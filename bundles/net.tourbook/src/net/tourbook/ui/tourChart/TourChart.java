@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -161,6 +161,10 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    private static final String   GRAPH_LABEL_RUN_DYN_VERTICAL_RATIO        = net.tourbook.common.Messages.Graph_Label_RunDyn_VerticalRatio;
    private static final String   GRAPH_LABEL_SWIM_STROKES                  = net.tourbook.common.Messages.Graph_Label_Swim_Strokes;
    private static final String   GRAPH_LABEL_SWIM_SWOLF                    = net.tourbook.common.Messages.Graph_Label_Swim_Swolf;
+
+
+
+
    public static final String    ACTION_ID_CAN_AUTO_ZOOM_TO_SLIDER         = "ACTION_ID_CAN_AUTO_ZOOM_TO_SLIDER";       //$NON-NLS-1$
 
    public static final String    ACTION_ID_CAN_MOVE_SLIDERS_WHEN_ZOOMED    = "ACTION_ID_CAN_MOVE_SLIDERS_WHEN_ZOOMED";  //$NON-NLS-1$
@@ -261,19 +265,25 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       GRAPH_CONTRIBUTION_ID_SWIM_SWOLF
    };
 
+
+//SET_FORMATTING_ON
+
+   public static final PulseGraph PULSE_GRAPH_DEFAULT = PulseGraph.DEVICE_BPM__2ND__RR_INTERVALS;
+
    static {}
+
 
 //SET_FORMATTING_ON
 
    /**
     * 1e-5 is too small for the min value, it do not correct the graph.
     */
-   public static final double MIN_ADJUSTMENT = 1e-3;
-
-   public static final double MAX_ADJUSTMENT = 1e-5;
+   public static final double     MIN_ADJUSTMENT      = 1e-3;
+   public static final double     MAX_ADJUSTMENT      = 1e-5;
 
    private LinkedHashMap<String, Boolean> _state_CustomTracksToolBarChart = new LinkedHashMap<>();
    private ArrayList<String>              _customTracksGraphContribId     = new ArrayList<>();
+
    //
    //
    private final IDialogSettings  _state;
@@ -5059,37 +5069,29 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
    void setupChartConfig() {
 
-      graphAntialiasing = _prefStore.getBoolean(//
-            ITourbookPreferences.GRAPH_ANTIALIASING) ? SWT.ON : SWT.OFF;
+      graphAntialiasing = _prefStore.getBoolean(ITourbookPreferences.GRAPH_ANTIALIASING) ? SWT.ON : SWT.OFF;
 
-      isShowSegmentAlternateColor = _prefStore.getBoolean(//
-            ITourbookPreferences.GRAPH_IS_SEGMENT_ALTERNATE_COLOR);
+      isShowSegmentAlternateColor = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SEGMENT_ALTERNATE_COLOR);
       segmentAlternateColor = PreferenceConverter.getColor(
-            _prefStore, //
+            _prefStore,
             ITourbookPreferences.GRAPH_SEGMENT_ALTERNATE_COLOR);
 
-      graphTransparencyLine = _prefStore.getInt(//
-            ITourbookPreferences.GRAPH_TRANSPARENCY_LINE);
-      graphTransparencyFilling = _prefStore.getInt(//
-            ITourbookPreferences.GRAPH_TRANSPARENCY_FILLING);
+      graphTransparencyLine = _prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE);
+      graphTransparencyFilling = _prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_FILLING);
 
-      isShowHorizontalGridLines = Util.getPrefixPrefBoolean(
-            _prefStore,
+      isShowHorizontalGridLines = Util.getPrefixPrefBoolean(_prefStore,
             GRID_PREF_PREFIX,
             ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES);
 
-      isShowVerticalGridLines = Util.getPrefixPrefBoolean(
-            _prefStore,
+      isShowVerticalGridLines = Util.getPrefixPrefBoolean(_prefStore,
             GRID_PREF_PREFIX,
             ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES);
 
-      gridVerticalDistance = Util.getPrefixPrefInt(//
-            _prefStore,
+      gridVerticalDistance = Util.getPrefixPrefInt(_prefStore,
             GRID_PREF_PREFIX,
             ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE);
 
-      gridHorizontalDistance = Util.getPrefixPrefInt(//
-            _prefStore,
+      gridHorizontalDistance = Util.getPrefixPrefInt(_prefStore,
             GRID_PREF_PREFIX,
             ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE);
    }

@@ -225,7 +225,7 @@ public class ColumnManager {
          }
       };
 
-      _profileSorter = new Comparator<>() {
+      _profileSorter = new Comparator<ColumnProfile>() {
          @Override
          public int compare(final ColumnProfile colProfile1, final ColumnProfile colProfile2) {
             return colProfile1.name.compareTo(colProfile2.name);
@@ -521,7 +521,7 @@ public class ColumnManager {
 
    // remove only the custom tracks columns from the overall list of defined column
    public void clearCustomTracksColumns() {
-      final ArrayList<String> columnIds = new ArrayList<>();
+      final ArrayList<String> columnIds = new ArrayList<String>();
       final Iterator<ColumnDefinition> itrColDef = _allDefinedColumnDefinitions.iterator();
       while (itrColDef.hasNext()) {
          final ColumnDefinition colDef = itrColDef.next();
@@ -542,7 +542,7 @@ public class ColumnManager {
          }
       }
 
-      final ArrayList<String> visibleIdsAndWidth = new ArrayList<>();
+      final ArrayList<String> visibleIdsAndWidth = new ArrayList<String>();
 
       for (final ColumnDefinition colDef : _activeProfile.visibleColumnDefinitions) {
 
@@ -1441,8 +1441,8 @@ public class ColumnManager {
        */
       final ArrayList<ColumnDefinition> allColumns = getRearrangedColumns();
 
-      final ArrayList<ColumnDefinition> displayedColumns = new ArrayList<>();
-      final ArrayList<ColumnDefinition> notDisplyedColumns = new ArrayList<>();
+      final ArrayList<ColumnDefinition> displayedColumns = new ArrayList<ColumnDefinition>();
+      final ArrayList<ColumnDefinition> notDisplyedColumns = new ArrayList<ColumnDefinition>();
       final HashSet<String> categorizedNames = new HashSet<>();
 
       for (final ColumnDefinition colDef : allColumns) {
