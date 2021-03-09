@@ -125,6 +125,7 @@ public class FitLogSAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_AVERAGE_LP_WATTS             = "AvgLeftRightBalance";                 //$NON-NLS-1$
 
    private static final String                  ATTRIB_PATHNAME                     = "PathName";                            //$NON-NLS-1$
+   private static final String                  ATTRIB_REFID                        = "RefId";                               //$NON-NLS-1$
    private static final String                  ATTRIB_REST                         = "Rest";                                //$NON-NLS-1$
    private static final String                  ATTRIB_SOURCE                       = "Source";                              //$NON-NLS-1$
    private static final String                  ATTRIB_UNIT                         = "Unit";                                //$NON-NLS-1$
@@ -224,6 +225,7 @@ public class FitLogSAXHandler extends DefaultHandler {
 //      private DateTime         trackTourDateTime;
 //      private long            trackTourStartTime   = Long.MIN_VALUE;
 
+      private String  _id;
       private String  _location;
       private String  _name;
       private String  _notes;
@@ -276,6 +278,7 @@ public class FitLogSAXHandler extends DefaultHandler {
    private class CustomST3TrackDefinition {
       private String _Name;
       private String _Id;
+      private String _RefId;
       private String _Unit;
 
       public String getId() {
@@ -284,6 +287,10 @@ public class FitLogSAXHandler extends DefaultHandler {
 
       public String getName() {
          return _Name;
+      }
+
+      public String getRefId() {
+         return _RefId;
       }
 
       public String getUnit() {
@@ -296,6 +303,10 @@ public class FitLogSAXHandler extends DefaultHandler {
 
       public void setName(final String name) {
          _Name = name;
+      }
+
+      public void setRefId(final String refid) {
+         _RefId = refid;
       }
 
       public void setUnit(final String unit) {
@@ -557,6 +568,14 @@ public class FitLogSAXHandler extends DefaultHandler {
             tourNotes.append(UI.NEW_LINE2);
          }
 
+         if (_currentActivity._id != null) {
+            tourNotes.append(ATTRIB_ID + "(SportTracks): " + _currentActivity._id); //$NON-NLS-1$
+            tourNotes.append(UI.NEW_LINE2);
+         } else {
+            //should never happen
+            tourNotes.append(ATTRIB_ID + "(SportTracks): NULL"); //$NON-NLS-1$
+            tourNotes.append(UI.NEW_LINE2);
+         }
          tourNotes.append(Messages.FitLog_CustomDataFields_Label);
          _currentActivity._customDataFields.forEach((key, value) -> {
             if (!tourNotes.toString().trim().isEmpty()) {
@@ -664,8 +683,8 @@ public class FitLogSAXHandler extends DefaultHandler {
          //setting up customTracksDefinition with call to "tourData.customTracksDefinition.put(...)"
          //must be set before calling "tourData.createTimeSeries(....)"
          for (final CustomST3TrackDefinition customST3TrackDefinition : _currentActivity._customTrackDefinitions) {
-            final String idS = customST3TrackDefinition.getId();
             final String nameS = customST3TrackDefinition.getName();
+            final String idS = nameS + UI.SYMBOL_SEMICOLON + customST3TrackDefinition.getRefId();
             final String unitS = customST3TrackDefinition.getUnit();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
                   .compareTo(NAME_VERTICALRATIO) == 0) {} else {
@@ -759,7 +778,9 @@ public class FitLogSAXHandler extends DefaultHandler {
 
       // after all data are added, the tour id can be created because it depends on the tour distance
       final String uniqueId = _device.createUniqueId(tourData, Util.UNIQUE_ID_SUFFIX_SPORT_TRACKS_FITLOG);
-      final Long tourId = tourData.createTourId(uniqueId);
+      final Integer uniqueIdwCategory = (_currentActivity._id == null ? Integer.valueOf(uniqueId) : Math.abs(_currentActivity._id
+            .hashCode()));
+      final Long tourId = tourData.createTourId(uniqueIdwCategory.toString());
 
       // check if the tour is already imported
       if (_alreadyImportedTours.containsKey(tourId) == false) {
@@ -779,6 +800,9 @@ public class FitLogSAXHandler extends DefaultHandler {
          finalizeTour_10_SetTourType(tourData);
          finalizeTour_20_SetTags(tourData);
          finalizeTour_30_CreateMarkers(tourData);
+      } else {
+         //show already imported tour
+         StatusUtil.log("Already imported Id:" + Long.toString(tourId));
       }
 
       // cleanup
@@ -1064,6 +1088,9 @@ public class FitLogSAXHandler extends DefaultHandler {
       _prevLatitude = Double.MIN_VALUE;
       _prevLongitude = Double.MIN_VALUE;
 
+      final String id = attributes.getValue(ATTRIB_ID);
+      _currentActivity._id = id;
+
       final String startTime = attributes.getValue(ATTRIB_START_TIME);
       if (!StringUtils.isNullOrEmpty(startTime)) {
 
@@ -1303,12 +1330,14 @@ public class FitLogSAXHandler extends DefaultHandler {
 
          final String nameT = attributes.getValue(ATTRIB_NAME);
          final String idT = attributes.getValue(ATTRIB_ID);
+         final String refidT = attributes.getValue(ATTRIB_REFID);
          final String unitT = attributes.getValue(ATTRIB_UNIT);
 
-         if (!StringUtils.isNullOrEmpty(nameT) && !StringUtils.isNullOrEmpty(idT)) {
+         if (!StringUtils.isNullOrEmpty(nameT) && !StringUtils.isNullOrEmpty(idT) && !StringUtils.isNullOrEmpty(idT)) {
 
             final CustomST3TrackDefinition custT = new CustomST3TrackDefinition();
             custT.setId(idT);
+            custT.setRefId(refidT);
             custT.setName(nameT);
             custT.setUnit(unitT);
 
@@ -1427,6 +1456,7 @@ public class FitLogSAXHandler extends DefaultHandler {
          for (final CustomST3TrackDefinition element : _currentActivity._customTrackDefinitions) {
             final String idS = element.getId();
             final String nameS = element.getName();
+            final String customTrackId = nameS + UI.SYMBOL_SEMICOLON + element.getRefId();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {
                final float value = Util.parseFloat(attributes, idS);
                if (value != Float.MIN_VALUE) {
@@ -1444,7 +1474,8 @@ public class FitLogSAXHandler extends DefaultHandler {
                }
             } else {
                final CustomTrackValue item = new CustomTrackValue();
-               item.id = idS;
+               //item.id = idS;
+               item.id = customTrackId;
                item.value = Util.parseFloat(attributes, idS);
                customTracksT.add(item);
             }

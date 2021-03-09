@@ -6739,10 +6739,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
           * NumberFormatException occurred so the calculation for the tour id was adjusted
           */
          tourIdKey = Short.toString(startYear)
-               + Short.toString(startMonth)
-               + Short.toString(startDay)
-               + Short.toString(startHour)
-               + Short.toString(startMinute)
+               + (startMonth < 10 ? "0" : "") + Short.toString(startMonth)
+               + (startDay < 10 ? "0" : "") + Short.toString(startDay)
+               + (startHour < 10 ? "0" : "") + Short.toString(startHour)
+               + (startMinute < 10 ? "0" : "") + Short.toString(startMinute)
                //
                + uniqueKeySuffix;
 
@@ -6756,10 +6756,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          try {
 
             tourIdKey = Short.toString(startYear)
-                  + Short.toString(startMonth)
-                  + Short.toString(startDay)
-                  + Short.toString(startHour)
-                  + Short.toString(startMinute)
+                  + (startMonth < 10 ? "0" : "") + Short.toString(startMonth)
+                  + (startDay < 10 ? "0" : "") + Short.toString(startDay)
+                  + (startHour < 10 ? "0" : "") + Short.toString(startHour)
+                  + (startMinute < 10 ? "0" : "") + Short.toString(startMinute)
                   //
                   + uniqueKeySuffix.substring(0, Math.min(5, uniqueKeySuffix.length()));
 

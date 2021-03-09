@@ -17,6 +17,8 @@ Export-Package: net.tourbook.device,
  net.tourbook.device.suunto
 Bundle-Vendor: MyTourbook
 Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-ClassPath: .,
+ opencsv-5.3.jar
 Import-Package: de.byteholder.geoclipse.map,
  net.tourbook,
  net.tourbook.application,
@@ -29,6 +31,7 @@ Import-Package: de.byteholder.geoclipse.map,
  net.tourbook.ui.tourChart,
  net.tourbook.ui.views.rawData,
  org.apache.commons.io,
+ org.apache.commons.lang3,
  org.joda.time,
  org.joda.time.format,
  org.json
