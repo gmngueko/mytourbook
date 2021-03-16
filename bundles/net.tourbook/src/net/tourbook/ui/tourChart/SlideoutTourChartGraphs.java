@@ -257,112 +257,214 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
             GridLayoutFactory.fillDefaults().numColumns(2).applyTo(_containerCustomTracks[index]);
          }
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean altitudeEnabled = true;
+         if (tourData != null && tourData.getAltitudeSmoothedSerie(true) == null) {
+            altitudeEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_ALTITUDE,
                GRAPH_LABEL_ALTITUDE,
-               Messages.Image__graph_altitude);
+               Messages.Image__graph_altitude,
+               Messages.Image__graph_altitude_disabled,
+               altitudeEnabled);
          _chkShowInChartToolbar_Altitude = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_ALTITUDE);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean heartrateEnabled = true;
+         if (tourData != null && tourData.getPulse_SmoothedSerie() == null) {
+            heartrateEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_PULSE,
                GRAPH_LABEL_HEARTBEAT,
-               Messages.Image__graph_heartbeat);
+               Messages.Image__graph_heartbeat,
+               Messages.Image__graph_heartbeat_disabled,
+               heartrateEnabled);
          _chkShowInChartToolbar_Pulse = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_HEARTBEAT);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean speedEnabled = true;
+         if (tourData != null && tourData.getSpeedSerie() == null) {
+            speedEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SPEED,
                GRAPH_LABEL_SPEED,
-               Messages.Image__graph_speed);
+               Messages.Image__graph_speed,
+               Messages.Image__graph_speed_disabled,
+               speedEnabled);
          _chkShowInChartToolbar_Speed = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SPEED);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean paceEnabled = true;
+         if (tourData != null && tourData.getPaceSerieSeconds() == null) {
+            paceEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_PACE,
                GRAPH_LABEL_PACE,
-               Messages.Image__graph_pace);
+               Messages.Image__graph_pace,
+               Messages.Image__graph_pace_disabled,
+               paceEnabled);
          _chkShowInChartToolbar_Pace = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_PACE);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean powerEnabled = true;
+         if (tourData != null && tourData.getPowerSerie() == null) {
+            powerEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_POWER,
                GRAPH_LABEL_POWER,
-               Messages.Image__graph_power);
+               Messages.Image__graph_power,
+               Messages.Image__graph_power_disabled,
+               powerEnabled);
          _chkShowInChartToolbar_Power = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_POWER);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean temperatureEnabled = true;
+         if (tourData != null && tourData.getTemperatureSerie() == null) {
+            temperatureEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_TEMPERATURE,
                GRAPH_LABEL_TEMPERATURE,
-               Messages.Image__graph_temperature);
+               Messages.Image__graph_temperature,
+               Messages.Image__graph_temperature_disabled,
+               temperatureEnabled);
          _chkShowInChartToolbar_Tempterature = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_TEMPERATURE);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean gradientEnabled = true;
+         if (tourData != null && tourData.gradientSerie == null) {
+            gradientEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_GRADIENT,
                GRAPH_LABEL_GRADIENT,
-               Messages.Image__graph_gradient);
+               Messages.Image__graph_gradient,
+               Messages.Image__graph_gradient_disabled,
+               gradientEnabled);
          _chkShowInChartToolbar_Gradient = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_GRADIENT);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean altimeterEnabled = true;
+         if (tourData != null && tourData.getAltimeterSerie() == null) {
+            altimeterEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_ALTIMETER,
                GRAPH_LABEL_ALTIMETER,
-               Messages.Image__graph_altimeter);
+               Messages.Image__graph_altimeter,
+               Messages.Image__graph_altimeter_disabled,
+               altimeterEnabled);
          _chkShowInChartToolbar_Altimeter = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_ALTIMETER);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean cadenceEnabled = true;
+         if (tourData != null && tourData.getCadenceSerieWithMuliplier() == null) {
+            cadenceEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_CADENCE,
                GRAPH_LABEL_CADENCE,
-               Messages.Image__graph_cadence);
+               Messages.Image__graph_cadence,
+               Messages.Image__graph_cadence_disabled,
+               cadenceEnabled);
          _chkShowInChartToolbar_Cadence = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_CADENCE);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean gearsEnabled = true;
+         if (tourData != null && tourData.getGears() == null) {
+            gearsEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_GEARS,
                GRAPH_LABEL_GEARS,
-               Messages.Image__Graph_Gears);
+               Messages.Image__Graph_Gears,
+               Messages.Image__Graph_Gears_disabled,
+               gearsEnabled);
          _chkShowInChartToolbar_Gears = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_GEARS);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean runDynStanceTimeEnabled = true;
+         if (tourData != null && tourData.getRunDyn_StanceTime() == null) {
+            runDynStanceTimeEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STANCE_TIME,
                GRAPH_LABEL_RUNDYN_STANCETIME,
-               Messages.Image__Graph_RunDyn_StanceTime);
+               Messages.Image__Graph_RunDyn_StanceTime,
+               Messages.Image__Graph_RunDyn_StanceTime_Disabled,
+               runDynStanceTimeEnabled);
          _chkShowInChartToolbar_RunDyn_StanceTime = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STANCETIME);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean runDynStanceTimeBalanceEnabled = true;
+         if (tourData != null && tourData.getRunDyn_StanceTimeBalance() == null) {
+            runDynStanceTimeBalanceEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STANCE_TIME_BALANCED,
                GRAPH_LABEL_RUNDYN_STANCETIMEBALANCE,
-               Messages.Image__Graph_RunDyn_StanceTimeBalance);
+               Messages.Image__Graph_RunDyn_StanceTimeBalance,
+               Messages.Image__Graph_RunDyn_StanceTimeBalance_Disabled,
+               runDynStanceTimeBalanceEnabled);
          _chkShowInChartToolbar_RunDyn_StanceTimeBalance = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STANCETIMEBALANCE);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean runDynStepLengthEnabled = true;
+         if (tourData != null && tourData.getRunDyn_StepLength() == null) {
+            runDynStepLengthEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STEP_LENGTH,
                GRAPH_LABEL_RUNDYN_STEPLENGTH,
-               Messages.Image__Graph_RunDyn_StepLength);
+               Messages.Image__Graph_RunDyn_StepLength,
+               Messages.Image__Graph_RunDyn_StepLength_Disabled,
+               runDynStepLengthEnabled);
          _chkShowInChartToolbar_RunDyn_StepLength = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STEPLENGTH);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean runDynVerticalOscEnabled = true;
+         if (tourData != null && tourData.getRunDyn_VerticalOscillation() == null) {
+            runDynVerticalOscEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_VERTICAL_OSCILLATION,
                GRAPH_LABEL_RUNDYN_VERTICALOSCILLATION,
-               Messages.Image__Graph_RunDyn_VerticalOscillation);
+               Messages.Image__Graph_RunDyn_VerticalOscillation,
+               Messages.Image__Graph_RunDyn_VerticalOscillation_Disabled,
+               runDynVerticalOscEnabled);
          _chkShowInChartToolbar_RunDyn_VerticalOscillation = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_VERTICALOSCILLATION);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean runDynVerticalRatioEnabled = true;
+         if (tourData != null && tourData.getRunDyn_VerticalRatio() == null) {
+            runDynVerticalRatioEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_VERTICAL_RATIO,
                GRAPH_LABEL_RUNDYN_VERTICALRATIO,
-               Messages.Image__Graph_RunDyn_VerticalRatio);
+               Messages.Image__Graph_RunDyn_VerticalRatio,
+               Messages.Image__Graph_RunDyn_VerticalRatio_Disabled,
+               runDynVerticalRatioEnabled);
          _chkShowInChartToolbar_RunDyn_VerticalRatio = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_VERTICALRATIO);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean swimStrokesEnabled = true;
+         if (tourData != null && tourData.getSwim_Strokes() == null) {
+            swimStrokesEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SWIM_STROKES,
                GRAPH_LABEL_SWIM_STROKES,
-               Messages.Image__Graph_Swim_Strokes);
+               Messages.Image__Graph_Swim_Strokes,
+               Messages.Image__Graph_Swim_Strokes_Disabled,
+               swimStrokesEnabled);
          _chkShowInChartToolbar_Swim_Strokes = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_SWIM_STROKES);
 
-         createUI_GraphAction_CustomTracks_StandardTracks(_container,
+         boolean swimSwolfEnabled = true;
+         if (tourData != null && tourData.getSwim_Swolf() == null) {
+            swimSwolfEnabled = false;
+         }
+         createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SWIM_SWOLF,
                GRAPH_LABEL_SWIM_SWOLF,
-               Messages.Image__Graph_Swim_Swolf);
+               Messages.Image__Graph_Swim_Swolf,
+               Messages.Image__Graph_Swim_Swolf_Disabled,
+               swimSwolfEnabled);
          _chkShowInChartToolbar_Swim_Swolf = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SWIM_SWOLF);
 
          {
@@ -484,6 +586,40 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
       btngraph.setEnabled(true);
       btngraph.setVisible(true);
       btngraph.setImage(TourbookPlugin.getImageDescriptor(image).createImage());
+      //btngraph.setText(text);
+      GridDataFactory
+            .fillDefaults()
+            .grab(true, false)
+            .align(SWT.LEFT, SWT.FILL)
+            .applyTo(btngraph);
+
+      btngraph.addSelectionListener(new SelectionAdapter() {
+
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            _tourChart.getGraphAction(graphId).run();
+         }
+      });
+
+      return btngraph;
+   }
+
+   private Button createUI_GraphAction_CustomTracks_StandardTrackswState(final Composite parent,
+                                                                         final int graphId,
+                                                                         final String text,
+                                                                         final String image,
+                                                                         final String imageDisabled,
+                                                                         final boolean isEnabled) {
+
+      final Button btngraph = new Button(parent, SWT.PUSH);
+
+      btngraph.setEnabled(isEnabled);
+      btngraph.setVisible(true);
+      if (isEnabled) {
+         btngraph.setImage(TourbookPlugin.getImageDescriptor(image).createImage());
+      } else {
+         btngraph.setImage(TourbookPlugin.getImageDescriptor(imageDisabled).createImage());
+      }
       //btngraph.setText(text);
       GridDataFactory
             .fillDefaults()
