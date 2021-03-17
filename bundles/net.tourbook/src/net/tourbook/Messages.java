@@ -1499,6 +1499,8 @@ public class Messages extends NLS {
    public static String        merge_tour_source_graph_heartbeat_tooltip;
    public static String        merge_tour_source_graph_temperature;
    public static String        merge_tour_source_graph_temperature_tooltip;
+   public static String        merge_tour_source_graph_customtracks;
+   public static String        merge_tour_source_graph_customtracks_tooltip;
 
    public static String        NT001_DialogExtractTour_InvalidTourData;
 

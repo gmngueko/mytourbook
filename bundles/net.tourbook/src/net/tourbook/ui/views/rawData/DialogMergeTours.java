@@ -27,6 +27,7 @@ import net.tourbook.chart.SelectionChartInfo;
 import net.tourbook.common.UI;
 import net.tourbook.common.action.ActionOpenPrefDialog;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourType;
 import net.tourbook.database.TourDatabase;
@@ -81,1420 +82,1474 @@ import org.eclipse.swt.widgets.Widget;
 
 public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2, I2ndAltiLayer {
 
-	private static final int											MAX_ADJUST_SECONDS		= 120;
-	private static final int											MAX_ADJUST_MINUTES		= 120;										// x 60
-	private static final int											MAX_ADJUST_ALTITUDE_1	= 20;
-	private static final int											MAX_ADJUST_ALTITUDE_10	= 40;											// x 10
+   private static final int       MAX_ADJUST_SECONDS     = 120;
+   private static final int       MAX_ADJUST_MINUTES     = 120;          // x 60
+   private static final int       MAX_ADJUST_ALTITUDE_1  = 20;
+   private static final int       MAX_ADJUST_ALTITUDE_10 = 40;           // x 10
 
-	private static final int											VH_SPACING					= 2;
+   private static final int       VH_SPACING             = 2;
 
-	private final IPreferenceStore									_prefStore					= TourbookPlugin
-			.getDefault()
-			.getPreferenceStore();
+   private final IPreferenceStore _prefStore             = TourbookPlugin
+         .getDefault()
+         .getPreferenceStore();
 
-	private final IDialogSettings										_dialogSettings;
+   private final IDialogSettings  _dialogSettings;
 
-	private TourData														_sourceTour;
-	private TourData														_targetTour;
+   private TourData               _sourceTour;
+   private TourData               _targetTour;
 
-	private Composite														_dlgContainer;
+   private Composite              _dlgContainer;
 
-	private TourChart														_tourChart;
-	private TourChartConfiguration									_tourChartConfig;
+   private TourChart              _tourChart;
+   private TourChartConfiguration _tourChartConfig;
 
-	private PixelConverter												_pc;
+   private PixelConverter         _pc;
 
-	/*
-	 * vertical adjustment options
-	 */
-	private Group															_groupAltitude;
+   /*
+    * vertical adjustment options
+    */
+   private Group _groupAltitude;
 
-	private Label															_lblAltitudeDiff1;
-	private Label															_lblAltitudeDiff10;
+   private Label _lblAltitudeDiff1;
+   private Label _lblAltitudeDiff10;
 
-	private Scale															_scaleAltitude1;
-	private Scale															_scaleAltitude10;
+   private Scale _scaleAltitude1;
+   private Scale _scaleAltitude10;
 
-	/*
-	 * horzontal adjustment options
-	 */
-	private Button															_chkSynchStartTime;
+   /*
+    * horzontal adjustment options
+    */
+   private Button _chkSynchStartTime;
 
-	private Label															_lblAdjustMinuteValue;
-	private Label															_lblAdjustSecondsValue;
+   private Label  _lblAdjustMinuteValue;
+   private Label  _lblAdjustSecondsValue;
 
-	private Scale															_scaleAdjustMinutes;
-	private Scale															_scaleAdjustSeconds;
+   private Scale  _scaleAdjustMinutes;
+   private Scale  _scaleAdjustSeconds;
 
-	private Label															_lblAdjustMinuteUnit;
-	private Label															_lblAdjustSecondsUnit;
+   private Label  _lblAdjustMinuteUnit;
+   private Label  _lblAdjustSecondsUnit;
 
-	private Button															_btnResetAdjustment;
-	private Button															_btnResetValues;
+   private Button _btnResetAdjustment;
+   private Button _btnResetValues;
 
-	/*
-	 * save actions
-	 */
-	private Button															_chkMergeAltitude;
-	private Button															_chkMergePulse;
-	private Button															_chkMergeTemperature;
-	private Button															_chkMergeCadence;
+   /*
+    * save actions
+    */
+   private Button _chkMergeAltitude;
+   private Button _chkMergePulse;
+   private Button _chkMergeTemperature;
+   private Button _chkMergeCadence;
+   private Button _chkMergeCustomTracks;
 
-	private Button															_chkAdjustAltiFromSource;
-	private Button															_chkAdjustAltiSmoothly;
+   private Button _chkAdjustAltiFromSource;
+   private Button _chkAdjustAltiSmoothly;
 
-	private Button															_chkAdjustAltiFromStart;
-	private Label															_lblAdjustAltiValueTimeUnit;
-	private Label															_lblAdjustAltiValueDistanceUnit;
-	private Label															_lblAdjustAltiValueTime;
-	private Label															_lblAdjustAltiValueDistance;
+   private Button _chkAdjustAltiFromStart;
+   private Label  _lblAdjustAltiValueTimeUnit;
+   private Label  _lblAdjustAltiValueDistanceUnit;
+   private Label  _lblAdjustAltiValueTime;
+   private Label  _lblAdjustAltiValueDistance;
 
-	private Button															_chkSetTourType;
-	private Link															_linkTourType;
-	private CLabel															_lblTourType;
+   private Button _chkSetTourType;
+   private Link   _linkTourType;
+   private CLabel _lblTourType;
 
-	private Button															_chkKeepHVAdjustments;
+   private Button _chkKeepHVAdjustments;
 
-	/*
-	 * display actions
-	 */
-	private Button															_chkValueDiffScaling;
+   /*
+    * display actions
+    */
+   private Button  _chkValueDiffScaling;
 
-	private Button															_chkPreviewChart;
+   private Button  _chkPreviewChart;
 
-	private boolean														_isTourSaved				= false;
-	private boolean														_isMergeSourceTourModified;
-	private boolean														_isChartUpdated;
+   private boolean _isTourSaved = false;
+   private boolean _isMergeSourceTourModified;
+   private boolean _isChartUpdated;
 
-	/*
-	 * backup data
-	 */
-	private int[]															_backupSourceTimeSerie;
-	private float[]														_backupSourceDistanceSerie;
-	private float[]														_backupSourceAltitudeSerie;
+   /*
+    * backup data
+    */
+   private int[]                                          _backupSourceTimeSerie;
+   private float[]                                        _backupSourceDistanceSerie;
+   private float[]                                        _backupSourceAltitudeSerie;
 
-	private TourType														_backupSourceTourType;
+   private TourType                                       _backupSourceTourType;
 
-	private float[]														_backupTargetPulseSerie;
-	private float[]														_backupTargetTemperatureSerie;
-	private float[]														_backupTargetCadenceSerie;
+   private float[]                                        _backupTargetPulseSerie;
+   private float[]                                        _backupTargetTemperatureSerie;
+   private float[]                                        _backupTargetCadenceSerie;
 
-	private int																_backupTargetTimeOffset;
-	private int																_backupTargetAltitudeOffset;
+   HashMap<String, float[]>                               _backupTargetCustomTracks;
+   HashMap<String, CustomTrackDefinition>                 _backupTargetCustomTracksDefinition;
 
-	private ActionOpenPrefDialog										_actionOpenTourTypePrefs;
+   private int                                            _backupTargetTimeOffset;
+   private int                                            _backupTargetAltitudeOffset;
 
-	private final NumberFormat											_nf							= NumberFormat.getNumberInstance();
+   private ActionOpenPrefDialog                           _actionOpenTourTypePrefs;
 
-	private final Image													_iconPlaceholder;
-	private final HashMap<Integer, Image>							_graphImages				= new HashMap<>();
+   private final NumberFormat                             _nf          = NumberFormat.getNumberInstance();
 
-	private final int														_tourStartTimeSynchOffset;
-	private int																_tourTimeOffsetBackup;
+   private final Image                                    _iconPlaceholder;
+   private final HashMap<Integer, Image>                  _graphImages = new HashMap<>();
 
-	private boolean														_isAdjustAltiFromSourceBackup;
-	private boolean														_isAdjustAltiFromStartBackup;
+   private final int                                      _tourStartTimeSynchOffset;
+   private int                                            _tourTimeOffsetBackup;
 
-	private org.eclipse.jface.util.IPropertyChangeListener	_prefChangeListener;
+   private boolean                                        _isAdjustAltiFromSourceBackup;
+   private boolean                                        _isAdjustAltiFromStartBackup;
 
-	/**
-	 * @param parentShell
-	 * @param mergeSourceTour
-	 *           {@link TourData} for the tour which is merge into the other tour
-	 * @param mergeTargetTour
-	 *           {@link TourData} for the tour into which the other tour is merged
-	 */
-	public DialogMergeTours(final Shell parentShell, final TourData mergeSourceTour, final TourData mergeTargetTour) {
+   private org.eclipse.jface.util.IPropertyChangeListener _prefChangeListener;
 
-		super(parentShell);
+   /**
+    * @param parentShell
+    * @param mergeSourceTour
+    *           {@link TourData} for the tour which is merge into the other tour
+    * @param mergeTargetTour
+    *           {@link TourData} for the tour into which the other tour is merged
+    */
+   public DialogMergeTours(final Shell parentShell, final TourData mergeSourceTour, final TourData mergeTargetTour) {
 
-		// make dialog resizable and display maximize button
-		setShellStyle(getShellStyle() | SWT.RESIZE | SWT.MAX);
+      super(parentShell);
 
-		// set icon for the window
-		setDefaultImage(TourbookPlugin.getImageDescriptor(Messages.image__merge_tours).createImage());
+      // make dialog resizable and display maximize button
+      setShellStyle(getShellStyle() | SWT.RESIZE | SWT.MAX);
 
-		_iconPlaceholder = TourbookPlugin.getImageDescriptor(Messages.Image__icon_placeholder).createImage();
+      // set icon for the window
+      setDefaultImage(TourbookPlugin.getImageDescriptor(Messages.image__merge_tours).createImage());
 
-		_sourceTour = mergeSourceTour;
-		_targetTour = mergeTargetTour;
+      _iconPlaceholder = TourbookPlugin.getImageDescriptor(Messages.Image__icon_placeholder).createImage();
 
-		/*
-		 * synchronize start time
-		 */
+      _sourceTour = mergeSourceTour;
+      _targetTour = mergeTargetTour;
 
-		final long sourceStartTime = _sourceTour.getTourStartTimeMS();
-		final long targetStartTime = _targetTour.getTourStartTimeMS();
+      /*
+       * synchronize start time
+       */
 
-		_tourStartTimeSynchOffset = (int) ((sourceStartTime - targetStartTime) / 1000);
+      final long sourceStartTime = _sourceTour.getTourStartTimeMS();
+      final long targetStartTime = _targetTour.getTourStartTimeMS();
 
-		_nf.setMinimumFractionDigits(3);
-		_nf.setMaximumFractionDigits(3);
+      _tourStartTimeSynchOffset = (int) ((sourceStartTime - targetStartTime) / 1000);
 
-		_dialogSettings = TourbookPlugin.getDefault().getDialogSettingsSection(getClass().getName());
-	}
+      _nf.setMinimumFractionDigits(3);
+      _nf.setMaximumFractionDigits(3);
 
-	private void addPrefListener() {
+      _dialogSettings = TourbookPlugin.getDefault().getDialogSettingsSection(getClass().getName());
+   }
 
-		_prefChangeListener = new IPropertyChangeListener() {
-			@Override
-			public void propertyChange(final PropertyChangeEvent event) {
+   private void addPrefListener() {
 
-				final String property = event.getProperty();
+      _prefChangeListener = new IPropertyChangeListener() {
+         @Override
+         public void propertyChange(final PropertyChangeEvent event) {
 
-				if (property.equals(ITourbookPreferences.TOUR_TYPE_LIST_IS_MODIFIED)) {
+            final String property = event.getProperty();
 
-					/*
-					 * tour data cache is cleared, reload tour data from the database
-					 */
+            if (property.equals(ITourbookPreferences.TOUR_TYPE_LIST_IS_MODIFIED)) {
 
-					if (_sourceTour.getTourPerson() != null) {
-						_sourceTour = TourManager.getInstance().getTourData(_sourceTour.getTourId());
-					}
+               /*
+                * tour data cache is cleared, reload tour data from the database
+                */
 
-					_targetTour = TourManager.getInstance().getTourData(_targetTour.getTourId());
+               if (_sourceTour.getTourPerson() != null) {
+                  _sourceTour = TourManager.getInstance().getTourData(_sourceTour.getTourId());
+               }
 
-					onModifyProperties();
-				}
-			}
-		};
+               _targetTour = TourManager.getInstance().getTourData(_targetTour.getTourId());
 
-		_prefStore.addPropertyChangeListener(_prefChangeListener);
-	}
+               onModifyProperties();
+            }
+         }
+      };
 
-	/**
-	 * set button width
-	 */
-	private void adjustButtonWidth() {
+      _prefStore.addPropertyChangeListener(_prefChangeListener);
+   }
 
-		final int btnResetAdj = _btnResetAdjustment.getBounds().width;
-		final int btnResetValues = _btnResetValues.getBounds().width;
-		final int newWidth = Math.max(btnResetAdj, btnResetValues);
+   /**
+    * set button width
+    */
+   private void adjustButtonWidth() {
 
-		GridData gd;
-		gd = (GridData) _btnResetAdjustment.getLayoutData();
-		gd.widthHint = newWidth;
+      final int btnResetAdj = _btnResetAdjustment.getBounds().width;
+      final int btnResetValues = _btnResetValues.getBounds().width;
+      final int newWidth = Math.max(btnResetAdj, btnResetValues);
 
-		gd = (GridData) _btnResetValues.getLayoutData();
-		gd.widthHint = newWidth;
-	}
+      GridData gd;
+      gd = (GridData) _btnResetAdjustment.getLayoutData();
+      gd.widthHint = newWidth;
 
-	@Override
-	public boolean close() {
+      gd = (GridData) _btnResetValues.getLayoutData();
+      gd.widthHint = newWidth;
+   }
 
-		saveState();
+   @Override
+   public boolean close() {
 
-		if (_isTourSaved == false) {
+      saveState();
 
-			// tour is not saved, dialog is canceled, restore original values
+      if (_isTourSaved == false) {
 
-			restoreDataBackup();
-		}
+         // tour is not saved, dialog is canceled, restore original values
 
-		/**
-		 * this is a tricky thing:
-		 * <p>
-		 * when the tour is not saved, the tour must be reverted
-		 * <p>
-		 * when the tour is saved, reverting the tour sets the editor to not dirty, tour data have
-		 * already been saved
-		 */
-		if (_isMergeSourceTourModified) {
+         restoreDataBackup();
+      }
 
-			// revert modified tour type in the merge from tour
+      /**
+       * this is a tricky thing:
+       * <p>
+       * when the tour is not saved, the tour must be reverted
+       * <p>
+       * when the tour is saved, reverting the tour sets the editor to not dirty, tour data have
+       * already been saved
+       */
+      if (_isMergeSourceTourModified) {
 
-			final TourEvent tourEvent = new TourEvent(_sourceTour);
-			tourEvent.isReverted = true;
+         // revert modified tour type in the merge from tour
 
-			TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
-		}
+         final TourEvent tourEvent = new TourEvent(_sourceTour);
+         tourEvent.isReverted = true;
 
-		return super.close();
-	}
+         TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
+      }
 
-	private void computeMergedData() {
+      return super.close();
+   }
 
-		int xMergeOffset = _targetTour.getMergedTourTimeOffset();
-		final int yMergeOffset = _targetTour.getMergedAltitudeOffset();
+   private void computeMergedData() {
 
-		final int[] targetTimeSerie = _targetTour.timeSerie;
-		final float[] targetDistanceSerie = _targetTour.distanceSerie;
-		final float[] targetAltitudeSerie = _targetTour.altitudeSerie;
+      int xMergeOffset = _targetTour.getMergedTourTimeOffset();
+      final int yMergeOffset = _targetTour.getMergedAltitudeOffset();
 
-		final int[] sourceTimeSerie = _sourceTour.timeSerie;
-		final float[] sourceAltitudeSerie = _sourceTour.altitudeSerie;
-		final float[] sourcePulseSerie = _sourceTour.pulseSerie;
-		final float[] sourceTemperatureSerie = _sourceTour.temperatureSerie;
-		final float[] sourceCadenceSerie = _sourceTour.getCadenceSerie();
+      final int[] targetTimeSerie = _targetTour.timeSerie;
+      final float[] targetDistanceSerie = _targetTour.distanceSerie;
+      final float[] targetAltitudeSerie = _targetTour.altitudeSerie;
 
-		if (_chkSynchStartTime.getSelection()) {
+      final int[] sourceTimeSerie = _sourceTour.timeSerie;
+      final float[] sourceAltitudeSerie = _sourceTour.altitudeSerie;
+      final float[] sourcePulseSerie = _sourceTour.pulseSerie;
+      final float[] sourceTemperatureSerie = _sourceTour.temperatureSerie;
+      final float[] sourceCadenceSerie = _sourceTour.getCadenceSerie();
 
-			// synchronize start time
+      if (_chkSynchStartTime.getSelection()) {
 
-			xMergeOffset = _tourStartTimeSynchOffset;
-		}
+         // synchronize start time
 
-		// check if the data series are available
-		final boolean isSourceTemperature = sourceTemperatureSerie != null;
-		final boolean isSourcePulse = sourcePulseSerie != null;
-		final boolean isSourceCadence = sourceCadenceSerie != null;
-		final boolean isSourceAltitude = sourceAltitudeSerie != null;
+         xMergeOffset = _tourStartTimeSynchOffset;
+      }
 
-		final boolean isTargetDistance = targetDistanceSerie != null;
-		final boolean isTargetAltitude = targetAltitudeSerie != null;
+      // check if the data series are available
+      final boolean isSourceTemperature = sourceTemperatureSerie != null;
+      final boolean isSourcePulse = sourcePulseSerie != null;
+      final boolean isSourceCadence = sourceCadenceSerie != null;
+      final boolean isSourceAltitude = sourceAltitudeSerie != null;
 
-		final int lastSourceIndex = sourceTimeSerie.length - 1;
-		final int serieLength = targetTimeSerie.length;
+      final boolean isTargetDistance = targetDistanceSerie != null;
+      final boolean isTargetAltitude = targetAltitudeSerie != null;
 
-		final float[] newSourceAltitudeSerie = new float[serieLength];
-		final float[] newSourceAltiDiffSerie = new float[serieLength];
+      final int lastSourceIndex = sourceTimeSerie.length - 1;
+      final int serieLength = targetTimeSerie.length;
 
-		final float[] newTargetPulseSerie = new float[serieLength];
-		final float[] newTargetTemperatureSerie = new float[serieLength];
-		final float[] newTargetCadenceSerie = new float[serieLength];
+      final float[] newSourceAltitudeSerie = new float[serieLength];
+      final float[] newSourceAltiDiffSerie = new float[serieLength];
 
-		int sourceIndex = 0;
-		int sourceTime = sourceTimeSerie[0] + xMergeOffset;
-		int sourceTimePrev = 0;
-		float sourceAlti = 0;
-		float sourceAltiPrev = 0;
+      final float[] newTargetPulseSerie = new float[serieLength];
+      final float[] newTargetTemperatureSerie = new float[serieLength];
+      final float[] newTargetCadenceSerie = new float[serieLength];
 
-		int targetTime = targetTimeSerie[0];
-		float newSourceAltitude;
+      final HashMap<String, float[]> sourceCustomTracks = _sourceTour.getCustomTracks();
+      final HashMap<String, CustomTrackDefinition> newTargetCustomTrackDefinition = _sourceTour.getCustomTracksDefinition();
+      final HashMap<String, float[]> newTargetCustomTrack = new HashMap<>();
 
-		if (isSourceAltitude) {
-			sourceAlti = sourceAltitudeSerie[0] + yMergeOffset;
-			sourceAltiPrev = sourceAlti;
-			newSourceAltitude = sourceAlti;
-		}
+      int sourceIndex = 0;
+      int sourceTime = sourceTimeSerie[0] + xMergeOffset;
+      int sourceTimePrev = 0;
+      float sourceAlti = 0;
+      float sourceAltiPrev = 0;
 
-		final boolean isLinearInterpolation = _chkAdjustAltiFromSource.getSelection()
-				&& _chkAdjustAltiSmoothly.getSelection();
+      int targetTime = targetTimeSerie[0];
+      float newSourceAltitude;
 
-		/*
-		 * create new time/distance serie for the source tour according to the time of the target tour
-		 */
-		for (int targetIndex = 0; targetIndex < serieLength; targetIndex++) {
+      if (isSourceAltitude) {
+         sourceAlti = sourceAltitudeSerie[0] + yMergeOffset;
+         sourceAltiPrev = sourceAlti;
+         newSourceAltitude = sourceAlti;
+      }
 
-			targetTime = targetTimeSerie[targetIndex];
+      final boolean isLinearInterpolation = _chkAdjustAltiFromSource.getSelection()
+            && _chkAdjustAltiSmoothly.getSelection();
 
-			/*
-			 * target tour is the leading time data serie, move source time forward to reach target
-			 * time
-			 */
-			while (sourceTime < targetTime) {
+      /*
+       * create new time/distance serie for the source tour according to the time of the target tour
+       */
+      for (int targetIndex = 0; targetIndex < serieLength; targetIndex++) {
 
-				sourceIndex++;
+         targetTime = targetTimeSerie[targetIndex];
 
-				// check array bounds
-				sourceIndex = (sourceIndex <= lastSourceIndex) ? sourceIndex : lastSourceIndex;
+         /*
+          * target tour is the leading time data serie, move source time forward to reach target
+          * time
+          */
+         while (sourceTime < targetTime) {
 
-				if (sourceIndex == lastSourceIndex) {
-					//prevent endless loops
-					break;
-				}
+            sourceIndex++;
 
-				sourceTimePrev = sourceTime;
-				sourceTime = sourceTimeSerie[sourceIndex] + xMergeOffset;
+            // check array bounds
+            sourceIndex = (sourceIndex <= lastSourceIndex) ? sourceIndex : lastSourceIndex;
 
-				if (isSourceAltitude) {
-					sourceAltiPrev = sourceAlti;
-					sourceAlti = sourceAltitudeSerie[sourceIndex] + yMergeOffset;
-				}
-			}
+            if (sourceIndex == lastSourceIndex) {
+               //prevent endless loops
+               break;
+            }
 
-			if (isSourceAltitude) {
+            sourceTimePrev = sourceTime;
+            sourceTime = sourceTimeSerie[sourceIndex] + xMergeOffset;
 
-				if (isLinearInterpolation) {
+            if (isSourceAltitude) {
+               sourceAltiPrev = sourceAlti;
+               sourceAlti = sourceAltitudeSerie[sourceIndex] + yMergeOffset;
+            }
+         }
 
-					/**
-					 * do linear interpolation for the altitude
-					 * <p>
-					 * y2 = (x2-x1)(y3-y1)/(x3-x1) + y1
-					 */
-					final int x1 = sourceTimePrev;
-					final int x2 = targetTime;
-					final int x3 = sourceTime;
-					final float y1 = sourceAltiPrev;
-					final float y3 = sourceAlti;
+         if (isSourceAltitude) {
 
-					final int xDiff = x3 - x1;
+            if (isLinearInterpolation) {
 
-					newSourceAltitude = xDiff == 0 ? sourceAltiPrev : (x2 - x1) * (y3 - y1) / xDiff + y1;
+               /**
+                * do linear interpolation for the altitude
+                * <p>
+                * y2 = (x2-x1)(y3-y1)/(x3-x1) + y1
+                */
+               final int x1 = sourceTimePrev;
+               final int x2 = targetTime;
+               final int x3 = sourceTime;
+               final float y1 = sourceAltiPrev;
+               final float y3 = sourceAlti;
 
-				} else {
+               final int xDiff = x3 - x1;
 
-					/*
-					 * the interpolited altitude is not exact above the none interpolite altitude, it is
-					 * in the middle of the previous and current altitude
-					 */
-					// newSourceAltitude = sourceAlti;
-					newSourceAltitude = sourceAltiPrev;
-				}
+               newSourceAltitude = xDiff == 0 ? sourceAltiPrev : (x2 - x1) * (y3 - y1) / xDiff + y1;
 
-				newSourceAltitudeSerie[targetIndex] = newSourceAltitude;
+            } else {
 
-				if (isTargetAltitude) {
-					newSourceAltiDiffSerie[targetIndex] = newSourceAltitude - targetAltitudeSerie[targetIndex];
-				}
-			}
+               /*
+                * the interpolited altitude is not exact above the none interpolite altitude, it is
+                * in the middle of the previous and current altitude
+                */
+               // newSourceAltitude = sourceAlti;
+               newSourceAltitude = sourceAltiPrev;
+            }
 
-			if (isSourcePulse) {
-				newTargetPulseSerie[targetIndex] = sourcePulseSerie[sourceIndex];
-			}
-			if (isSourceTemperature) {
-				newTargetTemperatureSerie[targetIndex] = sourceTemperatureSerie[sourceIndex];
-			}
-			if (isSourceCadence) {
-				newTargetCadenceSerie[targetIndex] = sourceCadenceSerie[sourceIndex];
-			}
-		}
+            newSourceAltitudeSerie[targetIndex] = newSourceAltitude;
 
-		_sourceTour.dataSerieAdjustedAlti = null;
+            if (isTargetAltitude) {
+               newSourceAltiDiffSerie[targetIndex] = newSourceAltitude - targetAltitudeSerie[targetIndex];
+            }
+         }
 
-		if (isSourceAltitude) {
-			_sourceTour.dataSerie2ndAlti = newSourceAltitudeSerie;
-		} else {
-			_sourceTour.dataSerie2ndAlti = null;
-		}
+         if (isSourcePulse) {
+            newTargetPulseSerie[targetIndex] = sourcePulseSerie[sourceIndex];
+         }
+         if (isSourceTemperature) {
+            newTargetTemperatureSerie[targetIndex] = sourceTemperatureSerie[sourceIndex];
+         }
+         if (isSourceCadence) {
+            newTargetCadenceSerie[targetIndex] = sourceCadenceSerie[sourceIndex];
+         }
 
-		if (isSourceAltitude && isTargetAltitude) {
-			_sourceTour.dataSerieDiffTo2ndAlti = newSourceAltiDiffSerie;
-		} else {
-			_sourceTour.dataSerieDiffTo2ndAlti = null;
-		}
+         if (sourceCustomTracks != null && !sourceCustomTracks.isEmpty()) {
+            for (final String customTracksId : sourceCustomTracks.keySet()) {
+               if (newTargetCustomTrack.get(customTracksId) == null) {
+                  final float[] serieData = new float[serieLength];
+                  newTargetCustomTrack.put(customTracksId, serieData);
+               }
+               final float[] targetSerieData = newTargetCustomTrack.get(customTracksId);
+               final float[] sourceSerieData = sourceCustomTracks.get(customTracksId);
+               targetSerieData[targetIndex] = sourceSerieData[sourceIndex];
+            }
+         }
+      }
 
-		if (_chkMergePulse.getSelection()) {
-			_targetTour.pulseSerie = newTargetPulseSerie;
-		} else {
-			_targetTour.pulseSerie = _backupTargetPulseSerie;
-		}
+      _sourceTour.dataSerieAdjustedAlti = null;
 
-		if (_chkMergeTemperature.getSelection()) {
-			_targetTour.temperatureSerie = newTargetTemperatureSerie;
-		} else {
-			_targetTour.temperatureSerie = _backupTargetTemperatureSerie;
-		}
+      if (isSourceAltitude) {
+         _sourceTour.dataSerie2ndAlti = newSourceAltitudeSerie;
+      } else {
+         _sourceTour.dataSerie2ndAlti = null;
+      }
 
-		if (_chkMergeCadence.getSelection()) {
-			_targetTour.setCadenceSerie(newTargetCadenceSerie);
-		} else {
-			_targetTour.setCadenceSerie(_backupTargetCadenceSerie);
-		}
+      if (isSourceAltitude && isTargetAltitude) {
+         _sourceTour.dataSerieDiffTo2ndAlti = newSourceAltiDiffSerie;
+      } else {
+         _sourceTour.dataSerieDiffTo2ndAlti = null;
+      }
 
-		float altiDiffTime = 0;
-		float altiDiffDist = 0;
+      if (_chkMergePulse.getSelection()) {
+         _targetTour.pulseSerie = newTargetPulseSerie;
+      } else {
+         _targetTour.pulseSerie = _backupTargetPulseSerie;
+      }
 
-		if (isSourceAltitude && isTargetAltitude && isTargetDistance) {
+      if (_chkMergeTemperature.getSelection()) {
+         _targetTour.temperatureSerie = newTargetTemperatureSerie;
+      } else {
+         _targetTour.temperatureSerie = _backupTargetTemperatureSerie;
+      }
 
-			/*
-			 * compute adjusted altitude
-			 */
+      if (_chkMergeCadence.getSelection()) {
+         _targetTour.setCadenceSerie(newTargetCadenceSerie);
+      } else {
+         _targetTour.setCadenceSerie(_backupTargetCadenceSerie);
+      }
 
-			if (_chkAdjustAltiFromStart.getSelection()) {
+      if (_chkMergeCustomTracks.getSelection()) {
+         //first add the backup tracks which were not in the source
+         for (final String customTracksId : _backupTargetCustomTracksDefinition.keySet()) {
+            if (!newTargetCustomTrackDefinition.containsKey(customTracksId)) {
+               newTargetCustomTrackDefinition.put(customTracksId, _backupTargetCustomTracksDefinition.get(customTracksId));
+               newTargetCustomTrack.put(customTracksId, _backupTargetCustomTracks.get(customTracksId));
+            }
+         }
+         _targetTour.customTracksDefinition = newTargetCustomTrackDefinition;
+         _targetTour.setCustomTracks(newTargetCustomTrack);
+      } else {
+         _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+         _targetTour.setCustomTracks(_backupTargetCustomTracks);
+      }
 
-				/*
-				 * adjust start altitude until left slider
-				 */
+      float altiDiffTime = 0;
+      float altiDiffDist = 0;
 
-				final float[] adjustedTargetAltitudeSerie = new float[serieLength];
+      if (isSourceAltitude && isTargetAltitude && isTargetDistance) {
 
-				float startAltiDiff = newSourceAltiDiffSerie[0];
-				final int endIndex = _tourChart.getXSliderPosition().getLeftSliderValueIndex();
-				final float distanceDiff = targetDistanceSerie[endIndex];
+         /*
+          * compute adjusted altitude
+          */
 
-				final float[] altitudeSerie = _targetTour.altitudeSerie;
+         if (_chkAdjustAltiFromStart.getSelection()) {
 
-				for (int serieIndex = 0; serieIndex < serieLength; serieIndex++) {
+            /*
+             * adjust start altitude until left slider
+             */
 
-					if (serieIndex < endIndex) {
+            final float[] adjustedTargetAltitudeSerie = new float[serieLength];
 
-						// add adjusted altitude
+            float startAltiDiff = newSourceAltiDiffSerie[0];
+            final int endIndex = _tourChart.getXSliderPosition().getLeftSliderValueIndex();
+            final float distanceDiff = targetDistanceSerie[endIndex];
 
-						final float targetDistance = targetDistanceSerie[serieIndex];
-						final float distanceScale = 1 - targetDistance / distanceDiff;
+            final float[] altitudeSerie = _targetTour.altitudeSerie;
 
-						final float adjustedAltiDiff = startAltiDiff * distanceScale;
-						final float newAltitude = altitudeSerie[serieIndex] + adjustedAltiDiff;
+            for (int serieIndex = 0; serieIndex < serieLength; serieIndex++) {
 
-						adjustedTargetAltitudeSerie[serieIndex] = newAltitude;
-						newSourceAltiDiffSerie[serieIndex] = newSourceAltitudeSerie[serieIndex] - newAltitude;
+               if (serieIndex < endIndex) {
 
-					} else {
+                  // add adjusted altitude
 
-						// add altitude which are not adjusted
+                  final float targetDistance = targetDistanceSerie[serieIndex];
+                  final float distanceScale = 1 - targetDistance / distanceDiff;
 
-						adjustedTargetAltitudeSerie[serieIndex] = altitudeSerie[serieIndex];
-					}
-				}
+                  final float adjustedAltiDiff = startAltiDiff * distanceScale;
+                  final float newAltitude = altitudeSerie[serieIndex] + adjustedAltiDiff;
 
-				_sourceTour.dataSerieAdjustedAlti = adjustedTargetAltitudeSerie;
+                  adjustedTargetAltitudeSerie[serieIndex] = newAltitude;
+                  newSourceAltiDiffSerie[serieIndex] = newSourceAltitudeSerie[serieIndex] - newAltitude;
+
+               } else {
+
+                  // add altitude which are not adjusted
+
+                  adjustedTargetAltitudeSerie[serieIndex] = altitudeSerie[serieIndex];
+               }
+            }
+
+            _sourceTour.dataSerieAdjustedAlti = adjustedTargetAltitudeSerie;
 
             startAltiDiff /= UI.UNIT_VALUE_ELEVATION;
 
-				final int targetEndTime = targetTimeSerie[endIndex];
-				final float targetEndDistance = targetDistanceSerie[endIndex];
+            final int targetEndTime = targetTimeSerie[endIndex];
+            final float targetEndDistance = targetDistanceSerie[endIndex];
 
-				// meter/min
-				altiDiffTime = targetEndTime == 0 ? //
-						0f
-						: startAltiDiff / targetEndTime * 60;
+            // meter/min
+            altiDiffTime = targetEndTime == 0 ? //
+                  0f
+                  : startAltiDiff / targetEndTime * 60;
 
-				// meter/meter
-				altiDiffDist = targetEndDistance == 0 ? //
-						0f
-						: ((startAltiDiff * 1000) / targetEndDistance) / UI.UNIT_VALUE_DISTANCE;
+            // meter/meter
+            altiDiffDist = targetEndDistance == 0 ? //
+                  0f
+                  : ((startAltiDiff * 1000) / targetEndDistance) / UI.UNIT_VALUE_DISTANCE;
 
-			} else if (_chkAdjustAltiFromSource.getSelection()) {
+         } else if (_chkAdjustAltiFromSource.getSelection()) {
 
-				/*
-				 * adjust target altitude from source altitude
-				 */
-				final float[] newTargetAltitudeSerie = new float[serieLength];
+            /*
+             * adjust target altitude from source altitude
+             */
+            final float[] newTargetAltitudeSerie = new float[serieLength];
 
-				for (int serieIndex = 0; serieIndex < serieLength; serieIndex++) {
-					newTargetAltitudeSerie[serieIndex] = newSourceAltitudeSerie[serieIndex];
-				}
+            for (int serieIndex = 0; serieIndex < serieLength; serieIndex++) {
+               newTargetAltitudeSerie[serieIndex] = newSourceAltitudeSerie[serieIndex];
+            }
 
-				_sourceTour.dataSerieAdjustedAlti = newTargetAltitudeSerie;
-			}
-		}
+            _sourceTour.dataSerieAdjustedAlti = newTargetAltitudeSerie;
+         }
+      }
 
-		updateUI(altiDiffTime, altiDiffDist);
-	}
+      updateUI(altiDiffTime, altiDiffDist);
+   }
 
-	@Override
-	protected void configureShell(final Shell shell) {
+   @Override
+   protected void configureShell(final Shell shell) {
 
-		super.configureShell(shell);
+      super.configureShell(shell);
 
-		shell.setText(Messages.tour_merger_dialog_title);
+      shell.setText(Messages.tour_merger_dialog_title);
 
-		shell.addDisposeListener(new DisposeListener() {
-			@Override
-			public void widgetDisposed(final DisposeEvent e) {
-				onDispose();
-			}
-		});
-	}
+      shell.addDisposeListener(new DisposeListener() {
+         @Override
+         public void widgetDisposed(final DisposeEvent e) {
+            onDispose();
+         }
+      });
+   }
 
-	@Override
-	public void create() {
+   @Override
+   public void create() {
 
-		createDataBackup();
-		addPrefListener();
+      createDataBackup();
+      addPrefListener();
 
-		// create UI widgets
-		super.create();
+      // create UI widgets
+      super.create();
 
-		adjustButtonWidth();
-		_dlgContainer.layout(true, true);
+      adjustButtonWidth();
+      _dlgContainer.layout(true, true);
 
-		createActions();
-		restoreState();
+      createActions();
+      restoreState();
 
-		setTitle(NLS.bind(
-				Messages.tour_merger_dialog_header_title,
-				TourManager.getTourTitle(_targetTour),
-				_targetTour.getDeviceName()));
+      setTitle(NLS.bind(
+            Messages.tour_merger_dialog_header_title,
+            TourManager.getTourTitle(_targetTour),
+            _targetTour.getDeviceName()));
 
-		setMessage(NLS.bind(
-				Messages.tour_merger_dialog_header_message,
-				TourManager.getTourTitle(_sourceTour),
-				_sourceTour.getDeviceName()));
+      setMessage(NLS.bind(
+            Messages.tour_merger_dialog_header_message,
+            TourManager.getTourTitle(_sourceTour),
+            _sourceTour.getDeviceName()));
 
-		// must be done before the merged data are computed
-		enableGraphActions();
-		setMergedGraphsVisible();
+      // must be done before the merged data are computed
+      enableGraphActions();
+      setMergedGraphsVisible();
 
-		// set alti diff scaling
-		_tourChartConfig.isRelativeValueDiffScaling = _chkValueDiffScaling.getSelection();
-		_tourChart.updateLayer2ndAlti(this, true);
+      // set alti diff scaling
+      _tourChartConfig.isRelativeValueDiffScaling = _chkValueDiffScaling.getSelection();
+      _tourChart.updateLayer2ndAlti(this, true);
 
-		updateUIFromTourData();
+      updateUIFromTourData();
 
-		if (_chkSynchStartTime.getSelection()) {
-			_tourTimeOffsetBackup = _targetTour.getMergedTourTimeOffset();
-			updateUITourTimeOffset(_tourStartTimeSynchOffset);
-		}
+      if (_chkSynchStartTime.getSelection()) {
+         _tourTimeOffsetBackup = _targetTour.getMergedTourTimeOffset();
+         updateUITourTimeOffset(_tourStartTimeSynchOffset);
+      }
 
-		// update chart after the UI is updated from the tour
-		updateTourChart();
+      // update chart after the UI is updated from the tour
+      updateTourChart();
 
-		enableActions();
+      enableActions();
 
-	}
+   }
 
-	@Override
-	public ChartLayer2ndAltiSerie create2ndAltiLayer() {
+   @Override
+   public ChartLayer2ndAltiSerie create2ndAltiLayer() {
 
-		if (_targetTour == null) {
-			return null;
-		}
+      if (_targetTour == null) {
+         return null;
+      }
 
-		final TourData mergeSourceTourData = _targetTour.getMergeSourceTourData();
+      final TourData mergeSourceTourData = _targetTour.getMergeSourceTourData();
 
-		if (_targetTour.getMergeSourceTourId() == null && mergeSourceTourData == null) {
-			return null;
-		}
+      if (_targetTour.getMergeSourceTourId() == null && mergeSourceTourData == null) {
+         return null;
+      }
 
-		TourData layerTourData;
+      TourData layerTourData;
 
-		if (mergeSourceTourData != null) {
-			layerTourData = mergeSourceTourData;
-		} else {
-			layerTourData = TourManager.getInstance().getTourData(_targetTour.getMergeSourceTourId());
-		}
+      if (mergeSourceTourData != null) {
+         layerTourData = mergeSourceTourData;
+      } else {
+         layerTourData = TourManager.getInstance().getTourData(_targetTour.getMergeSourceTourId());
+      }
 
-		if (layerTourData == null) {
-			return null;
-		}
+      if (layerTourData == null) {
+         return null;
+      }
 
-		final double[] xDataSerie = _tourChartConfig.isShowTimeOnXAxis ? //
-				_targetTour.getTimeSerieDouble()
-				: _targetTour.getDistanceSerieDouble();
+      final double[] xDataSerie = _tourChartConfig.isShowTimeOnXAxis ? //
+            _targetTour.getTimeSerieDouble()
+            : _targetTour.getDistanceSerieDouble();
 
-		return new ChartLayer2ndAltiSerie(layerTourData, xDataSerie, _tourChartConfig, null);
-	}
+      return new ChartLayer2ndAltiSerie(layerTourData, xDataSerie, _tourChartConfig, null);
+   }
 
-	private void createActions() {
+   private void createActions() {
 
-		_actionOpenTourTypePrefs = new ActionOpenPrefDialog(
-				Messages.action_tourType_modify_tourTypes,
-				ITourbookPreferences.PREF_PAGE_TOUR_TYPE);
-	}
+      _actionOpenTourTypePrefs = new ActionOpenPrefDialog(
+            Messages.action_tourType_modify_tourTypes,
+            ITourbookPreferences.PREF_PAGE_TOUR_TYPE);
+   }
 
-	@Override
-	protected final void createButtonsForButtonBar(final Composite parent) {
+   @Override
+   protected final void createButtonsForButtonBar(final Composite parent) {
 
-		super.createButtonsForButtonBar(parent);
+      super.createButtonsForButtonBar(parent);
 
-		// rename OK button
-		final Button buttonOK = getButton(IDialogConstants.OK_ID);
-		buttonOK.setText(Messages.tour_merger_save_target_tour);
+      // rename OK button
+      final Button buttonOK = getButton(IDialogConstants.OK_ID);
+      buttonOK.setText(Messages.tour_merger_save_target_tour);
 
-		setButtonLayoutData(buttonOK);
-	}
+      setButtonLayoutData(buttonOK);
+   }
 
-	private void createDataBackup() {
+   private void createDataBackup() {
 
-		/*
-		 * keep a backup of the altitude data because these data will be changed in this dialog
-		 */
-		_backupSourceTimeSerie = Util.createIntegerCopy(_sourceTour.timeSerie);
-		_backupSourceDistanceSerie = Util.createFloatCopy(_sourceTour.distanceSerie);
-		_backupSourceAltitudeSerie = Util.createFloatCopy(_sourceTour.altitudeSerie);
-		_backupSourceTourType = _sourceTour.getTourType();
+      /*
+       * keep a backup of the altitude data because these data will be changed in this dialog
+       */
+      _backupSourceTimeSerie = Util.createIntegerCopy(_sourceTour.timeSerie);
+      _backupSourceDistanceSerie = Util.createFloatCopy(_sourceTour.distanceSerie);
+      _backupSourceAltitudeSerie = Util.createFloatCopy(_sourceTour.altitudeSerie);
+      _backupSourceTourType = _sourceTour.getTourType();
 
-		_backupTargetPulseSerie = Util.createFloatCopy(_targetTour.pulseSerie);
-		_backupTargetTemperatureSerie = Util.createFloatCopy(_targetTour.temperatureSerie);
-		_backupTargetCadenceSerie = Util.createFloatCopy(_targetTour.getCadenceSerie());
+      _backupTargetPulseSerie = Util.createFloatCopy(_targetTour.pulseSerie);
+      _backupTargetTemperatureSerie = Util.createFloatCopy(_targetTour.temperatureSerie);
+      _backupTargetCadenceSerie = Util.createFloatCopy(_targetTour.getCadenceSerie());
 
-		_backupTargetTimeOffset = _targetTour.getMergedTourTimeOffset();
-		_backupTargetAltitudeOffset = _targetTour.getMergedAltitudeOffset();
-	}
+      _backupTargetCustomTracksDefinition = _targetTour.getCustomTracksDefinition();
+      _backupTargetCustomTracks = _targetTour.getCustomTracks();
 
-	@Override
-	protected Control createDialogArea(final Composite parent) {
+      _backupTargetTimeOffset = _targetTour.getMergedTourTimeOffset();
+      _backupTargetAltitudeOffset = _targetTour.getMergedAltitudeOffset();
+   }
 
-		_dlgContainer = (Composite) super.createDialogArea(parent);
+   @Override
+   protected Control createDialogArea(final Composite parent) {
 
-		createUI(_dlgContainer);
+      _dlgContainer = (Composite) super.createDialogArea(parent);
 
-		return _dlgContainer;
-	}
+      createUI(_dlgContainer);
 
-	private void createUI(final Composite parent) {
+      return _dlgContainer;
+   }
 
-		_pc = new PixelConverter(parent);
+   private void createUI(final Composite parent) {
 
-		final Composite dlgContainer = new Composite(parent, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(true, true).applyTo(dlgContainer);
-		GridLayoutFactory.fillDefaults().margins(10, 0).numColumns(1).applyTo(dlgContainer);
+      _pc = new PixelConverter(parent);
 
-		createUITourChart(dlgContainer);
+      final Composite dlgContainer = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(dlgContainer);
+      GridLayoutFactory.fillDefaults().margins(10, 0).numColumns(1).applyTo(dlgContainer);
 
-		// column container
-		final Composite columnContainer = new Composite(dlgContainer, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(columnContainer);
-		GridLayoutFactory.fillDefaults().numColumns(3).spacing(10, 0).applyTo(columnContainer);
+      createUITourChart(dlgContainer);
 
-		/*
-		 * column: options
-		 */
-		final Composite columnOptions = new Composite(columnContainer, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(false, false).applyTo(columnOptions);
-		GridLayoutFactory.fillDefaults().margins(0, 0).numColumns(1).applyTo(columnOptions);
+      // column container
+      final Composite columnContainer = new Composite(dlgContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(columnContainer);
+      GridLayoutFactory.fillDefaults().numColumns(3).spacing(10, 0).applyTo(columnContainer);
 
-		createUISectionSaveActions(columnOptions);
+      /*
+       * column: options
+       */
+      final Composite columnOptions = new Composite(columnContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(false, false).applyTo(columnOptions);
+      GridLayoutFactory.fillDefaults().margins(0, 0).numColumns(1).applyTo(columnOptions);
 
-		/*
-		 * column: display/adjustments
-		 */
-		final Composite columnDisplay = new Composite(columnContainer, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(columnDisplay);
-		GridLayoutFactory.fillDefaults().margins(0, 0).numColumns(1).applyTo(columnDisplay);
-
-		createUISectionAdjustments(columnDisplay);
-
-		createUISectionResetButtons(columnContainer);
-
-	}
-
-	/**
-	 * group: adjust time
-	 */
-	private void createUIGroupHorizAdjustment(final Composite parent) {
-
-		final int valueWidth = _pc.convertWidthInCharsToPixels(4);
-		Label label;
-
-		final Group groupTime = new Group(parent, SWT.NONE);
-		groupTime.setText(Messages.tour_merger_group_adjust_time);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(groupTime);
-		GridLayoutFactory.swtDefaults()//
-				.numColumns(1)
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(groupTime);
-
-		/*
-		 * checkbox: keep horiz. and vert. adjustments
-		 */
-		_chkSynchStartTime = new Button(groupTime, SWT.CHECK);
-		GridDataFactory.fillDefaults().applyTo(_chkSynchStartTime);
-		_chkSynchStartTime.setText(Messages.tour_merger_chk_use_synced_start_time);
-		_chkSynchStartTime.setToolTipText(Messages.tour_merger_chk_use_synced_start_time_tooltip);
-		_chkSynchStartTime.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-
-				// display synched time in the UI
-				if (_chkSynchStartTime.getSelection()) {
-
-					// set time offset for the synched tours
-
-					_tourTimeOffsetBackup = getFromUITourTimeOffset();
-					updateUITourTimeOffset(_tourStartTimeSynchOffset);
-
-				} else {
-
-					// set time offset manually
-
-					updateUITourTimeOffset(_tourTimeOffsetBackup);
-				}
-
-				onModifyProperties();
-
-				if (_chkPreviewChart.getSelection() == false) {
-
-					// preview
-					updateTourChart();
-				}
-			}
-		});
-
-		/*
-		 * container: seconds scale
-		 */
-		final Composite timeContainer = new Composite(groupTime, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(timeContainer);
-		GridLayoutFactory.fillDefaults().numColumns(4).spacing(0, 0).applyTo(timeContainer);
-
-		/*
-		 * scale: adjust seconds
-		 */
-		_lblAdjustSecondsValue = new Label(timeContainer, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.align(SWT.END, SWT.CENTER)
-				.hint(valueWidth, SWT.DEFAULT)
-				.applyTo(_lblAdjustSecondsValue);
-
-		label = new Label(timeContainer, SWT.NONE);
-		label.setText(UI.SPACE1);
-
-		_lblAdjustSecondsUnit = new Label(timeContainer, SWT.NONE);
-		_lblAdjustSecondsUnit.setText(Messages.tour_merger_label_adjust_seconds);
-
-		_scaleAdjustSeconds = new Scale(timeContainer, SWT.HORIZONTAL);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAdjustSeconds);
-		_scaleAdjustSeconds.setMinimum(0);
-		_scaleAdjustSeconds.setMaximum(MAX_ADJUST_SECONDS * 2);
-		_scaleAdjustSeconds.setPageIncrement(20);
-		_scaleAdjustSeconds.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
-		_scaleAdjustSeconds.addListener(SWT.MouseDoubleClick, new Listener() {
-			@Override
-			public void handleEvent(final Event event) {
-				onScaleDoubleClick(event.widget);
-			}
-		});
-
-		/*
-		 * scale: adjust minutes
-		 */
-		_lblAdjustMinuteValue = new Label(timeContainer, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.align(SWT.END, SWT.CENTER)
-				.hint(valueWidth, SWT.DEFAULT)
-				.applyTo(_lblAdjustMinuteValue);
-
-		label = new Label(timeContainer, SWT.NONE);
-		label.setText(UI.SPACE1);
-
-		_lblAdjustMinuteUnit = new Label(timeContainer, SWT.NONE);
-		_lblAdjustMinuteUnit.setText(Messages.tour_merger_label_adjust_minutes);
-
-		_scaleAdjustMinutes = new Scale(timeContainer, SWT.HORIZONTAL);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAdjustMinutes);
-		_scaleAdjustMinutes.setMinimum(0);
-		_scaleAdjustMinutes.setMaximum(MAX_ADJUST_MINUTES * 2);
-		_scaleAdjustMinutes.setPageIncrement(20);
-		_scaleAdjustMinutes.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
-		_scaleAdjustMinutes.addListener(SWT.MouseDoubleClick, new Listener() {
-			@Override
-			public void handleEvent(final Event event) {
-				onScaleDoubleClick(event.widget);
-			}
-		});
-	}
-
-	/**
-	 * group: adjust altitude
-	 */
-	private void createUIGroupVertAdjustment(final Composite parent) {
-
-		_groupAltitude = new Group(parent, SWT.NONE);
-		_groupAltitude.setText(Messages.tour_merger_group_adjust_altitude);
-		GridDataFactory.swtDefaults().grab(true, false).align(SWT.FILL, SWT.BEGINNING).applyTo(_groupAltitude);
-		GridLayoutFactory.swtDefaults().numColumns(4)
+      createUISectionSaveActions(columnOptions);
+
+      /*
+       * column: display/adjustments
+       */
+      final Composite columnDisplay = new Composite(columnContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(columnDisplay);
+      GridLayoutFactory.fillDefaults().margins(0, 0).numColumns(1).applyTo(columnDisplay);
+
+      createUISectionAdjustments(columnDisplay);
+
+      createUISectionResetButtons(columnContainer);
+
+   }
+
+   /**
+    * group: adjust time
+    */
+   private void createUIGroupHorizAdjustment(final Composite parent) {
+
+      final int valueWidth = _pc.convertWidthInCharsToPixels(4);
+      Label label;
+
+      final Group groupTime = new Group(parent, SWT.NONE);
+      groupTime.setText(Messages.tour_merger_group_adjust_time);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(groupTime);
+      GridLayoutFactory.swtDefaults()//
+            .numColumns(1)
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(groupTime);
+
+      /*
+       * checkbox: keep horiz. and vert. adjustments
+       */
+      _chkSynchStartTime = new Button(groupTime, SWT.CHECK);
+      GridDataFactory.fillDefaults().applyTo(_chkSynchStartTime);
+      _chkSynchStartTime.setText(Messages.tour_merger_chk_use_synced_start_time);
+      _chkSynchStartTime.setToolTipText(Messages.tour_merger_chk_use_synced_start_time_tooltip);
+      _chkSynchStartTime.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+
+            // display synched time in the UI
+            if (_chkSynchStartTime.getSelection()) {
+
+               // set time offset for the synched tours
+
+               _tourTimeOffsetBackup = getFromUITourTimeOffset();
+               updateUITourTimeOffset(_tourStartTimeSynchOffset);
+
+            } else {
+
+               // set time offset manually
+
+               updateUITourTimeOffset(_tourTimeOffsetBackup);
+            }
+
+            onModifyProperties();
+
+            if (_chkPreviewChart.getSelection() == false) {
+
+               // preview
+               updateTourChart();
+            }
+         }
+      });
+
+      /*
+       * container: seconds scale
+       */
+      final Composite timeContainer = new Composite(groupTime, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(timeContainer);
+      GridLayoutFactory.fillDefaults().numColumns(4).spacing(0, 0).applyTo(timeContainer);
+
+      /*
+       * scale: adjust seconds
+       */
+      _lblAdjustSecondsValue = new Label(timeContainer, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .align(SWT.END, SWT.CENTER)
+            .hint(valueWidth, SWT.DEFAULT)
+            .applyTo(_lblAdjustSecondsValue);
+
+      label = new Label(timeContainer, SWT.NONE);
+      label.setText(UI.SPACE1);
+
+      _lblAdjustSecondsUnit = new Label(timeContainer, SWT.NONE);
+      _lblAdjustSecondsUnit.setText(Messages.tour_merger_label_adjust_seconds);
+
+      _scaleAdjustSeconds = new Scale(timeContainer, SWT.HORIZONTAL);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAdjustSeconds);
+      _scaleAdjustSeconds.setMinimum(0);
+      _scaleAdjustSeconds.setMaximum(MAX_ADJUST_SECONDS * 2);
+      _scaleAdjustSeconds.setPageIncrement(20);
+      _scaleAdjustSeconds.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
+      _scaleAdjustSeconds.addListener(SWT.MouseDoubleClick, new Listener() {
+         @Override
+         public void handleEvent(final Event event) {
+            onScaleDoubleClick(event.widget);
+         }
+      });
+
+      /*
+       * scale: adjust minutes
+       */
+      _lblAdjustMinuteValue = new Label(timeContainer, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .align(SWT.END, SWT.CENTER)
+            .hint(valueWidth, SWT.DEFAULT)
+            .applyTo(_lblAdjustMinuteValue);
+
+      label = new Label(timeContainer, SWT.NONE);
+      label.setText(UI.SPACE1);
+
+      _lblAdjustMinuteUnit = new Label(timeContainer, SWT.NONE);
+      _lblAdjustMinuteUnit.setText(Messages.tour_merger_label_adjust_minutes);
+
+      _scaleAdjustMinutes = new Scale(timeContainer, SWT.HORIZONTAL);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAdjustMinutes);
+      _scaleAdjustMinutes.setMinimum(0);
+      _scaleAdjustMinutes.setMaximum(MAX_ADJUST_MINUTES * 2);
+      _scaleAdjustMinutes.setPageIncrement(20);
+      _scaleAdjustMinutes.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
+      _scaleAdjustMinutes.addListener(SWT.MouseDoubleClick, new Listener() {
+         @Override
+         public void handleEvent(final Event event) {
+            onScaleDoubleClick(event.widget);
+         }
+      });
+   }
+
+   /**
+    * group: adjust altitude
+    */
+   private void createUIGroupVertAdjustment(final Composite parent) {
+
+      _groupAltitude = new Group(parent, SWT.NONE);
+      _groupAltitude.setText(Messages.tour_merger_group_adjust_altitude);
+      GridDataFactory.swtDefaults().grab(true, false).align(SWT.FILL, SWT.BEGINNING).applyTo(_groupAltitude);
+      GridLayoutFactory.swtDefaults().numColumns(4)
 //				.extendedMargins(0, 0, 0, 0)
 //				.spacing(0, 0)
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(_groupAltitude);
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(_groupAltitude);
 
-		/*
-		 * scale: altitude 20m
-		 */
-		_lblAltitudeDiff1 = new Label(_groupAltitude, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.align(SWT.END, SWT.CENTER)
-				.hint(_pc.convertWidthInCharsToPixels(8), SWT.DEFAULT)
-				.applyTo(_lblAltitudeDiff1);
+      /*
+       * scale: altitude 20m
+       */
+      _lblAltitudeDiff1 = new Label(_groupAltitude, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .align(SWT.END, SWT.CENTER)
+            .hint(_pc.convertWidthInCharsToPixels(8), SWT.DEFAULT)
+            .applyTo(_lblAltitudeDiff1);
 
-		_scaleAltitude1 = new Scale(_groupAltitude, SWT.HORIZONTAL);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAltitude1);
-		_scaleAltitude1.setMinimum(0);
-		_scaleAltitude1.setMaximum(MAX_ADJUST_ALTITUDE_1 * 2);
-		_scaleAltitude1.setPageIncrement(5);
-		_scaleAltitude1.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
-		_scaleAltitude1.addListener(SWT.MouseDoubleClick, new Listener() {
-			@Override
-			public void handleEvent(final Event event) {
-				onScaleDoubleClick(event.widget);
-			}
-		});
+      _scaleAltitude1 = new Scale(_groupAltitude, SWT.HORIZONTAL);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAltitude1);
+      _scaleAltitude1.setMinimum(0);
+      _scaleAltitude1.setMaximum(MAX_ADJUST_ALTITUDE_1 * 2);
+      _scaleAltitude1.setPageIncrement(5);
+      _scaleAltitude1.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
+      _scaleAltitude1.addListener(SWT.MouseDoubleClick, new Listener() {
+         @Override
+         public void handleEvent(final Event event) {
+            onScaleDoubleClick(event.widget);
+         }
+      });
 
-		/*
-		 * scale: altitude 100m
-		 */
-		_lblAltitudeDiff10 = new Label(_groupAltitude, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.align(SWT.END, SWT.CENTER)
-				.hint(_pc.convertWidthInCharsToPixels(8), SWT.DEFAULT)
-				.applyTo(_lblAltitudeDiff10);
+      /*
+       * scale: altitude 100m
+       */
+      _lblAltitudeDiff10 = new Label(_groupAltitude, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .align(SWT.END, SWT.CENTER)
+            .hint(_pc.convertWidthInCharsToPixels(8), SWT.DEFAULT)
+            .applyTo(_lblAltitudeDiff10);
 
-		_scaleAltitude10 = new Scale(_groupAltitude, SWT.HORIZONTAL);
-		GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAltitude10);
-		_scaleAltitude10.setMinimum(0);
-		_scaleAltitude10.setMaximum(MAX_ADJUST_ALTITUDE_10 * 2);
-		_scaleAltitude10.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
-		_scaleAltitude10.addListener(SWT.MouseDoubleClick, new Listener() {
-			@Override
-			public void handleEvent(final Event event) {
-				onScaleDoubleClick(event.widget);
-			}
-		});
-	}
+      _scaleAltitude10 = new Scale(_groupAltitude, SWT.HORIZONTAL);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(_scaleAltitude10);
+      _scaleAltitude10.setMinimum(0);
+      _scaleAltitude10.setMaximum(MAX_ADJUST_ALTITUDE_10 * 2);
+      _scaleAltitude10.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
+      _scaleAltitude10.addListener(SWT.MouseDoubleClick, new Listener() {
+         @Override
+         public void handleEvent(final Event event) {
+            onScaleDoubleClick(event.widget);
+         }
+      });
+   }
 
-	private Button createUIMergeAction(	final Composite parent,
-													final int graphId,
-													final String btnText,
-													final String btnTooltip,
-													final String imageEnabled,
-													final boolean isEnabled) {
+   private Button createUIMergeAction(final Composite parent,
+                                      final int graphId,
+                                      final String btnText,
+                                      final String btnTooltip,
+                                      final String imageEnabled,
+                                      final boolean isEnabled) {
 
-		final Button mergeButton = new Button(parent, SWT.CHECK);
-		mergeButton.setText(btnText);
-		mergeButton.setToolTipText(btnTooltip);
+      final Button mergeButton = new Button(parent, SWT.CHECK);
+      mergeButton.setText(btnText);
+      mergeButton.setToolTipText(btnTooltip);
 
-		mergeButton.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onSelectMergeGraph(e);
-			}
-		});
+      mergeButton.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onSelectMergeGraph(e);
+         }
+      });
 
-		if (isEnabled) {
-			final Image image = TourbookPlugin.getImageDescriptor(imageEnabled).createImage();
-			_graphImages.put(graphId, image);
-			mergeButton.setImage(image);
-		} else {
-			mergeButton.setImage(_iconPlaceholder);
-		}
+      if (isEnabled) {
+         final Image image = TourbookPlugin.getImageDescriptor(imageEnabled).createImage();
+         _graphImages.put(graphId, image);
+         mergeButton.setImage(image);
+      } else {
+         mergeButton.setImage(_iconPlaceholder);
+      }
 
-		return mergeButton;
-	}
+      return mergeButton;
+   }
 
-	private void createUISectionAdjustments(final Composite parent) {
+   private void createUISectionAdjustments(final Composite parent) {
 
-		final Composite container = new Composite(parent, SWT.NONE);
-		GridDataFactory.fillDefaults()//
-				.grab(true, false)
-				.applyTo(container);
-		GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults()//
+            .grab(true, false)
+            .applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
 
-		createUIGroupHorizAdjustment(container);
-		createUIGroupVertAdjustment(container);
-		createUISectionDisplayOptions(container);
-	}
+      createUIGroupHorizAdjustment(container);
+      createUIGroupVertAdjustment(container);
+      createUISectionDisplayOptions(container);
+   }
 
-	private void createUISectionDisplayOptions(final Composite parent) {
+   private void createUISectionDisplayOptions(final Composite parent) {
 
-		final Composite container = new Composite(parent, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(true, false).align(SWT.FILL, SWT.FILL).applyTo(container);
-		GridLayoutFactory.fillDefaults()//
-				.numColumns(1)
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(container);
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).align(SWT.FILL, SWT.FILL).applyTo(container);
+      GridLayoutFactory.fillDefaults()//
+            .numColumns(1)
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(container);
 
-		/*
-		 * checkbox: display relative or absolute scale
-		 */
-		_chkValueDiffScaling = new Button(container, SWT.CHECK);
-		GridDataFactory.swtDefaults()/* .indent(5, 5) .span(4, 1) */.applyTo(_chkValueDiffScaling);
-		_chkValueDiffScaling.setText(Messages.tour_merger_chk_alti_diff_scaling);
-		_chkValueDiffScaling.setToolTipText(Messages.tour_merger_chk_alti_diff_scaling_tooltip);
-		_chkValueDiffScaling.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
+      /*
+       * checkbox: display relative or absolute scale
+       */
+      _chkValueDiffScaling = new Button(container, SWT.CHECK);
+      GridDataFactory.swtDefaults()/* .indent(5, 5) .span(4, 1) */.applyTo(_chkValueDiffScaling);
+      _chkValueDiffScaling.setText(Messages.tour_merger_chk_alti_diff_scaling);
+      _chkValueDiffScaling.setToolTipText(Messages.tour_merger_chk_alti_diff_scaling_tooltip);
+      _chkValueDiffScaling.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
 
-		/*
-		 * checkbox: preview chart
-		 */
-		_chkPreviewChart = new Button(container, SWT.CHECK);
-		GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).grab(true, false).applyTo(_chkPreviewChart);
-		_chkPreviewChart.setText(Messages.tour_merger_chk_preview_graphs);
-		_chkPreviewChart.setToolTipText(Messages.tour_merger_chk_preview_graphs_tooltip);
-		_chkPreviewChart.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
+      /*
+       * checkbox: preview chart
+       */
+      _chkPreviewChart = new Button(container, SWT.CHECK);
+      GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).grab(true, false).applyTo(_chkPreviewChart);
+      _chkPreviewChart.setText(Messages.tour_merger_chk_preview_graphs);
+      _chkPreviewChart.setToolTipText(Messages.tour_merger_chk_preview_graphs_tooltip);
+      _chkPreviewChart.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
 
-				if (_chkPreviewChart.getSelection()) {
+            if (_chkPreviewChart.getSelection()) {
 
-					setMergedGraphsVisible();
+               setMergedGraphsVisible();
 
-					onModifyProperties();
-					updateTourChart();
-				}
-			}
-		});
-	}
+               onModifyProperties();
+               updateTourChart();
+            }
+         }
+      });
+   }
 
-	private void createUISectionResetButtons(final Composite parent) {
+   private void createUISectionResetButtons(final Composite parent) {
 
-		final Composite container = new Composite(parent, SWT.NONE);
-		GridDataFactory.fillDefaults().grab(false, false).align(SWT.END, SWT.FILL).applyTo(container);
-		GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(false, false).align(SWT.END, SWT.FILL).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
 
-		/*
-		 * button: reset all adjustment options
-		 */
-		_btnResetAdjustment = new Button(container, SWT.NONE);
-		GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).applyTo(_btnResetAdjustment);
-		_btnResetAdjustment.setText(Messages.tour_merger_btn_reset_adjustment);
-		_btnResetAdjustment.setToolTipText(Messages.tour_merger_btn_reset_adjustment_tooltip);
-		_btnResetAdjustment.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onSelectResetAdjustments();
-			}
-		});
+      /*
+       * button: reset all adjustment options
+       */
+      _btnResetAdjustment = new Button(container, SWT.NONE);
+      GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).applyTo(_btnResetAdjustment);
+      _btnResetAdjustment.setText(Messages.tour_merger_btn_reset_adjustment);
+      _btnResetAdjustment.setToolTipText(Messages.tour_merger_btn_reset_adjustment_tooltip);
+      _btnResetAdjustment.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onSelectResetAdjustments();
+         }
+      });
 
-		/*
-		 * button: show original values
-		 */
-		_btnResetValues = new Button(container, SWT.NONE);
-		GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).applyTo(_btnResetValues);
-		_btnResetValues.setText(Messages.tour_merger_btn_reset_values);
-		_btnResetValues.setToolTipText(Messages.tour_merger_btn_reset_values_tooltip);
-		_btnResetValues.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onSelectResetValues();
-			}
-		});
-	}
+      /*
+       * button: show original values
+       */
+      _btnResetValues = new Button(container, SWT.NONE);
+      GridDataFactory.fillDefaults().align(SWT.FILL, SWT.FILL).applyTo(_btnResetValues);
+      _btnResetValues.setText(Messages.tour_merger_btn_reset_values);
+      _btnResetValues.setToolTipText(Messages.tour_merger_btn_reset_values_tooltip);
+      _btnResetValues.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onSelectResetValues();
+         }
+      });
+   }
 
-	/**
-	 * @param parent
-	 */
-	private void createUISectionSaveActions(final Composite parent) {
+   /**
+    * @param parent
+    */
+   private void createUISectionSaveActions(final Composite parent) {
 
-		final int indentOption = _pc.convertHorizontalDLUsToPixels(20);
-		final int indentOption2 = _pc.convertHorizontalDLUsToPixels(13);
+      final int indentOption = _pc.convertHorizontalDLUsToPixels(20);
+      final int indentOption2 = _pc.convertHorizontalDLUsToPixels(13);
 
-		/*
-		 * group: save options
-		 */
-		final Group group = new Group(parent, SWT.NONE);
-		group.setText(Messages.tour_merger_group_save_actions);
-		group.setToolTipText(Messages.tour_merger_group_save_actions_tooltip);
-		GridDataFactory.swtDefaults()//
-				.grab(true, false)
-				.align(SWT.BEGINNING, SWT.END)
-				.applyTo(group);
-		GridLayoutFactory.swtDefaults()//
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(group);
+      /*
+       * group: save options
+       */
+      final Group group = new Group(parent, SWT.NONE);
+      group.setText(Messages.tour_merger_group_save_actions);
+      group.setToolTipText(Messages.tour_merger_group_save_actions_tooltip);
+      GridDataFactory.swtDefaults()//
+            .grab(true, false)
+            .align(SWT.BEGINNING, SWT.END)
+            .applyTo(group);
+      GridLayoutFactory.swtDefaults()//
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(group);
 
-		/*
-		 * checkbox: merge pulse
-		 */
-		_chkMergePulse = createUIMergeAction(
-				group,
-				TourManager.GRAPH_PULSE,
-				Messages.merge_tour_source_graph_heartbeat,
-				Messages.merge_tour_source_graph_heartbeat_tooltip,
-				Messages.Image__graph_heartbeat,
-				_sourceTour.pulseSerie != null);
+      /*
+       * checkbox: merge pulse
+       */
+      _chkMergeCustomTracks = createUIMergeAction(
+            group,
+            TourManager.GRAPH_CUSTOM_TRACKS,
+            Messages.merge_tour_source_graph_customtracks,
+            Messages.merge_tour_source_graph_customtracks_tooltip,
+            Messages.Image__Graph_Custom_Tracks,
+            _sourceTour.customTracksDefinition != null && !_sourceTour.customTracksDefinition.isEmpty());
 
-		/*
-		 * checkbox: merge temperature
-		 */
-		_chkMergeTemperature = createUIMergeAction(
-				group,
-				TourManager.GRAPH_TEMPERATURE,
-				Messages.merge_tour_source_graph_temperature,
-				Messages.merge_tour_source_graph_temperature_tooltip,
-				Messages.Image__graph_temperature,
-				_sourceTour.temperatureSerie != null);
+      /*
+       * checkbox: merge pulse
+       */
+      _chkMergePulse = createUIMergeAction(
+            group,
+            TourManager.GRAPH_PULSE,
+            Messages.merge_tour_source_graph_heartbeat,
+            Messages.merge_tour_source_graph_heartbeat_tooltip,
+            Messages.Image__graph_heartbeat,
+            _sourceTour.pulseSerie != null);
 
-		/*
-		 * checkbox: merge cadence
-		 */
-		_chkMergeCadence = createUIMergeAction(
-				group,
-				TourManager.GRAPH_CADENCE,
-				Messages.merge_tour_source_graph_cadence,
-				Messages.merge_tour_source_graph_cadence_tooltip,
-				Messages.Image__graph_cadence,
-				_sourceTour.getCadenceSerie() != null);
+      /*
+       * checkbox: merge temperature
+       */
+      _chkMergeTemperature = createUIMergeAction(
+            group,
+            TourManager.GRAPH_TEMPERATURE,
+            Messages.merge_tour_source_graph_temperature,
+            Messages.merge_tour_source_graph_temperature_tooltip,
+            Messages.Image__graph_temperature,
+            _sourceTour.temperatureSerie != null);
 
-		/*
-		 * checkbox: merge altitude
-		 */
-		_chkMergeAltitude = createUIMergeAction(
-				group,
-				TourManager.GRAPH_ALTITUDE,
-				Messages.merge_tour_source_graph_altitude,
-				Messages.merge_tour_source_graph_altitude_tooltip,
-				Messages.Image__graph_altitude,
-				_sourceTour.altitudeSerie != null);
+      /*
+       * checkbox: merge cadence
+       */
+      _chkMergeCadence = createUIMergeAction(
+            group,
+            TourManager.GRAPH_CADENCE,
+            Messages.merge_tour_source_graph_cadence,
+            Messages.merge_tour_source_graph_cadence_tooltip,
+            Messages.Image__graph_cadence,
+            _sourceTour.getCadenceSerie() != null);
 
-		/*
-		 * container: merge altitude
-		 */
-		final Composite containerMergeGraph = new Composite(group, SWT.NONE);
-		GridDataFactory.fillDefaults().indent(indentOption + 16, 0).applyTo(containerMergeGraph);
-		GridLayoutFactory.fillDefaults()//
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(containerMergeGraph);
+      /*
+       * checkbox: merge altitude
+       */
+      _chkMergeAltitude = createUIMergeAction(
+            group,
+            TourManager.GRAPH_ALTITUDE,
+            Messages.merge_tour_source_graph_altitude,
+            Messages.merge_tour_source_graph_altitude_tooltip,
+            Messages.Image__graph_altitude,
+            _sourceTour.altitudeSerie != null);
 
-		/*
-		 * checkbox: adjust altitude from source
-		 */
-		_chkAdjustAltiFromSource = new Button(containerMergeGraph, SWT.RADIO);
-		_chkAdjustAltiFromSource.setText(Messages.tour_merger_chk_adjust_altitude_from_source);
-		_chkAdjustAltiFromSource.setToolTipText(Messages.tour_merger_chk_adjust_altitude_from_source_tooltip);
+      /*
+       * container: merge altitude
+       */
+      final Composite containerMergeGraph = new Composite(group, SWT.NONE);
+      GridDataFactory.fillDefaults().indent(indentOption + 16, 0).applyTo(containerMergeGraph);
+      GridLayoutFactory.fillDefaults()//
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(containerMergeGraph);
+
+      /*
+       * checkbox: adjust altitude from source
+       */
+      _chkAdjustAltiFromSource = new Button(containerMergeGraph, SWT.RADIO);
+      _chkAdjustAltiFromSource.setText(Messages.tour_merger_chk_adjust_altitude_from_source);
+      _chkAdjustAltiFromSource.setToolTipText(Messages.tour_merger_chk_adjust_altitude_from_source_tooltip);
 //		fChkAdjustAltiFromSource.setImage(fIconPlaceholder);
 
-		_chkAdjustAltiFromSource.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
+      _chkAdjustAltiFromSource.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
 
-				if (_chkAdjustAltiFromSource.getSelection()) {
+            if (_chkAdjustAltiFromSource.getSelection()) {
 
-					// check one adjust altitude
-					if (_chkAdjustAltiFromSource.getSelection() == false
-							&& _chkAdjustAltiFromStart.getSelection() == false) {
-						_chkAdjustAltiFromSource.setSelection(true);
-					}
+               // check one adjust altitude
+               if (_chkAdjustAltiFromSource.getSelection() == false
+                     && _chkAdjustAltiFromStart.getSelection() == false) {
+                  _chkAdjustAltiFromSource.setSelection(true);
+               }
 
-					// only one altitude adjustment can be set
-					_chkAdjustAltiFromStart.setSelection(false);
+               // only one altitude adjustment can be set
+               _chkAdjustAltiFromStart.setSelection(false);
 
-					_chkMergeAltitude.setSelection(true);
+               _chkMergeAltitude.setSelection(true);
 
-				} else {
+            } else {
 
-					// disable altitude merge option
-					_chkMergeAltitude.setSelection(false);
-				}
+               // disable altitude merge option
+               _chkMergeAltitude.setSelection(false);
+            }
 
-				onModifyProperties();
-			}
-		});
+            onModifyProperties();
+         }
+      });
 
-		/*
-		 * checkbox: smooth altitude with linear interpolation
-		 */
-		_chkAdjustAltiSmoothly = new Button(containerMergeGraph, SWT.CHECK);
-		GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(_chkAdjustAltiSmoothly);
-		_chkAdjustAltiSmoothly.setText(Messages.tour_merger_chk_adjust_altitude_linear_interpolition);
-		_chkAdjustAltiSmoothly.setToolTipText(Messages.tour_merger_chk_adjust_altitude_linear_interpolition_tooltip);
-		_chkAdjustAltiSmoothly.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				onModifyProperties();
-			}
-		});
+      /*
+       * checkbox: smooth altitude with linear interpolation
+       */
+      _chkAdjustAltiSmoothly = new Button(containerMergeGraph, SWT.CHECK);
+      GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(_chkAdjustAltiSmoothly);
+      _chkAdjustAltiSmoothly.setText(Messages.tour_merger_chk_adjust_altitude_linear_interpolition);
+      _chkAdjustAltiSmoothly.setToolTipText(Messages.tour_merger_chk_adjust_altitude_linear_interpolition_tooltip);
+      _chkAdjustAltiSmoothly.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            onModifyProperties();
+         }
+      });
 
-		/*
-		 * checkbox: adjust start altitude
-		 */
-		_chkAdjustAltiFromStart = new Button(containerMergeGraph, SWT.RADIO);
-		_chkAdjustAltiFromStart.setText(Messages.tour_merger_chk_adjust_start_altitude);
-		_chkAdjustAltiFromStart.setToolTipText(Messages.tour_merger_chk_adjust_start_altitude_tooltip);
-		_chkAdjustAltiFromStart.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
+      /*
+       * checkbox: adjust start altitude
+       */
+      _chkAdjustAltiFromStart = new Button(containerMergeGraph, SWT.RADIO);
+      _chkAdjustAltiFromStart.setText(Messages.tour_merger_chk_adjust_start_altitude);
+      _chkAdjustAltiFromStart.setToolTipText(Messages.tour_merger_chk_adjust_start_altitude_tooltip);
+      _chkAdjustAltiFromStart.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
 
-				if (_chkAdjustAltiFromStart.getSelection()) {
+            if (_chkAdjustAltiFromStart.getSelection()) {
 
-					// check one adjust altitude
-					if (_chkAdjustAltiFromStart.getSelection() == false
-							&& _chkAdjustAltiFromSource.getSelection() == false) {
-						_chkAdjustAltiFromStart.setSelection(true);
-					}
+               // check one adjust altitude
+               if (_chkAdjustAltiFromStart.getSelection() == false
+                     && _chkAdjustAltiFromSource.getSelection() == false) {
+                  _chkAdjustAltiFromStart.setSelection(true);
+               }
 
-					// only one altitude adjustment can be done
-					_chkAdjustAltiFromSource.setSelection(false);
+               // only one altitude adjustment can be done
+               _chkAdjustAltiFromSource.setSelection(false);
 
-					_chkMergeAltitude.setSelection(true);
+               _chkMergeAltitude.setSelection(true);
 
-				} else {
+            } else {
 
-					// disable altitude merge option
-					_chkMergeAltitude.setSelection(false);
-				}
+               // disable altitude merge option
+               _chkMergeAltitude.setSelection(false);
+            }
 
-				onModifyProperties();
-			}
-		});
+            onModifyProperties();
+         }
+      });
 
-		/*
-		 * altitude adjustment values
-		 */
-		final Composite aaContainer = new Composite(containerMergeGraph, SWT.NONE);
-		GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(aaContainer);
-		GridLayoutFactory.fillDefaults().numColumns(5).spacing(VH_SPACING, VH_SPACING).applyTo(aaContainer);
+      /*
+       * altitude adjustment values
+       */
+      final Composite aaContainer = new Composite(containerMergeGraph, SWT.NONE);
+      GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(aaContainer);
+      GridLayoutFactory.fillDefaults().numColumns(5).spacing(VH_SPACING, VH_SPACING).applyTo(aaContainer);
 
-		_lblAdjustAltiValueTime = new Label(aaContainer, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.hint(_pc.convertWidthInCharsToPixels(10), SWT.DEFAULT)
-				.applyTo(_lblAdjustAltiValueTime);
+      _lblAdjustAltiValueTime = new Label(aaContainer, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .hint(_pc.convertWidthInCharsToPixels(10), SWT.DEFAULT)
+            .applyTo(_lblAdjustAltiValueTime);
 
-		_lblAdjustAltiValueTimeUnit = new Label(aaContainer, SWT.NONE);
+      _lblAdjustAltiValueTimeUnit = new Label(aaContainer, SWT.NONE);
       _lblAdjustAltiValueTimeUnit.setText(UI.UNIT_LABEL_ELEVATION + "/min"); //$NON-NLS-1$
 
-		_lblAdjustAltiValueDistance = new Label(aaContainer, SWT.TRAIL);
-		GridDataFactory
-				.fillDefaults()
-				.hint(_pc.convertWidthInCharsToPixels(10), SWT.DEFAULT)
-				.applyTo(_lblAdjustAltiValueDistance);
+      _lblAdjustAltiValueDistance = new Label(aaContainer, SWT.TRAIL);
+      GridDataFactory
+            .fillDefaults()
+            .hint(_pc.convertWidthInCharsToPixels(10), SWT.DEFAULT)
+            .applyTo(_lblAdjustAltiValueDistance);
 
-		_lblAdjustAltiValueDistanceUnit = new Label(aaContainer, SWT.NONE);
+      _lblAdjustAltiValueDistanceUnit = new Label(aaContainer, SWT.NONE);
       _lblAdjustAltiValueDistanceUnit.setText(UI.UNIT_LABEL_ELEVATION + "/" + UI.UNIT_LABEL_DISTANCE); //$NON-NLS-1$
 
-		/*
-		 * checkbox: set tour type
-		 */
-		_chkSetTourType = new Button(group, SWT.CHECK);
-		GridDataFactory.fillDefaults().indent(0, 10).applyTo(_chkSetTourType);
-		_chkSetTourType.setText(Messages.tour_merger_chk_set_tour_type);
-		_chkSetTourType.setToolTipText(Messages.tour_merger_chk_set_tour_type_tooltip);
-		_chkSetTourType.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				enableActions();
-			}
-		});
+      /*
+       * checkbox: set tour type
+       */
+      _chkSetTourType = new Button(group, SWT.CHECK);
+      GridDataFactory.fillDefaults().indent(0, 10).applyTo(_chkSetTourType);
+      _chkSetTourType.setText(Messages.tour_merger_chk_set_tour_type);
+      _chkSetTourType.setToolTipText(Messages.tour_merger_chk_set_tour_type_tooltip);
+      _chkSetTourType.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            enableActions();
+         }
+      });
 
-		final Composite ttContainer = new Composite(group, SWT.NONE);
-		GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(ttContainer);
-		GridLayoutFactory.fillDefaults()//
-				.numColumns(2)
-				.spacing(VH_SPACING, VH_SPACING)
-				.applyTo(ttContainer);
+      final Composite ttContainer = new Composite(group, SWT.NONE);
+      GridDataFactory.fillDefaults().indent(indentOption2, 0).applyTo(ttContainer);
+      GridLayoutFactory.fillDefaults()//
+            .numColumns(2)
+            .spacing(VH_SPACING, VH_SPACING)
+            .applyTo(ttContainer);
 
-		/*
-		 * tour type
-		 */
-		_linkTourType = new Link(ttContainer, SWT.NONE);
-		GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(_linkTourType);
-		_linkTourType.setText(Messages.tour_editor_label_tour_type);
-		_linkTourType.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				net.tourbook.common.UI.openControlMenu(_linkTourType);
-			}
-		});
+      /*
+       * tour type
+       */
+      _linkTourType = new Link(ttContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(_linkTourType);
+      _linkTourType.setText(Messages.tour_editor_label_tour_type);
+      _linkTourType.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            net.tourbook.common.UI.openControlMenu(_linkTourType);
+         }
+      });
 
-		/*
-		 * tour type menu
-		 */
-		final MenuManager menuMgr = new MenuManager();
+      /*
+       * tour type menu
+       */
+      final MenuManager menuMgr = new MenuManager();
 
-		menuMgr.setRemoveAllWhenShown(true);
-		menuMgr.addMenuListener(new IMenuListener() {
-			@Override
-			public void menuAboutToShow(final IMenuManager menuMgr) {
+      menuMgr.setRemoveAllWhenShown(true);
+      menuMgr.addMenuListener(new IMenuListener() {
+         @Override
+         public void menuAboutToShow(final IMenuManager menuMgr) {
 
-				// set menu items
+            // set menu items
 
-				ActionSetTourTypeMenu.fillMenu(menuMgr, DialogMergeTours.this, false);
+            ActionSetTourTypeMenu.fillMenu(menuMgr, DialogMergeTours.this, false);
 
-				menuMgr.add(new Separator());
-				menuMgr.add(_actionOpenTourTypePrefs);
-			}
-		});
+            menuMgr.add(new Separator());
+            menuMgr.add(_actionOpenTourTypePrefs);
+         }
+      });
 
-		// set menu for the tag item
-		_linkTourType.setMenu(menuMgr.createContextMenu(_linkTourType));
+      // set menu for the tag item
+      _linkTourType.setMenu(menuMgr.createContextMenu(_linkTourType));
 
-		/*
-		 * label: tour type icon and text
-		 */
-		_lblTourType = new CLabel(ttContainer, SWT.NONE);
-		GridDataFactory.swtDefaults().grab(true, false).applyTo(_lblTourType);
+      /*
+       * label: tour type icon and text
+       */
+      _lblTourType = new CLabel(ttContainer, SWT.NONE);
+      GridDataFactory.swtDefaults().grab(true, false).applyTo(_lblTourType);
 
-		/*
-		 * checkbox: keep horiz. and vert. adjustments
-		 */
-		_chkKeepHVAdjustments = new Button(group, SWT.CHECK);
-		_chkKeepHVAdjustments.setText(Messages.tour_merger_chk_keep_horiz_vert_adjustments);
-		_chkKeepHVAdjustments.setToolTipText(Messages.tour_merger_chk_keep_horiz_vert_adjustments_tooltip);
-		_chkKeepHVAdjustments.setSelection(true);
-		_chkKeepHVAdjustments.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(final SelectionEvent e) {
-				// this option cannot be deselected
-				_chkKeepHVAdjustments.setSelection(true);
-			}
-		});
-	}
+      /*
+       * checkbox: keep horiz. and vert. adjustments
+       */
+      _chkKeepHVAdjustments = new Button(group, SWT.CHECK);
+      _chkKeepHVAdjustments.setText(Messages.tour_merger_chk_keep_horiz_vert_adjustments);
+      _chkKeepHVAdjustments.setToolTipText(Messages.tour_merger_chk_keep_horiz_vert_adjustments_tooltip);
+      _chkKeepHVAdjustments.setSelection(true);
+      _chkKeepHVAdjustments.addSelectionListener(new SelectionAdapter() {
+         @Override
+         public void widgetSelected(final SelectionEvent e) {
+            // this option cannot be deselected
+            _chkKeepHVAdjustments.setSelection(true);
+         }
+      });
+   }
 
-	private void createUITourChart(final Composite dlgContainer) {
+   private void createUITourChart(final Composite dlgContainer) {
 
-		_tourChart = new TourChart(dlgContainer, SWT.BORDER, null, _dialogSettings);
-		GridDataFactory.fillDefaults().grab(true, true).minSize(300, 200).applyTo(_tourChart);
+      _tourChart = new TourChart(dlgContainer, SWT.BORDER, null, _dialogSettings);
+      GridDataFactory.fillDefaults().grab(true, true).minSize(300, 200).applyTo(_tourChart);
 
-		_tourChart.setShowZoomActions(true);
-		_tourChart.setShowSlider(true);
+      _tourChart.setShowZoomActions(true);
+      _tourChart.setShowSlider(true);
 
-		// set altitude visible
-		_tourChartConfig = new TourChartConfiguration(true);
+      // set altitude visible
+      _tourChartConfig = new TourChartConfiguration(true);
 
-		// set one visible graph
-		int visibleGraph = -1;
-		if (_targetTour.altitudeSerie != null) {
-			visibleGraph = TourManager.GRAPH_ALTITUDE;
-		} else if (_targetTour.pulseSerie != null) {
-			visibleGraph = TourManager.GRAPH_PULSE;
-		} else if (_targetTour.temperatureSerie != null) {
-			visibleGraph = TourManager.GRAPH_TEMPERATURE;
-		} else if (_targetTour.getCadenceSerie() != null) {
-			visibleGraph = TourManager.GRAPH_CADENCE;
-		}
-		if (visibleGraph != -1) {
-			_tourChartConfig.addVisibleGraph(visibleGraph);
-		}
+      // set one visible graph
+      int visibleGraph = -1;
+      if (_targetTour.altitudeSerie != null) {
+         visibleGraph = TourManager.GRAPH_ALTITUDE;
+      } else if (_targetTour.pulseSerie != null) {
+         visibleGraph = TourManager.GRAPH_PULSE;
+      } else if (_targetTour.temperatureSerie != null) {
+         visibleGraph = TourManager.GRAPH_TEMPERATURE;
+      } else if (_targetTour.getCadenceSerie() != null) {
+         visibleGraph = TourManager.GRAPH_CADENCE;
+      }
+      if (visibleGraph != -1) {
+         _tourChartConfig.addVisibleGraph(visibleGraph);
+      }
 
-		// overwrite x-axis from pref store
-		_tourChartConfig.setIsShowTimeOnXAxis(TourbookPlugin
-				.getDefault()
-				.getPreferenceStore()
-				.getString(ITourbookPreferences.MERGE_TOUR_GRAPH_X_AXIS)
-				.equals(TourManager.X_AXIS_TIME));
+      // overwrite x-axis from pref store
+      _tourChartConfig.setIsShowTimeOnXAxis(TourbookPlugin
+            .getDefault()
+            .getPreferenceStore()
+            .getString(ITourbookPreferences.MERGE_TOUR_GRAPH_X_AXIS)
+            .equals(TourManager.X_AXIS_TIME));
 
-		_tourChart.addDataModelListener(new IDataModelListener() {
+      _tourChart.addDataModelListener(new IDataModelListener() {
 
-			@Override
-			public void dataModelChanged(final ChartDataModel changedChartDataModel) {
+         @Override
+         public void dataModelChanged(final ChartDataModel changedChartDataModel) {
 
-				// set title
-				changedChartDataModel.setTitle(TourManager.getTourTitleDetailed(_targetTour));
-			}
-		});
+            // set title
+            changedChartDataModel.setTitle(TourManager.getTourTitleDetailed(_targetTour));
+         }
+      });
 
-		_tourChart.addSliderMoveListener(new ISliderMoveListener() {
-			@Override
-			public void sliderMoved(final SelectionChartInfo chartInfo) {
+      _tourChart.addSliderMoveListener(new ISliderMoveListener() {
+         @Override
+         public void sliderMoved(final SelectionChartInfo chartInfo) {
 
-				if (_isChartUpdated) {
-					return;
-				}
+            if (_isChartUpdated) {
+               return;
+            }
 
-				onModifyProperties();
-			}
-		});
-	}
+            onModifyProperties();
+         }
+      });
+   }
 
-	private void enableActions() {
+   private void enableActions() {
 
-		final boolean isMergeAltitude = _chkMergeAltitude.getSelection();
-		final boolean isAdjustAltitude = _chkAdjustAltiFromStart.getSelection() && isMergeAltitude;
-		final boolean isSetTourType = _chkSetTourType.getSelection();
+      final boolean isMergeAltitude = _chkMergeAltitude.getSelection();
+      final boolean isAdjustAltitude = _chkAdjustAltiFromStart.getSelection() && isMergeAltitude;
+      final boolean isSetTourType = _chkSetTourType.getSelection();
 
 //		final boolean isMergeActionSelected = isMergeAltitude
 //				|| fChkMergePulse.getSelection()
 //				|| fChkMergeTemperature.getSelection()
 //				|| fChkMergeCadence.getSelection();
 
-		final boolean isAltitudeAvailable = _sourceTour.altitudeSerie != null && _targetTour.altitudeSerie != null;
+      final boolean isAltitudeAvailable = _sourceTour.altitudeSerie != null && _targetTour.altitudeSerie != null;
 
-		final boolean isSyncStartTime = _chkSynchStartTime.getSelection();
-		final boolean isAdjustTime = isSyncStartTime == false;// && (isMergeActionSelected || isAltitudeAvailable);
+      final boolean isSyncStartTime = _chkSynchStartTime.getSelection();
+      final boolean isAdjustTime = isSyncStartTime == false;// && (isMergeActionSelected || isAltitudeAvailable);
 
-		// adjust start altitude
-		_chkAdjustAltiFromStart.setEnabled(isMergeAltitude && isAltitudeAvailable);
-		_lblAdjustAltiValueDistance.setEnabled(isMergeAltitude && isAdjustAltitude);
-		_lblAdjustAltiValueDistanceUnit.setEnabled(isMergeAltitude && isAdjustAltitude);
-		_lblAdjustAltiValueTime.setEnabled(isMergeAltitude && isAdjustAltitude);
-		_lblAdjustAltiValueTimeUnit.setEnabled(isMergeAltitude && isAdjustAltitude);
+      // adjust start altitude
+      _chkAdjustAltiFromStart.setEnabled(isMergeAltitude && isAltitudeAvailable);
+      _lblAdjustAltiValueDistance.setEnabled(isMergeAltitude && isAdjustAltitude);
+      _lblAdjustAltiValueDistanceUnit.setEnabled(isMergeAltitude && isAdjustAltitude);
+      _lblAdjustAltiValueTime.setEnabled(isMergeAltitude && isAdjustAltitude);
+      _lblAdjustAltiValueTimeUnit.setEnabled(isMergeAltitude && isAdjustAltitude);
 
-		// adjust from source altitude
-		_chkAdjustAltiFromSource.setEnabled(isMergeAltitude && isAltitudeAvailable);
-		_chkAdjustAltiSmoothly.setEnabled(isMergeAltitude && _chkAdjustAltiFromSource.getSelection());
+      // adjust from source altitude
+      _chkAdjustAltiFromSource.setEnabled(isMergeAltitude && isAltitudeAvailable);
+      _chkAdjustAltiSmoothly.setEnabled(isMergeAltitude && _chkAdjustAltiFromSource.getSelection());
 
-		// set tour type
-		_linkTourType.setEnabled(isSetTourType);
+      // set tour type
+      _linkTourType.setEnabled(isSetTourType);
 
-		/*
-		 * CLabel cannot be disabled, show disabled control with another color
-		 */
-		if (isSetTourType) {
-			_lblTourType.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_FOREGROUND));
-		} else {
-			_lblTourType.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
-		}
+      /*
+       * CLabel cannot be disabled, show disabled control with another color
+       */
+      if (isSetTourType) {
+         _lblTourType.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_FOREGROUND));
+      } else {
+         _lblTourType.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
+      }
 
-		/*
-		 * altitude adjustment controls
-		 */
-		_scaleAltitude1.setEnabled(isAltitudeAvailable);
-		_scaleAltitude10.setEnabled(isAltitudeAvailable);
-		_lblAltitudeDiff1.setEnabled(isAltitudeAvailable);
-		_lblAltitudeDiff10.setEnabled(isAltitudeAvailable);
+      /*
+       * altitude adjustment controls
+       */
+      _scaleAltitude1.setEnabled(isAltitudeAvailable);
+      _scaleAltitude10.setEnabled(isAltitudeAvailable);
+      _lblAltitudeDiff1.setEnabled(isAltitudeAvailable);
+      _lblAltitudeDiff10.setEnabled(isAltitudeAvailable);
 
-		_chkValueDiffScaling.setEnabled(isAltitudeAvailable);
+      _chkValueDiffScaling.setEnabled(isAltitudeAvailable);
 
-		/*
-		 * time adjustment controls
-		 */
-		_chkSynchStartTime.setEnabled(true);
+      /*
+       * time adjustment controls
+       */
+      _chkSynchStartTime.setEnabled(true);
 
-		_scaleAdjustMinutes.setEnabled(isAdjustTime);
-		_lblAdjustMinuteValue.setEnabled(isAdjustTime);
-		_lblAdjustMinuteUnit.setEnabled(isAdjustTime);
+      _scaleAdjustMinutes.setEnabled(isAdjustTime);
+      _lblAdjustMinuteValue.setEnabled(isAdjustTime);
+      _lblAdjustMinuteUnit.setEnabled(isAdjustTime);
 
-		_scaleAdjustSeconds.setEnabled(isAdjustTime);
-		_lblAdjustSecondsValue.setEnabled(isAdjustTime);
-		_lblAdjustSecondsUnit.setEnabled(isAdjustTime);
+      _scaleAdjustSeconds.setEnabled(isAdjustTime);
+      _lblAdjustSecondsValue.setEnabled(isAdjustTime);
+      _lblAdjustSecondsUnit.setEnabled(isAdjustTime);
 
-		/*
-		 * reset buttons
-		 */
-		_btnResetAdjustment.setEnabled(true);
-		_btnResetValues.setEnabled(true);
-	}
+      /*
+       * reset buttons
+       */
+      _btnResetAdjustment.setEnabled(true);
+      _btnResetValues.setEnabled(true);
+   }
 
-	private void enableGraphActions() {
+   private void enableGraphActions() {
 
-		final boolean isAltitude = _sourceTour.altitudeSerie != null && _targetTour.altitudeSerie != null;
-		final boolean isSourcePulse = _sourceTour.pulseSerie != null;
-		final boolean isSourceTemperature = _sourceTour.temperatureSerie != null;
-		final boolean isSourceCadence = _sourceTour.getCadenceSerie() != null;
+      final boolean isAltitude = _sourceTour.altitudeSerie != null && _targetTour.altitudeSerie != null;
+      final boolean isSourcePulse = _sourceTour.pulseSerie != null;
+      final boolean isSourceTemperature = _sourceTour.temperatureSerie != null;
+      final boolean isSourceCadence = _sourceTour.getCadenceSerie() != null;
+      final boolean isSourceCustomTracks = _sourceTour.customTracksDefinition != null && !_sourceTour.customTracksDefinition.isEmpty();
 
-		_chkMergeAltitude.setEnabled(isAltitude);
-		_chkMergePulse.setEnabled(isSourcePulse);
-		_chkMergeTemperature.setEnabled(isSourceTemperature);
-		_chkMergeCadence.setEnabled(isSourceCadence);
+      _chkMergeAltitude.setEnabled(isAltitude);
+      _chkMergePulse.setEnabled(isSourcePulse);
+      _chkMergeTemperature.setEnabled(isSourceTemperature);
+      _chkMergeCadence.setEnabled(isSourceCadence);
+      _chkMergeCustomTracks.setEnabled(isSourceCustomTracks);
 
-		/*
-		 * keep state from the pref store but unckeck graphs which are not available
-		 */
-		if (isAltitude == false) {
-			_chkMergeAltitude.setSelection(false);
-		}
-		if (isSourcePulse == false) {
-			_chkMergePulse.setSelection(false);
-		}
-		if (isSourceTemperature == false) {
-			_chkMergeTemperature.setSelection(false);
-		}
-		if (isSourceCadence == false) {
-			_chkMergeCadence.setSelection(false);
-		}
+      /*
+       * keep state from the pref store but unckeck graphs which are not available
+       */
+      if (isAltitude == false) {
+         _chkMergeAltitude.setSelection(false);
+      }
+      if (isSourcePulse == false) {
+         _chkMergePulse.setSelection(false);
+      }
+      if (isSourceTemperature == false) {
+         _chkMergeTemperature.setSelection(false);
+      }
+      if (isSourceCadence == false) {
+         _chkMergeCadence.setSelection(false);
+      }
+      if (isSourceCustomTracks == false) {
+         _chkMergeCustomTracks.setSelection(false);
+      }
 
-		if (_chkMergeAltitude.getSelection()) {
+      if (_chkMergeAltitude.getSelection()) {
 
-			// ensure that one adjust altitude option is selected
-			if (_chkAdjustAltiFromStart.getSelection() == false && _chkAdjustAltiFromSource.getSelection() == false) {
-				_chkAdjustAltiFromSource.setSelection(true);
-			}
-		}
-	}
+         // ensure that one adjust altitude option is selected
+         if (_chkAdjustAltiFromStart.getSelection() == false && _chkAdjustAltiFromSource.getSelection() == false) {
+            _chkAdjustAltiFromSource.setSelection(true);
+         }
+      }
+   }
 
-	@Override
-	protected IDialogSettings getDialogBoundsSettings() {
+   @Override
+   protected IDialogSettings getDialogBoundsSettings() {
 
-		// keep window size and position
+      // keep window size and position
 //		return null;
-		return _dialogSettings;
-	}
+      return _dialogSettings;
+   }
 
-	private int getFromUIAltitudeOffset() {
+   private int getFromUIAltitudeOffset() {
 
-		final int altiDiff1 = _scaleAltitude1.getSelection() - MAX_ADJUST_ALTITUDE_1;
-		final int altiDiff10 = (_scaleAltitude10.getSelection() - MAX_ADJUST_ALTITUDE_10) * 10;
+      final int altiDiff1 = _scaleAltitude1.getSelection() - MAX_ADJUST_ALTITUDE_1;
+      final int altiDiff10 = (_scaleAltitude10.getSelection() - MAX_ADJUST_ALTITUDE_10) * 10;
 
       final float localAltiDiff1 = altiDiff1 / UI.UNIT_VALUE_ELEVATION;
       final float localAltiDiff10 = altiDiff10 / UI.UNIT_VALUE_ELEVATION;
@@ -1502,415 +1557,433 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _lblAltitudeDiff1.setText(Integer.toString((int) localAltiDiff1) + UI.SPACE + UI.UNIT_LABEL_ELEVATION);
       _lblAltitudeDiff10.setText(Integer.toString((int) localAltiDiff10) + UI.SPACE + UI.UNIT_LABEL_ELEVATION);
 
-		return altiDiff1 + altiDiff10;
-	}
+      return altiDiff1 + altiDiff10;
+   }
 
-	/**
-	 * @return tour time offset which is set in the UI
-	 */
-	private int getFromUITourTimeOffset() {
+   /**
+    * @return tour time offset which is set in the UI
+    */
+   private int getFromUITourTimeOffset() {
 
-		final int seconds = _scaleAdjustSeconds.getSelection() - MAX_ADJUST_SECONDS;
-		final int minutes = _scaleAdjustMinutes.getSelection() - MAX_ADJUST_MINUTES;
+      final int seconds = _scaleAdjustSeconds.getSelection() - MAX_ADJUST_SECONDS;
+      final int minutes = _scaleAdjustMinutes.getSelection() - MAX_ADJUST_MINUTES;
 
-		_lblAdjustSecondsValue.setText(Integer.toString(seconds));
-		_lblAdjustMinuteValue.setText(Integer.toString(minutes));
+      _lblAdjustSecondsValue.setText(Integer.toString(seconds));
+      _lblAdjustMinuteValue.setText(Integer.toString(minutes));
 
-		return minutes * 60 + seconds;
-	}
+      return minutes * 60 + seconds;
+   }
 
-	@Override
-	public ArrayList<TourData> getSelectedTours() {
+   @Override
+   public ArrayList<TourData> getSelectedTours() {
 
-		final ArrayList<TourData> selectedTours = new ArrayList<>();
-		selectedTours.add(_sourceTour);
+      final ArrayList<TourData> selectedTours = new ArrayList<>();
+      selectedTours.add(_sourceTour);
 
-		return selectedTours;
-	}
+      return selectedTours;
+   }
 
-	@Override
-	protected void okPressed() {
+   @Override
+   protected void okPressed() {
 
-		saveTour();
+      saveTour();
 
-		super.okPressed();
-	}
+      super.okPressed();
+   }
 
-	private void onDispose() {
+   private void onDispose() {
 
-		_iconPlaceholder.dispose();
+      _iconPlaceholder.dispose();
 
-		for (final Image image : _graphImages.values()) {
-			image.dispose();
-		}
+      for (final Image image : _graphImages.values()) {
+         image.dispose();
+      }
 
-		_prefStore.removePropertyChangeListener(_prefChangeListener);
-	}
+      _prefStore.removePropertyChangeListener(_prefChangeListener);
+   }
 
-	private void onModifyProperties() {
+   private void onModifyProperties() {
 
-		_targetTour.setMergedAltitudeOffset(getFromUIAltitudeOffset());
-		_targetTour.setMergedTourTimeOffset(getFromUITourTimeOffset());
+      _targetTour.setMergedAltitudeOffset(getFromUIAltitudeOffset());
+      _targetTour.setMergedTourTimeOffset(getFromUITourTimeOffset());
 
-		// calculate merged data
-		computeMergedData();
+      // calculate merged data
+      computeMergedData();
 
-		_tourChartConfig.isRelativeValueDiffScaling = _chkValueDiffScaling.getSelection();
+      _tourChartConfig.isRelativeValueDiffScaling = _chkValueDiffScaling.getSelection();
 
-		if (_chkPreviewChart.getSelection()) {
-			// update chart
-			updateTourChart();
-		} else {
-			// update only the merge layer, this is much faster
-			_tourChart.updateLayer2ndAlti(this, true);
-		}
+      if (_chkPreviewChart.getSelection()) {
+         // update chart
+         updateTourChart();
+      } else {
+         // update only the merge layer, this is much faster
+         _tourChart.updateLayer2ndAlti(this, true);
+      }
 
-		enableActions();
-	}
+      enableActions();
+   }
 
-	private void onScaleDoubleClick(final Widget widget) {
+   private void onScaleDoubleClick(final Widget widget) {
 
-		final Scale scale = (Scale) widget;
-		final int max = scale.getMaximum();
+      final Scale scale = (Scale) widget;
+      final int max = scale.getMaximum();
 
-		scale.setSelection(max / 2);
+      scale.setSelection(max / 2);
 
-		onModifyProperties();
-	}
+      onModifyProperties();
+   }
 
-	private void onSelectMergeGraph(final SelectionEvent event) {
+   private void onSelectMergeGraph(final SelectionEvent event) {
 
-		if (event.widget == _chkMergeAltitude) {
+      if (event.widget == _chkMergeAltitude) {
 
-			// merge altitude is modified
+         // merge altitude is modified
 
-			if (_chkMergeAltitude.getSelection()) {
+         if (_chkMergeAltitude.getSelection()) {
 
-				// merge altitude is selected
+            // merge altitude is selected
 
-				_chkAdjustAltiFromSource.setSelection(_isAdjustAltiFromSourceBackup);
-				_chkAdjustAltiFromStart.setSelection(_isAdjustAltiFromStartBackup);
-			} else {
+            _chkAdjustAltiFromSource.setSelection(_isAdjustAltiFromSourceBackup);
+            _chkAdjustAltiFromStart.setSelection(_isAdjustAltiFromStartBackup);
+         } else {
 
-				// merge altitude is deselected
+            // merge altitude is deselected
 
-				_isAdjustAltiFromSourceBackup = _chkAdjustAltiFromSource.getSelection();
-				_isAdjustAltiFromStartBackup = _chkAdjustAltiFromStart.getSelection();
-			}
+            _isAdjustAltiFromSourceBackup = _chkAdjustAltiFromSource.getSelection();
+            _isAdjustAltiFromStartBackup = _chkAdjustAltiFromStart.getSelection();
+         }
 
-		}
+      }
 
-		if (_chkMergeAltitude.getSelection()) {
+      if (_chkMergeAltitude.getSelection()) {
 
-			// ensure that one adjust altitude option is selected
-			if (_chkAdjustAltiFromStart.getSelection() == false && _chkAdjustAltiFromSource.getSelection() == false) {
-				_chkAdjustAltiFromSource.setSelection(true);
-			}
-		} else {
+         // ensure that one adjust altitude option is selected
+         if (_chkAdjustAltiFromStart.getSelection() == false && _chkAdjustAltiFromSource.getSelection() == false) {
+            _chkAdjustAltiFromSource.setSelection(true);
+         }
+      } else {
 
-			// uncheck all altitude adjustments
-			_chkAdjustAltiFromSource.setSelection(false);
-			_chkAdjustAltiFromStart.setSelection(false);
-		}
+         // uncheck all altitude adjustments
+         _chkAdjustAltiFromSource.setSelection(false);
+         _chkAdjustAltiFromStart.setSelection(false);
+      }
 
-		setMergedGraphsVisible();
+      setMergedGraphsVisible();
 
-		onModifyProperties();
-		updateTourChart();
-	}
+      onModifyProperties();
+      updateTourChart();
+   }
 
-	private void onSelectResetAdjustments() {
+   private void onSelectResetAdjustments() {
 
-		_scaleAdjustSeconds.setSelection(MAX_ADJUST_SECONDS);
-		_scaleAdjustMinutes.setSelection(MAX_ADJUST_MINUTES);
-		_scaleAltitude1.setSelection(MAX_ADJUST_ALTITUDE_1);
-		_scaleAltitude10.setSelection(MAX_ADJUST_ALTITUDE_10);
+      _scaleAdjustSeconds.setSelection(MAX_ADJUST_SECONDS);
+      _scaleAdjustMinutes.setSelection(MAX_ADJUST_MINUTES);
+      _scaleAltitude1.setSelection(MAX_ADJUST_ALTITUDE_1);
+      _scaleAltitude10.setSelection(MAX_ADJUST_ALTITUDE_10);
 
-		onModifyProperties();
-	}
+      onModifyProperties();
+   }
 
-	private void onSelectResetValues() {
+   private void onSelectResetValues() {
 
-		/*
-		 * get original data from the backuped data
-		 */
-		_sourceTour.timeSerie = Util.createIntegerCopy(_backupSourceTimeSerie);
-		_sourceTour.distanceSerie = Util.createFloatCopy(_backupSourceDistanceSerie);
-		_sourceTour.altitudeSerie = Util.createFloatCopy(_backupSourceAltitudeSerie);
+      /*
+       * get original data from the backuped data
+       */
+      _sourceTour.timeSerie = Util.createIntegerCopy(_backupSourceTimeSerie);
+      _sourceTour.distanceSerie = Util.createFloatCopy(_backupSourceDistanceSerie);
+      _sourceTour.altitudeSerie = Util.createFloatCopy(_backupSourceAltitudeSerie);
 
-		_targetTour.pulseSerie = Util.createFloatCopy(_backupTargetPulseSerie);
-		_targetTour.temperatureSerie = Util.createFloatCopy(_backupTargetTemperatureSerie);
-		_targetTour.setCadenceSerie(Util.createFloatCopy(_backupTargetCadenceSerie));
+      _targetTour.pulseSerie = Util.createFloatCopy(_backupTargetPulseSerie);
+      _targetTour.temperatureSerie = Util.createFloatCopy(_backupTargetTemperatureSerie);
+      _targetTour.setCadenceSerie(Util.createFloatCopy(_backupTargetCadenceSerie));
 
-		_targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
-		_targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
+      _targetTour.customTracksDefinition = new HashMap<>(_backupTargetCustomTracksDefinition);
+      _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
-		updateUIFromTourData();
+      _targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
+      _targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
 
-		enableActions();
-	}
+      updateUIFromTourData();
 
-	/**
-	 * Restore values which have been modified in the dialog
-	 *
-	 * @param selectedTour
-	 */
-	private void restoreDataBackup() {
+      enableActions();
+   }
 
-		_sourceTour.timeSerie = _backupSourceTimeSerie;
-		_sourceTour.distanceSerie = _backupSourceDistanceSerie;
-		_sourceTour.altitudeSerie = _backupSourceAltitudeSerie;
-		_sourceTour.setTourType(_backupSourceTourType);
+   /**
+    * Restore values which have been modified in the dialog
+    *
+    * @param selectedTour
+    */
+   private void restoreDataBackup() {
 
-		_targetTour.pulseSerie = _backupTargetPulseSerie;
-		_targetTour.temperatureSerie = _backupTargetTemperatureSerie;
-		_targetTour.setCadenceSerie(_backupTargetCadenceSerie);
+      _sourceTour.timeSerie = _backupSourceTimeSerie;
+      _sourceTour.distanceSerie = _backupSourceDistanceSerie;
+      _sourceTour.altitudeSerie = _backupSourceAltitudeSerie;
+      _sourceTour.setTourType(_backupSourceTourType);
 
-		_targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
-		_targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
-	}
+      _targetTour.pulseSerie = _backupTargetPulseSerie;
+      _targetTour.temperatureSerie = _backupTargetTemperatureSerie;
+      _targetTour.setCadenceSerie(_backupTargetCadenceSerie);
 
-	private void restoreState() {
+      _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+      _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
-		final IPreferenceStore prefStore = TourbookPlugin.getDefault().getPreferenceStore();
+      _targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
+      _targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
+   }
 
-		_chkPreviewChart.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_PREVIEW_CHART));
-		_chkValueDiffScaling.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_ALTITUDE_DIFF_SCALING));
+   private void restoreState() {
 
-		_chkAdjustAltiSmoothly.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_LINEAR_INTERPOLATION));
+      final IPreferenceStore prefStore = TourbookPlugin.getDefault().getPreferenceStore();
 
-		_chkSynchStartTime.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_SYNC_START_TIME));
+      _chkPreviewChart.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_PREVIEW_CHART));
+      _chkValueDiffScaling.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_ALTITUDE_DIFF_SCALING));
 
-		/*
-		 * set tour type
-		 */
-		_chkSetTourType.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE));
-		if (_sourceTour.getTourPerson() == null) {
+      _chkAdjustAltiSmoothly.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_LINEAR_INTERPOLATION));
 
-			// tour is not saved, used tour type id from pref store
+      _chkSynchStartTime.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_SYNC_START_TIME));
 
-			final long tourTypeId = prefStore.getLong(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE_ID);
+      /*
+       * set tour type
+       */
+      _chkSetTourType.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE));
+      if (_sourceTour.getTourPerson() == null) {
 
-			final ArrayList<TourType> tourTypes = TourDatabase.getAllTourTypes();
+         // tour is not saved, used tour type id from pref store
 
-			for (final TourType tourType : tourTypes) {
-				if (tourType.getTypeId() == tourTypeId) {
+         final long tourTypeId = prefStore.getLong(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE_ID);
 
-					_sourceTour.setTourType(tourType);
+         final ArrayList<TourType> tourTypes = TourDatabase.getAllTourTypes();
 
-					_isMergeSourceTourModified = true;
+         for (final TourType tourType : tourTypes) {
+            if (tourType.getTypeId() == tourTypeId) {
 
-					break;
-				}
-			}
-		}
+               _sourceTour.setTourType(tourType);
 
-		// restore merge graph state
-		_chkMergeAltitude.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE));
-		_chkMergePulse.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE));
-		_chkMergeTemperature
-				.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_TEMPERATURE));
-		_chkMergeCadence.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE));
-	}
+               _isMergeSourceTourModified = true;
 
-	private void saveState() {
+               break;
+            }
+         }
+      }
 
-		final IPreferenceStore prefStore = TourbookPlugin.getDefault().getPreferenceStore();
+      // restore merge graph state
+      _chkMergeAltitude.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE));
+      _chkMergePulse.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE));
+      _chkMergeTemperature
+            .setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_TEMPERATURE));
+      _chkMergeCadence.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE));
+      _chkMergeCustomTracks.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CUSTOMTRACKS));
+   }
 
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_GRAPH_X_AXIS,
-				_tourChartConfig.isShowTimeOnXAxis
-						? TourManager.X_AXIS_TIME
-						: TourManager.X_AXIS_DISTANCE);
+   private void saveState() {
 
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_PREVIEW_CHART, _chkPreviewChart.getSelection());
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_ALTITUDE_DIFF_SCALING, _chkValueDiffScaling.getSelection());
+      final IPreferenceStore prefStore = TourbookPlugin.getDefault().getPreferenceStore();
 
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_LINEAR_INTERPOLATION, _chkAdjustAltiSmoothly.getSelection());
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE, _chkSetTourType.getSelection());
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SYNC_START_TIME, _chkSynchStartTime.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_GRAPH_X_AXIS,
+            _tourChartConfig.isShowTimeOnXAxis
+                  ? TourManager.X_AXIS_TIME
+                  : TourManager.X_AXIS_DISTANCE);
 
-		// save tour type id
-		final TourType sourceTourType = _sourceTour.getTourType();
-		if (sourceTourType != null) {
-			prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE_ID, sourceTourType.getTypeId());
-		}
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_PREVIEW_CHART, _chkPreviewChart.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_ALTITUDE_DIFF_SCALING, _chkValueDiffScaling.getSelection());
 
-		// save merged tour graphs
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE, _chkMergeAltitude.getSelection());
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE, _chkMergePulse.getSelection());
-		prefStore
-				.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_TEMPERATURE, _chkMergeTemperature.getSelection());
-		prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE, _chkMergeCadence.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_LINEAR_INTERPOLATION, _chkAdjustAltiSmoothly.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE, _chkSetTourType.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SYNC_START_TIME, _chkSynchStartTime.getSelection());
 
-	}
+      // save tour type id
+      final TourType sourceTourType = _sourceTour.getTourType();
+      if (sourceTourType != null) {
+         prefStore.setValue(ITourbookPreferences.MERGE_TOUR_SET_TOUR_TYPE_ID, sourceTourType.getTypeId());
+      }
 
-	private void saveTour() {
+      // save merged tour graphs
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE, _chkMergeAltitude.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE, _chkMergePulse.getSelection());
+      prefStore
+            .setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_TEMPERATURE, _chkMergeTemperature.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE, _chkMergeCadence.getSelection());
+      prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CUSTOMTRACKS, _chkMergeCustomTracks.getSelection());
 
-		boolean isMerged = false;
+   }
 
-		if (_chkMergeAltitude.getSelection()) {
+   private void saveTour() {
 
-			// set target altitude values
+      boolean isMerged = false;
 
-			if ((_chkAdjustAltiFromStart.getSelection() || _chkAdjustAltiFromSource.getSelection())
-					&& _sourceTour.dataSerieAdjustedAlti != null) {
+      if (_chkMergeAltitude.getSelection()) {
 
-				isMerged = true;
+         // set target altitude values
 
-				// update target altitude from adjuste source altitude
-				_targetTour.altitudeSerie = _sourceTour.dataSerieAdjustedAlti;
+         if ((_chkAdjustAltiFromStart.getSelection() || _chkAdjustAltiFromSource.getSelection())
+               && _sourceTour.dataSerieAdjustedAlti != null) {
 
-				// adjust altitude up/down values
-				_targetTour.computeAltitudeUpDown();
-			}
-		}
+            isMerged = true;
 
-		if (_chkMergePulse.getSelection()) {
-			// pulse is already merged
-			isMerged = true;
-		} else {
-			// restore original pulse values because these values should not be saved
-			_targetTour.pulseSerie = _backupTargetPulseSerie;
-		}
+            // update target altitude from adjuste source altitude
+            _targetTour.altitudeSerie = _sourceTour.dataSerieAdjustedAlti;
 
-		if (_chkMergeTemperature.getSelection()) {
-			// temperature is already merged
-			isMerged = true;
-		} else {
-			// restore original temperature values because these values should not be saved
-			_targetTour.temperatureSerie = _backupTargetTemperatureSerie;
-		}
+            // adjust altitude up/down values
+            _targetTour.computeAltitudeUpDown();
+         }
+      }
 
-		if (_chkMergeCadence.getSelection()) {
-			// cadence is already merged
-			isMerged = true;
-		} else {
-			// restore original cadence values because these values should not be saved
-			_targetTour.setCadenceSerie(_backupTargetCadenceSerie);
-		}
+      if (_chkMergePulse.getSelection()) {
+         // pulse is already merged
+         isMerged = true;
+      } else {
+         // restore original pulse values because these values should not be saved
+         _targetTour.pulseSerie = _backupTargetPulseSerie;
+      }
 
-		if (_chkSetTourType.getSelection() == false) {
+      if (_chkMergeTemperature.getSelection()) {
+         // temperature is already merged
+         isMerged = true;
+      } else {
+         // restore original temperature values because these values should not be saved
+         _targetTour.temperatureSerie = _backupTargetTemperatureSerie;
+      }
 
-			// restore backup values
+      if (_chkMergeCadence.getSelection()) {
+         // cadence is already merged
+         isMerged = true;
+      } else {
+         // restore original cadence values because these values should not be saved
+         _targetTour.setCadenceSerie(_backupTargetCadenceSerie);
+      }
 
-			_sourceTour.setTourType(_backupSourceTourType);
-		}
+      if (_chkMergeCustomTracks.getSelection()) {
+         // custom tracks is already merged
+         isMerged = true;
+      } else {
+         // restore original custom tracks values because these values should not be saved
+         _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+         _targetTour.setCustomTracks(_backupTargetCustomTracks);
+      }
 
-		if (isMerged) {
-			_targetTour.computeComputedValues();
-		}
+      if (_chkSetTourType.getSelection() == false) {
 
-		// set tour id into which the tour is merged
-		_sourceTour.setTourPerson(_targetTour.getTourPerson());
-		_sourceTour.setMergeTargetTourId(_targetTour.getTourId());
-		_sourceTour.setMergeSourceTourId(null);
+         // restore backup values
 
-		// save modified tours
-		final ArrayList<TourData> modifiedTours = new ArrayList<>();
-		modifiedTours.add(_targetTour);
-		modifiedTours.add(_sourceTour);
+         _sourceTour.setTourType(_backupSourceTourType);
+      }
 
-		TourManager.saveModifiedTours(modifiedTours);
+      if (isMerged) {
+         _targetTour.computeComputedValues();
+      }
 
-		_isTourSaved = true;
-	}
+      // set tour id into which the tour is merged
+      _sourceTour.setTourPerson(_targetTour.getTourPerson());
+      _sourceTour.setMergeTargetTourId(_targetTour.getTourId());
+      _sourceTour.setMergeSourceTourId(null);
 
-	private void setMergedGraphsVisible() {
+      // save modified tours
+      final ArrayList<TourData> modifiedTours = new ArrayList<>();
+      modifiedTours.add(_targetTour);
+      modifiedTours.add(_sourceTour);
 
-		final ArrayList<Integer> visibleGraphs = _tourChartConfig.getVisibleGraphs();
+      TourManager.saveModifiedTours(modifiedTours);
 
-		if (_chkMergeAltitude.getSelection()) {
-			if (visibleGraphs.contains(TourManager.GRAPH_ALTITUDE) == false) {
-				visibleGraphs.add(TourManager.GRAPH_ALTITUDE);
-			}
-		}
+      _isTourSaved = true;
+   }
 
-		if (_chkMergePulse.getSelection()) {
-			if (visibleGraphs.contains(TourManager.GRAPH_PULSE) == false) {
-				visibleGraphs.add(TourManager.GRAPH_PULSE);
-			}
-		}
+   private void setMergedGraphsVisible() {
 
-		if (_chkMergeTemperature.getSelection()) {
-			if (visibleGraphs.contains(TourManager.GRAPH_TEMPERATURE) == false) {
-				visibleGraphs.add(TourManager.GRAPH_TEMPERATURE);
-			}
-		}
+      final ArrayList<Integer> visibleGraphs = _tourChartConfig.getVisibleGraphs();
 
-		if (_chkMergeCadence.getSelection()) {
-			if (visibleGraphs.contains(TourManager.GRAPH_CADENCE) == false) {
-				visibleGraphs.add(TourManager.GRAPH_CADENCE);
-			}
-		}
-	}
+      if (_chkMergeAltitude.getSelection()) {
+         if (visibleGraphs.contains(TourManager.GRAPH_ALTITUDE) == false) {
+            visibleGraphs.add(TourManager.GRAPH_ALTITUDE);
+         }
+      }
 
-	@Override
-	public void toursAreModified(final ArrayList<TourData> modifiedTours) {
+      if (_chkMergePulse.getSelection()) {
+         if (visibleGraphs.contains(TourManager.GRAPH_PULSE) == false) {
+            visibleGraphs.add(TourManager.GRAPH_PULSE);
+         }
+      }
 
-		// tour type was modified
-		_isMergeSourceTourModified = true;
+      if (_chkMergeTemperature.getSelection()) {
+         if (visibleGraphs.contains(TourManager.GRAPH_TEMPERATURE) == false) {
+            visibleGraphs.add(TourManager.GRAPH_TEMPERATURE);
+         }
+      }
 
-		updateUIFromTourData();
-	}
+      if (_chkMergeCadence.getSelection()) {
+         if (visibleGraphs.contains(TourManager.GRAPH_CADENCE) == false) {
+            visibleGraphs.add(TourManager.GRAPH_CADENCE);
+         }
+      }
+      //TODO: add Custom Tracks to visible charts, but would need individual selection for each custom tracks !!
+   }
 
-	private void updateTourChart() {
+   @Override
+   public void toursAreModified(final ArrayList<TourData> modifiedTours) {
 
-		_isChartUpdated = true;
+      // tour type was modified
+      _isMergeSourceTourModified = true;
 
-		_tourChart.updateTourChart(_targetTour, _tourChartConfig, true);
+      updateUIFromTourData();
+   }
 
-		_isChartUpdated = false;
-	}
+   private void updateTourChart() {
 
-	private void updateUI(final float altiDiffTime, final float altiDiffDist) {
+      _isChartUpdated = true;
 
-		if (_chkAdjustAltiFromStart.getSelection()) {
+      _tourChart.updateTourChart(_targetTour, _tourChartConfig, true);
 
-			_lblAdjustAltiValueTime.setText(_nf.format(altiDiffTime));
-			_lblAdjustAltiValueDistance.setText(_nf.format(altiDiffDist));
+      _isChartUpdated = false;
+   }
 
-		} else {
+   private void updateUI(final float altiDiffTime, final float altiDiffDist) {
 
-			// adjusted alti is disabled
+      if (_chkAdjustAltiFromStart.getSelection()) {
 
-			_lblAdjustAltiValueTime.setText("N/A"); //$NON-NLS-1$
-			_lblAdjustAltiValueDistance.setText("N/A"); //$NON-NLS-1$
-		}
-	}
+         _lblAdjustAltiValueTime.setText(_nf.format(altiDiffTime));
+         _lblAdjustAltiValueDistance.setText(_nf.format(altiDiffDist));
 
-	/**
-	 * set data from the tour into the UI
-	 */
-	private void updateUIFromTourData() {
+      } else {
 
-		/*
-		 * show time offset
-		 */
-		updateUITourTimeOffset(_targetTour.getMergedTourTimeOffset());
+         // adjusted alti is disabled
 
-		/*
-		 * show altitude offset
-		 */
-		final int mergedMetricAltitudeOffset = _targetTour.getMergedAltitudeOffset();
+         _lblAdjustAltiValueTime.setText("N/A"); //$NON-NLS-1$
+         _lblAdjustAltiValueDistance.setText("N/A"); //$NON-NLS-1$
+      }
+   }
 
-		final float altitudeOffset = mergedMetricAltitudeOffset;
-		final int altitudeOffset1 = (int) (altitudeOffset % 10);
-		final int altitudeOffset10 = (int) (altitudeOffset / 10);
+   /**
+    * set data from the tour into the UI
+    */
+   private void updateUIFromTourData() {
 
-		_scaleAltitude1.setSelection(altitudeOffset1 + MAX_ADJUST_ALTITUDE_1);
-		_scaleAltitude10.setSelection(altitudeOffset10 + MAX_ADJUST_ALTITUDE_10);
+      /*
+       * show time offset
+       */
+      updateUITourTimeOffset(_targetTour.getMergedTourTimeOffset());
 
-		net.tourbook.ui.UI.updateUI_TourType(_sourceTour, _lblTourType, true);
+      /*
+       * show altitude offset
+       */
+      final int mergedMetricAltitudeOffset = _targetTour.getMergedAltitudeOffset();
 
-		onModifyProperties();
-	}
+      final float altitudeOffset = mergedMetricAltitudeOffset;
+      final int altitudeOffset1 = (int) (altitudeOffset % 10);
+      final int altitudeOffset10 = (int) (altitudeOffset / 10);
 
-	private void updateUITourTimeOffset(final int tourTimeOffset) {
+      _scaleAltitude1.setSelection(altitudeOffset1 + MAX_ADJUST_ALTITUDE_1);
+      _scaleAltitude10.setSelection(altitudeOffset10 + MAX_ADJUST_ALTITUDE_10);
 
-		final int seconds = tourTimeOffset % 60;
-		final int minutes = tourTimeOffset / 60;
+      net.tourbook.ui.UI.updateUI_TourType(_sourceTour, _lblTourType, true);
 
-		_scaleAdjustSeconds.setSelection(seconds + MAX_ADJUST_SECONDS);
-		_scaleAdjustMinutes.setSelection(minutes + MAX_ADJUST_MINUTES);
-	}
+      onModifyProperties();
+   }
+
+   private void updateUITourTimeOffset(final int tourTimeOffset) {
+
+      final int seconds = tourTimeOffset % 60;
+      final int minutes = tourTimeOffset / 60;
+
+      _scaleAdjustSeconds.setSelection(seconds + MAX_ADJUST_SECONDS);
+      _scaleAdjustMinutes.setSelection(minutes + MAX_ADJUST_MINUTES);
+   }
 }

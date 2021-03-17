@@ -7449,7 +7449,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       if (customTracksDefinition == null) {
          return new HashMap<>();
       }
-      return customTracksDefinition;
+      return new HashMap<>(customTracksDefinition);
    }
 
    public HashMap<String, CustomTrackStatisticEntry> getCustomTracksStatistics() {
