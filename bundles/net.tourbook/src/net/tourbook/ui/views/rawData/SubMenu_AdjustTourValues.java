@@ -21,6 +21,7 @@ import net.tourbook.ui.ITourProviderByID;
 import net.tourbook.ui.action.ActionComputeDistanceValuesFromGeoposition;
 import net.tourbook.ui.action.ActionMultiplyCaloriesBy1000;
 import net.tourbook.ui.action.ActionRetrieveWeatherData;
+import net.tourbook.ui.action.ActionRetrieveWeatherOwmData;
 import net.tourbook.ui.action.ActionSetTimeZone;
 import net.tourbook.ui.action.SubMenu_Cadence;
 import net.tourbook.ui.action.SubMenu_Elevation;
@@ -87,6 +88,10 @@ public class SubMenu_AdjustTourValues extends Action implements IMenuCreator {
 
    public ActionRetrieveWeatherData getActionRetrieveWeatherData() {
       return _subMenu_Weather.getActionRetrieveWeatherData();
+   }
+
+   public ActionRetrieveWeatherOwmData getActionRetrieveWeatherOwmData() {
+      return _subMenu_Weather.getActionRetrieveWeatherOwmData();
    }
 
    @Override

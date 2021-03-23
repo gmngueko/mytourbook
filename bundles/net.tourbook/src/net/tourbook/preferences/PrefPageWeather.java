@@ -26,6 +26,9 @@ import java.time.Duration;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.tour.TourLogManager;
+import net.tourbook.tour.TourLogState;
+import net.tourbook.weather.HistoricalWeatherOwmRetriever;
 import net.tourbook.weather.HistoricalWeatherRetriever;
 import net.tourbook.web.WEB;
 
@@ -63,11 +66,16 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
     * UI controls
     */
    private Button _btnTestConnection;
+   private Button _btnTestConnectionOwm;
    private Button _chkWeatherRetrieval;
 
    private Label  _labelApiKey;
 
    private Text   _textApiKey;
+
+   private Label  _labelApiOwmKey;
+
+   private Text   _textApiOwmKey;
 
    @Override
    protected Control createContents(final Composite parent) {
@@ -163,6 +171,44 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
                   .span(2, 1)
                   .applyTo(_btnTestConnection);
          }
+         {
+            /*
+             * OWM API key
+             */
+            // label
+            _labelApiOwmKey = new Label(container, SWT.WRAP);
+            _labelApiOwmKey.setText(Messages.Pref_WeatherOwm_Label_ApiKey);
+            GridDataFactory.fillDefaults()
+                  .indent(defaultHIndent, 0)
+                  .align(SWT.FILL, SWT.CENTER)
+                  .applyTo(_labelApiOwmKey);
+
+            // text
+            _textApiOwmKey = new Text(container, SWT.BORDER);
+            _textApiOwmKey.setToolTipText(Messages.Pref_WeatherOwm_Label_ApiKey_Tooltip);
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .applyTo(_textApiOwmKey);
+
+         }
+         {
+            /*
+             * Button: test connection OWM
+             */
+            _btnTestConnectionOwm = new Button(container, SWT.NONE);
+            _btnTestConnectionOwm.setText(Messages.Pref_WeatherOwm_Button_TestHTTPConnection);
+            _btnTestConnectionOwm.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  onCheckConnectionOwm();
+               }
+            });
+            GridDataFactory.fillDefaults()
+                  .indent(defaultHIndent, 0)
+                  .align(SWT.BEGINNING, SWT.FILL)
+                  .span(2, 1)
+                  .applyTo(_btnTestConnectionOwm);
+         }
       }
 
       return container;
@@ -175,6 +221,11 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
       _labelApiKey.setEnabled(useWeatherRetrieval);
       _textApiKey.setEnabled(useWeatherRetrieval);
       _btnTestConnection.setEnabled(useWeatherRetrieval);
+
+      _labelApiOwmKey.setEnabled(useWeatherRetrieval);
+      _textApiOwmKey.setEnabled(useWeatherRetrieval);
+      _btnTestConnectionOwm.setEnabled(useWeatherRetrieval);
+
    }
 
    @Override
@@ -222,6 +273,54 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
       });
    }
 
+   /**
+    * This method ensures the connection to the OWM API can be made successfully.
+    */
+   private void onCheckConnectionOwm() {
+
+      BusyIndicator.showWhile(Display.getCurrent(), new Runnable() {
+         @Override
+         public void run() {
+
+            try {
+
+               final String apiUrl = HistoricalWeatherOwmRetriever.getTestApiUrl();
+               final HttpRequest request = HttpRequest.newBuilder(URI.create(apiUrl + _textApiOwmKey
+                     .getText()))
+                     .GET()
+                     .build();
+
+               final HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
+
+               final int statusCode = response.statusCode();
+               final String responseMessage = response.body();
+
+               final String message = statusCode == HttpURLConnection.HTTP_OK
+                     ? NLS.bind(Messages.Pref_Weather_CheckHTTPConnection_OK_Message, apiUrl)
+                     : NLS.bind(
+                           Messages.Pref_Weather_CheckHTTPConnection_FAILED_Message,
+                           new Object[] {
+                                 apiUrl,
+                                 statusCode,
+                                 responseMessage });
+
+               if (statusCode == HttpURLConnection.HTTP_OK) {
+                  TourLogManager.addSubLog(TourLogState.IMPORT_OK, "TEST OWM Connection result=>\n" + responseMessage);
+               } else {
+                  TourLogManager.addSubLog(TourLogState.IMPORT_ERROR, "TEST OWM Connection result=>\n" + responseMessage);
+               }
+               MessageDialog.openInformation(
+                     Display.getCurrent().getActiveShell(),
+                     Messages.Pref_Weather_CheckHTTPConnection_Message,
+                     message);
+
+            } catch (final IOException | InterruptedException e) {
+               e.printStackTrace();
+            }
+         }
+      });
+   }
+
    private void onSelectCheckWeatherRetrieval() {
       enableControls();
    }
@@ -231,6 +330,7 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
 
       _chkWeatherRetrieval.setSelection(_prefStore.getDefaultBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL));
       _textApiKey.setText(_prefStore.getDefaultString(ITourbookPreferences.WEATHER_API_KEY));
+      _textApiOwmKey.setText(_prefStore.getDefaultString(ITourbookPreferences.WEATHER_OWM_API_KEY));
 
       enableControls();
 
@@ -253,6 +353,7 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
 
       _chkWeatherRetrieval.setSelection(_prefStore.getBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL));
       _textApiKey.setText(_prefStore.getString(ITourbookPreferences.WEATHER_API_KEY));
+      _textApiOwmKey.setText(_prefStore.getString(ITourbookPreferences.WEATHER_OWM_API_KEY));
    }
 
    private void saveState() {
@@ -261,6 +362,7 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
 
       _prefStore.setValue(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL, useWeatherRetrieval);
       _prefStore.setValue(ITourbookPreferences.WEATHER_API_KEY, _textApiKey.getText());
+      _prefStore.setValue(ITourbookPreferences.WEATHER_OWM_API_KEY, _textApiOwmKey.getText());
    }
 
 }

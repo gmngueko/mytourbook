@@ -1729,6 +1729,8 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
       final boolean useWeatherRetrieval = _prefStore.getBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL) &&
             !StringUtils.isNullOrEmpty(_prefStore.getString(ITourbookPreferences.WEATHER_API_KEY));
 
+      final boolean useWeatherOwmRetrieval = _prefStore.getBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL);
+
       final boolean isTableLayout = _isLayoutNatTable;
       final boolean isTreeLayout = !isTableLayout;
 
@@ -1744,6 +1746,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
        */
       _subMenu_AdjustTourValues.setEnabled(isTourSelected || isAllToursSelected);
       _subMenu_AdjustTourValues.getActionRetrieveWeatherData().setEnabled(useWeatherRetrieval);
+      _subMenu_AdjustTourValues.getActionRetrieveWeatherOwmData().setEnabled(useWeatherOwmRetrieval);
 
       // re-import can be run on all/selected/between dates tours
       _actionReimport_Tours.setEnabled(true);
@@ -3101,7 +3104,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
                      /**
                       * <code>
-                     
+
                         Caused by: java.lang.NullPointerException
                         at org.eclipse.jface.viewers.AbstractTreeViewer.getSelection(AbstractTreeViewer.java:2956)
                         at org.eclipse.jface.viewers.StructuredViewer.handleSelect(StructuredViewer.java:1211)
@@ -3119,13 +3122,13 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
                         at org.eclipse.jface.viewers.AbstractTreeViewer.internalCollapseToLevel(AbstractTreeViewer.java:1586)
                         at org.eclipse.jface.viewers.AbstractTreeViewer.collapseToLevel(AbstractTreeViewer.java:751)
                         at org.eclipse.jface.viewers.AbstractTreeViewer.collapseAll(AbstractTreeViewer.java:733)
-                     
+
                         at net.tourbook.ui.views.tourBook.TourBookView$70.run(TourBookView.java:3406)
-                     
+
                         at org.eclipse.swt.widgets.RunnableLock.run(RunnableLock.java:35)
                         at org.eclipse.swt.widgets.Synchronizer.runAsyncMessages(Synchronizer.java:135)
                         ... 22 more
-                     
+
                       * </code>
                       */
 

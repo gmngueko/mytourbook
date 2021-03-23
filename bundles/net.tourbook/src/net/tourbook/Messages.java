@@ -394,6 +394,10 @@ public class Messages extends NLS {
    public static String        Dialog_RetrieveWeather_Label_WeatherDataNotRetrieved;
    public static String        Dialog_RetrieveWeather_WeatherDataNotFound;
 
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_Title;
+   public static String        Dialog_RetrieveWeatherOwm_Label_WeatherDataNotRetrieved;
+   public static String        Dialog_RetrieveWeatherOwm_WeatherDataNotFound;
+
    public static String        Dialog_SetWeatherDescription_Dialog_Title;
 
    public static String        dialog_is_tour_editor_modified_message;
@@ -1848,6 +1852,10 @@ public class Messages extends NLS {
    public static String        Pref_Weather_CheckHTTPConnection_OK_Message;
    public static String        Pref_Weather_CheckHTTPConnection_FAILED_Message;
 
+   public static String        Pref_WeatherOwm_Label_ApiKey;
+   public static String        Pref_WeatherOwm_Label_ApiKey_Tooltip;
+   public static String        Pref_WeatherOwm_Button_TestHTTPConnection;
+
 // public static String    Pref_SignImages_Dialog_ConfirmDelete_Message;
 // public static String    Pref_SignImages_Dialog_Delete_Title;
 // public static String    Pref_SignImages_Dialog_NoSelectedSignImage_Message;
@@ -2481,6 +2489,7 @@ public class Messages extends NLS {
    public static String Tour_Action_AdjustTemperature;
    public static String Tour_Action_AdjustTourValues;
    public static String Tour_Action_RetrieveWeatherData;
+   public static String Tour_Action_RetrieveWeatherOwmData;
    public static String Tour_Action_auto_move_sliders_when_zoomed;
    public static String Tour_Action_auto_zoom_to_slider_position;
    public static String Tour_Action_DuplicateTour;

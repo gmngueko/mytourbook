@@ -2479,6 +2479,30 @@ public class TourManager {
    }
 
    /**
+    * @param tourData
+    * @return Returns <code>true</code> when the tour is modified, otherwise <code>false</code>.
+    */
+   public static boolean retrieveWeatherOwmData(final TourData tourData) {
+
+      // ensure data is available
+      if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
+
+         TourLogManager.subLog_Error(
+               String.format(
+                     LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
+                     getTourDateTimeShort(tourData)));
+
+         return false;
+      }
+
+      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import not yet implemented");
+
+      TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
+
+      return true;
+   }
+
+   /**
     * Saves tours which have been modified and updates the tour data editor, a notification is fired
     * when the data are saved.
     * <p>

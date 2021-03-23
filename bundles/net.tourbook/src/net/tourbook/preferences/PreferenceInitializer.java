@@ -532,6 +532,7 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
        */
       store.setDefault(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL,false);
       store.setDefault(ITourbookPreferences.WEATHER_API_KEY, UI.EMPTY_STRING);
+      store.setDefault(ITourbookPreferences.WEATHER_OWM_API_KEY, UI.EMPTY_STRING);
 
 // SET_FORMATTING_ON
    }
