@@ -395,6 +395,9 @@ public class Messages extends NLS {
    public static String        Dialog_RetrieveWeather_WeatherDataNotFound;
 
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Title;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_Message;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelInterval;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidInterval;
    public static String        Dialog_RetrieveWeatherOwm_Label_WeatherDataNotRetrieved;
    public static String        Dialog_RetrieveWeatherOwm_WeatherDataNotFound;
 

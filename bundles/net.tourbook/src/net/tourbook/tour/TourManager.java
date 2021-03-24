@@ -2482,7 +2482,7 @@ public class TourManager {
     * @param tourData
     * @return Returns <code>true</code> when the tour is modified, otherwise <code>false</code>.
     */
-   public static boolean retrieveWeatherOwmData(final TourData tourData) {
+   public static boolean retrieveWeatherOwmData(final TourData tourData, final int intervalSeconds) {
 
       // ensure data is available
       if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
@@ -2495,7 +2495,7 @@ public class TourManager {
          return false;
       }
 
-      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import not yet implemented");
+      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import not yet implemented, interval:" + intervalSeconds);
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
 
