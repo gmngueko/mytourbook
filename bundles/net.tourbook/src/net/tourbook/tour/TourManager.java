@@ -78,7 +78,9 @@ import net.tourbook.ui.tourChart.TourChartView;
 import net.tourbook.ui.tourChart.X_AXIS_START_TIME;
 import net.tourbook.ui.views.TourChartAnalyzerInfo;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
+import net.tourbook.weather.HistoricalWeatherOwmRetriever;
 import net.tourbook.weather.HistoricalWeatherRetriever;
+import net.tourbook.weather.OWMWeatherData;
 import net.tourbook.weather.WeatherData;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -2495,6 +2497,16 @@ public class TourManager {
          return false;
       }
 
+      final OWMWeatherData historicalWeatherData = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(intervalSeconds)
+            .getHistoricalWeatherData();
+      if (historicalWeatherData == null) {
+         TourLogManager.subLog_Error(
+               NLS.bind(
+                     Messages.Dialog_RetrieveWeatherOwm_WeatherDataNotFound,
+                     new Object[] {
+                           TourManager.getTourDateTimeShort(tourData) }));
+         return false;
+      }
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import not yet implemented, interval:" + intervalSeconds);
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));

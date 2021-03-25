@@ -42,6 +42,7 @@ import net.tourbook.data.TourData;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.ui.Messages;
 import net.tourbook.ui.views.calendar.CalendarProfile;
+import net.tourbook.weather.OWMResults.OWMResponse;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 
@@ -50,7 +51,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
  */
 public class HistoricalWeatherOwmRetriever {
 
-   private static final String  SYS_PROP__LOG_WEATHER_DATA = "logWeatherData"; //$NON-NLS-1$
+   private static final String  SYS_PROP__LOG_WEATHER_DATA = "logWeatherData";                                                      //$NON-NLS-1$
    private static final boolean _isLogWeatherData          = System.getProperty(SYS_PROP__LOG_WEATHER_DATA) != null;
 
    private static final String  DEFAULT_UNIT               = "metric";
@@ -83,9 +84,11 @@ public class HistoricalWeatherOwmRetriever {
 
    private String                 endTime;
 
-   private WeatherData            historicalWeatherData;
+   private long                   utcStartTime;
 
-   private final IPreferenceStore _prefStore   = TourbookPlugin.getPrefStore();
+   private OWMWeatherData         historicalWeatherData;
+
+   private final IPreferenceStore _prefStore         = TourbookPlugin.getPrefStore();
 
    public HistoricalWeatherOwmRetriever() {}
 
@@ -102,6 +105,7 @@ public class HistoricalWeatherOwmRetriever {
 
       final double roundedStartTime = tour.getTourStartTime().getHour();
       startTime = (int) roundedStartTime + "00"; //$NON-NLS-1$
+      utcStartTime = tour.getTourStartTime().toEpochSecond();
 
       int roundedEndHour = Instant.ofEpochMilli(tour.getTourEndTimeMS()).atZone(tour.getTimeZoneIdWithDefault()).getHour();
       final int roundedEndMinutes = Instant.ofEpochMilli(tour.getTourEndTimeMS()).atZone(tour.getTimeZoneIdWithDefault()).getMinute();
@@ -109,6 +113,9 @@ public class HistoricalWeatherOwmRetriever {
          ++roundedEndHour;
       }
       endTime = roundedEndHour + "00"; //$NON-NLS-1$
+
+      historicalWeatherData = new OWMWeatherData();
+      historicalWeatherData.initWeatherSeries(tour.timeSerie.length);
    }
 
    public static String getApiUrl() {
@@ -156,7 +163,7 @@ public class HistoricalWeatherOwmRetriever {
       searchAreaCenter = LatLngTool.travel(startPoint, bearingBetweenPoint, distanceFromStart / 2, LengthUnit.METER);
    }
 
-   public WeatherData getHistoricalWeatherData() {
+   public OWMWeatherData getHistoricalWeatherData() {
       return historicalWeatherData;
    }
 
@@ -167,7 +174,7 @@ public class HistoricalWeatherOwmRetriever {
     *           A string containing a historical weather data JSON object.
     * @return The parsed weather data.
     */
-   private WeatherData parseWeatherData(final String weatherDataResponse) {
+   private OWMWeatherData parseWeatherData(final String weatherDataResponse) {
 
       if (_isLogWeatherData) {
 
@@ -191,7 +198,7 @@ public class HistoricalWeatherOwmRetriever {
          System.out.println(weatherDataResponse);
       }
 
-      final WeatherData weatherData = new WeatherData();
+      final OWMWeatherData weatherData = new OWMWeatherData();
       try {
          final ObjectMapper mapper = new ObjectMapper();
          final String weatherResults = mapper.readValue(weatherDataResponse, JsonNode.class)
@@ -277,14 +284,71 @@ public class HistoricalWeatherOwmRetriever {
     *
     * @return The weather data, if found.
     */
-   public HistoricalWeatherOwmRetriever retrieveHistoricalWeatherData() {
+   public HistoricalWeatherOwmRetriever retrieveHistoricalWeatherData(final int intervalSeconds) {
 
-      final String rawWeatherData = sendWeatherApiRequest();
-      if (!rawWeatherData.contains("weather")) { //$NON-NLS-1$
+      if (tour == null) {
          return null;
       }
 
-      historicalWeatherData = parseWeatherData(rawWeatherData);
+
+      final int sumHumidity = 0;
+      final int numHumidityDatasets = 0;
+
+      final int sumPressure = 0;
+      final int numPressureDatasets = 0;
+
+      final float sumPrecipitation = 0f;
+      final int sumWindChill = 0;
+
+      final int sumWindDirection = 0;
+      final int numWindDirectionDatasets = 0;
+
+      final float sumWindSpeed = 0;
+      final int numWindSpeedDatasets = 0;
+
+      float sumTemperature = 0;
+      int numTemperatureDatasets = 0;
+      float maxTemperature = Float.MIN_VALUE;
+      float minTemperature = Float.MAX_VALUE;
+
+      int jumpIndex = 0;
+      for (int serieIndex = 0; serieIndex < tour.timeSerie.length; serieIndex++) {
+         if (tour.timeSerie[serieIndex] / intervalSeconds >= jumpIndex || serieIndex == (tour.timeSerie.length - 1)) {
+            jumpIndex++;
+            final long utcForWeather = utcStartTime + tour.timeSerie[serieIndex];
+            final String rawWeatherData = sendWeatherApiRequest(tour.latitudeSerie[serieIndex], tour.longitudeSerie[serieIndex], utcForWeather);
+            if (!rawWeatherData.contains("current")) { //$NON-NLS-1$
+               return null;
+            }
+
+            try {
+               final ObjectMapper mapper = new ObjectMapper();
+               final OWMResponse rawWeatherResponse = mapper.readValue(rawWeatherData, new TypeReference<OWMResponse>() {});
+
+               if (rawWeatherResponse != null && rawWeatherResponse.current != null) {
+                  if (rawWeatherResponse.current.temp != null) {
+                     historicalWeatherData.OWM_Temperature_Present = true;
+                     historicalWeatherData.OWM_Temperature_Serie[serieIndex] = rawWeatherResponse.current.temp;
+                     sumTemperature += rawWeatherResponse.current.temp;
+
+                     if (rawWeatherResponse.current.temp < minTemperature) {
+                        minTemperature = rawWeatherResponse.current.temp;
+                     }
+
+                     if (rawWeatherResponse.current.temp > maxTemperature) {
+                        maxTemperature = rawWeatherResponse.current.temp;
+                     }
+                     numTemperatureDatasets++;
+                  }
+               }
+            } catch (final Exception e) {
+               StatusUtil.log(
+                     "OWMWeatherHistoryRetriever.parseWeatherData : Error while parsing the historical weather JSON object :" //$NON-NLS-1$
+                           + rawWeatherData + "\n" + e.getMessage()); //$NON-NLS-1$
+               return null;
+            }
+         }
+      }
 
       return this;
    }
@@ -294,20 +358,15 @@ public class HistoricalWeatherOwmRetriever {
     *
     * @return The result of the weather API query.
     */
-   private String sendWeatherApiRequest() {
+   private String sendWeatherApiRequest(final double latitudeSerie, final double longitudeSerie, final long utcTime) {
 
-      final String weatherRequestWithParameters =
+      String weatherRequestWithParameters = baseApiUrl;
 
-            getApiUrl() + _prefStore.getString(ITourbookPreferences.WEATHER_API_KEY)
-
-                  + "&q=" + searchAreaCenter.getLatitude() + "," + searchAreaCenter.getLongitude() //$NON-NLS-1$ //$NON-NLS-2$
-                  + "&date=" + startDate //$NON-NLS-1$
-                  + "&tp=1" //$NON-NLS-1$
-                  + "&format=json" //$NON-NLS-1$
-
-                  + "&includelocation=yes" //$NON-NLS-1$
-                  + "&extra=utcDateTime" //$NON-NLS-1$
-      ;
+      weatherRequestWithParameters += unitParameter + DEFAULT_UNIT;
+      weatherRequestWithParameters += latitudeParameter + String.format("%.2f", latitudeSerie);
+      weatherRequestWithParameters += longitudeParameter + String.format("%.2f", longitudeSerie);
+      weatherRequestWithParameters += utcParameter + utcTime;
+      weatherRequestWithParameters += keyParameter + _prefStore.getString(ITourbookPreferences.WEATHER_OWM_API_KEY);
 
       //tp=1 : Specifies the weather forecast time interval in hours. Here, every 1 hour
 
