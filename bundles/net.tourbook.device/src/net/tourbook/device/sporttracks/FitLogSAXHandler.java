@@ -91,6 +91,7 @@ public class FitLogSAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_AVERAGE_RPM                  = "AverageRPM";                          //$NON-NLS-1$
    private static final String                  ATTRIB_WEATHER_TEMP                 = "Temp";                                //$NON-NLS-1$
    private static final String                  ATTRIB_WEATHER_CONDITIONS           = "Conditions";                          //$NON-NLS-1$
+   private static final String ATTRIB_WEATHER_CONDITIONSNOTES = "ConditionsNotes"; //$NON-NLS-1$
    //
    private static final String                  TAG_TRACK                           = "Track";                               //$NON-NLS-1$
    private static final String                  TAG_TRACK_PT                        = "pt";                                  //$NON-NLS-1$
@@ -256,6 +257,7 @@ public class FitLogSAXHandler extends DefaultHandler {
 
       private String                        _weatherText;
       private String                        _weatherConditions;
+      private String                        _weatherConditionsNotes;
       private float                         _weatherTemperature       = Float.MIN_VALUE;
       private float                         _weatherTemperatureFeel   = Float.MIN_VALUE;
       private int                           _weatherWindSpeed         = Integer.MIN_VALUE;
@@ -532,7 +534,7 @@ public class FitLogSAXHandler extends DefaultHandler {
       /*
        * weather
        */
-      tourData.setWeather(_currentActivity._weatherText);
+      tourData.setWeather(_currentActivity._weatherText + UI.NEW_LINE2 + _currentActivity._weatherConditionsNotes);
       tourData.setWeatherClouds(_weatherId.get(_currentActivity._weatherConditions));
 
       final float weatherTemperature = _currentActivity._weatherTemperature;
@@ -1226,6 +1228,7 @@ public class FitLogSAXHandler extends DefaultHandler {
          _isInWeather = true;
          _currentActivity._weatherTemperature = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMP);
          _currentActivity._weatherConditions = attributes.getValue(ATTRIB_WEATHER_CONDITIONS);
+         _currentActivity._weatherConditionsNotes = attributes.getValue(ATTRIB_WEATHER_CONDITIONSNOTES);
          _currentActivity._weatherTemperatureFeel = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMPFEEL);
          _currentActivity._weatherHumidity = Util.parseFloat(attributes, ATTRIB_WEATHER_HUMIDITYPERCENT);
          _currentActivity._weatherPrecipitation = Util.parseFloat(attributes, ATTRIB_WEATHER_PRECIPITATIONMM);

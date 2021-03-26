@@ -15,7 +15,11 @@
  *******************************************************************************/
 package net.tourbook.weather;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.tourbook.common.weather.IWeather;
+import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
 
 /**
  * Class to store data from the Open Weather Map API.
@@ -50,6 +54,8 @@ public class OWMWeatherData {
    boolean        OWM_Wind_Direction_Present   = false;
    boolean        OWM_Wind_Gust_Present        = false;
    boolean        OWM_Wind_Speed_Present       = false;
+
+   Map<String, OWMWeather_Main_Map> OWM_Weather_Map              = new HashMap<>();
 
    private int    maxTemperature;
    private int    minTemperature;

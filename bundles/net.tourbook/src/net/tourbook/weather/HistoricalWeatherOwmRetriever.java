@@ -15,8 +15,8 @@
  *******************************************************************************/
 package net.tourbook.weather;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javadocmd.simplelatlng.LatLng;
 import com.javadocmd.simplelatlng.LatLngTool;
@@ -29,20 +29,23 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
-import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
 import net.tourbook.preferences.ITourbookPreferences;
-import net.tourbook.ui.Messages;
 import net.tourbook.ui.views.calendar.CalendarProfile;
 import net.tourbook.weather.OWMResults.OWMResponse;
+import net.tourbook.weather.OWMResults.OWMResponse_Weather;
+import net.tourbook.weather.OWMResults.OWMWeather_Description_Map;
+import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 
@@ -168,118 +171,6 @@ public class HistoricalWeatherOwmRetriever {
    }
 
    /**
-    * Parses a JSON weather data object into a WeatherData object.
-    *
-    * @param weatherDataResponse
-    *           A string containing a historical weather data JSON object.
-    * @return The parsed weather data.
-    */
-   private OWMWeatherData parseWeatherData(final String weatherDataResponse) {
-
-      if (_isLogWeatherData) {
-
-         final long elapsedTime = tour.getTourDeviceTime_Elapsed();
-         final ZonedDateTime zdtTourStart = tour.getTourStartTime();
-         final ZonedDateTime zdtTourEnd = zdtTourStart.plusSeconds(elapsedTime);
-         final String tourTitle = tour.getTourTitle();
-
-         System.out.println();
-
-         if (tourTitle.length() > 0) {
-            System.out.println(tourTitle);
-         }
-
-         System.out.println(String.format(Messages.Tour_Tooltip_Format_DateWeekTime,
-               zdtTourStart.format(TimeTools.Formatter_Date_F),
-               zdtTourStart.format(TimeTools.Formatter_Time_M),
-               zdtTourEnd.format(TimeTools.Formatter_Time_M),
-               zdtTourStart.get(TimeTools.calendarWeek.weekOfWeekBasedYear())));
-
-         System.out.println(weatherDataResponse);
-      }
-
-      final OWMWeatherData weatherData = new OWMWeatherData();
-      try {
-         final ObjectMapper mapper = new ObjectMapper();
-         final String weatherResults = mapper.readValue(weatherDataResponse, JsonNode.class)
-               .get("data") //$NON-NLS-1$
-               .get("weather") //$NON-NLS-1$
-               .get(0)
-               .get("hourly") //$NON-NLS-1$
-               .toString();
-
-         final List<WWOHourlyResults> rawWeatherData = mapper.readValue(weatherResults, new TypeReference<List<WWOHourlyResults>>() {});
-
-         boolean isTourStartData = false;
-         boolean isTourEndData = false;
-         int numHourlyDatasets = 0;
-         int sumHumidity = 0;
-         int sumPressure = 0;
-         float sumPrecipitation = 0f;
-         int sumWindChill = 0;
-         int sumWindDirection = 0;
-         int sumWindSpeed = 0;
-         int sumTemperature = 0;
-         int maxTemperature = Integer.MIN_VALUE;
-         int minTemperature = Integer.MAX_VALUE;
-
-         for (final WWOHourlyResults hourlyData : rawWeatherData) {
-            // Within the hourly data, find the times that corresponds to the tour time
-            // and extract all the weather data.
-            if (hourlyData.gettime().equals(startTime)) {
-               isTourStartData = true;
-               weatherData.setWeatherDescription(hourlyData.getWeatherDescription());
-               weatherData.setWeatherType(hourlyData.getWeatherCode());
-            }
-            if (hourlyData.gettime().equals(endTime)) {
-               isTourEndData = true;
-            }
-
-            if (isTourStartData || isTourEndData) {
-               sumWindDirection += hourlyData.getWinddirDegree();
-               sumWindSpeed += hourlyData.getWindspeedKmph();
-               sumHumidity += hourlyData.getHumidity();
-               sumPrecipitation += hourlyData.getPrecipMM();
-               sumPressure += hourlyData.getPressure();
-               sumWindChill += hourlyData.getFeelsLikeC();
-               sumTemperature += hourlyData.getTempC();
-
-               if (hourlyData.getTempC() < minTemperature) {
-                  minTemperature = hourlyData.getTempC();
-               }
-
-               if (hourlyData.getTempC() > maxTemperature) {
-                  maxTemperature = hourlyData.getTempC();
-               }
-
-               ++numHourlyDatasets;
-               if (isTourEndData) {
-                  break;
-               }
-            }
-         }
-
-         weatherData.setWindDirection((int) Math.ceil((double) sumWindDirection / (double) numHourlyDatasets));
-         weatherData.setWindSpeed((int) Math.ceil((double) sumWindSpeed / (double) numHourlyDatasets));
-         weatherData.setTemperatureMax(maxTemperature);
-         weatherData.setTemperatureMin(minTemperature);
-         weatherData.setTemperatureAverage((int) Math.ceil((double) sumTemperature / (double) numHourlyDatasets));
-         weatherData.setWindChill((int) Math.ceil((double) sumWindChill / (double) numHourlyDatasets));
-         weatherData.setAverageHumidity((int) Math.ceil((double) sumHumidity / (double) numHourlyDatasets));
-         weatherData.setAveragePressure((int) Math.ceil((double) sumPressure / (double) numHourlyDatasets));
-         weatherData.setPrecipitation(sumPrecipitation);
-
-      } catch (final Exception e) {
-         StatusUtil.log(
-               "WeatherHistoryRetriever.parseWeatherData : Error while parsing the historical weather JSON object :" //$NON-NLS-1$
-                     + weatherDataResponse + "\n" + e.getMessage()); //$NON-NLS-1$
-         return null;
-      }
-
-      return weatherData;
-   }
-
-   /**
     * Retrieves the historical weather data
     *
     * @return The weather data, if found.
@@ -291,20 +182,23 @@ public class HistoricalWeatherOwmRetriever {
       }
 
 
-      final int sumHumidity = 0;
-      final int numHumidityDatasets = 0;
+      int sumHumidity = 0;
+      int numHumidityDatasets = 0;
 
-      final int sumPressure = 0;
-      final int numPressureDatasets = 0;
+      int sumPressure = 0;
+      int numPressureDatasets = 0;
 
-      final float sumPrecipitation = 0f;
-      final int sumWindChill = 0;
+      float sumPrecipitation = 0f;
+      int numPrecipitationDatasets = 0;
 
-      final int sumWindDirection = 0;
-      final int numWindDirectionDatasets = 0;
+      int sumWindChill = 0;
+      int numWindChillDatasets = 0;
 
-      final float sumWindSpeed = 0;
-      final int numWindSpeedDatasets = 0;
+      int sumWindDirection = 0;
+      int numWindDirectionDatasets = 0;
+
+      float sumWindSpeed = 0;
+      int numWindSpeedDatasets = 0;
 
       float sumTemperature = 0;
       int numTemperatureDatasets = 0;
@@ -340,6 +234,126 @@ public class HistoricalWeatherOwmRetriever {
                      }
                      numTemperatureDatasets++;
                   }
+                  if (rawWeatherResponse.current.feels_like != null) {
+                     historicalWeatherData.OWM_Temperature_Feel_Present = true;
+                     historicalWeatherData.OWM_Temperature_Feel_Serie[serieIndex] = rawWeatherResponse.current.feels_like;
+                     sumWindChill += rawWeatherResponse.current.feels_like;
+                     numWindChillDatasets++;
+                  }
+                  if (rawWeatherResponse.current.wind_speed != null) {
+                     historicalWeatherData.OWM_Wind_Speed_Present = true;
+                     historicalWeatherData.OWM_Wind_Speed_Serie[serieIndex] = rawWeatherResponse.current.wind_speed;
+                     sumWindSpeed += rawWeatherResponse.current.wind_speed;
+                     numWindSpeedDatasets++;
+                  }
+                  if (rawWeatherResponse.current.wind_deg != null) {
+                     historicalWeatherData.OWM_Wind_Direction_Present = true;
+                     historicalWeatherData.OWM_Wind_Direction_Serie[serieIndex] = rawWeatherResponse.current.wind_deg;
+                     sumWindDirection += rawWeatherResponse.current.wind_deg;
+                     numWindDirectionDatasets++;
+                  }
+                  if (rawWeatherResponse.current.humidity != null) {
+                     historicalWeatherData.OWM_Humidity_Present = true;
+                     historicalWeatherData.OWM_Humidity_Serie[serieIndex] = rawWeatherResponse.current.humidity;
+                     sumHumidity += rawWeatherResponse.current.humidity;
+                     numHumidityDatasets++;
+                  }
+                  if (rawWeatherResponse.current.pressure != null) {
+                     historicalWeatherData.OWM_Pressure_Present = true;
+                     historicalWeatherData.OWM_Pressure_Serie[serieIndex] = rawWeatherResponse.current.pressure;
+                     sumPressure += rawWeatherResponse.current.pressure;
+                     numPressureDatasets++;
+                  }
+
+                  if (rawWeatherResponse.current.rain != null && rawWeatherResponse.current.rain.h1 != null) {
+                     historicalWeatherData.OWM_Precipitation_Serie[serieIndex] = rawWeatherResponse.current.rain.h1;
+                  } else if (rawWeatherResponse.current.rain != null && rawWeatherResponse.current.rain.h3 != null) {
+                     historicalWeatherData.OWM_Precipitation_Serie[serieIndex] = rawWeatherResponse.current.rain.h3 / 3;
+                  } else {
+                     historicalWeatherData.OWM_Precipitation_Serie[serieIndex] = 0;
+                  }
+                  //rain is alway accounted for
+                  numPrecipitationDatasets++;
+                  sumPrecipitation += historicalWeatherData.OWM_Precipitation_Serie[serieIndex];
+
+                  if (rawWeatherResponse.current.clouds != null) {
+                     historicalWeatherData.OWM_Clouds_Present = true;
+                     historicalWeatherData.OWM_Clouds_Serie[serieIndex] = rawWeatherResponse.current.clouds;
+                  }
+                  if (rawWeatherResponse.current.dew_point != null) {
+                     historicalWeatherData.OWM_Dew_Points_Present = true;
+                     historicalWeatherData.OWM_Dew_Points_Serie[serieIndex] = rawWeatherResponse.current.dew_point;
+                  }
+                  if (rawWeatherResponse.current.uvi != null) {
+                     historicalWeatherData.OWM_UV_Index_Present = true;
+                     historicalWeatherData.OWM_UV_Index_Serie[serieIndex] = rawWeatherResponse.current.uvi;
+                  }
+                  if (rawWeatherResponse.current.visibility != null) {
+                     historicalWeatherData.OWM_Visibility_Present = true;
+                     historicalWeatherData.OWM_Visibility_Serie[serieIndex] = rawWeatherResponse.current.visibility;
+                  }
+
+                  //snow is always accounted for
+                  historicalWeatherData.OWM_Snow_Present = true;
+                  if (rawWeatherResponse.current.snow != null && rawWeatherResponse.current.snow.h1 != null) {
+                     historicalWeatherData.OWM_Snow_Serie[serieIndex] = rawWeatherResponse.current.snow.h1;
+                  } else if (rawWeatherResponse.current.snow != null && rawWeatherResponse.current.snow.h3 != null) {
+                     historicalWeatherData.OWM_Snow_Serie[serieIndex] = rawWeatherResponse.current.snow.h3 / 3;
+                  } else {
+                     historicalWeatherData.OWM_Snow_Serie[serieIndex] = 0;
+                  }
+
+                  //wind gust always accounted for
+                  historicalWeatherData.OWM_Wind_Gust_Present = true;
+                  if (rawWeatherResponse.current.wind_gust != null) {
+                     historicalWeatherData.OWM_Wind_Gust_Serie[serieIndex] = rawWeatherResponse.current.wind_gust;
+                  } else {
+                     historicalWeatherData.OWM_Wind_Gust_Serie[serieIndex] = 0;
+                  }
+
+                  if (rawWeatherResponse.current.weather != null && rawWeatherResponse.current.weather.length > 0) {
+                     final OWMResponse_Weather item = rawWeatherResponse.current.weather[0];
+                     if (item.main != null) {
+                        OWMWeather_Main_Map mainW = null;
+                        if (historicalWeatherData.OWM_Weather_Map.containsKey(item.main)) {
+                           mainW = historicalWeatherData.OWM_Weather_Map.get(item.main);
+                           mainW.weight += 1;
+                           String descM = "null";
+                           if (item.description != null) {
+                              descM = item.description;
+                           }
+                           if (mainW.descriptionsMap.containsKey(descM)) {
+                              final OWMWeather_Description_Map descW = mainW.descriptionsMap.get(descM);
+                              descW.weight += 1;
+                           } else {
+                              final OWMWeather_Description_Map descW = new OWMWeather_Description_Map();
+                              descW.description = descM;
+                              descW.weight += 1;
+                              mainW.descriptionsMap.put(descW.description, descW);
+                           }
+                        } else {
+                           mainW = new OWMWeather_Main_Map();
+
+                           mainW.main = item.main;
+                           mainW.weight += 1;
+                           String descM = "null";
+                           if (item.description != null) {
+                              descM = item.description;
+                           }
+                           if (mainW.descriptionsMap.containsKey(descM)) {
+                              final OWMWeather_Description_Map descW = mainW.descriptionsMap.get(descM);
+                              descW.weight += 1;
+                           } else {
+                              final OWMWeather_Description_Map descW = new OWMWeather_Description_Map();
+                              descW.description = descM;
+                              descW.weight += 1;
+                              mainW.descriptionsMap.put(descW.description, descW);
+                           }
+                           historicalWeatherData.OWM_Weather_Map.put(mainW.main, mainW);
+                        }
+                     }
+                  }
+
                }
             } catch (final Exception e) {
                StatusUtil.log(
@@ -349,6 +363,80 @@ public class HistoricalWeatherOwmRetriever {
             }
          }
       }
+
+      if (numWindDirectionDatasets > 0) {
+         historicalWeatherData.setWindDirection((int) Math.ceil((double) sumWindDirection / (double) numWindDirectionDatasets));
+      }
+      if (numWindSpeedDatasets > 0) {
+         historicalWeatherData.setWindSpeed((int) Math.ceil((double) sumWindSpeed / (double) numWindSpeedDatasets));
+      }
+      historicalWeatherData.setTemperatureMax((int) maxTemperature);
+      historicalWeatherData.setTemperatureMin((int) minTemperature);
+      if (numTemperatureDatasets > 0) {
+         historicalWeatherData.setTemperatureAverage((int) Math.ceil((double) sumTemperature / (double) numTemperatureDatasets));
+      }
+      if (numWindChillDatasets > 0) {
+         historicalWeatherData.setWindChill((int) Math.ceil((double) sumWindChill / (double) numWindChillDatasets));
+      }
+      if (numHumidityDatasets > 0) {
+         historicalWeatherData.setAverageHumidity((int) Math.ceil((double) sumHumidity / (double) numHumidityDatasets));
+      }
+      if (numPressureDatasets > 0) {
+         historicalWeatherData.setAveragePressure((int) Math.ceil((double) sumPressure / (double) numPressureDatasets));
+      }
+      historicalWeatherData.setPrecipitation(sumPrecipitation);
+
+      //compute weight percent
+      int weigthSum = 0;
+      for (final Map.Entry<String, OWMWeather_Main_Map> item : historicalWeatherData.OWM_Weather_Map.entrySet()) {
+         weigthSum += item.getValue().weight;
+         int weigthSum2 = 0;
+         for (final Map.Entry<String, OWMWeather_Description_Map> item2 : item.getValue().descriptionsMap.entrySet()) {
+            weigthSum2 += item2.getValue().weight;
+         }
+         if (weigthSum2 > 0) {
+            for (final Map.Entry<String, OWMWeather_Description_Map> item2 : item.getValue().descriptionsMap.entrySet()) {
+               item2.getValue().weightPercent = (float) Math.round((double) item2.getValue().weight * 100.0 / weigthSum2);
+            }
+         }
+      }
+      if (weigthSum > 0)
+      {
+         for (final Map.Entry<String, OWMWeather_Main_Map> item : historicalWeatherData.OWM_Weather_Map.entrySet())
+          {
+              item.getValue().weightPercent = (float)Math.round((double)item.getValue().weight *100.0 / weigthSum);
+          }
+      }
+
+      //sort the json
+      final List<OWMWeather_Main_Map> WeatherCond = new ArrayList<>();
+      for (final Map.Entry<String, OWMWeather_Main_Map> item : historicalWeatherData.OWM_Weather_Map.entrySet())
+      {
+          WeatherCond.add(item.getValue());
+          for (final Map.Entry<String, OWMWeather_Description_Map> item2 : item.getValue().descriptionsMap.entrySet())
+          {
+              item.getValue().descriptions.add(item2.getValue());
+          }
+          Collections.sort(item.getValue().descriptions, new OWMResults.SortOWMWeather_Description_Mapbyweight());
+      }
+      Collections.sort(WeatherCond, new OWMResults.SortOWMWeather_Main_Mapbyweight());
+
+      final ObjectMapper mapper = new ObjectMapper();
+      try {
+         final String weatherNote = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(WeatherCond);
+         historicalWeatherData.setWeatherDescription(weatherNote);
+      } catch (final JsonProcessingException e) {
+         StatusUtil.log(
+               "OWMWeatherHistoryRetriever.parseWeatherData : Error while pretty printing weather condition notes :" //$NON-NLS-1$
+                     + "\n" + e.getMessage()); //$NON-NLS-1$
+         return null;
+      }
+
+      //TODO: compute weather type (condition)
+
+      //TODO: compute precipitation total
+
+      //TODO add summary weather info in description ???
 
       return this;
    }
