@@ -57,9 +57,9 @@ public class HistoricalWeatherOwmRetriever {
    private static final String  SYS_PROP__LOG_WEATHER_DATA = "logWeatherData";                                                      //$NON-NLS-1$
    private static final boolean _isLogWeatherData          = System.getProperty(SYS_PROP__LOG_WEATHER_DATA) != null;
 
-   private static final String  DEFAULT_UNIT               = "metric";
-   private static final String  DEFAULT_LATITUDE           = "50.85";
-   private static final String  DEFAULT_LONGITUDE          = "4.42";
+   private static final String  DEFAULT_UNIT               = "metric"; //$NON-NLS-1$
+   private static final String  DEFAULT_LATITUDE           = "50.85"; //$NON-NLS-1$
+   private static final String  DEFAULT_LONGITUDE          = "4.42"; //$NON-NLS-1$
 
    private static HttpClient    httpClient                 = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
 
@@ -138,6 +138,34 @@ public class HistoricalWeatherOwmRetriever {
       return testUrl + keyParameter;
    }
 
+   /*
+    * Compute numerical integration
+    * mainly used to compute total precipitation
+    * */
+   public static float numericalIntegrationOfSerie(final float[] serieData,
+                                                   final int[] serieTime,
+                                                   final double scaleFactor,
+                                                   final int intervalSeconds) {
+      float result = 0;
+      int jumpIndex = 0;
+      int indexCurrent = 0;
+      int indexPrev = 0;
+      for (int serieIndex = 0; serieIndex < serieTime.length; serieIndex++) {
+         if (serieTime[serieIndex] / intervalSeconds >= jumpIndex || serieIndex == (serieTime.length - 1)) {
+            if (jumpIndex == 0) {
+               indexCurrent = serieIndex;
+               jumpIndex++;
+               continue;
+            }
+            jumpIndex++;
+            indexPrev = indexCurrent;
+            indexCurrent = serieIndex;
+            result += (serieTime[indexCurrent] - serieTime[indexPrev]) * (serieData[indexCurrent] + serieData[indexPrev]) / (2);
+         }
+      }
+      return (float) (result * scaleFactor);
+   }
+
    /**
     * Determines the geographic area covered by a GPS track. The goal is to
     * encompass most of the track to search a weather station as close as possible
@@ -191,6 +219,9 @@ public class HistoricalWeatherOwmRetriever {
       float sumPrecipitation = 0f;
       int numPrecipitationDatasets = 0;
 
+      float sumSnow = 0f;
+      int numSnowDatasets = 0;
+
       int sumWindChill = 0;
       int numWindChillDatasets = 0;
 
@@ -204,6 +235,8 @@ public class HistoricalWeatherOwmRetriever {
       int numTemperatureDatasets = 0;
       float maxTemperature = Float.MIN_VALUE;
       float minTemperature = Float.MAX_VALUE;
+
+      historicalWeatherData.intervalRetrievalSeconds = intervalSeconds;
 
       int jumpIndex = 0;
       for (int serieIndex = 0; serieIndex < tour.timeSerie.length; serieIndex++) {
@@ -265,6 +298,7 @@ public class HistoricalWeatherOwmRetriever {
                      numPressureDatasets++;
                   }
 
+                  //rain
                   if (rawWeatherResponse.current.rain != null && rawWeatherResponse.current.rain.h1 != null) {
                      historicalWeatherData.OWM_Precipitation_Serie[serieIndex] = rawWeatherResponse.current.rain.h1;
                   } else if (rawWeatherResponse.current.rain != null && rawWeatherResponse.current.rain.h3 != null) {
@@ -273,6 +307,7 @@ public class HistoricalWeatherOwmRetriever {
                      historicalWeatherData.OWM_Precipitation_Serie[serieIndex] = 0;
                   }
                   //rain is alway accounted for
+                  historicalWeatherData.OWM_Precipitation_Present = true;
                   numPrecipitationDatasets++;
                   sumPrecipitation += historicalWeatherData.OWM_Precipitation_Serie[serieIndex];
 
@@ -302,6 +337,8 @@ public class HistoricalWeatherOwmRetriever {
                   } else {
                      historicalWeatherData.OWM_Snow_Serie[serieIndex] = 0;
                   }
+                  numSnowDatasets++;
+                  sumSnow += historicalWeatherData.OWM_Snow_Serie[serieIndex];
 
                   //wind gust always accounted for
                   historicalWeatherData.OWM_Wind_Gust_Present = true;
@@ -318,7 +355,7 @@ public class HistoricalWeatherOwmRetriever {
                         if (historicalWeatherData.OWM_Weather_Map.containsKey(item.main)) {
                            mainW = historicalWeatherData.OWM_Weather_Map.get(item.main);
                            mainW.weight += 1;
-                           String descM = "null";
+                           String descM = "null"; //$NON-NLS-1$
                            if (item.description != null) {
                               descM = item.description;
                            }
@@ -328,6 +365,7 @@ public class HistoricalWeatherOwmRetriever {
                            } else {
                               final OWMWeather_Description_Map descW = new OWMWeather_Description_Map();
                               descW.description = descM;
+                              descW.id = item.id;
                               descW.weight += 1;
                               mainW.descriptionsMap.put(descW.description, descW);
                            }
@@ -336,7 +374,7 @@ public class HistoricalWeatherOwmRetriever {
 
                            mainW.main = item.main;
                            mainW.weight += 1;
-                           String descM = "null";
+                           String descM = "null"; //$NON-NLS-1$
                            if (item.description != null) {
                               descM = item.description;
                            }
@@ -346,6 +384,7 @@ public class HistoricalWeatherOwmRetriever {
                            } else {
                               final OWMWeather_Description_Map descW = new OWMWeather_Description_Map();
                               descW.description = descM;
+                              descW.id = item.id;
                               descW.weight += 1;
                               mainW.descriptionsMap.put(descW.description, descW);
                            }
@@ -370,10 +409,10 @@ public class HistoricalWeatherOwmRetriever {
       if (numWindSpeedDatasets > 0) {
          historicalWeatherData.setWindSpeed((int) Math.ceil((double) sumWindSpeed / (double) numWindSpeedDatasets));
       }
-      historicalWeatherData.setTemperatureMax((int) maxTemperature);
-      historicalWeatherData.setTemperatureMin((int) minTemperature);
+      historicalWeatherData.setTemperatureMax(maxTemperature);
+      historicalWeatherData.setTemperatureMin(minTemperature);
       if (numTemperatureDatasets > 0) {
-         historicalWeatherData.setTemperatureAverage((int) Math.ceil((double) sumTemperature / (double) numTemperatureDatasets));
+         historicalWeatherData.setTemperatureAverage((float) Math.ceil((double) sumTemperature / (double) numTemperatureDatasets));
       }
       if (numWindChillDatasets > 0) {
          historicalWeatherData.setWindChill((int) Math.ceil((double) sumWindChill / (double) numWindChillDatasets));
@@ -384,7 +423,7 @@ public class HistoricalWeatherOwmRetriever {
       if (numPressureDatasets > 0) {
          historicalWeatherData.setAveragePressure((int) Math.ceil((double) sumPressure / (double) numPressureDatasets));
       }
-      historicalWeatherData.setPrecipitation(sumPrecipitation);
+      //historicalWeatherData.setPrecipitation(sumPrecipitation);
 
       //compute weight percent
       int weigthSum = 0;
@@ -421,22 +460,57 @@ public class HistoricalWeatherOwmRetriever {
       }
       Collections.sort(WeatherCond, new OWMResults.SortOWMWeather_Main_Mapbyweight());
 
+      //compute weather type (condition)
+      if(WeatherCond != null && WeatherCond.size() > 0) {
+         if (WeatherCond.get(0) != null && WeatherCond.get(0).descriptions != null
+               && WeatherCond.get(0).descriptions.get(0) != null
+               && WeatherCond.get(0).descriptions.get(0).id != null) {
+            historicalWeatherData.setWeatherType(WeatherCond.get(0).descriptions.get(0).id);
+         }
+      }
+
+      //compute precipitation total
+      float totalPrecipitation = 0;
+      float avgPrecipitationPerHour = 0;
+      if (sumPrecipitation > 0 && numPrecipitationDatasets > 0) {
+         totalPrecipitation = numericalIntegrationOfSerie(historicalWeatherData.OWM_Precipitation_Serie,
+               tour.timeSerie,
+               1.0 / 3600.0,
+               intervalSeconds);
+         avgPrecipitationPerHour = sumPrecipitation / numPrecipitationDatasets;
+      }
+      historicalWeatherData.setPrecipitation(totalPrecipitation);
+      historicalWeatherData.setAveragePrecipitationPerHour(avgPrecipitationPerHour);
+
+      //compute precipitation Snow total
+      float totalPrecipitationSnow = 0;
+      float avgPrecipitationSnowPerHour = 0;
+      if (sumSnow > 0 && numSnowDatasets > 0) {
+         totalPrecipitationSnow = numericalIntegrationOfSerie(historicalWeatherData.OWM_Snow_Serie,
+               tour.timeSerie,
+               1.0 / 3600.0,
+               intervalSeconds);
+         avgPrecipitationSnowPerHour = sumSnow / numSnowDatasets;
+      }
+      historicalWeatherData.setPrecipitationSnow(totalPrecipitationSnow);
+      historicalWeatherData.setAveragePrecipitationSnowPerHour(avgPrecipitationSnowPerHour);
+
+      //TODO compute head/tail/cross wind GPS direction
+
+      //add summary weather info in description ???
       final ObjectMapper mapper = new ObjectMapper();
       try {
          final String weatherNote = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(WeatherCond);
-         historicalWeatherData.setWeatherDescription(weatherNote);
+         String weatherSummary = historicalWeatherData.computeWeatherSummaryDescription() + UI.NEW_LINE1;
+         weatherSummary += weatherNote;
+         weatherSummary += UI.NEW_LINE1 + "OWM retrieval interval(seconds):" + intervalSeconds; //$NON-NLS-1$
+         historicalWeatherData.setWeatherDescription(weatherSummary);
       } catch (final JsonProcessingException e) {
          StatusUtil.log(
                "OWMWeatherHistoryRetriever.parseWeatherData : Error while pretty printing weather condition notes :" //$NON-NLS-1$
                      + "\n" + e.getMessage()); //$NON-NLS-1$
          return null;
       }
-
-      //TODO: compute weather type (condition)
-
-      //TODO: compute precipitation total
-
-      //TODO add summary weather info in description ???
 
       return this;
    }
@@ -451,8 +525,8 @@ public class HistoricalWeatherOwmRetriever {
       String weatherRequestWithParameters = baseApiUrl;
 
       weatherRequestWithParameters += unitParameter + DEFAULT_UNIT;
-      weatherRequestWithParameters += latitudeParameter + String.format("%.2f", latitudeSerie);
-      weatherRequestWithParameters += longitudeParameter + String.format("%.2f", longitudeSerie);
+      weatherRequestWithParameters += latitudeParameter + String.format("%.2f", latitudeSerie); //$NON-NLS-1$
+      weatherRequestWithParameters += longitudeParameter + String.format("%.2f", longitudeSerie); //$NON-NLS-1$
       weatherRequestWithParameters += utcParameter + utcTime;
       weatherRequestWithParameters += keyParameter + _prefStore.getString(ITourbookPreferences.WEATHER_OWM_API_KEY);
 

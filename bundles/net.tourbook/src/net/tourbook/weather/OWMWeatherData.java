@@ -18,6 +18,7 @@ package net.tourbook.weather;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.tourbook.common.UI;
 import net.tourbook.common.weather.IWeather;
 import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
 
@@ -27,64 +28,134 @@ import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
  */
 public class OWMWeatherData {
 
-   public float[] OWM_Temperature_Serie;
-   public float[] OWM_Temperature_Feel_Serie;
-   public float[] OWM_Clouds_Serie;
-   public float[] OWM_Dew_Points_Serie;
-   public float[] OWM_Humidity_Serie;
-   public float[] OWM_Precipitation_Serie;
-   public float[] OWM_Snow_Serie;
-   public float[] OWM_Pressure_Serie;
-   public float[] OWM_UV_Index_Serie;
-   public float[] OWM_Visibility_Serie;
-   public float[] OWM_Wind_Direction_Serie;
-   public float[] OWM_Wind_Gust_Serie;
-   public float[] OWM_Wind_Speed_Serie;
+   public float[]                   OWM_Temperature_Serie;
 
-   boolean        OWM_Temperature_Present      = false;
-   boolean        OWM_Temperature_Feel_Present = false;
-   boolean        OWM_Clouds_Present           = false;
-   boolean        OWM_Dew_Points_Present       = false;
-   boolean        OWM_Humidity_Present         = false;
-   boolean        OWM_Precipitation_Present    = false;
-   boolean        OWM_Snow_Present             = false;
-   boolean        OWM_Pressure_Present         = false;
-   boolean        OWM_UV_Index_Present         = false;
-   boolean        OWM_Visibility_Present       = false;
-   boolean        OWM_Wind_Direction_Present   = false;
-   boolean        OWM_Wind_Gust_Present        = false;
-   boolean        OWM_Wind_Speed_Present       = false;
+   public float[]                   OWM_Temperature_Feel_Serie;
 
+   public float[]                   OWM_Clouds_Serie;
+   public float[]                   OWM_Dew_Points_Serie;
+   public float[]                   OWM_Humidity_Serie;
+   public float[]                   OWM_Precipitation_Serie;
+   public float[]                   OWM_Snow_Serie;
+   public float[]                   OWM_Pressure_Serie;
+   public float[]                   OWM_UV_Index_Serie;
+   public float[]                   OWM_Visibility_Serie;
+   public float[]                   OWM_Wind_Direction_Serie;
+   public float[]                   OWM_Wind_Gust_Serie;
+   public float[]                   OWM_Wind_Speed_Serie;
+   boolean                          OWM_Temperature_Present      = false;
+   boolean                          OWM_Temperature_Feel_Present = false;
+
+   boolean                          OWM_Clouds_Present           = false;
+   boolean                          OWM_Dew_Points_Present       = false;
+   boolean                          OWM_Humidity_Present         = false;
+   boolean                          OWM_Precipitation_Present    = false;
+   boolean                          OWM_Snow_Present             = false;
+   boolean                          OWM_Pressure_Present         = false;
+   boolean                          OWM_UV_Index_Present         = false;
+   boolean                          OWM_Visibility_Present       = false;
+   boolean                          OWM_Wind_Direction_Present   = false;
+   boolean                          OWM_Wind_Gust_Present        = false;
+   boolean                          OWM_Wind_Speed_Present       = false;
    Map<String, OWMWeather_Main_Map> OWM_Weather_Map              = new HashMap<>();
 
-   private int    maxTemperature;
-   private int    minTemperature;
-   private int    averageTemperature;
-   private int    WindDirection;
-   private int    WindSpeed;
+   int                              intervalRetrievalSeconds     = -1;
 
+   private float                    maxTemperature;
+   private float                    minTemperature;
+   private float                    averageTemperature;
+
+   private int                      WindDirection;
+   private int                      WindSpeed;
    /**
     * Precipitation in millimeters
     */
-   private float  precipitation;
+   private float                    precipitation;
+   private float                    averagePrecipitationPerHour;
 
-   private String WeatherDescription;
-   private String WeatherType;
+   /**
+    * Snow Precipitation in millimeters
+    */
+   private float                    precipitationSnow;
+   private float                    averagePrecipitationSnowPerHour;
+
+   private String                   WeatherDescription;
+   private String                   WeatherType                  = IWeather.cloudIsNotDefined;//default weather is undefined
 
    /**
     * Humidity in percentage (%)
     */
-   private int    averageHumidity;
-
+   private int                      averageHumidity;
    /**
     * Atmospheric pressure in millibars (mb)
     */
-   private int    averagePressure;
+   private int                      averagePressure;
 
-   private int    windChill;
+   private int                      windChill;
+
+   public String computeWeatherSummaryDescription() {
+      String summary = UI.EMPTY_STRING;
+
+      if (OWM_Temperature_Present) {
+
+         summary += "Min./Max./Avg.:"; //$NON-NLS-1$
+         summary += String.format("%.1f", minTemperature) + "°C/"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += String.format("%.1f", maxTemperature) + "°C/"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += String.format("%.1f", averageTemperature) + "°C"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      if (OWM_Pressure_Present)
+      {
+          if (summary.length() > 0) {
+            summary += "; "; //$NON-NLS-1$
+         }
+          summary += "Pressure:"; //$NON-NLS-1$
+          summary += String.format("%d", averagePressure) + "mb"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      if (OWM_Humidity_Present)
+      {
+          if (summary.length() > 0) {
+            summary += "; "; //$NON-NLS-1$
+         }
+          summary += "Humidity:"; //$NON-NLS-1$
+          summary += String.format("%d", averageHumidity) + "%"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      if (OWM_Wind_Speed_Present) {
+         if (summary.length() > 0) {
+            summary += "; "; //$NON-NLS-1$
+         }
+         summary += "Wind Speed:"; //$NON-NLS-1$
+         summary += String.format("%.1f", (float) (3.6 * WindSpeed)) + "K/h"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      if (OWM_Snow_Present) {
+         if (summary.length() > 0) {
+            summary += "; "; //$NON-NLS-1$
+         }
+         summary += "Snow(Avg.1h/Tot.):"; //$NON-NLS-1$
+         summary += String.format("%.2f", averagePrecipitationSnowPerHour) + "mm/"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += String.format("%.2f", precipitationSnow) + "mm"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+      if (OWM_Precipitation_Present) {
+         if (summary.length() > 0) {
+            summary += "; "; //$NON-NLS-1$
+         }
+         summary += "Rain(Avg.1h/Tot.):"; //$NON-NLS-1$
+         summary += String.format("%.2f", averagePrecipitationPerHour) + "mm/"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += String.format("%.2f", precipitation) + "mm"; //$NON-NLS-1$ //$NON-NLS-2$
+      }
+
+      return summary;
+   }
 
    public int getAverageHumidity() {
       return averageHumidity;
+   }
+
+   public float getAveragePrecipitationPerHour() {
+      return averagePrecipitationPerHour;
+   }
+
+   public float getAveragePrecipitationSnowPerHour() {
+      return averagePrecipitationSnowPerHour;
    }
 
    public int getAveragePressure() {
@@ -95,15 +166,19 @@ public class OWMWeatherData {
       return precipitation;
    }
 
-   public int getTemperatureAverage() {
+   public float getPrecipitationSnow() {
+      return precipitationSnow;
+   }
+
+   public float getTemperatureAverage() {
       return averageTemperature;
    }
 
-   public int getTemperatureMax() {
+   public float getTemperatureMax() {
       return maxTemperature;
    }
 
-   public int getTemperatureMin() {
+   public float getTemperatureMin() {
       return minTemperature;
    }
 
@@ -147,6 +222,14 @@ public class OWMWeatherData {
       this.averageHumidity = averageHumidity;
    }
 
+   public void setAveragePrecipitationPerHour(final float averagePrecipitationPerHour) {
+      this.averagePrecipitationPerHour = averagePrecipitationPerHour;
+   }
+
+   public void setAveragePrecipitationSnowPerHour(final float averagePrecipitationSnowPerHour) {
+      this.averagePrecipitationSnowPerHour = averagePrecipitationSnowPerHour;
+   }
+
    public void setAveragePressure(final int averagePressure) {
       this.averagePressure = averagePressure;
    }
@@ -155,15 +238,19 @@ public class OWMWeatherData {
       this.precipitation = precipitation;
    }
 
-   public void setTemperatureAverage(final int temperatureAverage) {
+   public void setPrecipitationSnow(final float precipitationSnow) {
+      this.precipitationSnow = precipitationSnow;
+   }
+
+   public void setTemperatureAverage(final float temperatureAverage) {
       averageTemperature = temperatureAverage;
    }
 
-   public void setTemperatureMax(final int temperatureMax) {
+   public void setTemperatureMax(final float temperatureMax) {
       maxTemperature = temperatureMax;
    }
 
-   public void setTemperatureMin(final int temperatureMin) {
+   public void setTemperatureMin(final float temperatureMin) {
       minTemperature = temperatureMin;
    }
 
@@ -171,45 +258,77 @@ public class OWMWeatherData {
       WeatherDescription = weatherDescription;
    }
 
-   public void setWeatherType(final String weatherCode) {
+   public void setWeatherType(final int weatherCode) {
 
-      // Codes : http://www.worldweatheronline.com/feed/wwoConditionCodes.xml
+      // Codes : https://openweathermap.org/weather-conditions
 
       switch (weatherCode) {
-      case "122": //$NON-NLS-1$
+      case 803:
+      case 804:
          WeatherType = IWeather.WEATHER_ID_OVERCAST;
          break;
-      case "113": //$NON-NLS-1$
+      case 800:
          WeatherType = IWeather.WEATHER_ID_CLEAR;
          break;
-      case "116": //$NON-NLS-1$
+      case 701:
+      case 721:
+      case 741:
+      case 801:
+      case 802:
          WeatherType = IWeather.WEATHER_ID_PART_CLOUDS;
          break;
-      //case "200":
-      //    WeatherType = IWeather.WEATHER_ID_LIGHTNING;
-      //   break;
-      case "293": //$NON-NLS-1$
-      case "296": //$NON-NLS-1$
-      case "299": //$NON-NLS-1$
-      case "302": //$NON-NLS-1$
-      case "305": //$NON-NLS-1$
-      case "308": //$NON-NLS-1$
-      case "356": //$NON-NLS-1$
-      case "359": //$NON-NLS-1$
+      case 200://Thunderstorm
+      case 201:
+      case 202:
+      case 210:
+      case 211:
+      case 212:
+      case 221:
+      case 230:
+      case 231:
+      case 232:
+         WeatherType = IWeather.WEATHER_ID_LIGHTNING;
+         break;
+      case 300://Drizzle
+      case 301:
+      case 302:
+      case 310:
+      case 311:
+      case 312:
+      case 313:
+      case 314:
+      case 321:
+      case 500://Rain
+      case 501:
+      case 502:
+      case 503:
+      case 504:
+      case 511:
          WeatherType = IWeather.WEATHER_ID_RAIN;
          break;
-      case "332": //$NON-NLS-1$
-      case "335": //$NON-NLS-1$
-      case "329": //$NON-NLS-1$
-      case "326": //$NON-NLS-1$
-      case "323": //$NON-NLS-1$
-      case "320": //$NON-NLS-1$
+      case 600:
+      case 601:
+      case 602:
+      case 611:
+      case 612:
+      case 613:
+      case 615:
+      case 616:
+      case 620:
+      case 621:
+      case 622:
          WeatherType = IWeather.WEATHER_ID_SNOW;
          break;
-      case "200": //$NON-NLS-1$
+      case 711:
+      case 731:
+      case 762:
+      case 781:
          WeatherType = IWeather.WEATHER_ID_SEVERE_WEATHER_ALERT;
          break;
-      case "353": //$NON-NLS-1$
+      case 520://light intensity shower rain
+      case 521:
+      case 522:
+      case 531:
          WeatherType = IWeather.WEATHER_ID_SCATTERED_SHOWERS;
          break;
       default:

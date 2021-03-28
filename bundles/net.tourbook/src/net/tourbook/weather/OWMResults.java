@@ -132,14 +132,15 @@ public class OWMResults {
    static public class OWMWeather_Description_Map {
 
       public Integer weight        = 0;
-      public Float   weightPercent = (float) 0;
+      public Float   weightPercent = (float) 0.0;
       public String  description   = null;
+      public Integer id            = null;
    }
 
    static public class OWMWeather_Main_Map {
 
       public Integer                                 weight          = 0;
-      public Float                                   weightPercent   = (float) 0;
+      public Float                                   weightPercent   = (float) 0.0;
       public String                                  main            = null;
 
       @JsonIgnore()

@@ -2507,7 +2507,26 @@ public class TourManager {
                            TourManager.getTourDateTimeShort(tourData) }));
          return false;
       }
-      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import not yet implemented, interval:" + intervalSeconds);
+
+      tourData.setIsWeatherDataFromApi(true);
+
+      tourData.setAvgTemperature(historicalWeatherData.getTemperatureAverage());
+      tourData.setWeatherWindSpeed(historicalWeatherData.getWindSpeed());
+      tourData.setWeatherWindDir(historicalWeatherData.getWindDirection());
+      tourData.setWeather(historicalWeatherData.getWeatherDescription());
+      tourData.setWeatherClouds(historicalWeatherData.getWeatherType());
+
+      tourData.setWeather_Humidity((short) historicalWeatherData.getAverageHumidity());
+      tourData.setWeather_Precipitation(historicalWeatherData.getPrecipitation());
+      tourData.setWeather_Pressure((short) historicalWeatherData.getAveragePressure());
+      tourData.setWeather_Temperature_Max(historicalWeatherData.getTemperatureMax());
+      tourData.setWeather_Temperature_Min(historicalWeatherData.getTemperatureMin());
+      tourData.setWeather_Temperature_WindChill(historicalWeatherData.getWindChill());
+
+      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import done for interval:" + intervalSeconds);
+
+      //TODO: add cutom tracks series data and replace current temperature if any
+      //move current temperature to Sensor Temperature custom track data serie
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
 
