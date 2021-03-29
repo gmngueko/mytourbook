@@ -2533,8 +2533,10 @@ public class TourManager {
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import done for interval:" + intervalSeconds);
 
-      //TODO: add cutom tracks series data and replace current temperature if any
-      //move current temperature to Sensor Temperature custom track data serie
+      //add cutom tracks series data and replace current temperature if any
+      //move current temperature to "Sensor Temperature" custom track data serie if that sensor temperature was not yet present !!
+      //to avoid loosing "sensor temperature" !!! So this "sensor temperature" is created only once the first time you do a OWM retrieval
+      historicalWeatherData.setCustomTracks(tourData);
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
 
