@@ -466,9 +466,9 @@ public class HistoricalWeatherOwmRetriever {
           {
               item.getValue().descriptions.add(item2.getValue());
           }
-          Collections.sort(item.getValue().descriptions, new OWMResults.SortOWMWeather_Description_Mapbyweight());
+          Collections.sort(item.getValue().descriptions, new OWMResults.SortDescOWMWeather_Description_Mapbyweight());
       }
-      Collections.sort(WeatherCond, new OWMResults.SortOWMWeather_Main_Mapbyweight());
+       Collections.sort(WeatherCond, new OWMResults.SortDescOWMWeather_Main_Mapbyweight());
 
       //compute weather type (condition)
       if(WeatherCond != null && WeatherCond.size() > 0) {

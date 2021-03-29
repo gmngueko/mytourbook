@@ -149,6 +149,26 @@ public class OWMResults {
       public List<OWMWeather_Description_Map>        descriptions    = new ArrayList<>();
    }
 
+   static public class SortDescOWMWeather_Description_Mapbyweight implements Comparator<OWMWeather_Description_Map>
+   {
+      // Used for sorting OWMWeather_Description_Map in descending order of
+      // weight number
+       @Override
+      public int compare(final OWMWeather_Description_Map a, final OWMWeather_Description_Map b)
+       {
+           return b.weight - a.weight;
+       }
+   }
+
+   static public class SortDescOWMWeather_Main_Mapbyweight implements Comparator<OWMWeather_Main_Map> {
+      // Used for sorting OWMWeather_Main_Map in descending order of
+      // weight number
+      @Override
+      public int compare(final OWMWeather_Main_Map a, final OWMWeather_Main_Map b) {
+         return b.weight - a.weight;
+      }
+   }
+
    static public class SortOWMWeather_Description_Mapbyweight implements Comparator<OWMWeather_Description_Map>
    {
       // Used for sorting OWMWeather_Description_Map in ascending order of
