@@ -398,6 +398,10 @@ public class Messages extends NLS {
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Message;
    public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelInterval;
    public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidInterval;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelLatitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidLatitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelLongitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidLongitude;
    public static String        Dialog_RetrieveWeatherOwm_Label_WeatherDataNotRetrieved;
    public static String        Dialog_RetrieveWeatherOwm_WeatherDataNotFound;
 
@@ -1160,6 +1164,7 @@ public class Messages extends NLS {
    public static String        Log_RetrieveWeatherData_001_Start;
    public static String        Log_RetrieveWeatherData_002_End;
    public static String        Log_RetrieveWeatherData_010_NoGpsDataSeries;
+   public static String        Log_RetrieveOWMWeatherData_010_UsingDefaultGPS;
 
    public static String        Log_SaveTags_End;
    public static String        Log_SaveTags_Progress_AppendTags;

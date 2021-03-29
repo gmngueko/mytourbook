@@ -29,6 +29,8 @@ import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -43,26 +45,38 @@ import org.eclipse.swt.widgets.Text;
 public class ActionRetrieveWeatherOwmData extends Action {
    //TODO replace with default preference
    public static final int      DEFAULT_INTERVAL = 1200;
+   private static final double  DEFAULT_LATITUDE  = 50.85;
+   private static final double  DEFAULT_LONGITUDE = 4.42;
 
    private final ITourProvider2 _tourProvider;
    private int                  intervalSeconds  = DEFAULT_INTERVAL;
+   private double               defaultOWNLatitude  = DEFAULT_LATITUDE;
+   private double               defaultOWNLongitude = DEFAULT_LONGITUDE;
 
    private class OwmSettingsDialog extends TitleAreaDialog {
 
       private Text   intervalText;
+      private Text   latitudeText;
+      private Text   longitudeText;
 
       private String intervalValue;
+      private String latitudeValue;
+      private String longitudeValue;
 
       public OwmSettingsDialog(final Shell parentShell) {
          super(parentShell);
       }
 
-      public void create(final int interval) {
+      public void create(final int interval, final double latitude, final double longitude) {
          super.create();
          setTitle(Messages.Dialog_RetrieveWeatherOwm_Dialog_Title);
          setMessage(Messages.Dialog_RetrieveWeatherOwm_Dialog_Message, IMessageProvider.INFORMATION);
          intervalValue = String.valueOf(interval);
          intervalText.setText(intervalValue);
+         latitudeValue = String.valueOf(latitude);
+         latitudeText.setText(latitudeValue);
+         longitudeValue = String.valueOf(longitude);
+         longitudeText.setText(longitudeValue);
       }
 
       @Override
@@ -74,6 +88,8 @@ public class ActionRetrieveWeatherOwmData extends Action {
          container.setLayout(layout);
 
          createInterval(container);
+         createLatitude(container);
+         createLongitude(container);
 
          return area;
       }
@@ -103,8 +119,86 @@ public class ActionRetrieveWeatherOwmData extends Action {
          });
       }
 
+      private void createLatitude(final Composite container) {
+         final Label lbtLatitude = new Label(container, SWT.NONE);
+         lbtLatitude.setText(Messages.Dialog_RetrieveWeatherOwm_Dialog_LabelLatitude);
+
+         final GridData dataLatitudeGrid = new GridData();
+         dataLatitudeGrid.grabExcessHorizontalSpace = true;
+         dataLatitudeGrid.horizontalAlignment = GridData.FILL;
+         latitudeText = new Text(container, SWT.BORDER);
+         latitudeText.setLayoutData(dataLatitudeGrid);
+
+         latitudeText.addVerifyListener(new VerifyListener() {
+            @Override
+            public void verifyText(final VerifyEvent e) {
+
+               // get old text and create new text by using the VerifyEvent.text
+               final Text text = (Text) e.getSource();
+
+               // get old text and create new text by using the VerifyEvent.text
+               final String oldS = text.getText();
+               final String newS = oldS.substring(0, e.start) + e.text + oldS.substring(e.end);
+
+               boolean isFloat = true;
+               try {
+                  Double.parseDouble(newS);
+               } catch (final NumberFormatException ex) {
+                  isFloat = false;
+               }
+
+               if (!isFloat) {
+                  e.doit = false;
+               }
+            }
+         });
+
+      }
+
+      private void createLongitude(final Composite container) {
+         final Label lbtLongitude = new Label(container, SWT.NONE);
+         lbtLongitude.setText(Messages.Dialog_RetrieveWeatherOwm_Dialog_LabelLongitude);
+
+         final GridData dataLongitudeGrid = new GridData();
+         dataLongitudeGrid.grabExcessHorizontalSpace = true;
+         dataLongitudeGrid.horizontalAlignment = GridData.FILL;
+         longitudeText = new Text(container, SWT.BORDER);
+         longitudeText.setLayoutData(dataLongitudeGrid);
+         longitudeText.addVerifyListener(new VerifyListener() {
+            @Override
+            public void verifyText(final VerifyEvent e) {
+
+               // get old text and create new text by using the VerifyEvent.text
+               final Text text = (Text) e.getSource();
+
+               // get old text and create new text by using the VerifyEvent.text
+               final String oldS = text.getText();
+               final String newS = oldS.substring(0, e.start) + e.text + oldS.substring(e.end);
+
+               boolean isFloat = true;
+               try {
+                  Double.parseDouble(newS);
+               } catch (final NumberFormatException ex) {
+                  isFloat = false;
+               }
+
+               if (!isFloat) {
+                  e.doit = false;
+               }
+            }
+         });
+      }
+
       public String getInterval() {
          return intervalValue;
+      }
+
+      public String getLatitude() {
+         return latitudeValue;
+      }
+
+      public String getLongitude() {
+         return longitudeValue;
       }
 
       @Override
@@ -122,6 +216,8 @@ public class ActionRetrieveWeatherOwmData extends Action {
       // as soon as the Dialog closes
       private void saveInput() {
          intervalValue = intervalText.getText();
+         latitudeValue = latitudeText.getText();
+         longitudeValue = longitudeText.getText();
       }
    }
 
@@ -157,7 +253,7 @@ public class ActionRetrieveWeatherOwmData extends Action {
       }
 
       final OwmSettingsDialog dialog = new OwmSettingsDialog(shell);
-      dialog.create(intervalSeconds);
+      dialog.create(intervalSeconds, defaultOWNLatitude, defaultOWNLongitude);
       if (dialog.open() == Window.OK) {
          try {
             intervalSeconds = Integer.valueOf(dialog.getInterval());
@@ -166,6 +262,24 @@ public class ActionRetrieveWeatherOwmData extends Action {
                   shell,
                   Messages.Dialog_RetrieveWeatherOwm_Dialog_Title,
                   Messages.Dialog_RetrieveWeatherOwm_Dialog_InvalidInterval);
+            return;
+         }
+         try {
+            defaultOWNLatitude = Double.valueOf(dialog.getLatitude());
+         } catch (final Exception exc) {
+            MessageDialog.openInformation(
+                  shell,
+                  Messages.Dialog_RetrieveWeatherOwm_Dialog_Title,
+                  Messages.Dialog_RetrieveWeatherOwm_Dialog_InvalidLatitude);
+            return;
+         }
+         try {
+            defaultOWNLongitude = Double.valueOf(dialog.getLongitude());
+         } catch (final Exception exc) {
+            MessageDialog.openInformation(
+                  shell,
+                  Messages.Dialog_RetrieveWeatherOwm_Dialog_Title,
+                  Messages.Dialog_RetrieveWeatherOwm_Dialog_InvalidLongitude);
             return;
          }
       } else {
@@ -179,7 +293,7 @@ public class ActionRetrieveWeatherOwmData extends Action {
 
             for (final TourData tour : selectedTours) {
 
-               final boolean isDataRetrieved = TourManager.retrieveWeatherOwmData(tour, intervalSeconds);
+               final boolean isDataRetrieved = TourManager.retrieveWeatherOwmData(tour, intervalSeconds, defaultOWNLatitude, defaultOWNLongitude);
 
                if (isDataRetrieved) {
                   modifiedTours.add(tour);

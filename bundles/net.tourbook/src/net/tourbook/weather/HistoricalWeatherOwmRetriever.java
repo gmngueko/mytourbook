@@ -103,7 +103,9 @@ public class HistoricalWeatherOwmRetriever {
 
       this.tour = tour;
 
-      determineWeatherSearchArea();
+//      if (tour.latitudeSerie != null && tour.longitudeSerie != null) {
+//         determineWeatherSearchArea();
+//      }
       startDate = DateTimeFormatter.ofPattern("yyyy-MM-dd").format(tour.getTourStartTime()); //$NON-NLS-1$
 
       final double roundedStartTime = tour.getTourStartTime().getHour();
@@ -200,10 +202,12 @@ public class HistoricalWeatherOwmRetriever {
 
    /**
     * Retrieves the historical weather data
+    * @param defaultOWNLongitude
+    * @param defaultOWNLatitude
     *
     * @return The weather data, if found.
     */
-   public HistoricalWeatherOwmRetriever retrieveHistoricalWeatherData(final int intervalSeconds) {
+   public HistoricalWeatherOwmRetriever retrieveHistoricalWeatherData(final int intervalSeconds, final double defaultOWNLatitude, final double defaultOWNLongitude) {
 
       if (tour == null) {
          return null;
@@ -243,7 +247,13 @@ public class HistoricalWeatherOwmRetriever {
          if (tour.timeSerie[serieIndex] / intervalSeconds >= jumpIndex || serieIndex == (tour.timeSerie.length - 1)) {
             jumpIndex++;
             final long utcForWeather = utcStartTime + tour.timeSerie[serieIndex];
-            final String rawWeatherData = sendWeatherApiRequest(tour.latitudeSerie[serieIndex], tour.longitudeSerie[serieIndex], utcForWeather);
+            final String rawWeatherData;
+            if (tour.latitudeSerie != null && tour.longitudeSerie != null) {
+               rawWeatherData = sendWeatherApiRequest(tour.latitudeSerie[serieIndex], tour.longitudeSerie[serieIndex], utcForWeather);
+            } else {
+               rawWeatherData = sendWeatherApiRequest(defaultOWNLatitude, defaultOWNLongitude, utcForWeather);
+            }
+
             if (!rawWeatherData.contains("current")) { //$NON-NLS-1$
                return null;
             }
@@ -412,7 +422,7 @@ public class HistoricalWeatherOwmRetriever {
       historicalWeatherData.setTemperatureMax(maxTemperature);
       historicalWeatherData.setTemperatureMin(minTemperature);
       if (numTemperatureDatasets > 0) {
-         historicalWeatherData.setTemperatureAverage((float) Math.ceil((double) sumTemperature / (double) numTemperatureDatasets));
+         historicalWeatherData.setTemperatureAverage(sumTemperature / numTemperatureDatasets);
       }
       if (numWindChillDatasets > 0) {
          historicalWeatherData.setWindChill((int) Math.ceil((double) sumWindChill / (double) numWindChillDatasets));

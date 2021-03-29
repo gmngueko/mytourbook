@@ -148,6 +148,7 @@ public class TourManager {
    public static final String  LOG_RETRIEVE_WEATHER_DATA_001_START             = Messages.Log_RetrieveWeatherData_001_Start;
    public static final String  LOG_RETRIEVE_WEATHER_DATA_002_END               = Messages.Log_RetrieveWeatherData_002_End;
    public static final String  LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE = Messages.Log_RetrieveWeatherData_010_NoGpsDataSeries;
+   public static final String  LOG_RETRIEVE_OWM_WEATHER_USING_DEFAULT_GPS      = Messages.Log_RetrieveOWMWeatherData_010_UsingDefaultGPS;
    //
    public static final String  CUSTOM_DATA_TOUR_DATA                           = "tourData";                                                         //$NON-NLS-1$
    public static final String  CUSTOM_DATA_TOUR_CHART_CONFIGURATION            = "tourChartConfig";                                                  //$NON-NLS-1$
@@ -2482,22 +2483,29 @@ public class TourManager {
 
    /**
     * @param tourData
+    * @param defaultOWNLongitude
+    * @param defaultOWNLatitude
     * @return Returns <code>true</code> when the tour is modified, otherwise <code>false</code>.
     */
-   public static boolean retrieveWeatherOwmData(final TourData tourData, final int intervalSeconds) {
+   public static boolean retrieveWeatherOwmData(final TourData tourData,
+                                                final int intervalSeconds,
+                                                final double defaultOWNLatitude,
+                                                final double defaultOWNLongitude) {
 
-      // ensure data is available
+      // ensure data is available otherwise use default
       if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
 
-         TourLogManager.subLog_Error(
+         TourLogManager.subLog_Info(
                String.format(
                      LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
-                     getTourDateTimeShort(tourData)));
+                     getTourDateTimeShort(tourData) + UI.SPACE1 + LOG_RETRIEVE_OWM_WEATHER_USING_DEFAULT_GPS));
 
-         return false;
+         //return false;
       }
 
-      final OWMWeatherData historicalWeatherData = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(intervalSeconds)
+      final OWMWeatherData historicalWeatherData = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(intervalSeconds,
+            defaultOWNLatitude,
+            defaultOWNLongitude)
             .getHistoricalWeatherData();
       if (historicalWeatherData == null) {
          TourLogManager.subLog_Error(

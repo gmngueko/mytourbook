@@ -109,7 +109,7 @@ public class OWMWeatherData {
             summary += "; "; //$NON-NLS-1$
          }
           summary += "Pressure:"; //$NON-NLS-1$
-          summary += String.format("%d", averagePressure) + "mb"; //$NON-NLS-1$ //$NON-NLS-2$
+          summary += String.format("%d", averagePressure) + "hPa"; //$NON-NLS-1$ //$NON-NLS-2$
       }
       if (OWM_Humidity_Present)
       {
