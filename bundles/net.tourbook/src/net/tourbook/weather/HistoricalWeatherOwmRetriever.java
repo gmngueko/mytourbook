@@ -417,7 +417,7 @@ public class HistoricalWeatherOwmRetriever {
          historicalWeatherData.setWindDirection((int) Math.ceil((double) sumWindDirection / (double) numWindDirectionDatasets));
       }
       if (numWindSpeedDatasets > 0) {
-         historicalWeatherData.setWindSpeed((int) Math.ceil((double) sumWindSpeed / (double) numWindSpeedDatasets));
+         historicalWeatherData.setWindSpeed((int) Math.ceil(sumWindSpeed / numWindSpeedDatasets));
       }
       historicalWeatherData.setTemperatureMax(maxTemperature);
       historicalWeatherData.setTemperatureMin(minTemperature);

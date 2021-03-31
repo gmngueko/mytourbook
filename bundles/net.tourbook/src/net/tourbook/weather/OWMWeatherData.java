@@ -31,7 +31,6 @@ import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
 public class OWMWeatherData {
 
    public float[]                   OWM_Temperature_Serie;
-
    public float[]                   OWM_Temperature_Feel_Serie;
 
    public float[]                   OWM_Clouds_Serie;
@@ -45,6 +44,11 @@ public class OWMWeatherData {
    public float[]                   OWM_Wind_Direction_Serie;
    public float[]                   OWM_Wind_Gust_Serie;
    public float[]                   OWM_Wind_Speed_Serie;
+
+   public float[]                   OWM_Wind_Tail_Serie;
+   public float[]                   OWM_Wind_Cross_Serie;
+   public float[]                   OWM_GPS_Direction_Serie;
+
    boolean                          OWM_Temperature_Present      = false;
    boolean                          OWM_Temperature_Feel_Present = false;
 
@@ -59,6 +63,11 @@ public class OWMWeatherData {
    boolean                          OWM_Wind_Direction_Present   = false;
    boolean                          OWM_Wind_Gust_Present        = false;
    boolean                          OWM_Wind_Speed_Present       = false;
+
+   boolean                          OWM_Wind_Tail_Present        = false;
+   boolean                          OWM_Wind_Cross_Present       = false;
+   boolean                          OWM_GPS_Direction_Present    = false;
+
    Map<String, OWMWeather_Main_Map> OWM_Weather_Map              = new HashMap<>();
 
    int                              intervalRetrievalSeconds     = -1;
@@ -105,21 +114,19 @@ public class OWMWeatherData {
          summary += String.format("%.1f", maxTemperature) + "°C/"; //$NON-NLS-1$ //$NON-NLS-2$
          summary += String.format("%.1f", averageTemperature) + "°C"; //$NON-NLS-1$ //$NON-NLS-2$
       }
-      if (OWM_Pressure_Present)
-      {
-          if (summary.length() > 0) {
+      if (OWM_Pressure_Present) {
+         if (summary.length() > 0) {
             summary += "; "; //$NON-NLS-1$
          }
-          summary += "Pressure:"; //$NON-NLS-1$
-          summary += String.format("%d", averagePressure) + "hPa"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += "Pressure:"; //$NON-NLS-1$
+         summary += String.format("%d", averagePressure) + "hPa"; //$NON-NLS-1$ //$NON-NLS-2$
       }
-      if (OWM_Humidity_Present)
-      {
-          if (summary.length() > 0) {
+      if (OWM_Humidity_Present) {
+         if (summary.length() > 0) {
             summary += "; "; //$NON-NLS-1$
          }
-          summary += "Humidity:"; //$NON-NLS-1$
-          summary += String.format("%d", averageHumidity) + "%"; //$NON-NLS-1$ //$NON-NLS-2$
+         summary += "Humidity:"; //$NON-NLS-1$
+         summary += String.format("%d", averageHumidity) + "%"; //$NON-NLS-1$ //$NON-NLS-2$
       }
       if (OWM_Wind_Speed_Present) {
          if (summary.length() > 0) {
@@ -146,6 +153,81 @@ public class OWMWeatherData {
       }
 
       return summary;
+   }
+
+   public void computeWindTour(final TourData tour, final int intervalSeconds) {
+      OWMWindCompute windResult;
+
+      if (tour.latitudeSerie == null || tour.longitudeSerie == null || !OWM_Wind_Direction_Present || !OWM_Wind_Speed_Present) {
+         return;
+      }
+      if (tour.timeSerie[tour.timeSerie.length - 1] < (2 * OWMUtils.TailWind_Delta_seconds)) {
+         return;//tour duration too short
+      }
+      if (tour.timeSerie.length < 3) {
+         return;//not enough data
+      }
+      if (intervalSeconds <= 0) {
+         return;
+      }
+
+      OWM_Wind_Tail_Serie = new float[tour.timeSerie.length];
+      OWM_Wind_Cross_Serie = new float[tour.timeSerie.length];
+      OWM_GPS_Direction_Serie = new float[tour.timeSerie.length];
+
+      OWM_Wind_Tail_Present = true;
+      OWM_Wind_Cross_Present = true;
+      OWM_GPS_Direction_Present = true;
+
+      int jumpIndex = 0;
+      for (int serieIndex = 0; serieIndex < tour.timeSerie.length; serieIndex++) {
+         if (tour.timeSerie[serieIndex] / intervalSeconds >= jumpIndex || serieIndex == (tour.timeSerie.length - 1)) {
+            jumpIndex++;
+
+            if ((serieIndex >= tour.latitudeSerie.length) || (serieIndex >= tour.longitudeSerie.length)) {
+               continue;
+            }
+
+            final float windDir = OWM_Wind_Direction_Serie[serieIndex];
+            int serieIndex2 = serieIndex + 1;
+            final float windSpeed = OWM_Wind_Speed_Serie[serieIndex];
+
+            if (serieIndex != (tour.timeSerie.length - 1)) {
+               for (int j = serieIndex + 2; j < tour.timeSerie.length; j++) {
+                  if ((tour.timeSerie[j] - tour.timeSerie[serieIndex]) > OWMUtils.TailWind_Delta_seconds) {
+                     break;
+                  } else {
+                     serieIndex2 = j;
+                  }
+               }
+            } else {
+               serieIndex2 = serieIndex - 1;
+               for (int j = serieIndex - 2; j < tour.timeSerie.length; j--) {
+                  if ((tour.timeSerie[serieIndex] - tour.timeSerie[j]) > OWMUtils.TailWind_Delta_seconds) {
+                     break;
+                  } else {
+                     serieIndex2 = j;
+                  }
+               }
+            }
+
+            float latituteStart = (float) tour.latitudeSerie[serieIndex];
+            float latituteEnd = (float) tour.latitudeSerie[serieIndex2];
+            float longitudeStart = (float) tour.longitudeSerie[serieIndex];
+            float longitudeEnd = (float) tour.longitudeSerie[serieIndex2];
+            if (serieIndex == (tour.timeSerie.length - 1)) {
+               latituteStart = (float) tour.latitudeSerie[serieIndex2];
+               latituteEnd = (float) tour.latitudeSerie[serieIndex];
+               longitudeStart = (float) tour.longitudeSerie[serieIndex2];
+               longitudeEnd = (float) tour.longitudeSerie[serieIndex];
+            }
+
+            windResult = OWMWindCompute.computeWind(latituteStart, longitudeStart, latituteEnd, longitudeEnd, windDir, windSpeed);
+            OWM_Wind_Tail_Serie[serieIndex] = windResult.tail;
+            OWM_Wind_Cross_Serie[serieIndex] = windResult.cross;
+            OWM_GPS_Direction_Serie[serieIndex] = windResult.gpsDir;
+         }
+      }
    }
 
    public int getAverageHumidity() {
@@ -242,7 +324,7 @@ public class OWMWeatherData {
       if (newCustTracks == null) {
          newCustTracks = new HashMap<>();
       }
-      if(tourData.customTracksDefinition == null) {
+      if (tourData.customTracksDefinition == null) {
          tourData.customTracksDefinition = new HashMap<>();
       }
 
@@ -362,6 +444,34 @@ public class OWMWeatherData {
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Speed_Unit);
          tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Speed_Serie);
+      }
+
+      if (OWM_Wind_Tail_Present) {
+         customTrackId = OWMUtils.OWM_Wind_Tail_Name + UI.SYMBOL_COLON + OWMUtils.OWM_Wind_Tail_UUID;
+         final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+         customTrackDefinition.setId(customTrackId);
+         customTrackDefinition.setName(OWMUtils.OWM_Wind_Tail_Name);
+         customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Tail_Unit);
+         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustTracks.put(customTrackId, OWM_Wind_Tail_Serie);
+      }
+      if (OWM_Wind_Cross_Present) {
+         customTrackId = OWMUtils.OWM_Wind_Cross_Name + UI.SYMBOL_COLON + OWMUtils.OWM_Wind_Cross_UUID;
+         final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+         customTrackDefinition.setId(customTrackId);
+         customTrackDefinition.setName(OWMUtils.OWM_Wind_Cross_Name);
+         customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Cross_Unit);
+         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustTracks.put(customTrackId, OWM_Wind_Cross_Serie);
+      }
+      if (OWM_GPS_Direction_Present) {
+         customTrackId = OWMUtils.OWM_GPS_Direction_Name + UI.SYMBOL_COLON + OWMUtils.OWM_GPS_Direction_UUID;
+         final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+         customTrackDefinition.setId(customTrackId);
+         customTrackDefinition.setName(OWMUtils.OWM_GPS_Direction_Name);
+         customTrackDefinition.setUnit(OWMUtils.OWM_GPS_Direction_Unit);
+         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustTracks.put(customTrackId, OWM_GPS_Direction_Serie);
       }
 
       customTrackId = OWMUtils.Sensor_Temperature_Name + UI.SYMBOL_COLON + OWMUtils.Sensor_Temperature_UUID;

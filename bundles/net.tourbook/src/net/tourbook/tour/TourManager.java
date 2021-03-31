@@ -2519,7 +2519,8 @@ public class TourManager {
       tourData.setIsWeatherDataFromApi(true);
 
       tourData.setAvgTemperature(historicalWeatherData.getTemperatureAverage());
-      tourData.setWeatherWindSpeed(historicalWeatherData.getWindSpeed());
+      //windspeed is in m/s needs to multiply 3.6 to obtain k/h
+      tourData.setWeatherWindSpeed((int) (historicalWeatherData.getWindSpeed() * 3.6));
       tourData.setWeatherWindDir(historicalWeatherData.getWindDirection());
       tourData.setWeather(historicalWeatherData.getWeatherDescription());
       tourData.setWeatherClouds(historicalWeatherData.getWeatherType());
@@ -2533,6 +2534,8 @@ public class TourManager {
 
       TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import done for interval:" + intervalSeconds);
 
+      //compute tail wind, cross wind, gps diretion of tour with OWM weather info
+      historicalWeatherData.computeWindTour(tourData, intervalSeconds);
       //add cutom tracks series data and replace current temperature if any
       //move current temperature to "Sensor Temperature" custom track data serie if that sensor temperature was not yet present !!
       //to avoid loosing "sensor temperature" !!! So this "sensor temperature" is created only once the first time you do a OWM retrieval
