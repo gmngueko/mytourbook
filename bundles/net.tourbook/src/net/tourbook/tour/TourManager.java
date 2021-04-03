@@ -2483,8 +2483,9 @@ public class TourManager {
 
    /**
     * @param tourData
-    * @param defaultOWNLongitude
+    * @param intervalSeconds
     * @param defaultOWNLatitude
+    * @param defaultOWNLongitude
     * @return Returns <code>true</code> when the tour is modified, otherwise <code>false</code>.
     */
    public static boolean retrieveWeatherOwmData(final TourData tourData,

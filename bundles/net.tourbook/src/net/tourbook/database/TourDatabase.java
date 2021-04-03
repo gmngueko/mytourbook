@@ -3848,6 +3848,12 @@ public class TourDatabase {
             //
             // version 38 end ---------
 
+            // TourTag extraData start
+            //
+            + "   extraData             BLOB(2G)                                          \n" //$NON-NLS-1$
+            //
+            // TourTag extraData end ---------
+
             //
             + ")"); //$NON-NLS-1$
 
@@ -4372,6 +4378,22 @@ public class TourDatabase {
                         splashManager.getShell(),
                         Messages.tour_database_version_info_title,
                         NLS.bind(Messages.Tour_Database_UpdateInfo, _dbDesignVersion_Old, _dbDesignVersion_New));
+               }
+
+               try (Connection conn = getConnection_Simple()) {
+                  if (updateDb_TourTag_AddColumn_ExtraData(conn) == true) {
+                     // display info for the successful update of TourTag table with 'extraData' column
+
+                     MessageDialog.openInformation(
+                           splashManager.getShell(),
+                           Messages.tour_database_version_info_title,
+                           Messages.Tour_Database_UpdateInfo_TourTag_ExtraData);
+                  }
+               } catch (final Exception exc) {
+                  MessageDialog.openInformation(
+                        splashManager.getShell(),
+                        Messages.tour_database_version_info_title,
+                        Messages.Tour_Database_UpdateInfo_TourTag_ExtraData_Exception);
                }
 
                splashManager.setMessage(Messages.App_SplashMessage_Finalize);
@@ -8146,6 +8168,44 @@ public class TourDatabase {
             em.close();
          }
       });
+   }
+
+   /**
+    * Add Column {@link TourTag#extraData} blob.
+    *
+    * @param conn
+    * @throws SQLException
+    */
+   private boolean updateDb_TourTag_AddColumn_ExtraData(final Connection conn) throws SQLException {
+
+      final DatabaseMetaData meta = conn.getMetaData();
+
+      final ResultSet rsColumns = meta.getColumns(null, TABLE_SCHEMA, TABLE_TOUR_TAG, "EXTRADATA"); //$NON-NLS-1$
+
+      while (rsColumns.next()) {
+         final String name = rsColumns.getString("COLUMN_NAME");
+         if (name.compareToIgnoreCase("extraData") == 0) {
+            return false;//column exist already
+         }
+      }
+      /*
+       * Add this column to contain extra (non searchable at this point) data to TourTag
+       * extra info like Maintenance info (date purchased, cost of maintenance, schedule of
+       * maintenance
+       * and other in the future ...
+       */
+
+      String sql;
+      final Statement stmt = conn.createStatement();
+      {
+         // ALTER TABLE TourTag AD COLUMN ExtraData BLOB(2G)
+
+         sql = "ALTER TABLE " + TABLE_TOUR_TAG + " ADD COLUMN extraData   BLOB(2G)"; //$NON-NLS-1$ //$NON-NLS-2$
+         exec(stmt, sql);
+      }
+      stmt.close();
+
+      return true;
    }
 
    private void updateMonitor(final SplashManager splashManager, final int newDbVersion) {

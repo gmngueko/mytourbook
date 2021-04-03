@@ -75,10 +75,29 @@ public class TourTag implements Cloneable, Comparable<Object> {
    private String notes;                                        // db-version 38
 
    /**
+    * Extra informations:Maintenance,... A BLOB CANNOT BE MULTIPLE !
+    */
+   @Basic(optional = false)
+   private ExtraData extraData;
+
+   /**
     * When a tag is expanded in the tag tree viewer, the tours can be displayed in different
     * structures
     */
-   private int    expandType = EXPAND_TYPE_FLAT;
+   private int                 expandType = EXPAND_TYPE_FLAT;
+
+   /**
+    * Contains all tours which are associated with this tag
+    */
+   @ManyToMany(mappedBy = "tourTags", cascade = ALL, fetch = LAZY)
+   private final Set<TourData> tourData   = new HashSet<>();
+
+   /**
+    * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not
+    * persisted
+    */
+   @Transient
+   private long                _createId = 0;
 
 //   /**
 //    * A tag belongs to <b>ONE</b> category and not to many as it was implemented in version 14.4
@@ -97,19 +116,6 @@ public class TourTag implements Cloneable, Comparable<Object> {
 //    */
 //   @ManyToOne()
 //   private TourTagCategory      tourTagCategory;
-
-   /**
-    * Contains all tours which are associated with this tag
-    */
-   @ManyToMany(mappedBy = "tourTags", cascade = ALL, fetch = LAZY)
-   private final Set<TourData> tourData  = new HashSet<>();
-
-   /**
-    * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not
-    * persisted
-    */
-   @Transient
-   private long                _createId = 0;
 
    public TourTag() {}
 
@@ -177,6 +183,10 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
    public int getExpandType() {
       return expandType;
+   }
+
+   public ExtraData getExtraData() {
+      return extraData;
    }
 
    /**
@@ -261,6 +271,10 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
    public void setExpandType(final int expandType) {
       this.expandType = expandType;
+   }
+
+   public void setExtraData(final ExtraData extraData) {
+      this.extraData = extraData;
    }
 
    public void setNotes(final String notes) {

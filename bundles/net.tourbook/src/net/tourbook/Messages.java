@@ -2372,6 +2372,8 @@ public class Messages extends NLS {
    public static String Tour_Database_Update_TourWeek;
    public static String Tour_Database_UpdateDone;
    public static String Tour_Database_UpdateInfo;
+   public static String Tour_Database_UpdateInfo_TourTag_ExtraData;
+   public static String Tour_Database_UpdateInfo_TourTag_ExtraData_Exception;
 
    public static String Tour_Editor_Decorator_TimeZone_Tooltip;
    public static String Tour_Editor_Dialog_DeleteSwimTimeSlices_Message;
