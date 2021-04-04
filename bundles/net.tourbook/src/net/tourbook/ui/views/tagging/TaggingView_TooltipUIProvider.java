@@ -46,20 +46,22 @@ import org.eclipse.swt.widgets.ToolBar;
 
 public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
 
-   private static final String APP_ACTION_CLOSE_TOOLTIP = net.tourbook.common.Messages.App_Action_Close_Tooltip;
+   private static final String      APP_ACTION_CLOSE_TOOLTIP = net.tourbook.common.Messages.App_Action_Close_Tooltip;
 
-   private static final int    SHELL_MARGIN             = 5;
-   private static final int    MAX_DATA_WIDTH           = 300;
+   private static final int         SHELL_MARGIN             = 5;
+   private static final int         MAX_DATA_WIDTH           = 300;
 
-   private Object              _viewerCellData;
+   private Object                   _viewerCellData;
 
-   private IToolTipProvider    _toolTipProvider;
+   private IToolTipProvider         _toolTipProvider;
 
-   private ActionCloseTooltip  _actionCloseTooltip;
-   private ActionEditTag       _actionEditTag;
+   private ActionCloseTooltip       _actionCloseTooltip;
+   private ActionEditTag            _actionEditTag;
 
-   private boolean             _hasNotes;
-   private String              _content_Notes;
+   private ActionEditTagMaintenance _actionEditTagMaintenance;
+
+   private boolean                  _hasNotes;
+   private String                   _content_Notes;
 
    /*
     * UI resources
@@ -110,6 +112,27 @@ public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
          _toolTipProvider.hideToolTip();
 
          _taggingView.editTag(_viewerCellData);
+      }
+   }
+
+   private class ActionEditTagMaintenance extends Action {
+
+      public ActionEditTagMaintenance() {
+
+         super(null, Action.AS_PUSH_BUTTON);
+
+         setToolTipText(Messages.Action_Tag_EditMaintenance_Tooltip);
+
+         setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Edit));
+         setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.EditTour_Disabled));
+      }
+
+      @Override
+      public void run() {
+
+         _toolTipProvider.hideToolTip();
+
+         _taggingView.editTagMaintenance(_viewerCellData);
       }
    }
 
@@ -214,6 +237,9 @@ public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
 
       _actionEditTag = new ActionEditTag();
       tbm.add(_actionEditTag);
+
+      _actionEditTagMaintenance = new ActionEditTagMaintenance();
+      tbm.add(_actionEditTagMaintenance);
 
       /**
        * The close action is ALWAYS visible, sometimes there is a bug that the tooltip do not

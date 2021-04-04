@@ -312,6 +312,7 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
       name = modifiedTourTag.name;
       notes = modifiedTourTag.notes;
+      extraData = modifiedTourTag.extraData;
    }
 
 }

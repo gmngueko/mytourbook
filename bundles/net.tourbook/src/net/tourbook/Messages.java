@@ -427,6 +427,9 @@ public class Messages extends NLS {
    public static String        Action_Tag_Save_Tooltip;
    public static String        Action_Tag_SetTags;
 
+   public static String        Action_Tag_EditMaintenance;
+   public static String        Action_Tag_EditMaintenance_Tooltip;
+
    public static String        Action_TagCategory_Edit;
    public static String        Action_TagCategory_Edit_Tooltip;
    public static String        Action_TagCategory_EditCategory;
@@ -856,6 +859,11 @@ public class Messages extends NLS {
    public static String        Dialog_TourTag_Label_Notes;
    public static String        Dialog_TourTag_Label_TagName;
    public static String        Dialog_TourTag_Title;
+
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExtraHour;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExtraMonth;
+   public static String        Dialog_TourTag_MaintenanceTag_Message;
+   public static String        Dialog_TourTag_MaintenanceTag_Title;
 
    public static String        Dialog_TourTagCategory_EditCategory_Message;
    public static String        Dialog_TourTagCategory_EditCategory_Title;

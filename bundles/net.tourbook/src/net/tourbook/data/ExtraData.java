@@ -22,7 +22,7 @@ import java.io.Serializable;
  * data like Maintenace info, etc...
  * those data are non searchable just extra informations
  */
-public class ExtraData implements Serializable {
+public class ExtraData implements Cloneable, Serializable {
 
    /**
     *
@@ -31,6 +31,20 @@ public class ExtraData implements Serializable {
 
    private TourTagMaintenance maintenanceInfo;
 
+   @Override
+   public ExtraData clone() {
+
+      ExtraData newExtraData = null;
+
+      try {
+         newExtraData = (ExtraData) super.clone();
+      } catch (final CloneNotSupportedException e) {
+         e.printStackTrace();
+      }
+
+      return newExtraData;
+   }
+
    public TourTagMaintenance getMaintenanceInfo() {
       return maintenanceInfo;
    }
@@ -38,5 +52,4 @@ public class ExtraData implements Serializable {
    public void setMaintenanceInfo(final TourTagMaintenance maintenanceInfo) {
       this.maintenanceInfo = maintenanceInfo;
    }
-
 }

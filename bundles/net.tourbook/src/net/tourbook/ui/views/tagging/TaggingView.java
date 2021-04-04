@@ -220,6 +220,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private ActionCollapseOthers                _actionCollapseOthers;
    private ActionEditQuick                     _actionEditQuick;
    private ActionEditTag                       _actionEditTag;
+   private ActionEditTagMaintenance            _actionEditTagMaintenance;
    private ActionEditTour                      _actionEditTour;
    private ActionExpandSelection               _actionExpandSelection;
    private ActionExport                        _actionExportTour;
@@ -678,6 +679,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
       _actionOpenTour = new ActionOpenTour(this);
       _actionRefreshView = new ActionRefreshView(this);
       _actionEditTag = new ActionEditTag(this);
+      _actionEditTagMaintenance = new ActionEditTagMaintenance(this);
       _actionSetAllTagStructures = new ActionMenuSetAllTagStructures(this);
       _actionSetTagStructure = new ActionMenuSetTagStructure(this);
       _actionSetTourType = new ActionSetTourTypeMenu(this);
@@ -1510,6 +1512,11 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
       _actionEditTag.editTag(viewerCellData);
    }
 
+   void editTagMaintenance(final Object viewerCellData) {
+
+      _actionEditTagMaintenance.editTag(viewerCellData);
+   }
+
    private void enableActions(final boolean isIterateTours) {
 
       final StructuredSelection selection = (StructuredSelection) _tagViewer.getSelection();
@@ -1584,17 +1591,26 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
             _actionEditTag.setText(Messages.Action_Tag_Edit);
             _actionEditTag.setEnabled(true);
 
+            _actionEditTagMaintenance.setText(Messages.Action_Tag_EditMaintenance);
+            _actionEditTagMaintenance.setEnabled(true);
+
          } else if (isCategorySelected) {
 
             _actionEditTag.setText(Messages.Action_TagCategory_Edit);
             _actionEditTag.setEnabled(true);
 
+            _actionEditTagMaintenance.setEnabled(false);
+
          } else {
             _actionEditTag.setEnabled(false);
+
+            _actionEditTagMaintenance.setEnabled(false);
          }
 
       } else {
          _actionEditTag.setEnabled(false);
+
+         _actionEditTagMaintenance.setEnabled(false);
       }
 
       /*
@@ -1652,6 +1668,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
 
       menuMgr.add(new Separator());
       menuMgr.add(_actionEditTag);
+      menuMgr.add(_actionEditTagMaintenance);
       menuMgr.add(_actionSetTagStructure);
       menuMgr.add(_actionSetAllTagStructures);
       menuMgr.add(_actionOpenTagPrefs);

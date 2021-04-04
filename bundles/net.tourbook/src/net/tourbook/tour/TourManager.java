@@ -2451,7 +2451,11 @@ public class TourManager {
          return false;
       }
 
-      final WeatherData historicalWeatherData = new HistoricalWeatherRetriever(tourData).retrieveHistoricalWeatherData().getHistoricalWeatherData();
+      final HistoricalWeatherRetriever historicalWeatherRetriever = new HistoricalWeatherRetriever(tourData).retrieveHistoricalWeatherData();
+      WeatherData historicalWeatherData = null;
+      if(historicalWeatherRetriever != null) {
+         historicalWeatherData = historicalWeatherRetriever.getHistoricalWeatherData();
+      }
       if (historicalWeatherData == null) {
          TourLogManager.subLog_Error(
                NLS.bind(
@@ -2504,10 +2508,14 @@ public class TourManager {
          //return false;
       }
 
-      final OWMWeatherData historicalWeatherData = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(intervalSeconds,
+      final HistoricalWeatherOwmRetriever historicalWeatherOwmRetriever = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(
+            intervalSeconds,
             defaultOWNLatitude,
-            defaultOWNLongitude)
-            .getHistoricalWeatherData();
+            defaultOWNLongitude);
+      OWMWeatherData historicalWeatherData = null;
+      if (historicalWeatherOwmRetriever != null) {
+         historicalWeatherData = historicalWeatherOwmRetriever.getHistoricalWeatherData();
+      }
       if (historicalWeatherData == null) {
          TourLogManager.subLog_Error(
                NLS.bind(

@@ -18,34 +18,52 @@ package net.tourbook.data;
 import java.io.Serializable;
 import java.util.TreeMap;
 
-public class TourTagMaintenance implements Serializable {
+import net.tourbook.ui.UI;
+
+public class TourTagMaintenance implements Cloneable, Serializable {
 
    /**
     *
     */
    private static final long                serialVersionUID = 314756931007979108L;
 
-   private int                              extraHourUsed;
-   private int                              extraMonthUsage;
+   private int                             extraHourUsed           = 0;
+   private int                             extraMonthUsage         = 0;
 
-   private TreeMap<Long, MaintenanceEvent> sorted           = new TreeMap<>();
+   private TreeMap<Long, MaintenanceEvent> sortedEventsMaintenance           = new TreeMap<>();
 
-   public class MaintenanceEvent implements Serializable {
+   public class MaintenanceEvent implements Cloneable, Serializable {
 
       /**
        *
        */
       private static final long serialVersionUID = -3716703585072557410L;
 
-      public long               eventEpochTime;
-      public float              cost;
-      public String             notes;
-      public float              metersTotalUsed;
-      public long               secondsTotalUsed;
+      public long               eventEpochTime   = 0;
+      public float              cost             = 0;
+      public String             notes            = UI.EMPTY_STRING;
+      public float              metersTotalUsed  = 0;
+      public long               secondsTotalUsed = 0;
    }
 
    public void addEvent(final Long utcTime, final MaintenanceEvent newEvent) {
-      sorted.put(utcTime, newEvent);
+      sortedEventsMaintenance.put(utcTime, newEvent);
+   }
+
+   @Override
+   public TourTagMaintenance clone() {
+
+      TourTagMaintenance newTourTagMaintenance = null;
+
+      try {
+         newTourTagMaintenance = (TourTagMaintenance) super.clone();
+         newTourTagMaintenance.sortedEventsMaintenance = new TreeMap<>();
+         newTourTagMaintenance.sortedEventsMaintenance.putAll(sortedEventsMaintenance);
+      } catch (final CloneNotSupportedException e) {
+         e.printStackTrace();
+      }
+
+      return newTourTagMaintenance;
    }
 
    public int getExtraHourUsed() {
@@ -56,8 +74,8 @@ public class TourTagMaintenance implements Serializable {
       return extraMonthUsage;
    }
 
-   public TreeMap<Long, MaintenanceEvent> getSorted() {
-      return sorted;
+   public TreeMap<Long, MaintenanceEvent> getSortedEventsMaintenance() {
+      return sortedEventsMaintenance;
    }
 
    public void setExtraHourUsed(final int extraHourUsed) {
@@ -68,7 +86,7 @@ public class TourTagMaintenance implements Serializable {
       this.extraMonthUsage = extraMonthUsage;
    }
 
-   public void setSorted(final TreeMap<Long, MaintenanceEvent> sorted) {
-      this.sorted = sorted;
+   public void setSortedEventsMaintenance(final TreeMap<Long, MaintenanceEvent> sorted) {
+      this.sortedEventsMaintenance = sorted;
    }
 }

@@ -39,6 +39,7 @@ import net.tourbook.data.TourTagCategory;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.tag.Dialog_TourTag;
 import net.tourbook.tag.Dialog_TourTag_Category;
+import net.tourbook.tag.Dialog_TourTag_Maintenance;
 import net.tourbook.tag.TVIPrefTag;
 import net.tourbook.tag.TVIPrefTagCategory;
 import net.tourbook.tag.TVIPrefTagRoot;
@@ -156,6 +157,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    private Button  _btnNewTag;
    private Button  _btnNewTagCategory;
    private Button  _btnReset;
+
+   private Button  _btnEditTagMaintenance;
 
    private class Action_DeleteTag extends Action {
 
@@ -589,6 +592,21 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
             });
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnEditTagOrCategory);
          }
+
+         {
+            // Button: edit tag maintenance
+
+            _btnEditTagMaintenance = new Button(container, SWT.NONE);
+            _btnEditTagMaintenance.setText(Messages.Action_Tag_EditMaintenance);
+            _btnEditTagMaintenance.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  onAction_Edit_TagMaintenance();
+               }
+            });
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnEditTagMaintenance);
+         }
+
          {
             // Button: reset
 
@@ -770,7 +788,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       int numCategorys = 0;
       int numOtherItems = 0;
 
-      for (Object treeItem : selection) {
+      for (final Object treeItem : selection) {
 
          if (treeItem instanceof TVIPrefTag) {
             numTags++;
@@ -789,6 +807,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       _btnNewTag.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
       _btnNewTagCategory.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
 
+      //_btnEditTagMaintenance.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
+
       final boolean isOneItemSelected = selection.size() == 1;
       if (isOneItemSelected) {
 
@@ -796,6 +816,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
             _btnEditTagOrCategory.setText(Messages.Action_Tag_Edit);
             _btnEditTagOrCategory.setEnabled(true);
+
+            _btnEditTagMaintenance.setEnabled(true);
 
          } else if (isCategorySelected) {
 
@@ -806,6 +828,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       } else {
 
          _btnEditTagOrCategory.setEnabled(false);
+
+         _btnEditTagMaintenance.setEnabled(false);
       }
 
       _btnReset.setEnabled(true);
@@ -941,6 +965,45 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       }
 
       setFocusToViewer();
+   }
+
+   /**
+    * Edit Maintenance for selected tag
+    */
+   private void onAction_Edit_TagMaintenance() {
+      final Object firstElement = _tagViewer.getStructuredSelection().getFirstElement();
+
+      String dlgMessage = UI.EMPTY_STRING;
+
+      if (firstElement instanceof TVIPrefTag) {
+
+         final TVIPrefTag tourTagItem = ((TVIPrefTag) firstElement);
+         final TourTag tourTag = tourTagItem.getTourTag();
+
+         dlgMessage = NLS.bind(Messages.Dialog_TourTag_MaintenanceTag_Message, tourTag.getTagName());
+
+         if (new Dialog_TourTag_Maintenance(getShell(), dlgMessage, tourTag).open() != Window.OK) {
+
+            setFocusToViewer();
+
+            return;
+         }
+
+         // update model
+         TourDatabase.saveEntity(tourTag, tourTag.getTagId(), TourTag.class);
+
+         // update UI
+         _tagViewer.update(tourTagItem, new String[] { SORT_PROPERTY });
+
+      } else {
+         return;
+      }
+
+      _isModified = true;
+
+      setFocusToViewer();
+
+      return;
    }
 
    /**
