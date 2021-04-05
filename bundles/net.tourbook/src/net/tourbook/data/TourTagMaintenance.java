@@ -18,8 +18,6 @@ package net.tourbook.data;
 import java.io.Serializable;
 import java.util.TreeMap;
 
-import net.tourbook.ui.UI;
-
 public class TourTagMaintenance implements Cloneable, Serializable {
 
    /**
@@ -28,26 +26,12 @@ public class TourTagMaintenance implements Cloneable, Serializable {
    private static final long                serialVersionUID = 314756931007979108L;
 
    private int                             extraHourUsed           = 0;
-   private int                             extraMonthUsage         = 0;
+   private int                             extraLifeMonthUsage         = 0;
 
    private TreeMap<Long, MaintenanceEvent> sortedEventsMaintenance           = new TreeMap<>();
 
-   public class MaintenanceEvent implements Cloneable, Serializable {
-
-      /**
-       *
-       */
-      private static final long serialVersionUID = -3716703585072557410L;
-
-      public long               eventEpochTime   = 0;
-      public float              cost             = 0;
-      public String             notes            = UI.EMPTY_STRING;
-      public float              metersTotalUsed  = 0;
-      public long               secondsTotalUsed = 0;
-   }
-
-   public void addEvent(final Long utcTime, final MaintenanceEvent newEvent) {
-      sortedEventsMaintenance.put(utcTime, newEvent);
+   public MaintenanceEvent addEvent(final Long utcTime, final MaintenanceEvent newEvent) {
+      return sortedEventsMaintenance.put(utcTime, newEvent);
    }
 
    @Override
@@ -70,20 +54,24 @@ public class TourTagMaintenance implements Cloneable, Serializable {
       return extraHourUsed;
    }
 
-   public int getExtraMonthUsage() {
-      return extraMonthUsage;
+   public int getExtraLifeMonthUsage() {
+      return extraLifeMonthUsage;
    }
 
    public TreeMap<Long, MaintenanceEvent> getSortedEventsMaintenance() {
       return sortedEventsMaintenance;
    }
 
+   public MaintenanceEvent removeEvent(final Long utcTime) {
+      return sortedEventsMaintenance.remove(utcTime);
+   }
+
    public void setExtraHourUsed(final int extraHourUsed) {
       this.extraHourUsed = extraHourUsed;
    }
 
-   public void setExtraMonthUsage(final int extraMonthUsage) {
-      this.extraMonthUsage = extraMonthUsage;
+   public void setExtraLifeMonthUsage(final int extraMonthUsage) {
+      this.extraLifeMonthUsage = extraMonthUsage;
    }
 
    public void setSortedEventsMaintenance(final TreeMap<Long, MaintenanceEvent> sorted) {
