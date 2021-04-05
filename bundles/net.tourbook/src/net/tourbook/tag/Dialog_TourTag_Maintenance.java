@@ -15,6 +15,8 @@
  *******************************************************************************/
 package net.tourbook.tag;
 
+import java.util.Calendar;
+
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.data.ExtraData;
@@ -27,13 +29,24 @@ import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
+import org.joda.time.DateTime;
 
 /**
  * Dialog to modify Maintenace a {@link TourTag}
@@ -56,6 +69,14 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
    private Text _txtName;
    private Text _txtExtraHours;
    private Text _txtExtraMonths;
+
+   private Text _txtEventNotes;
+   private Text _txtEventCost;
+
+   private org.eclipse.swt.widgets.DateTime _eventDate;
+
+   private Button _buttonAddEvent;
+   private Button _buttonDeleteEvents;
 
    public Dialog_TourTag_Maintenance(final Shell parentShell, final String dlgMessage, final TourTag tourTag) {
 
@@ -118,6 +139,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
 
    private void createUI(final Composite parent) {
 
+      //Global Maintenance info
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
       GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
@@ -189,20 +211,175 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
                }
             });
          }
-         /*
-          * {
-          * // Text: Notes
-          * final Label label = new Label(container, SWT.NONE);
-          * label.setText(Messages.Dialog_TourTag_Label_Notes);
-          * GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(label);
-          * _txtNotes = new Text(container, SWT.BORDER | SWT.WRAP | SWT.MULTI | SWT.V_SCROLL |
-          * SWT.H_SCROLL);
-          * GridDataFactory.fillDefaults()
-          * .grab(true, true)
-          * .hint(convertWidthInCharsToPixels(100), convertHeightInCharsToPixels(20))
-          * .applyTo(_txtNotes);
-          * }
-          */
+      }
+      //Table List of Events
+      final Composite containerEventList = new Composite(parent, SWT.BORDER);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(containerEventList);
+      GridLayoutFactory.swtDefaults().numColumns(1).applyTo(containerEventList);
+      {
+         final Label label = new Label(containerEventList, SWT.NONE);
+         label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventList);
+         GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+         final Table table = new Table(containerEventList, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
+         table.setLinesVisible(true);
+         table.setHeaderVisible(true);
+         final GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
+         data.heightHint = 100;
+         table.setLayoutData(data);
+
+         final String[] titles = { Messages.Dialog_TourTag_Label_TagMaintenance_EventSelected,
+               Messages.Dialog_TourTag_Label_TagMaintenance_EventDate, Messages.Dialog_TourTag_Label_TagMaintenance_EventCost,
+               Messages.Dialog_TourTag_Label_TagMaintenance_EventMeterUsed, Messages.Dialog_TourTag_Label_TagMaintenance_EventMeterUsedDifference,
+               Messages.Dialog_TourTag_Label_TagMaintenance_EventTimeUsed, Messages.Dialog_TourTag_Label_TagMaintenance_EventTimeUsedDifference,
+               Messages.Dialog_TourTag_Label_TagMaintenance_EventNotes };
+         for (int i = 0; i < titles.length; i++) {
+            final TableColumn column = new TableColumn(table, SWT.NONE);
+            column.setText(titles[i]);
+            table.getColumn(i).pack();
+         }
+
+         for (int i = 0; i <= 10; i++) {
+            final TableItem item = new TableItem(table, SWT.NONE);
+            item.setText(1, DateTime.now().plusDays(i).toString());
+            item.setText(2, String.valueOf(153.7 + i));
+            item.setText(3, String.valueOf(200 + i));
+            item.setText(4, String.valueOf(100 + i));
+            item.setText(5, "100:00:00");
+            item.setText(6, "50:00:00");
+            item.setText(7, "Test Notes.....");
+            final TableEditor editor = new TableEditor(table);
+            final Button button = new Button(table, SWT.CHECK);
+            button.setData(i);
+            button.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  final Button button = (Button) e.widget;
+                  if (button.getSelection()) {
+                     System.out.println(" Maintenance check for True:" + button.getData());
+                  } else {
+                     System.out.println(" Maintenance check for False:" + button.getData());
+                  }
+               }
+            });
+            button.pack();
+            editor.minimumWidth = button.getSize().x;
+            editor.horizontalAlignment = SWT.LEFT;
+            editor.setEditor(button, item, 0);
+         }
+
+         for (int i = 0; i < titles.length; i++) {
+            table.getColumn(i).pack();
+         }
+         containerEventList.pack();
+
+         {
+            //Add Event Button
+            _buttonDeleteEvents = new Button(containerEventList, SWT.NONE);
+            _buttonDeleteEvents.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventDelete);
+            _buttonDeleteEvents.addListener(SWT.Selection, new Listener() {
+               @Override
+               public void handleEvent(final Event e) {
+                  switch (e.type) {
+                  case SWT.Selection:
+                     System.out.println("Delete Maintenance Events Button pressed");
+                     break;
+                  }
+               }
+            });
+         }
+      }
+      //Specific Event Maintenance info to Add
+      final Composite containerEvent = new Composite(parent, SWT.BORDER);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(containerEvent);
+      GridLayoutFactory.swtDefaults().numColumns(1).applyTo(containerEvent);
+      {
+         {
+            //Add Event Button
+            _buttonAddEvent = new Button(containerEvent, SWT.NONE);
+            _buttonAddEvent.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventAdd);
+            _buttonAddEvent.addListener(SWT.Selection, new Listener() {
+               @Override
+               public void handleEvent(final Event e) {
+                  switch (e.type) {
+                  case SWT.Selection:
+                     final Calendar cal = Calendar.getInstance();
+                     cal.set(_eventDate.getYear(),
+                           _eventDate.getMonth(),
+                           _eventDate.getDay(),
+                           _eventDate.getHours(),
+                           _eventDate.getMinutes());
+                     System.out.println("Add Maintenance Event Button pressed for:" + cal.toString() + ";" + _eventDate.toString());
+                     break;
+                  }
+               }
+            });
+         }
+         final Composite containerEventDateCost = new Composite(containerEvent, SWT.NONE);
+         GridDataFactory.fillDefaults().grab(true, true).applyTo(containerEventDateCost);
+         GridLayoutFactory.swtDefaults().numColumns(4).applyTo(containerEventDateCost);
+         {
+            // Text: Event Cost
+
+            final Label label = new Label(containerEventDateCost, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventCost);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtEventCost = new Text(containerEventDateCost, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtEventCost);
+
+            _txtEventCost.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Maintenance Event Date
+
+            final Label label = new Label(containerEventDateCost, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventDate);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _eventDate = new org.eclipse.swt.widgets.DateTime(containerEventDateCost, SWT.DATE);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_eventDate);
+            final Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(System.currentTimeMillis());
+            //init event date to today/now
+            _eventDate.setYear(cal.get(Calendar.YEAR));
+            _eventDate.setMonth(cal.get(Calendar.MONTH));
+            _eventDate.setDay(cal.get(Calendar.DAY_OF_MONTH));
+         }
+         final Composite containerEventNotes = new Composite(containerEvent, SWT.NONE);
+         GridDataFactory.fillDefaults().grab(true, true).applyTo(containerEventNotes);
+         GridLayoutFactory.swtDefaults().numColumns(2).applyTo(containerEventNotes);
+         {
+            // Text: Event Notes
+            final Label label = new Label(containerEventNotes, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventNotes);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(label);
+            _txtEventNotes = new Text(containerEventNotes,
+                  SWT.BORDER | SWT.WRAP | SWT.MULTI | SWT.V_SCROLL |
+                        SWT.H_SCROLL);
+            GridDataFactory.fillDefaults()
+                  .grab(true, true)
+                  .hint(convertWidthInCharsToPixels(100), convertHeightInCharsToPixels(20) / 4)
+                  .applyTo(_txtEventNotes);
+         }
+
       }
    }
 

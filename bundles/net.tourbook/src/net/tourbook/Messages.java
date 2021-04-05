@@ -860,6 +860,17 @@ public class Messages extends NLS {
    public static String        Dialog_TourTag_Label_TagName;
    public static String        Dialog_TourTag_Title;
 
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventAdd;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventDelete;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventList;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventCost;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventDate;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventNotes;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventMeterUsed;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventMeterUsedDifference;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventTimeUsed;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventTimeUsedDifference;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventSelected;
    public static String        Dialog_TourTag_Label_TagMaintenance_ExtraHour;
    public static String        Dialog_TourTag_Label_TagMaintenance_ExtraMonth;
    public static String        Dialog_TourTag_MaintenanceTag_Message;
