@@ -16,17 +16,22 @@
 package net.tourbook.tag;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.persistence.EntityManager;
+
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.data.ExtraData;
 import net.tourbook.data.MaintenanceEvent;
+import net.tourbook.data.TourData;
 import net.tourbook.data.TourTag;
 import net.tourbook.data.TourTagMaintenance;
+import net.tourbook.database.TourDatabase;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
@@ -39,10 +44,12 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
@@ -81,10 +88,12 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
 
    private Button                           _buttonAddEvent;
    private Button                           _buttonDeleteEvents;
+   private Button                           _buttonComputeEventsData;
 
    private Composite                        _containerEventList;
    private Table                            _tableEvents;
    private String[]                         _titleEvents = { Messages.Dialog_TourTag_Label_TagMaintenance_EventSelected,
+         Messages.Dialog_TourTag_Label_TagMaintenance_EventNumberOfTours, Messages.Dialog_TourTag_Label_TagMaintenance_EventNumberOfToursDiff,
          Messages.Dialog_TourTag_Label_TagMaintenance_EventDate, Messages.Dialog_TourTag_Label_TagMaintenance_EventCost,
          Messages.Dialog_TourTag_Label_TagMaintenance_EventMeterUsed, Messages.Dialog_TourTag_Label_TagMaintenance_EventMeterUsedDifference,
          Messages.Dialog_TourTag_Label_TagMaintenance_EventTimeUsed, Messages.Dialog_TourTag_Label_TagMaintenance_EventTimeUsedDifference,
@@ -232,16 +241,17 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
          final Label label = new Label(_containerEventList, SWT.NONE);
          label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventList);
          GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
-
+         final Color headerColor = Display.getDefault().getSystemColor(SWT.COLOR_GRAY);
          _tableEvents = new Table(_containerEventList, SWT.SINGLE | SWT.BORDER | SWT.FULL_SELECTION | SWT.V_SCROLL);
          _tableEvents.setLinesVisible(true);
          _tableEvents.setHeaderVisible(true);
+         _tableEvents.setHeaderBackground(headerColor);
          final GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
          data.heightHint = 100;
          _tableEvents.setLayoutData(data);
 
          for (int i = 0; i < _titleEvents.length; i++) {
-            final TableColumn column = new TableColumn(_tableEvents, SWT.NONE);
+            final TableColumn column = new TableColumn(_tableEvents, SWT.RIGHT);
             column.setText(_titleEvents[i]);
             _tableEvents.getColumn(i).pack();
          }
@@ -276,7 +286,6 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
                public void handleEvent(final Event e) {
                   switch (e.type) {
                   case SWT.Selection:
-                     //System.out.println("Delete Maintenance Events Button pressed");
                      ExtraData extraData = _tourTag_Clone.getExtraData();
                      if (extraData == null) {
                         extraData = new ExtraData();
@@ -297,6 +306,62 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
                         }
                      }
                      restoreState();
+                     break;
+                  }
+               }
+            });
+         }
+         {
+            //Compute Event Data Button
+            _buttonComputeEventsData = new Button(_containerEventList, SWT.NONE);
+            _buttonComputeEventsData.setText(Messages.Dialog_TourTag_Label_TagMaintenance_EventComputeData);
+            _buttonComputeEventsData.addListener(SWT.Selection, new Listener() {
+               @Override
+               public void handleEvent(final Event e) {
+                  switch (e.type) {
+                  case SWT.Selection:
+                     ExtraData extraData = _tourTag_Clone.getExtraData();
+                     if (extraData == null) {
+                        extraData = new ExtraData();
+                        _tourTag_Clone.setExtraData(extraData);
+                     }
+                     TourTagMaintenance maintenance = extraData.getMaintenanceInfo();
+                     if (maintenance == null) {
+                        maintenance = new TourTagMaintenance();
+                        extraData.setMaintenanceInfo(maintenance);
+                     }
+                     final ArrayList<Long> taggedTours = TagManager.getTaggedTours(_tourTag_Clone);
+                     final ArrayList<TourData> taggedTourDatas = new ArrayList<>();
+                     if (taggedTours.size() > 0) {
+                        final EntityManager em = TourDatabase.getInstance().getEntityManager();
+                        // loop: all tours
+                        for (final Long tourId : taggedTours) {
+                           final TourData tourData = em.find(TourData.class, tourId);
+                           if (tourData != null) {
+                              tourData.convertDataSeries();
+                              taggedTourDatas.add(tourData);
+                           }
+                        }
+                        for (final Map.Entry<Long, MaintenanceEvent> eventEntry : maintenance.getSortedEventsMaintenance().entrySet()) {
+                           final Long key = eventEntry.getKey();
+                           final MaintenanceEvent value = eventEntry.getValue();
+                           value.numTours = 0;
+                           value.metersTotalUsed = 0;
+                           value.secondsTotalUsed = 0;
+                        }
+                        for (final TourData tourData : taggedTourDatas) {
+                           for (final Map.Entry<Long, MaintenanceEvent> eventEntry : maintenance.getSortedEventsMaintenance().entrySet()) {
+                              final Long key = eventEntry.getKey();
+                              final MaintenanceEvent value = eventEntry.getValue();
+                              if (tourData.getTourStartTimeMS() < (key * 1000)) {
+                                 value.numTours++;
+                                 value.metersTotalUsed += tourData.getTourDistance();
+                                 value.secondsTotalUsed += tourData.getTourDeviceTime_Elapsed();
+                              }
+                           }
+                        }
+                        restoreState();
+                     }
                      break;
                   }
                }
@@ -461,24 +526,42 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             }
          }
          final SimpleDateFormat formatDate = new SimpleDateFormat("yyyy-MM-dd");
-         for (final Map.Entry<Long, MaintenanceEvent> eventEntry : eventsMap.entrySet()) {
-            final Long key = eventEntry.getKey();
-            final MaintenanceEvent value = eventEntry.getValue();
+         final Long[] eventsMapKeys = new Long[eventsMap.size()];
+         eventsMap.keySet().toArray(eventsMapKeys);
+         MaintenanceEvent valuePrev = null;
+         final Color colorDeltaItem = Display.getDefault().getSystemColor(SWT.COLOR_CYAN);
+
+         //for (final Map.Entry<Long, MaintenanceEvent> eventEntry : eventsMap.entrySet()) {
+         for (final Long key : eventsMapKeys) {
+            //final MaintenanceEvent value = eventEntry.getValue();
+            final MaintenanceEvent value = eventsMap.get(key);
+
             final TableItem itemEvent = new TableItem(_tableEvents, SWT.NONE);
+
+            itemEvent.setText(1, String.valueOf(value.numTours));
+            itemEvent.setBackground(2, colorDeltaItem);
+            itemEvent.setText(2,
+                  (valuePrev == null ? String.valueOf(value.numTours) : String.valueOf(value.numTours - valuePrev.numTours)));
 
             final Calendar calEvent = Calendar.getInstance();
             calEvent.setTimeInMillis(key * 1000);
             final Date dateEvent = calEvent.getTime();
-            itemEvent.setText(1, formatDate.format(dateEvent));
+            itemEvent.setText(3, formatDate.format(dateEvent));
             itemEvent.setData(value);
 
-            itemEvent.setText(2, String.valueOf(value.cost));
-            itemEvent.setText(3, String.valueOf(value.metersTotalUsed));
-            itemEvent.setText(4, String.valueOf(0));//TODO: add
-            itemEvent.setText(5,
-                  ("" + value.secondsTotalUsed / 3600) + ':' + ((value.secondsTotalUsed / 60) % 60) + ':' + (value.secondsTotalUsed % 60));
-            itemEvent.setText(6, "00:00:00");//TODO add
-            itemEvent.setText(7, value.notes);
+            itemEvent.setText(4, String.valueOf(value.cost));
+            itemEvent.setText(5, String.valueOf(value.metersTotalUsed));
+            itemEvent.setBackground(6, colorDeltaItem);
+            itemEvent.setText(6,
+                  (valuePrev == null ? String.valueOf(value.metersTotalUsed) : String.valueOf(value.metersTotalUsed - valuePrev.metersTotalUsed)));
+            itemEvent.setText(7,
+                  String.format("%d:%02d:%02d", value.secondsTotalUsed / 3600, ((value.secondsTotalUsed / 60) % 60), (value.secondsTotalUsed % 60)));
+            final long deltaSeconds = valuePrev == null ? value.secondsTotalUsed : value.secondsTotalUsed - valuePrev.secondsTotalUsed;
+            itemEvent.setBackground(8, colorDeltaItem);
+            itemEvent.setText(8, String.format("%d:%02d:%02d", deltaSeconds / 3600, ((deltaSeconds / 60) % 60), (deltaSeconds % 60)));
+            itemEvent.setText(9, value.notes);
+
+            valuePrev = value;
 
             final TableEditor editor = new TableEditor(_tableEvents);
             final Button button = new Button(_tableEvents, SWT.CHECK);

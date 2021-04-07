@@ -31,4 +31,5 @@ public class MaintenanceEvent implements Cloneable, Serializable {
    public String             notes            = UI.EMPTY_STRING;
    public float              metersTotalUsed  = 0;
    public long               secondsTotalUsed = 0;
+   public int                numTours         = 0;
 }

@@ -477,6 +477,66 @@ public class TagManager {
    }
 
    /**
+    * Get all tours for a tag id.
+    */
+   /**
+    * @param oneTag
+    * @return Returns a list with all tour id's which contain the tour tag.
+    */
+   public static ArrayList<Long> getTaggedTours(final TourTag oneTag) {
+
+      final ArrayList<Long> allTourIds = new ArrayList<>();
+
+      final ArrayList<Long> sqlParameters = new ArrayList<>();
+      final StringBuilder sqlParameterPlaceholder = new StringBuilder();
+
+      sqlParameterPlaceholder.append(PARAMETER_FIRST);
+
+      sqlParameters.add(oneTag.getTagId());
+
+      final String sql = UI.EMPTY_STRING
+
+            + "SELECT\n" //                                                                           //$NON-NLS-1$
+
+            + " DISTINCT TourData.tourId\n" //                                                        //$NON-NLS-1$
+
+            + " FROM " + TourDatabase.JOINTABLE__TOURDATA__TOURTAG + " jTdataTtag \n" //              //$NON-NLS-1$ //$NON-NLS-2$
+
+            // get all tours for current tag
+            + " LEFT OUTER JOIN " + TourDatabase.TABLE_TOUR_DATA + " TourData" //                     //$NON-NLS-1$ //$NON-NLS-2$
+            + " ON jTdataTtag.TourData_tourId = TourData.tourId \n" //                                //$NON-NLS-1$
+
+            + " WHERE jTdataTtag.TourTag_TagId IN (" + sqlParameterPlaceholder.toString() + ")\n" //  //$NON-NLS-1$ //$NON-NLS-2$
+
+            + " ORDER BY tourId\n"; //                                                 //$NON-NLS-1$
+
+      PreparedStatement statement = null;
+
+      try (Connection conn = TourDatabase.getInstance().getConnection()) {
+
+         statement = conn.prepareStatement(sql);
+
+         // fillup parameter
+         for (int parameterIndex = 0; parameterIndex < sqlParameters.size(); parameterIndex++) {
+            statement.setLong(parameterIndex + 1, sqlParameters.get(parameterIndex));
+         }
+
+         final ResultSet result = statement.executeQuery();
+         while (result.next()) {
+            allTourIds.add(result.getLong(1));
+         }
+
+      } catch (final SQLException e) {
+         StatusUtil.log(sql);
+         UI.showSQLException(e);
+      } finally {
+         Util.closeSql(statement);
+      }
+
+      return allTourIds;
+   }
+
+   /**
     * Updates the tag list in each tour tag filter profile as one or several tags were just deleted.
     *
     * @param deletedTags
