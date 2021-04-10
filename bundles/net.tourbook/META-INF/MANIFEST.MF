@@ -98,3 +98,5 @@ Import-Package: com.fasterxml.jackson.core.type,
  org.opengis.geometry,
  org.osgi.service.event;version="1.4.0",
  tourbook.search.nls
+Bundle-ClassPath: opencsv-5.3.jar,
+ .

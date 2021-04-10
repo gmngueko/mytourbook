@@ -25,8 +25,25 @@ public class TourTagMaintenance implements Cloneable, Serializable {
     */
    private static final long                serialVersionUID = 314756931007979108L;
 
+
    private int                             extraHourUsed           = 0;
    private int                             extraLifeMonthUsage         = 0;
+
+   private Float                           expectedLifeKilometers   = null;
+   private Float                           expectedLifeHours        = null;
+
+   private String                          purchasePrice;
+   private String                          purchaseLocation;
+   private long                            purchaseDateEpochSeconds = 0;
+
+   private Float                           scheduleDistanceMeters   = null;
+   private Integer                         scheduleTimeSpanSeconds  = null;
+   private Float                           scheduleLifeMonths       = null;
+
+   private String                          brand;
+   private String                          model;
+   private String                          type;
+   private Float                           weightKilograms          = null;
 
    private TreeMap<Long, MaintenanceEvent> sortedEventsMaintenance           = new TreeMap<>();
 
@@ -50,6 +67,18 @@ public class TourTagMaintenance implements Cloneable, Serializable {
       return newTourTagMaintenance;
    }
 
+   public String getBrand() {
+      return brand;
+   }
+
+   public Float getExpectedLifeHours() {
+      return expectedLifeHours;
+   }
+
+   public Float getExpectedLifeKilometers() {
+      return expectedLifeKilometers;
+   }
+
    public int getExtraHourUsed() {
       return extraHourUsed;
    }
@@ -58,12 +87,60 @@ public class TourTagMaintenance implements Cloneable, Serializable {
       return extraLifeMonthUsage;
    }
 
+   public String getModel() {
+      return model;
+   }
+
+   public long getPurchaseDateEpochSeconds() {
+      return purchaseDateEpochSeconds;
+   }
+
+   public String getPurchaseLocation() {
+      return purchaseLocation;
+   }
+
+   public String getPurchasePrice() {
+      return purchasePrice;
+   }
+
+   public Float getScheduleDistanceMeters() {
+      return scheduleDistanceMeters;
+   }
+
+   public Float getScheduleLifeMonths() {
+      return scheduleLifeMonths;
+   }
+
+   public Integer getScheduleTimeSpanSeconds() {
+      return scheduleTimeSpanSeconds;
+   }
+
    public TreeMap<Long, MaintenanceEvent> getSortedEventsMaintenance() {
       return sortedEventsMaintenance;
    }
 
+   public String getType() {
+      return type;
+   }
+
+   public Float getWeightKilograms() {
+      return weightKilograms;
+   }
+
    public MaintenanceEvent removeEvent(final Long utcTime) {
       return sortedEventsMaintenance.remove(utcTime);
+   }
+
+   public void setBrand(final String brand) {
+      this.brand = brand;
+   }
+
+   public void setExpectedLifeHours(final Float expectedLifeHours) {
+      this.expectedLifeHours = expectedLifeHours;
+   }
+
+   public void setExpectedLifeKilometers(final Float expectedLifeKilometers) {
+      this.expectedLifeKilometers = expectedLifeKilometers;
    }
 
    public void setExtraHourUsed(final int extraHourUsed) {
@@ -74,7 +151,43 @@ public class TourTagMaintenance implements Cloneable, Serializable {
       this.extraLifeMonthUsage = extraMonthUsage;
    }
 
+   public void setModel(final String model) {
+      this.model = model;
+   }
+
+   public void setPurchaseDateEpochSeconds(final long purchaseDateEpochSeconds) {
+      this.purchaseDateEpochSeconds = purchaseDateEpochSeconds;
+   }
+
+   public void setPurchaseLocation(final String purchaseLocation) {
+      this.purchaseLocation = purchaseLocation;
+   }
+
+   public void setPurchasePrice(final String purchasePrice) {
+      this.purchasePrice = purchasePrice;
+   }
+
+   public void setScheduleDistanceMeters(final Float scheduleDistanceMeters) {
+      this.scheduleDistanceMeters = scheduleDistanceMeters;
+   }
+
+   public void setScheduleLifeMonths(final Float scheduleLifeMonths) {
+      this.scheduleLifeMonths = scheduleLifeMonths;
+   }
+
+   public void setScheduleTimeSpanSeconds(final Integer scheduleTimeSpanSeconds) {
+      this.scheduleTimeSpanSeconds = scheduleTimeSpanSeconds;
+   }
+
    public void setSortedEventsMaintenance(final TreeMap<Long, MaintenanceEvent> sorted) {
       this.sortedEventsMaintenance = sorted;
+   }
+
+   public void setType(final String type) {
+      this.type = type;
+   }
+
+   public void setWeightKilograms(final Float weightKilograms) {
+      this.weightKilograms = weightKilograms;
    }
 }

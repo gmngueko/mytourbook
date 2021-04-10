@@ -39,6 +39,7 @@ import net.tourbook.data.TourTagCategory;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.tag.Dialog_TourTag;
 import net.tourbook.tag.Dialog_TourTag_Category;
+import net.tourbook.tag.Dialog_TourTag_Import;
 import net.tourbook.tag.Dialog_TourTag_Maintenance;
 import net.tourbook.tag.TVIPrefTag;
 import net.tourbook.tag.TVIPrefTagCategory;
@@ -159,6 +160,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    private Button  _btnReset;
 
    private Button  _btnEditTagMaintenance;
+   private Button  _btnImportTags;
 
    private class Action_DeleteTag extends Action {
 
@@ -598,6 +600,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
             _btnEditTagMaintenance = new Button(container, SWT.NONE);
             _btnEditTagMaintenance.setText(Messages.Action_Tag_EditMaintenance);
+            _btnEditTagMaintenance.setToolTipText(Messages.Action_Tag_EditMaintenance_Tooltip);
             _btnEditTagMaintenance.addSelectionListener(new SelectionAdapter() {
                @Override
                public void widgetSelected(final SelectionEvent e) {
@@ -605,6 +608,21 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
                }
             });
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnEditTagMaintenance);
+         }
+
+         {
+            // Button: import tags
+
+            _btnImportTags = new Button(container, SWT.NONE);
+            _btnImportTags.setToolTipText(Messages.Action_Tag_ImportTags_Tooltip);
+            _btnImportTags.setText(Messages.Action_Tag_ImportTags);
+            _btnImportTags.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  onAction_Import_TagsFromFile();
+               }
+            });
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnImportTags);
          }
 
          {
@@ -807,8 +825,6 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       _btnNewTag.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
       _btnNewTagCategory.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
 
-      //_btnEditTagMaintenance.setEnabled((isSelection == false || isCategorySelected && isTagSelected == false));
-
       final boolean isOneItemSelected = selection.size() == 1;
       if (isOneItemSelected) {
 
@@ -831,6 +847,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
          _btnEditTagMaintenance.setEnabled(false);
       }
+
+      _btnImportTags.setEnabled(true);
 
       _btnReset.setEnabled(true);
       _tagViewer.getTree().setEnabled(true);
@@ -1063,6 +1081,29 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       _isModified = true;
 
       setFocusToViewer();
+   }
+
+   /**
+    * Edit Maintenance for selected tag
+    */
+   private void onAction_Import_TagsFromFile() {
+
+      String dlgMessage = UI.EMPTY_STRING;
+
+      dlgMessage = Messages.Dialog_TourTag_ImportTag_Message;
+
+      if (new Dialog_TourTag_Import(getShell(), dlgMessage).open() != Window.OK) {
+
+         setFocusToViewer();
+
+         return;
+      }
+
+      _isModified = true;
+
+      setFocusToViewer();
+
+      return;
    }
 
    private void onAction_NewCategory() {
