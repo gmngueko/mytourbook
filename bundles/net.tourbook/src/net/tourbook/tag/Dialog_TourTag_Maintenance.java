@@ -89,7 +89,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
 
    private Text                             _txtPurchasePrice;
    private Text                             _txtPurchaseLocation;
-   private Text                             _txtPurchaseDate;
+   private org.eclipse.swt.widgets.DateTime _txtPurchaseDate;
 
    private Text                             _txtScheduleDistanceMeters;
    private Text                             _txtScheduleTimeSpanSeconds;
@@ -97,7 +97,6 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
 
    private Text                             _txtExtraHours;
    private Text                             _txtExtraMonths;
-
 
    private Text                             _txtEventNotes;
    private Text                             _txtEventCost;
@@ -197,7 +196,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             // Text: Brand
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("Brand");
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_Brand);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _txtBrand = new Text(container, SWT.BORDER);
@@ -207,7 +206,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             // Text: Model
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("Model");
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_Model);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _txtModel = new Text(container, SWT.BORDER);
@@ -217,7 +216,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             // Text: Type
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("Type");
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_Type);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _txtType = new Text(container, SWT.BORDER);
@@ -227,13 +226,71 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             // Text: Weight
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("Weight");
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_Weight);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _txtWeight = new Text(container, SWT.BORDER);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtWeight);
 
             _txtWeight.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Expected Life Hours
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_ExpectedLifeHours);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtLifeHours = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtLifeHours);
+
+            _txtLifeHours.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Expected Life Km
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_ExpectedLifeKilometers);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtLifeKilometers = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtLifeKilometers);
+
+            _txtLifeKilometers.addVerifyListener(new VerifyListener() {
                @Override
                public void verifyText(final VerifyEvent e) {
                   /* Notice how we combine the old and new below */
@@ -298,6 +355,129 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
                   final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
                   try {
                      final int value = Integer.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Purchase Price
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_PurchasePrice);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtPurchasePrice = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtPurchasePrice);
+         }
+         {
+            // Text: Purchase Location
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_PurchaseLocation);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtPurchaseLocation = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtPurchaseLocation);
+         }
+         {
+            // Text: Purchase Date
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_PurchaseDate);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtPurchaseDate = new org.eclipse.swt.widgets.DateTime(container, SWT.DATE);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtPurchaseDate);
+            final Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(0);
+            //init event date to today/now
+            _txtPurchaseDate.setYear(cal.get(Calendar.YEAR));
+            _txtPurchaseDate.setMonth(cal.get(Calendar.MONTH));
+            _txtPurchaseDate.setDay(cal.get(Calendar.DAY_OF_MONTH));
+         }
+         {
+            // Text: Schedule Maintenance Km
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_ScheduleDistanceMeters);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtScheduleDistanceMeters = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtScheduleDistanceMeters);
+
+            _txtScheduleDistanceMeters.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Schedule Maintenance Hours
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_ScheduleTimeSpanSeconds);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtScheduleTimeSpanSeconds = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtScheduleTimeSpanSeconds);
+
+            _txtScheduleTimeSpanSeconds.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals("")) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+         }
+         {
+            // Text: Schedule Maintenance Life Month
+
+            final Label label = new Label(container, SWT.NONE);
+            label.setText(Messages.Dialog_TourTag_Label_TagMaintenance_ScheduleLifeMonths);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+
+            _txtScheduleLifeMonths = new Text(container, SWT.BORDER);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtScheduleLifeMonths);
+
+            _txtScheduleLifeMonths.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final float value = Float.valueOf(valueTxt);
                      if (value < 0) {
                         e.doit = false;
                      }
@@ -594,6 +774,20 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
          _txtModel.setText(maintenance.getModel());
          _txtType.setText(maintenance.getType());
          _txtWeight.setText(maintenance.getWeightKilograms() == null ? "" : String.valueOf(maintenance.getWeightKilograms()));
+         _txtLifeKilometers.setText(maintenance.getExpectedLifeKilometers() == null ? "" : String.valueOf(maintenance.getExpectedLifeKilometers()));
+         _txtLifeHours.setText(maintenance.getExpectedLifeHours() == null ? "" : String.valueOf(maintenance.getExpectedLifeHours()));
+         _txtPurchaseLocation.setText(maintenance.getPurchaseLocation());
+         _txtPurchasePrice.setText(maintenance.getPurchasePrice());
+         final Calendar cal = Calendar.getInstance();
+         cal.setTimeInMillis(maintenance.getPurchaseDateEpochSeconds() * 1000);
+         _txtPurchaseDate.setYear(cal.get(Calendar.YEAR));
+         _txtPurchaseDate.setMonth(cal.get(Calendar.MONTH));
+         _txtPurchaseDate.setDay(cal.get(Calendar.DAY_OF_MONTH));
+         _txtScheduleDistanceMeters.setText(maintenance.getScheduleDistanceMeters() == null ? "" : String.valueOf(maintenance
+               .getScheduleDistanceMeters()));
+         _txtScheduleLifeMonths.setText(maintenance.getScheduleLifeMonths() == null ? "" : String.valueOf(maintenance.getScheduleLifeMonths()));
+         _txtScheduleTimeSpanSeconds.setText(maintenance.getScheduleTimeSpanSeconds() == null ? "" : String.valueOf(maintenance
+               .getScheduleTimeSpanSeconds()));
       }
 
       //set UI with Maintenance events
@@ -710,5 +904,50 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
       maintenance.setBrand(_txtBrand.getText());
       maintenance.setModel(_txtModel.getText());
       maintenance.setType(_txtType.getText());
+
+      final String lifeKm = _txtLifeKilometers.getText().strip();
+      if (lifeKm.isBlank()) {
+         maintenance.setExpectedLifeKilometers(null);
+      } else {
+         maintenance.setExpectedLifeKilometers(Float.valueOf(lifeKm));
+      }
+
+      final String lifeHours = _txtLifeHours.getText().strip();
+      if (lifeHours.isBlank()) {
+         maintenance.setExpectedLifeHours(null);
+      } else {
+         maintenance.setExpectedLifeHours(Float.valueOf(lifeKm));
+      }
+
+      maintenance.setPurchaseLocation(_txtPurchaseLocation.getText());
+      maintenance.setPurchasePrice(_txtPurchasePrice.getText());
+      final Calendar cal = Calendar.getInstance();
+      cal.set(_txtPurchaseDate.getYear(),
+            _txtPurchaseDate.getMonth(),
+            _txtPurchaseDate.getDay(),
+            _txtPurchaseDate.getHours(), //TODO set 0?
+            _txtPurchaseDate.getMinutes());//TODO set to 0?
+      maintenance.setPurchaseDateEpochSeconds(cal.getTimeInMillis() / 1000);
+
+      final String schedKm = _txtScheduleDistanceMeters.getText().strip();
+      if (schedKm.isBlank()) {
+         maintenance.setScheduleDistanceMeters(null);
+      } else {
+         maintenance.setScheduleDistanceMeters(Float.valueOf(schedKm));
+      }
+
+      final String schedMonth = _txtScheduleLifeMonths.getText().strip();
+      if (schedMonth.isBlank()) {
+         maintenance.setScheduleLifeMonths(null);
+      } else {
+         maintenance.setScheduleLifeMonths(Float.valueOf(schedMonth));
+      }
+
+      final String schedTimeSpan = _txtScheduleTimeSpanSeconds.getText().strip();
+      if (schedTimeSpan.isBlank()) {
+         maintenance.setScheduleTimeSpanSeconds(null);
+      } else {
+         maintenance.setScheduleTimeSpanSeconds(Integer.valueOf(schedTimeSpan));
+      }
    }
 }

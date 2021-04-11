@@ -492,12 +492,14 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
                   } catch (final Exception exc) {
                      //TODO
                      exc.printStackTrace();
+                     newTag.scheduleDistanceMeters = null;
                   }
                   try {
                      newTag.scheduleLifeMonths = Float.parseFloat(csvMaintenanceInfo.MyScheduleMonths);
                   } catch (final Exception exc) {
                      //TODO
                      exc.printStackTrace();
+                     newTag.scheduleLifeMonths = null;
                   }
                   newTag.scheduleTimeSpanSeconds = parseTimeSpan(csvMaintenanceInfo.MyScheduleTimeSpan);
 
