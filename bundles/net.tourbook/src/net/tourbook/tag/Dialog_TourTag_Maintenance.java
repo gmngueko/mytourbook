@@ -801,12 +801,12 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
          _txtScheduleDistanceMeters.setText((maintenance.getScheduleDistanceMeters() == null || maintenance.getScheduleDistanceMeters().isNaN())
                ? UI.EMPTY_STRING
                : String.valueOf(maintenance
-               .getScheduleDistanceMeters()));
+                     .getScheduleDistanceMeters() / 1000));
          _txtScheduleLifeMonths.setText((maintenance.getScheduleLifeMonths() == null || maintenance.getScheduleLifeMonths().isNaN()) ? UI.EMPTY_STRING
                : String
                .valueOf(maintenance.getScheduleLifeMonths()));
          _txtScheduleTimeSpanSeconds.setText(maintenance.getScheduleTimeSpanSeconds() == null ? UI.EMPTY_STRING : String.valueOf(maintenance
-               .getScheduleTimeSpanSeconds()));
+               .getScheduleTimeSpanSeconds() / 3600));
       }
 
       //set UI with Maintenance events
@@ -844,10 +844,11 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
             itemEvent.setData(value);
 
             itemEvent.setText(4, String.valueOf(value.cost));
-            itemEvent.setText(5, String.valueOf(value.metersTotalUsed));
+            itemEvent.setText(5, String.valueOf(value.metersTotalUsed / 1000));
             itemEvent.setBackground(6, colorDeltaItem);
             itemEvent.setText(6,
-                  (valuePrev == null ? String.valueOf(value.metersTotalUsed) : String.valueOf(value.metersTotalUsed - valuePrev.metersTotalUsed)));
+                  (valuePrev == null ? String.valueOf(value.metersTotalUsed / 1000) : String.valueOf((value.metersTotalUsed
+                        - valuePrev.metersTotalUsed) / 1000)));
             itemEvent.setText(7,
                   String.format("%d:%02d:%02d", value.secondsTotalUsed / 3600, ((value.secondsTotalUsed / 60) % 60), (value.secondsTotalUsed % 60))); //$NON-NLS-1$
             final long deltaSeconds = valuePrev == null ? value.secondsTotalUsed : value.secondsTotalUsed - valuePrev.secondsTotalUsed;
@@ -952,7 +953,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
       if (schedKm.isBlank()) {
          maintenance.setScheduleDistanceMeters(null);
       } else {
-         maintenance.setScheduleDistanceMeters(Float.valueOf(schedKm));
+         maintenance.setScheduleDistanceMeters(Float.valueOf(schedKm) * 1000);
       }
 
       final String schedMonth = _txtScheduleLifeMonths.getText().strip();
@@ -966,7 +967,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
       if (schedTimeSpan.isBlank()) {
          maintenance.setScheduleTimeSpanSeconds(null);
       } else {
-         maintenance.setScheduleTimeSpanSeconds(Integer.valueOf(schedTimeSpan));
+         maintenance.setScheduleTimeSpanSeconds((int) (Float.valueOf(schedTimeSpan) * 3600));
       }
    }
 }

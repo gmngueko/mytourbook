@@ -45,6 +45,7 @@ import java.util.regex.Pattern;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.data.ExtraData;
 import net.tourbook.data.MaintenanceEvent;
 import net.tourbook.data.TourTag;
@@ -76,21 +77,21 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
 
    private static final char        CSV_TOKEN_SEPARATOR_CHAR     = ';';
 
-   private static final String      CSV_COLUMN_ID                = "Id"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_NAME              = "Name"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_MODEL             = "Model"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_BRAND             = "Brand"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_DATEPURCHASED     = "DatePurchased"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_TYPE              = "Type"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_EXPECTEDLIFEKM    = "ExpectedLifeKilometers"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_EXPECTEDLIFEHOURS = "ExpectedLifeHours"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_EXTRAKMUSED       = "ExtraKilometersUsed"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_WEIGHTKG          = "WeightKilograms"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_PURCHASELOCATION  = "PurchaseLocation"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_PURCHASEPRICE     = "PurchasePrice"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_NOTES             = "Notes"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_INUSE             = "InUse"; //$NON-NLS-1$
-   private static final String      CSV_COLUMN_MAINTENANCE       = "Maintenance"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_ID                = "Id";                                     //$NON-NLS-1$
+   private static final String      CSV_COLUMN_NAME              = "Name";                                   //$NON-NLS-1$
+   private static final String      CSV_COLUMN_MODEL             = "Model";                                  //$NON-NLS-1$
+   private static final String      CSV_COLUMN_BRAND             = "Brand";                                  //$NON-NLS-1$
+   private static final String      CSV_COLUMN_DATEPURCHASED     = "DatePurchased";                          //$NON-NLS-1$
+   private static final String      CSV_COLUMN_TYPE              = "Type";                                   //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXPECTEDLIFEKM    = "ExpectedLifeKilometers";                 //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXPECTEDLIFEHOURS = "ExpectedLifeHours";                      //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXTRAKMUSED       = "ExtraKilometersUsed";                    //$NON-NLS-1$
+   private static final String      CSV_COLUMN_WEIGHTKG          = "WeightKilograms";                        //$NON-NLS-1$
+   private static final String      CSV_COLUMN_PURCHASELOCATION  = "PurchaseLocation";                       //$NON-NLS-1$
+   private static final String      CSV_COLUMN_PURCHASEPRICE     = "PurchasePrice";                          //$NON-NLS-1$
+   private static final String      CSV_COLUMN_NOTES             = "Notes";                                  //$NON-NLS-1$
+   private static final String      CSV_COLUMN_INUSE             = "InUse";                                  //$NON-NLS-1$
+   private static final String      CSV_COLUMN_MAINTENANCE       = "Maintenance";                            //$NON-NLS-1$
 
    private final IDialogSettings    _state                       = TourbookPlugin.getState(ID);
 
@@ -101,6 +102,9 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
    private HashMap<String, CsvTag>  _mapIdCsvTags                = new HashMap<>();
    private HashMap<String, TourTag> _mapIdTourTags               = new HashMap<>();
 
+   private ArrayList<TourTag>       _updateTourTags;
+   private ArrayList<TourTag>       _newTourTags;
+
    private HashMap<String, Integer> _mapHeaderIndex              = new HashMap<>();
 
    /*
@@ -108,6 +112,7 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
     */
    private Text   _txtFileName;
    private Button _buttonOpenFile;
+   private Button _buttonSaveNewTags;
    private Text   _txtFileInfo;
 
    static public class CsvMaintenanceEvent {
@@ -162,12 +167,16 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
       TreeMap<Long, MaintenanceEvent> maintenanceEvents       = new TreeMap<>();
    }
 
-   public Dialog_TourTag_Import(final Shell parentShell, final String dlgMessage) {
+   public Dialog_TourTag_Import(final Shell parentShell,
+                                final String dlgMessage,
+                                final ArrayList<TourTag> updatedTourTags,
+                                final ArrayList<TourTag> newTourTags) {
 
       super(parentShell);
 
       _dlgMessage = dlgMessage;
-
+      _updateTourTags = updatedTourTags;
+      _newTourTags = newTourTags;
       // make dialog resizable
       setShellStyle(getShellStyle() | SWT.RESIZE);
    }
@@ -313,6 +322,7 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
             // Button: OpenFile
             _buttonOpenFile = new Button(container, SWT.NONE);
             _buttonOpenFile.setText(Messages.Dialog_TourTag_Label_ImportTag_ChoseFile);
+            _buttonOpenFile.setToolTipText(Messages.Dialog_TourTag_Label_ImportTag_ChoseFile_Tooltip);
             _buttonOpenFile.addListener(SWT.Selection, new Listener() {
                @Override
                public void handleEvent(final Event e) {
@@ -331,6 +341,12 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
                   }
                }
             });
+         }
+         {
+            _buttonSaveNewTags = new Button(container, SWT.CHECK);
+            _buttonSaveNewTags.setText(Messages.Dialog_TourTag_Label_ImportTag_CheckSaveNewTags);
+            _buttonSaveNewTags.setToolTipText(Messages.Dialog_TourTag_Label_ImportTag_CheckSaveNewTags_Tooltip);
+            _buttonSaveNewTags.setSelection(false);
          }
 
       }
@@ -541,21 +557,23 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
          //Update existing Tags with csv info
          _allTourTags = TourDatabase.getAllTourTags();
          int numFoundbyST3Id = 0;
-         for (final Map.Entry<Long, TourTag> entry : _allTourTags.entrySet()) {
-            final Long key = entry.getKey();
-            final TourTag value = entry.getValue();
+         for (final CsvTag csvTag : _allCsvTags) {
             //search by ST3 Id
             CsvTag foundCsvTag = null;
-            for (final CsvTag csvTag : _allCsvTags) {
-               if (value.getNotes() != null && value.getNotes().contains(csvTag.id)) {
+            TourTag foundTourTag = null;
+            for (final Map.Entry<Long, TourTag> entry : _allTourTags.entrySet()) {
+               final TourTag tentativeTourTag = entry.getValue();
+               if (tentativeTourTag.getNotes() != null && tentativeTourTag.getNotes().contains(csvTag.id)) {
                   foundCsvTag = csvTag;
+                  foundTourTag = tentativeTourTag;
+                  break;
                }
             }
             if (foundCsvTag != null) {
-               ExtraData extraData = value.getExtraData();
+               ExtraData extraData = foundTourTag.getExtraData();
                if (extraData == null) {
                   extraData = new ExtraData();
-                  value.setExtraData(extraData);
+                  foundTourTag.setExtraData(extraData);
                }
                TourTagMaintenance maintenance = extraData.getMaintenanceInfo();
                if (maintenance == null) {
@@ -581,12 +599,47 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
 
                numFoundbyST3Id++;
                //save tag to DB
-               TourDatabase.saveEntity(value, value.getTagId(), TourTag.class);
+               //TourDatabase.saveEntity(value, value.getTagId(), TourTag.class);
+               _updateTourTags.add(foundTourTag);
 
             } else {
-               //TODO search by name
-            }
+               if (_buttonSaveNewTags.getSelection()) {
+                  //add new TourTag and TODO search by name first
+                  final TourTag newTourTag = new TourTag(csvTag.name);
+                  final String notesST3 = "Id(SportTracks): " + csvTag.id + UI.NEW_LINE1; //$NON-NLS-1$
+                  newTourTag.setNotes(notesST3 + csvTag.notes);
+                  ExtraData extraData = newTourTag.getExtraData();
+                  if (extraData == null) {
+                     extraData = new ExtraData();
+                     newTourTag.setExtraData(extraData);
+                  }
+                  TourTagMaintenance maintenance = extraData.getMaintenanceInfo();
+                  if (maintenance == null) {
+                     maintenance = new TourTagMaintenance();
+                     extraData.setMaintenanceInfo(maintenance);
+                  }
+                  maintenance.setBrand(csvTag.brand);
+                  maintenance.setExpectedLifeHours(csvTag.expectedLifeHours);
+                  maintenance.setExpectedLifeKilometers(csvTag.expectedLifeKilometers);
+                  maintenance.setExtraHourUsed(csvTag.maintenanceInfo.MyExtraHoursUsed.intValue());
+                  maintenance.setExtraLifeMonthUsage(csvTag.maintenanceInfo.MyExtraMonthsUsed.intValue());
+                  maintenance.setModel(csvTag.model);
+                  maintenance.setPurchaseDateEpochSeconds(csvTag.datePurchased);
+                  maintenance.setPurchaseLocation(csvTag.purchaseLocation);
+                  maintenance.setPurchasePrice(csvTag.purchasePrice);
+                  maintenance.setScheduleDistanceMeters(csvTag.scheduleDistanceMeters);
+                  maintenance.setScheduleLifeMonths(csvTag.scheduleLifeMonths);
+                  maintenance.setScheduleTimeSpanSeconds(csvTag.scheduleTimeSpanSeconds);
+                  maintenance.setType(csvTag.type);
+                  maintenance.setWeightKilograms(csvTag.weightKilograms);
 
+                  maintenance.setSortedEventsMaintenance(csvTag.maintenanceEvents);
+
+                  //save tag to DB
+                  newTourTag.setRoot(true);
+                  _newTourTags.add(newTourTag);
+               }
+            }
          }
          info += "; ST3Id Found:" + numFoundbyST3Id; //$NON-NLS-1$
       }

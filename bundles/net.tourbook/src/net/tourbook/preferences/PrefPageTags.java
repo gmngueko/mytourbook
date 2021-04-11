@@ -1091,13 +1091,49 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       String dlgMessage = UI.EMPTY_STRING;
 
       dlgMessage = Messages.Dialog_TourTag_ImportTag_Message;
-
-      if (new Dialog_TourTag_Import(getShell(), dlgMessage).open() != Window.OK) {
+      final ArrayList<TourTag> updatedTourTags = new ArrayList<>();
+      final ArrayList<TourTag> newTourTags = new ArrayList<>();
+      if (new Dialog_TourTag_Import(getShell(), dlgMessage, updatedTourTags, newTourTags).open() != Window.OK) {
 
          setFocusToViewer();
 
          return;
       }
+
+      for (final TourTag tourTag : updatedTourTags) {
+         // update model
+         TourDatabase.saveEntity(tourTag, tourTag.getTagId(), TourTag.class);
+      }
+
+      for (final TourTag tourTag : newTourTags) {
+         final TVIPrefTag tagItem = new TVIPrefTag(_tagViewer, tourTag);
+
+         //this will be a root tag
+         tourTag.setRoot(true);
+
+         /*
+          * Update model
+          */
+         tagItem.setParentItem(_rootItem);
+         _rootItem.getFetchedChildren().add(tagItem);
+
+         // persist tag
+         final TourTag savedTag = TourDatabase.saveEntity(tourTag, TourDatabase.ENTITY_IS_NOT_SAVED, TourTag.class);
+
+         if (savedTag != null) {
+
+            // update item
+            tagItem.setTourTag(savedTag);
+
+            /*
+             * Update UI
+             */
+            _tagViewer.add(_rootItem, tagItem);
+         }
+      }
+
+      //Update UI
+      _tagViewer.refresh();
 
       _isModified = true;
 

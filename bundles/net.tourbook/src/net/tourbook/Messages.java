@@ -898,6 +898,9 @@ public class Messages extends NLS {
    public static String        Dialog_TourTag_Label_ImportTag_FileName;
    public static String        Dialog_TourTag_Label_ImportTag_FileInfo;
    public static String        Dialog_TourTag_Label_ImportTag_ChoseFile;
+   public static String        Dialog_TourTag_Label_ImportTag_ChoseFile_Tooltip;
+   public static String        Dialog_TourTag_Label_ImportTag_CheckSaveNewTags;
+   public static String        Dialog_TourTag_Label_ImportTag_CheckSaveNewTags_Tooltip;
 
    public static String        Dialog_TourTagCategory_EditCategory_Message;
    public static String        Dialog_TourTagCategory_EditCategory_Title;
