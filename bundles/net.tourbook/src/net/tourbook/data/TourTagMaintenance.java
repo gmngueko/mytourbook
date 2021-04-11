@@ -15,6 +15,8 @@
  *******************************************************************************/
 package net.tourbook.data;
 
+import de.byteholder.geoclipse.map.UI;
+
 import java.io.Serializable;
 import java.util.TreeMap;
 
@@ -32,17 +34,17 @@ public class TourTagMaintenance implements Cloneable, Serializable {
    private Float                           expectedLifeKilometers   = null;
    private Float                           expectedLifeHours        = null;
 
-   private String                          purchasePrice;
-   private String                          purchaseLocation;
+   private String                          purchasePrice            = UI.EMPTY_STRING;
+   private String                          purchaseLocation         = UI.EMPTY_STRING;
    private long                            purchaseDateEpochSeconds = 0;
 
    private Float                           scheduleDistanceMeters   = null;
    private Integer                         scheduleTimeSpanSeconds  = null;
    private Float                           scheduleLifeMonths       = null;
 
-   private String                          brand;
-   private String                          model;
-   private String                          type;
+   private String                          brand                    = UI.EMPTY_STRING;
+   private String                          model                    = UI.EMPTY_STRING;
+   private String                          type                     = UI.EMPTY_STRING;
    private Float                           weightKilograms          = null;
 
    private TreeMap<Long, MaintenanceEvent> sortedEventsMaintenance           = new TreeMap<>();

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
@@ -75,21 +76,21 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
 
    private static final char        CSV_TOKEN_SEPARATOR_CHAR     = ';';
 
-   private static final String      CSV_COLUMN_ID                = "Id";
-   private static final String      CSV_COLUMN_NAME              = "Name";
-   private static final String      CSV_COLUMN_MODEL             = "Model";
-   private static final String      CSV_COLUMN_BRAND             = "Brand";
-   private static final String      CSV_COLUMN_DATEPURCHASED     = "DatePurchased";
-   private static final String      CSV_COLUMN_TYPE              = "Type";
-   private static final String      CSV_COLUMN_EXPECTEDLIFEKM    = "ExpectedLifeKilometers";
-   private static final String      CSV_COLUMN_EXPECTEDLIFEHOURS = "ExpectedLifeHours";
-   private static final String      CSV_COLUMN_EXTRAKMUSED       = "ExtraKilometersUsed";
-   private static final String      CSV_COLUMN_WEIGHTKG          = "WeightKilograms";
-   private static final String      CSV_COLUMN_PURCHASELOCATION  = "PurchaseLocation";
-   private static final String      CSV_COLUMN_PURCHASEPRICE     = "PurchasePrice";
-   private static final String      CSV_COLUMN_NOTES             = "Notes";
-   private static final String      CSV_COLUMN_INUSE             = "InUse";
-   private static final String      CSV_COLUMN_MAINTENANCE       = "Maintenance";
+   private static final String      CSV_COLUMN_ID                = "Id"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_NAME              = "Name"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_MODEL             = "Model"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_BRAND             = "Brand"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_DATEPURCHASED     = "DatePurchased"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_TYPE              = "Type"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXPECTEDLIFEKM    = "ExpectedLifeKilometers"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXPECTEDLIFEHOURS = "ExpectedLifeHours"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_EXTRAKMUSED       = "ExtraKilometersUsed"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_WEIGHTKG          = "WeightKilograms"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_PURCHASELOCATION  = "PurchaseLocation"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_PURCHASEPRICE     = "PurchasePrice"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_NOTES             = "Notes"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_INUSE             = "InUse"; //$NON-NLS-1$
+   private static final String      CSV_COLUMN_MAINTENANCE       = "Maintenance"; //$NON-NLS-1$
 
    private final IDialogSettings    _state                       = TourbookPlugin.getState(ID);
 
@@ -205,18 +206,20 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
       }
       Integer timeSpanSeconds = 0;
 
-      final String[] listElement = timespanString.split(":");
+      final String[] listElement = timespanString.split(":"); //$NON-NLS-1$
       if (listElement.length != 3) {
          return null;
       }
 
       try {
          //parse day.hours index [0]
-         final String[] daysHours = listElement[0].split(".");
+         final String[] daysHours = listElement[0].split(Pattern.quote(".")); //$NON-NLS-1$
          if (daysHours.length == 2) {
             timeSpanSeconds = (Integer.valueOf(daysHours[0]) * 24 + Integer.valueOf(daysHours[1])) * 3600;
          } else if (daysHours.length == 1) {
             timeSpanSeconds = (Integer.valueOf(daysHours[0])) * 3600;
+         } else if (daysHours.length == 0) {
+            timeSpanSeconds = (Integer.valueOf(listElement[0])) * 3600;
          } else {
             return null;
          }
@@ -316,9 +319,9 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
                   switch (e.type) {
                   case SWT.Selection:
                      final FileDialog dialog = new FileDialog(getShell(), SWT.OPEN);
-                     final String[] filterNames = new String[] { "Txt Files", "All Files (*)" };
-                     final String[] filterExtensions = new String[] { "*.csv;*.txt", "*" };
-                     final String filterPath = "";
+                     final String[] filterNames = new String[] { "Txt Files", "All Files (*)" }; //$NON-NLS-1$ //$NON-NLS-2$
+                     final String[] filterExtensions = new String[] { "*.csv;*.txt", "*" }; //$NON-NLS-1$ //$NON-NLS-2$
+                     final String filterPath = ""; //$NON-NLS-1$
                      dialog.setFilterNames(filterNames);
                      dialog.setFilterExtensions(filterExtensions);
                      dialog.setFilterPath(filterPath);
@@ -352,7 +355,7 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
    private void parseCsvTags(final String csvFile) {
       final List<String[]> csvParseResult = parseCSVFile(csvFile);
 
-      String info = "nbr Entries:" + (csvParseResult.size() - 1) + ";";
+      String info = "nbr Entries:" + (csvParseResult.size() - 1) + ";"; //$NON-NLS-1$ //$NON-NLS-2$
       int numFaultLines = 0;
 
       if (csvParseResult.size() > 1) {
@@ -398,10 +401,10 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
 
             idx = _mapHeaderIndex.get(CSV_COLUMN_DATEPURCHASED);
             if (idx != null) {
-               if (!allToken[idx].isBlank() && !allToken[idx].startsWith("000")) {
-                  final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ");
+               if (!allToken[idx].isBlank() && !allToken[idx].startsWith("000")) { //$NON-NLS-1$
+                  final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ssZ"); //$NON-NLS-1$
                   try {
-                     final Date date = formatter.parse(allToken[idx].replaceAll("Z$", "+0000"));
+                     final Date date = formatter.parse(allToken[idx].replaceAll("Z$", "+0000")); //$NON-NLS-1$ //$NON-NLS-2$
                      newTag.datePurchased = date.getTime() / 1000;
                   } catch (final ParseException e) {
                      // TODO Auto-generated catch block
@@ -533,7 +536,7 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
             }
          }
 
-         info += "numFaultyLines:" + numFaultLines;
+         info += "numFaultyLines:" + numFaultLines; //$NON-NLS-1$
 
          //Update existing Tags with csv info
          _allTourTags = TourDatabase.getAllTourTags();
@@ -585,7 +588,7 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
             }
 
          }
-         info += "; ST3Id Found:" + numFoundbyST3Id;
+         info += "; ST3Id Found:" + numFoundbyST3Id; //$NON-NLS-1$
       }
 
       _txtFileInfo.setText(info);

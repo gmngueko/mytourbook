@@ -122,6 +122,15 @@ public class TourTag implements Cloneable, Comparable<Object> {
    public TourTag(final String tagName) {
       name = tagName.trim();
       _createId = ++_createCounter;
+
+      if (extraData == null) {
+         extraData = new ExtraData();
+      }
+      TourTagMaintenance maintenance = extraData.getMaintenanceInfo();
+      if (maintenance == null) {
+         maintenance = new TourTagMaintenance();
+         extraData.setMaintenanceInfo(maintenance);
+      }
    }
 
    @Override
