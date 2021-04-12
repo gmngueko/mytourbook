@@ -345,6 +345,8 @@ public class FitData {
             }
          }
 
+         finalizeTour_Elevation(_tourData);
+
          // must be called after time series are created
          finalizeTour_Gears(_tourData, _allGearData);
 
@@ -353,6 +355,20 @@ public class FitData {
 
          finalizeTour_Type();
 
+      }
+   }
+
+   /**
+    * Compute elevation up/down values when com.garmin.fit.SessionMesg.getTotalAscent() is
+    * <code>null</code> -> elevation up/down == 0
+    *
+    * @param tourData
+    */
+   private void finalizeTour_Elevation(final TourData tourData) {
+
+      if (tourData.getTourAltUp() == 0 && tourData.getTourAltDown() == 0) {
+
+         _tourData.computeAltitudeUpDown();
       }
    }
 
