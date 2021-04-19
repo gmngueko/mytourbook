@@ -24,6 +24,7 @@ import net.tourbook.ui.action.ActionRetrieveWeatherData;
 import net.tourbook.ui.action.ActionRetrieveWeatherOwmData;
 import net.tourbook.ui.action.ActionSetTimeZone;
 import net.tourbook.ui.action.SubMenu_Cadence;
+import net.tourbook.ui.action.SubMenu_CustomTracks;
 import net.tourbook.ui.action.SubMenu_Elevation;
 import net.tourbook.ui.action.SubMenu_Weather;
 
@@ -37,6 +38,8 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
 public class SubMenu_AdjustTourValues extends Action implements IMenuCreator {
+
+   private SubMenu_CustomTracks                       _subMenu_CustomTracks;
 
    private SubMenu_Cadence                            _subMenu_Cadence;
    private SubMenu_Elevation                          _subMenu_Elevation;
@@ -57,6 +60,7 @@ public class SubMenu_AdjustTourValues extends Action implements IMenuCreator {
 
       setMenuCreator(this);
 
+      _subMenu_CustomTracks = new SubMenu_CustomTracks(tourProvider);
       _subMenu_Cadence = new SubMenu_Cadence(tourProvider);
       _subMenu_Elevation = new SubMenu_Elevation(tourProvider, tourProviderById);
       _subMenu_Weather = new SubMenu_Weather(tourProvider);
@@ -81,6 +85,7 @@ public class SubMenu_AdjustTourValues extends Action implements IMenuCreator {
       new ActionContributionItem(_action_MultiplyCaloriesBy1000).fill(menu, -1);
       new ActionContributionItem(_action_SetTimeZone).fill(menu, -1);
 
+      new ActionContributionItem(_subMenu_CustomTracks).fill(menu, -1);
       new ActionContributionItem(_subMenu_Cadence).fill(menu, -1);
       new ActionContributionItem(_subMenu_Elevation).fill(menu, -1);
       new ActionContributionItem(_subMenu_Weather).fill(menu, -1);

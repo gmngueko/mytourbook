@@ -394,6 +394,9 @@ public class Messages extends NLS {
    public static String        Dialog_RetrieveWeather_Label_WeatherDataNotRetrieved;
    public static String        Dialog_RetrieveWeather_WeatherDataNotFound;
 
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_Title;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_Message;
+
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Title;
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Message;
    public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelInterval;
@@ -2299,6 +2302,7 @@ public class Messages extends NLS {
    public static String Tour_Action_AdjustTourValues;
    public static String Tour_Action_RetrieveWeatherData;
    public static String Tour_Action_RetrieveWeatherOwmData;
+   public static String Tour_Action_RetrieveCustomTracksJsonData;
    public static String Tour_Action_auto_move_sliders_when_zoomed;
    public static String Tour_Action_auto_zoom_to_slider_position;
    public static String Tour_Action_DuplicateTour;
@@ -2319,6 +2323,7 @@ public class Messages extends NLS {
    public static String Tour_Action_ComputeCadenceZonesTimes;
    public static String Tour_Action_ComputeCadenceZonesTimes_Message;
    public static String Tour_Action_ComputeCadenceZonesTimes_Title;
+   public static String Tour_Action_Custom_Tracks;
    public static String Tour_Action_Custom_Tracks_Tooltip_Prefix;
    public static String Tour_Action_GeoCompare_Tooltip;
    public static String Tour_Action_GraphGears;
