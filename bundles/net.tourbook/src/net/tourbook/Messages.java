@@ -396,6 +396,18 @@ public class Messages extends NLS {
 
    public static String        Dialog_RetrieveCustomTracksJson_Dialog_Title;
    public static String        Dialog_RetrieveCustomTracksJson_Dialog_Message;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelRadioChoose;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile_ToolTip;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_NoJsonImport;
 
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Title;
    public static String        Dialog_RetrieveWeatherOwm_Dialog_Message;

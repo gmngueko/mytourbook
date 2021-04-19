@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import de.byteholder.geoclipse.map.UI;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -64,25 +66,19 @@ import org.eclipse.swt.widgets.Text;
 
 public class ActionRetrieveCustomTracksJson extends Action {
    //TODO replace with default preference
-   public static final String   JSONPATH_GARMIN_SP02      = "/Spo2DailyAcclimation/payload/spo2ValuesArray";
-   public static final String   JSONPATH_GARMIN_RESPRATE  = "/respirationValuesArray";
-   public static final String   TRACKNAME_GARMIN_SP02     = "Garmin SPO2";
-   public static final String   TRACKNAME_GARMIN_RESPRATE = "Garmin RespRate";
-   public static final String   TRACKID_GARMIN_SP02       = "Garmin SPO2:12d76972-a064-4cf0-ac91-c023869b2bb3";
-   public static final String   TRACKID_GARMIN_RESPRATE   = "Garmin RespRate:c0e4348f-2d8b-48cf-ab91-14d0e32c61d5";
-   public static final String   TRACKUNIT_GARMIN_SP02     = "%";
-   public static final String   TRACKUNIT_GARMIN_RESPRATE = "cpm";
+   public static final String   JSONPATH_GARMIN_SP02      = "/Spo2DailyAcclimation/payload/spo2ValuesArray"; //$NON-NLS-1$
+   public static final String   JSONPATH_GARMIN_RESPRATE  = "/respirationValuesArray"; //$NON-NLS-1$
+   public static final String   TRACKNAME_GARMIN_SP02     = "Garmin SPO2"; //$NON-NLS-1$
+   public static final String   TRACKNAME_GARMIN_RESPRATE = "Garmin RespRate"; //$NON-NLS-1$
+   public static final String   TRACKID_GARMIN_SP02       = "Garmin SPO2:12d76972-a064-4cf0-ac91-c023869b2bb3"; //$NON-NLS-1$
+   public static final String   TRACKID_GARMIN_RESPRATE   = "Garmin RespRate:c0e4348f-2d8b-48cf-ab91-14d0e32c61d5"; //$NON-NLS-1$
+   public static final String   TRACKUNIT_GARMIN_SP02     = "%"; //$NON-NLS-1$
+   public static final String   TRACKUNIT_GARMIN_RESPRATE = "cpm"; //$NON-NLS-1$
 
    final static Charset         ENCODING_UTF8             = StandardCharsets.UTF_8;
-   final static Charset         ENCODING_CP1252           = Charset.forName("CP1252");
+   final static Charset         ENCODING_CP1252           = Charset.forName("CP1252"); //$NON-NLS-1$
 
    private final ITourProvider2 _tourProvider;
-//   private String               _jsonPath1               = JSONPATH_GARMIN_SP02;
-//   private String               _jsonPath2               = JSONPATH_GARMIN_RESPRATE;
-//   private String               _trackName1               = TRACKNAME_GARMIN_SP02;
-//   private String               _trackId1                 = TRACKID_GARMIN_SP02;
-//   private String               _trackName2               = TRACKNAME_GARMIN_RESPRATE;
-//   private String               _trackId2                 = TRACKID_GARMIN_RESPRATE;
    private String _jsonPath  = JSONPATH_GARMIN_SP02;
    private String _trackName = TRACKNAME_GARMIN_SP02;
    private String _trackId   = TRACKID_GARMIN_SP02;
@@ -119,7 +115,6 @@ public class ActionRetrieveCustomTracksJson extends Action {
 
       private String  trackUnit2Value;
 
-      //private String  txtFileNameValue;
       private Button  buttonOpenFile;
 
       private Text    txtFileName;
@@ -175,10 +170,10 @@ public class ActionRetrieveCustomTracksJson extends Action {
       private void createJsonImport(final Composite container) {
 
          final Group group1 = new Group(container, SWT.SHADOW_IN);
-         group1.setText("Choose the path to import");
+         group1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelRadioChoose);
          group1.setLayout(new RowLayout(SWT.HORIZONTAL));
          buttonPath1 = new Button(group1, SWT.RADIO);
-         buttonPath1.setText("Path1");
+         buttonPath1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath1);
          buttonPath1.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -192,7 +187,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
 
          });
          buttonPath2 = new Button(group1, SWT.RADIO);
-         buttonPath2.setText("Path2");
+         buttonPath2.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath2);
          buttonPath2.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -207,11 +202,11 @@ public class ActionRetrieveCustomTracksJson extends Action {
          });
 
          final Label lbtDummy = new Label(container, SWT.NONE);
-         lbtDummy.setText("");
+         lbtDummy.setText(UI.EMPTY_STRING);
 
          buttonOpenFile = new Button(container, SWT.NONE);
-         buttonOpenFile.setText("Open Json File");
-         buttonOpenFile.setToolTipText("Open and Parse Json File !!");
+         buttonOpenFile.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile);
+         buttonOpenFile.setToolTipText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile_ToolTip);
          buttonOpenFile.addListener(SWT.Selection, new Listener() {
             @Override
             public void handleEvent(final Event e) {
@@ -228,14 +223,14 @@ public class ActionRetrieveCustomTracksJson extends Action {
                   final Path path = Paths.get(txtFileName.getText());
                   try {
                      final List<String> jsonDocument = Files.readAllLines(path, ENCODING_CP1252);
-                     jsonFileContent = "";
+                     jsonFileContent = UI.EMPTY_STRING;
                      for (final String element : jsonDocument) {
                         jsonFileContent += element;
                      }
                   } catch (final IOException e1) {
                      // TODO Auto-generated catch block
                      e1.printStackTrace();
-                     txtFileName.setText(dialog.open() + "=>Exception reading file!!!");
+                     txtFileName.setText(dialog.open() + "=>Exception reading file!!!"); //$NON-NLS-1$
                   }
                   break;
                }
@@ -250,7 +245,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
 
       private void createJsonPath1(final Composite container) {
          final Label lbtPath1 = new Label(container, SWT.NONE);
-         lbtPath1.setText("Json Path1");
+         lbtPath1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath1);
 
          final GridData dataPath1 = new GridData();
          dataPath1.grabExcessHorizontalSpace = true;
@@ -259,7 +254,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          jsonPath1Text.setLayoutData(dataPath1);
 
          final Label lbtName1 = new Label(container, SWT.NONE);
-         lbtName1.setText("Track Name1");
+         lbtName1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName1);
 
          final GridData dataName1 = new GridData();
          dataName1.grabExcessHorizontalSpace = true;
@@ -268,7 +263,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          trackName1Text.setLayoutData(dataName1);
 
          final Label lbtId1 = new Label(container, SWT.NONE);
-         lbtId1.setText("Track Id1");
+         lbtId1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId1);
 
          final GridData dataId1 = new GridData();
          dataId1.grabExcessHorizontalSpace = true;
@@ -277,7 +272,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          trackId1Text.setLayoutData(dataId1);
 
          final Label lbtUnit1 = new Label(container, SWT.NONE);
-         lbtUnit1.setText("Track Unit1");
+         lbtUnit1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit1);
 
          final GridData dataUnit1 = new GridData();
          dataUnit1.grabExcessHorizontalSpace = true;
@@ -288,7 +283,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
 
       private void createJsonPath2(final Composite container) {
          final Label lbtPath2 = new Label(container, SWT.NONE);
-         lbtPath2.setText("Json Path2");
+         lbtPath2.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath2);
 
          final GridData dataPath2 = new GridData();
          dataPath2.grabExcessHorizontalSpace = true;
@@ -297,7 +292,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          jsonPath2Text.setLayoutData(dataPath2);
 
          final Label lbtName2 = new Label(container, SWT.NONE);
-         lbtName2.setText("Track Name2");
+         lbtName2.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName2);
 
          final GridData dataName2 = new GridData();
          dataName2.grabExcessHorizontalSpace = true;
@@ -306,7 +301,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          trackName2Text.setLayoutData(dataName2);
 
          final Label lbtId2 = new Label(container, SWT.NONE);
-         lbtId2.setText("Track Id2");
+         lbtId2.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId2);
 
          final GridData dataId2 = new GridData();
          dataId2.grabExcessHorizontalSpace = true;
@@ -315,7 +310,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
          trackId2Text.setLayoutData(dataId2);
 
          final Label lbtUnit1 = new Label(container, SWT.NONE);
-         lbtUnit1.setText("Track Unit1");
+         lbtUnit1.setText(Messages.Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit2);
 
          final GridData dataUnit2 = new GridData();
          dataUnit2.grabExcessHorizontalSpace = true;
@@ -386,14 +381,11 @@ public class ActionRetrieveCustomTracksJson extends Action {
          trackId2Value = trackId2Text.getText();
          trackUnit1Value = trackUnit1Text.getText();
          trackUnit2Value = trackUnit2Text.getText();
-
-         //txtFileNameValue = txtFileName.getText();
       }
 
    }
 
    public class GarminData{
-      //ArrayList<GarminEntry> valueArray;
       TreeMap<Long, Integer> valueMap;
       String trackId;
       String trackName;
@@ -520,10 +512,8 @@ public class ActionRetrieveCustomTracksJson extends Action {
          return;
       }
 
-      //final ArrayList<GarminEntry> garminValueArray = new ArrayList<>();
       final TreeMap<Long, Integer> garminValueMap = new TreeMap<>();
       final GarminData garminData = new GarminData();
-      //garminData.valueArray = garminValueArray;
       garminData.valueMap = garminValueMap;
       garminData.trackId = _trackId;
       garminData.trackName = _trackName;
@@ -539,7 +529,6 @@ public class ActionRetrieveCustomTracksJson extends Action {
                final GarminEntry entry = new GarminEntry();
                entry.epochMilliseconds = arrayElement.get(0).asLong();
                entry.value = arrayElement.get(1).asInt();
-               //garminValueArray.add(entry);
                garminValueMap.put(entry.epochMilliseconds, entry.value);
             }
          } catch (final JsonProcessingException e) {
@@ -570,7 +559,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
                MessageDialog.openInformation(
                      shell,
                      Messages.Dialog_RetrieveCustomTracksJson_Dialog_Title,
-                     "No Json data to Import");
+                     Messages.Dialog_RetrieveCustomTracksJson_Dialog_NoJsonImport);
             }
          }
       });
