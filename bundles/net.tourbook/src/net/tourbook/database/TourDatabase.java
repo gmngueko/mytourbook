@@ -1508,6 +1508,84 @@ public class TourDatabase {
       return tourIds;
    }
 
+   public static ArrayList<Long> getAllTourIds_BetweenTwoDates(final long dateFromEpochMS,
+                                                               final long dateUntilEpochMS) {
+
+      final ArrayList<Long> tourIds = new ArrayList<>();
+
+      PreparedStatement stmt = null;
+
+      try (Connection conn = getInstance().getConnection()) {
+
+         final long dateFromMS = dateFromEpochMS;//dateStart.toInstant().toEpochMilli();
+         final long dateUntilMS = dateUntilEpochMS;//dateEnd.toInstant().toEpochMilli();
+
+         final String sql = UI.EMPTY_STRING +
+
+               "SELECT tourId" //                                       //$NON-NLS-1$
+               + " FROM " + TourDatabase.TABLE_TOUR_DATA //             //$NON-NLS-1$
+               + " WHERE TourStartTime >= ? AND TourStartTime < ?" //   //$NON-NLS-1$
+               + " ORDER BY TourStartTime"; //                          //$NON-NLS-1$
+
+         stmt = conn.prepareStatement(sql);
+         stmt.setLong(1, dateFromMS);
+         stmt.setLong(2, dateUntilMS);
+
+         final ResultSet result = stmt.executeQuery();
+
+         while (result.next()) {
+            tourIds.add(result.getLong(1));
+         }
+
+      } catch (final SQLException e) {
+         UI.showSQLException(e);
+      } finally {
+         Util.closeSql(stmt);
+      }
+
+      return tourIds;
+   }
+
+   public static ArrayList<Long> getAllTourIds_BetweenTwoDates_ForPerson(final long dateFromEpochMS,
+                                                                         final long dateUntilEpochMS,
+                                                                         final long personId) {
+
+      final ArrayList<Long> tourIds = new ArrayList<>();
+
+      PreparedStatement stmt = null;
+
+      try (Connection conn = getInstance().getConnection()) {
+
+         final long dateFromMS = dateFromEpochMS;//dateStart.toInstant().toEpochMilli();
+         final long dateUntilMS = dateUntilEpochMS;//dateEnd.toInstant().toEpochMilli();
+
+         final String sql = UI.EMPTY_STRING +
+
+               "SELECT tourId" //                                       //$NON-NLS-1$
+               + " FROM " + TourDatabase.TABLE_TOUR_DATA //             //$NON-NLS-1$
+               + " WHERE TourStartTime >= ? AND TourStartTime < ? AND " + KEY_PERSON + " = ?" //   //$NON-NLS-1$
+               + " ORDER BY TourStartTime"; //                          //$NON-NLS-1$
+
+         stmt = conn.prepareStatement(sql);
+         stmt.setLong(1, dateFromMS);
+         stmt.setLong(2, dateUntilMS);
+         stmt.setLong(3, personId);
+
+         final ResultSet result = stmt.executeQuery();
+
+         while (result.next()) {
+            tourIds.add(result.getLong(1));
+         }
+
+      } catch (final SQLException e) {
+         UI.showSQLException(e);
+      } finally {
+         Util.closeSql(stmt);
+      }
+
+      return tourIds;
+   }
+
    public static TreeSet<String> getAllTourMarkerNames() {
 
       if (_dbTourMarkerNames == null) {

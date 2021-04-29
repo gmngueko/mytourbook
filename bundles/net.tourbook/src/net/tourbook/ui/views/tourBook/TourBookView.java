@@ -345,6 +345,8 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
    private ActionTourBookOptions           _actionTourBookOptions;
    private ActionUpload                    _actionUploadTour;
    //
+   private ActionDownLoadGarminConnect     _actionDownLoadGarminConnect;
+   //
    private PixelConverter                  _pc;
    /*
     * UI controls
@@ -1103,6 +1105,8 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
    private void createActions() {
 
+      _actionDownLoadGarminConnect = new ActionDownLoadGarminConnect(this);
+
       _subMenu_AdjustTourValues = new SubMenu_AdjustTourValues(this, this);
       _actionReimport_Tours = new ActionReimportTours(this);
 
@@ -1751,6 +1755,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
       // re-import can be run on all/selected/between dates tours
       _actionReimport_Tours.setEnabled(true);
+      _actionDownLoadGarminConnect.setEnabled(true);
 
       _actionDeleteTour.setEnabled(isTourSelected);
       _actionEditQuick.setEnabled(isOneTour);
@@ -1858,6 +1863,9 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
       menuMgr.add(_actionReimport_Tours);
       menuMgr.add(_actionSetOtherPerson);
       menuMgr.add(_actionDeleteTour);
+
+      menuMgr.add(new Separator());
+      menuMgr.add(_actionDownLoadGarminConnect);
 
       enableActions();
    }
