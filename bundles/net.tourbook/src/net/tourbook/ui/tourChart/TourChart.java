@@ -54,6 +54,7 @@ import net.tourbook.common.CommonActivator;
 import net.tourbook.common.PointLong;
 import net.tourbook.common.UI;
 import net.tourbook.common.action.ActionOpenPrefDialog;
+import net.tourbook.common.color.ColorUtil;
 import net.tourbook.common.color.GraphColorManager;
 import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.time.TimeTools;
@@ -287,7 +288,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    private IWorkbenchPart                                   _part;
    //
    private TourData                                         _tourData;
-   private TourChartConfiguration                           _tcc;
+   private TourChartConfiguration                           _tourChartConfiguration;
 
    private Long                                             _currentTourId_for_CustomTracks = null;
    //
@@ -431,7 +432,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       @Override
       protected ToolbarSlideout createSlideout(final ToolBar toolbar) {
 
-         return new Slideout_GraphBackground(_parent, toolbar, TourChart.this, _state);
+         return new Slideout_GraphBackground(_parent, toolbar, TourChart.this);
       }
 
       @Override
@@ -637,7 +638,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             return;
          }
 
-         if (_tcc.isShowTourPhotos == false) {
+         if (_tourChartConfiguration.isShowTourPhotos == false) {
             return;
          }
 
@@ -650,7 +651,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             return;
          }
 
-         if (_tcc.isShowTourPhotoTooltip) {
+         if (_tourChartConfiguration.isShowTourPhotoTooltip) {
 
             _photoTooltip.showChartPhotoToolTip(
                   _layerPhoto,
@@ -915,7 +916,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _prefStore.setValue(ITourbookPreferences.GRAPH_IS_GRAPH_OVERLAPPED, isItemChecked);
 
-      _tcc.isGraphOverlapped = isItemChecked;
+      _tourChartConfiguration.isGraphOverlapped = isItemChecked;
       updateTourChart();
 
       setActionChecked(ACTION_ID_IS_GRAPH_OVERLAPPED, isItemChecked);
@@ -925,7 +926,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _prefStore.setValue(ITourbookPreferences.GRAPH_TOUR_INFO_IS_VISIBLE, isTourInfoVisible);
 
-      _tcc.isTourInfoVisible = isTourInfoVisible;
+      _tourChartConfiguration.isTourInfoVisible = isTourInfoVisible;
 
       updateUI_TourTitleInfo();
    }
@@ -946,15 +947,15 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _prefStore.setValue(ITourbookPreferences.GRAPH_ARE_PAUSES_VISIBLE, arePausesVisible);
 
-      _tcc.isShowTourPauses = arePausesVisible;
+      _tourChartConfiguration.isShowTourPauses = arePausesVisible;
 
       updateUI_PausesLayer(arePausesVisible);
    }
 
    public void actionShowTourPhotos() {
 
-      boolean isShowPhotos = _tcc.isShowTourPhotos;
-      boolean isShowTooltip = _tcc.isShowTourPhotoTooltip;
+      boolean isShowPhotos = _tourChartConfiguration.isShowTourPhotos;
+      boolean isShowTooltip = _tourChartConfiguration.isShowTourPhotoTooltip;
 
       if (isShowPhotos && isShowTooltip) {
 
@@ -972,8 +973,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          isShowTooltip = true;
       }
 
-      _tcc.isShowTourPhotos = isShowPhotos;
-      _tcc.isShowTourPhotoTooltip = isShowTooltip;
+      _tourChartConfiguration.isShowTourPhotos = isShowPhotos;
+      _tourChartConfiguration.isShowTourPhotoTooltip = isShowTooltip;
 
       _prefStore.setValue(ITourbookPreferences.GRAPH_IS_TOUR_PHOTO_VISIBLE, isShowPhotos);
       _prefStore.setValue(ITourbookPreferences.GRAPH_IS_TOUR_PHOTO_TOOLTIP_VISIBLE, isShowTooltip);
@@ -991,7 +992,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    public void actionXAxisDistance(final boolean isChecked) {
 
       // check if the distance axis button was pressed
-      if (isChecked && !_tcc.isShowTimeOnXAxis) {
+      if (isChecked && !_tourChartConfiguration.isShowTimeOnXAxis) {
          return;
       }
 
@@ -999,8 +1000,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
          // show distance on x axis
 
-         _tcc.isShowTimeOnXAxis = !_tcc.isShowTimeOnXAxis;
-         _tcc.isShowTimeOnXAxisBackup = _tcc.isShowTimeOnXAxis;
+         _tourChartConfiguration.isShowTimeOnXAxis = !_tourChartConfiguration.isShowTimeOnXAxis;
+         _tourChartConfiguration.isShowTimeOnXAxisBackup = _tourChartConfiguration.isShowTimeOnXAxis;
 
          switchSlidersTo2ndXData();
          updateTourChart(false);
@@ -1017,24 +1018,24 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    public void actionXAxisTime(final boolean isChecked) {
 
       // check if the time axis button was already pressed
-      if (isChecked && _tcc.isShowTimeOnXAxis) {
+      if (isChecked && _tourChartConfiguration.isShowTimeOnXAxis) {
 
          // x-axis already shows time, toggle between tour start time and tour time
 
-         final X_AXIS_START_TIME configXAxisTime = _tcc.xAxisTime;
+         final X_AXIS_START_TIME configXAxisTime = _tourChartConfiguration.xAxisTime;
 
          if (_tourData.getPhotoTimeAdjustment() > 0) {
 
             if (configXAxisTime == X_AXIS_START_TIME.START_WITH_0) {
 
-               _tcc.xAxisTime = X_AXIS_START_TIME.TOUR_START_TIME;
+               _tourChartConfiguration.xAxisTime = X_AXIS_START_TIME.TOUR_START_TIME;
 
             } else if (configXAxisTime == X_AXIS_START_TIME.TOUR_START_TIME) {
 
-               _tcc.xAxisTime = X_AXIS_START_TIME.PHOTO_TIME;
+               _tourChartConfiguration.xAxisTime = X_AXIS_START_TIME.PHOTO_TIME;
 
             } else {
-               _tcc.xAxisTime = X_AXIS_START_TIME.START_WITH_0;
+               _tourChartConfiguration.xAxisTime = X_AXIS_START_TIME.START_WITH_0;
             }
 
          } else {
@@ -1043,7 +1044,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
              * there is no photo time adjustment, toggle between relative and absolute time
              */
 
-            _tcc.xAxisTime = configXAxisTime == X_AXIS_START_TIME.START_WITH_0
+            _tourChartConfiguration.xAxisTime = configXAxisTime == X_AXIS_START_TIME.START_WITH_0
                   ? X_AXIS_START_TIME.TOUR_START_TIME
                   : X_AXIS_START_TIME.START_WITH_0;
          }
@@ -1061,8 +1062,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
          // show time on x axis
 
-         _tcc.isShowTimeOnXAxis = !_tcc.isShowTimeOnXAxis;
-         _tcc.isShowTimeOnXAxisBackup = _tcc.isShowTimeOnXAxis;
+         _tourChartConfiguration.isShowTimeOnXAxis = !_tourChartConfiguration.isShowTimeOnXAxis;
+         _tourChartConfiguration.isShowTimeOnXAxisBackup = _tourChartConfiguration.isShowTimeOnXAxis;
 
          switchSlidersTo2ndXData();
          updateTourChart(false);
@@ -1072,7 +1073,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       setActionChecked(ACTION_ID_X_AXIS_TIME, isChecked);
       setActionChecked(ACTION_ID_X_AXIS_DISTANCE, !isChecked);
 
-      fireXAxisSelection(_tcc.isShowTimeOnXAxis);
+      fireXAxisSelection(_tourChartConfiguration.isShowTimeOnXAxis);
    }
 
    /**
@@ -1110,7 +1111,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _prefChangeListener = propertyChangeEvent -> {
 
-         if (_tcc == null) {
+         if (_tourChartConfiguration == null) {
             return;
          }
 
@@ -1127,7 +1128,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
                // zoom preferences has changed
 
-               _tcc.updateZoomOptions();
+               _tourChartConfiguration.updateZoomOptions();
 
                isChartModified = true;
 
@@ -1176,7 +1177,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _prefChangeListener_Common = propertyChangeEvent -> {
 
-         if (_tcc == null) {
+         if (_tourChartConfiguration == null) {
             return;
          }
 
@@ -1541,7 +1542,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     */
    public void createActions_TourEditor(final TourChartConfiguration tourChartConfig) {
 
-      _tcc = tourChartConfig;
+      _tourChartConfiguration = tourChartConfig;
 
       createActions();
       createChartActions();
@@ -1592,7 +1593,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       // set value serie for the x-axis, it can be time or distance
       double[] xAxisSerie = null;
-      xAxisSerie = _tcc.isShowTimeOnXAxis //
+      xAxisSerie = _tourChartConfiguration.isShowTimeOnXAxis //
             ? _tourData.getTimeSerieWithTimeZoneAdjusted()
             : _tourData.getDistanceSerieDouble();
 
@@ -1775,7 +1776,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     */
    private void createLayer_Marker(final boolean isForcedMarker) {
 
-      if (isForcedMarker == false && _tcc.isShowTourMarker == false) {
+      if (isForcedMarker == false && _tourChartConfiguration.isShowTourMarker == false) {
 
          // marker layer is not displayed
 
@@ -1788,33 +1789,33 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       final ChartMarkerConfig cmc = new ChartMarkerConfig();
 
-      cmc.isDrawMarkerWithDefaultColor = _tcc.isDrawMarkerWithDefaultColor;
-      cmc.isShowAbsoluteValues = _tcc.isShowAbsoluteValues;
-      cmc.isShowHiddenMarker = _tcc.isShowHiddenMarker;
-      cmc.isShowMarkerLabel = _tcc.isShowMarkerLabel;
-      cmc.isShowMarkerTooltip = _tcc.isShowMarkerTooltip;
-      cmc.isShowTooltipData_Elevation = _tcc.isShowTooltipData_Elevation;
-      cmc.isShowTooltipData_Distance = _tcc.isShowTooltipData_Distance;
-      cmc.isShowTooltipData_Duration = _tcc.isShowTooltipData_Duration;
-      cmc.isShowTooltipData_ElevationGainDifference = _tcc.isShowTooltipData_ElevationGainDifference;
-      cmc.isShowTooltipData_DistanceDifference = _tcc.isShowTooltipData_DistanceDifference;
-      cmc.isShowTooltipData_DurationDifference = _tcc.isShowTooltipData_DurationDifference;
-      cmc.isShowMarkerPoint = _tcc.isShowMarkerPoint;
-      cmc.isShowOnlyWithDescription = _tcc.isShowOnlyWithDescription;
-      cmc.isShowSignImage = _tcc.isShowSignImage;
-      cmc.isShowLabelTempPos = _tcc.isShowLabelTempPos;
+      cmc.isDrawMarkerWithDefaultColor = _tourChartConfiguration.isDrawMarkerWithDefaultColor;
+      cmc.isShowAbsoluteValues = _tourChartConfiguration.isShowAbsoluteValues;
+      cmc.isShowHiddenMarker = _tourChartConfiguration.isShowHiddenMarker;
+      cmc.isShowMarkerLabel = _tourChartConfiguration.isShowMarkerLabel;
+      cmc.isShowMarkerTooltip = _tourChartConfiguration.isShowMarkerTooltip;
+      cmc.isShowTooltipData_Elevation = _tourChartConfiguration.isShowTooltipData_Elevation;
+      cmc.isShowTooltipData_Distance = _tourChartConfiguration.isShowTooltipData_Distance;
+      cmc.isShowTooltipData_Duration = _tourChartConfiguration.isShowTooltipData_Duration;
+      cmc.isShowTooltipData_ElevationGainDifference = _tourChartConfiguration.isShowTooltipData_ElevationGainDifference;
+      cmc.isShowTooltipData_DistanceDifference = _tourChartConfiguration.isShowTooltipData_DistanceDifference;
+      cmc.isShowTooltipData_DurationDifference = _tourChartConfiguration.isShowTooltipData_DurationDifference;
+      cmc.isShowMarkerPoint = _tourChartConfiguration.isShowMarkerPoint;
+      cmc.isShowOnlyWithDescription = _tourChartConfiguration.isShowOnlyWithDescription;
+      cmc.isShowSignImage = _tourChartConfiguration.isShowSignImage;
+      cmc.isShowLabelTempPos = _tourChartConfiguration.isShowLabelTempPos;
 
-      cmc.markerLabelTempPos = _tcc.markerLabelTempPos;
-      cmc.markerTooltipPosition = _tcc.markerTooltipPosition;
+      cmc.markerLabelTempPos = _tourChartConfiguration.markerLabelTempPos;
+      cmc.markerTooltipPosition = _tourChartConfiguration.markerTooltipPosition;
 
-      cmc.markerHoverSize = _tcc.markerHoverSize;
-      cmc.markerLabelOffset = _tcc.markerLabelOffset;
-      cmc.markerPointSize = _tcc.markerPointSize;
-      cmc.markerSignImageSize = _tcc.markerSignImageSize;
+      cmc.markerHoverSize = _tourChartConfiguration.markerHoverSize;
+      cmc.markerLabelOffset = _tourChartConfiguration.markerLabelOffset;
+      cmc.markerPointSize = _tourChartConfiguration.markerPointSize;
+      cmc.markerSignImageSize = _tourChartConfiguration.markerSignImageSize;
 
-      cmc.markerColorDefault = _tcc.markerColorDefault;
-      cmc.markerColorDevice = _tcc.markerColorDevice;
-      cmc.markerColorHidden = _tcc.markerColorHidden;
+      cmc.markerColorDefault = _tourChartConfiguration.markerColorDefault;
+      cmc.markerColorDevice = _tourChartConfiguration.markerColorDevice;
+      cmc.markerColorHidden = _tourChartConfiguration.markerColorHidden;
 
       if (_layerMarker == null) {
 
@@ -1961,17 +1962,15 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       _layerNightSections.setChartNightConfig(chartNightConfig);
 
-      // get the x-axis data serie
-      final double[] xAxisSerie = getXAxisDataSerie();
-
       final int[] timeSerie = _tourData.timeSerie;
       final double[] latitudeSerie = _tourData.latitudeSerie;
       final double[] longitudeSerie = _tourData.longitudeSerie;
-
       if (timeSerie == null || latitudeSerie == null || longitudeSerie == null) {
          return;
       }
 
+      // get the x-axis data serie
+      final double[] xAxisSerie = getXAxisDataSerie();
       if (_tourData.isMultipleTours()) {
 
          final int[] multipleStartTimeIndex = _tourData.multipleTourStartIndex;
@@ -1981,7 +1980,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
          final int numberOfTours = _tourData.multipleTourStartIndex.length;
          final ZonedDateTime[] multipleTourZonedStartTime = _tourData.multipleTourZonedStartTime;
-
          int tourSerieIndex = 0;
          int nextTourSerieIndex = 0;
          ZonedDateTime tourStartTime = null;
@@ -2000,7 +1998,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
             createLayer_NightSections_Chart(xAxisSerie, chartNightConfig, tourStartTime, tourSerieIndex, nextTourSerieIndex, previousTourElapsedTime);
          }
-
       } else {
 
          createLayer_NightSections_Chart(xAxisSerie, chartNightConfig, _tourData.getTourStartTime(), 0, timeSerie.length, 0);
@@ -2119,7 +2116,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     */
    private void createLayer_Pauses(final boolean isForcedPauses) {
 
-      if (isForcedPauses == false && _tcc.isShowTourPauses == false) {
+      if (isForcedPauses == false && _tourChartConfiguration.isShowTourPauses == false) {
          // pauses layer is not displayed
          hidePausesLayer();
          return;
@@ -2127,19 +2124,19 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       // pauses layer is visible
 
-      final ChartPauseConfig cpc = new ChartPauseConfig();
+      final ChartPauseConfig chartPauseConfig = new ChartPauseConfig();
 
       if (_layerPause == null) {
 
          // setup pause layer, a layer is created only once
 
-         _layerPause = new ChartLayerPause(this);
+         _layerPause = new ChartLayerPause();
 
          // set overlay painter
          addChartOverlay(_layerPause);
       }
 
-      _layerPause.setChartPauseConfig(cpc);
+      _layerPause.setChartPauseConfig(chartPauseConfig);
 
       // get the x-axis data serie
       final double[] xAxisSerie = getXAxisDataSerie();
@@ -2195,7 +2192,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                         xAxisSerie,
                         tourSerieIndex);
 
-                  cpc.chartLabels.add(chartLabel);
+                  chartPauseConfig.chartLabels.add(chartLabel);
                }
 
                ++currentTourPauseIndex;
@@ -2239,7 +2236,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                   xAxisSerie,
                   serieIndex);
 
-            cpc.chartLabels.add(chartLabel);
+            chartPauseConfig.chartLabels.add(chartLabel);
          }
       }
    }
@@ -2248,7 +2245,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       while (true) {
 
-         if (_tcc.isShowTourPhotos == false) {
+         if (_tourChartConfiguration.isShowTourPhotos == false) {
             break;
          }
 
@@ -2401,7 +2398,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             TourSegmenterView.STATE_GRAPH_OPACITY,
             TourSegmenterView.STATE_GRAPH_OPACITY_DEFAULT);
 
-      final double[] xDataSerie = _tcc.isShowTimeOnXAxis
+      final double[] xDataSerie = _tourChartConfiguration.isShowTimeOnXAxis
             ? _tourData.getTimeSerieDouble()
             : _tourData.getDistanceSerieDouble();
 
@@ -2848,7 +2845,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       /*
        * add actions to the toolbar
        */
-      if (_tcc.canShowTourCompareGraph) {
+      if (_tourChartConfiguration.canShowTourCompareGraph) {
          tbm.add(_allTourChartActions.get(getGraphActionId(TourManager.GRAPH_TOUR_COMPARE)));
       }
 
@@ -2870,7 +2867,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       tbm.add(_allTourChartActions.get(ACTION_ID_IS_SHOW_TOUR_PAUSES));
       tbm.add(_actionTourInfo);
 
-      if (_tcc.canUseGeoCompareTool) {
+      if (_tourChartConfiguration.canUseGeoCompareTool) {
          tbm.add(_actionGeoCompare);
       }
       tbm.add(_actionTourChartSmoothing);
@@ -3311,7 +3308,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    }
 
    public TourChartConfiguration getTourChartConfig() {
-      return _tcc;
+      return _tourChartConfiguration;
    }
 
    public TourData getTourData() {
@@ -3340,7 +3337,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
    private double[] getXAxisDataSerie() {
 
-      final double[] xAxisSerie = _tcc.isShowTimeOnXAxis
+      final double[] xAxisSerie = _tourChartConfiguration.isShowTimeOnXAxis
             ? _tourData.getTimeSerieDouble()
             : _tourData.getDistanceSerieDouble();
       return xAxisSerie;
@@ -3541,7 +3538,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          setChartOverlayDirty();
       }
 
-      if (_tcc.isShowMarkerTooltip) {
+      if (_tourChartConfiguration.isShowMarkerTooltip) {
 
          // marker tooltip is displayed
 
@@ -3867,7 +3864,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          // update state in the chart
          setHoveredTitleSegment(chartTitleSegment);
 
-         if (_tcc.isShowInfoTooltip) {
+         if (_tourChartConfiguration.isShowInfoTooltip) {
 
             // show/hide tooltip
             if (chartTitleSegment == null) {
@@ -3949,7 +3946,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                //final Action tourAction = _allTourChartActions.get(getGraphActionId(TourManager.GRAPH_CUSTOM_TRACKS + idx));
                //tourAction.setEnabled(false);
                _allTourChartActions.remove(getGraphActionId(TourManager.GRAPH_CUSTOM_TRACKS + alphabeticOrder));
-               _tcc.removeVisibleGraph(TourManager.GRAPH_CUSTOM_TRACKS + alphabeticOrder);//remove cutom raph from being visible
+               _tourChartConfiguration.removeVisibleGraph(TourManager.GRAPH_CUSTOM_TRACKS + alphabeticOrder);//remove cutom raph from being visible
             }
             numDisplayCustomTracks++;
          }
@@ -4583,7 +4580,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
    private void setCustomBackgroundPainter() {
 
-      if (_tcc.isBackgroundStyle_HrZone() || _tcc.isBackgroundStyle_SwimmingStyle()) {
+      if (_tourChartConfiguration.isBackgroundStyle_HrZone() || _tourChartConfiguration.isBackgroundStyle_SwimmingStyle()) {
          _customBackgroundPainter = new GraphBackgroundPainter();
       } else {
          _customBackgroundPainter = null;
@@ -5185,8 +5182,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             _prefStore,
             ITourbookPreferences.GRAPH_SEGMENT_ALTERNATE_COLOR);
 
-      graphTransparencyLine = _prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE);
-      graphTransparencyFilling = _prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_FILLING);
+      graphTransparencyLine = ColorUtil.getTransparencyFromPercentage(_prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE));
+      graphTransparencyFilling = ColorUtil.getTransparencyFromPercentage(_prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_FILLING));
 
       isShowHorizontalGridLines = Util.getPrefixPrefBoolean(_prefStore,
             GRID_PREF_PREFIX,
@@ -5209,15 +5206,15 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       final ChartTitleSegmentConfig ctsConfig = getChartTitleSegmentConfig();
 
-      if (_tcc.isTourInfoVisible) {
+      if (_tourChartConfiguration.isTourInfoVisible) {
 
          // show tour info
          addChartMouseListener(_mouseSegmentTitle_Listener);
          addChartMouseMoveListener(_mouseSegmentTitle_MoveListener);
 
          ctsConfig.isShowSegmentBackground = true;
-         ctsConfig.isShowSegmentSeparator = _tcc.isShowInfoTourSeparator;
-         ctsConfig.isShowSegmentTitle = _tcc.isShowInfoTitle;
+         ctsConfig.isShowSegmentSeparator = _tourChartConfiguration.isShowInfoTourSeparator;
+         ctsConfig.isShowSegmentTitle = _tourChartConfiguration.isShowInfoTitle;
 
       } else {
 
@@ -5232,7 +5229,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       ctsConfig.isMultipleSegments = _tourData.isMultipleTours();
 
-      _tourTitleTooltip.setFadeInDelayTime(_tcc.tourInfoTooltipDelay);
+      _tourTitleTooltip.setFadeInDelayTime(_tourChartConfiguration.tourInfoTooltipDelay);
    }
 
    /**
@@ -5459,7 +5456,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
        */
       // show photo layer only for ONE visible graph
       if (_layerPhoto != null
-            && _tcc.isShowTourPhotos == true
+            && _tourChartConfiguration.isShowTourPhotos == true
             && (yData == yDataWithLabels || dataModel.getChartType() == ChartType.HISTORY)) {
 
          customFgLayers.add(_layerPhoto);
@@ -5649,7 +5646,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       if (chartDataModel == null) {
 
          _tourData = null;
-         _tcc = null;
+         _tourChartConfiguration = null;
 
          _valuePointTooltip.setTourData(null);
 
@@ -5715,8 +5712,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       String toolTip;
       ImageDescriptor imageDescriptor;
 
-      final boolean isShowPhotos = _tcc.isShowTourPhotos;
-      final boolean isShowTooltip = _tcc.isShowTourPhotoTooltip;
+      final boolean isShowPhotos = _tourChartConfiguration.isShowTourPhotos;
+      final boolean isShowTooltip = _tourChartConfiguration.isShowTourPhotoTooltip;
 
       if (isShowPhotos && isShowTooltip) {
 
@@ -5795,7 +5792,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          allGraphIds = allGraphIdsAndCustomTracksIds.stream().mapToInt(Integer::intValue).toArray();
       }
 
-      final ArrayList<Integer> visibleGraphIds = _tcc.getVisibleGraphs();
+      final ArrayList<Integer> visibleGraphIds = _tourChartConfiguration.getVisibleGraphs();
       final ArrayList<Integer> enabledGraphIds = new ArrayList<>();
 
       // get all graph ids which can be displayed
@@ -5825,13 +5822,13 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       /*
        * Tour infos
        */
-      _actionTourInfo.setSelected(_tcc.isTourInfoVisible);
+      _actionTourInfo.setSelected(_tourChartConfiguration.isTourInfoVisible);
       _actionTourInfo.setEnabled(true);
 
       /*
        * Tour marker
        */
-      _actionTourMarker.setSelected(_tcc.isShowTourMarker);
+      _actionTourMarker.setSelected(_tourChartConfiguration.isShowTourMarker);
       _actionTourMarker.setEnabled(true);
 
       /*
@@ -5839,7 +5836,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
        */
       tourAction = _allTourChartActions.get(ACTION_ID_IS_SHOW_TOUR_PAUSES);
       tourAction.setEnabled(true);
-      tourAction.setChecked(_tcc.isShowTourPauses);
+      tourAction.setChecked(_tourChartConfiguration.isShowTourPauses);
 
       /*
        * Tour photos
@@ -5853,7 +5850,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
        */
       tourAction = _allTourChartActions.get(ACTION_ID_IS_GRAPH_OVERLAPPED);
       tourAction.setEnabled(true);
-      tourAction.setChecked(_tcc.isGraphOverlapped);
+      tourAction.setChecked(_tourChartConfiguration.isGraphOverlapped);
 
       /*
        * Geo compare
@@ -5864,7 +5861,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       /*
        * x-axis time/distance
        */
-      final boolean isShowTimeOnXAxis = _tcc.isShowTimeOnXAxis;
+      final boolean isShowTimeOnXAxis = _tourChartConfiguration.isShowTimeOnXAxis;
 
       tourAction = _allTourChartActions.get(ACTION_ID_X_AXIS_TIME);
       tourAction.setEnabled(true); // time data are always available
@@ -5872,11 +5869,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       tourAction = _allTourChartActions.get(ACTION_ID_X_AXIS_DISTANCE);
       tourAction.setChecked(!isShowTimeOnXAxis);
-      tourAction.setEnabled(!_tcc.isForceTimeOnXAxis);
+      tourAction.setEnabled(!_tourChartConfiguration.isForceTimeOnXAxis);
 
       // get options check status from the configuration
-      final boolean isMoveSlidersWhenZoomed = _tcc.moveSlidersWhenZoomed;
-      final boolean isAutoZoomToSlider = _tcc.autoZoomToSlider;
+      final boolean isMoveSlidersWhenZoomed = _tourChartConfiguration.moveSlidersWhenZoomed;
+      final boolean isAutoZoomToSlider = _tourChartConfiguration.autoZoomToSlider;
       final boolean canAutoZoom = getMouseMode().equals(Chart.MOUSE_MODE_ZOOM);
 
       // update tour chart actions
@@ -5900,7 +5897,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     * Update the tour chart with the previous data, configuration and min/max values.
     */
    public void updateTourChart() {
-      updateTourChartInternal(_tourData, _tcc, true, false);
+      updateTourChartInternal(_tourData, _tourChartConfiguration, true, false);
    }
 
    /**
@@ -5910,7 +5907,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     *           <code>true</code> keeps the min/max values from the previous chart
     */
    public void updateTourChart(final boolean keepMinMaxValues) {
-      updateTourChartInternal(_tourData, _tcc, keepMinMaxValues, false);
+      updateTourChartInternal(_tourData, _tourChartConfiguration, keepMinMaxValues, false);
    }
 
    /**
@@ -5922,11 +5919,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     *           when <code>true</code> the properties for the tour chart have changed
     */
    public void updateTourChart(final boolean keepMinMaxValues, final boolean isPropertyChanged) {
-      updateTourChartInternal(_tourData, _tcc, keepMinMaxValues, isPropertyChanged);
+      updateTourChartInternal(_tourData, _tourChartConfiguration, keepMinMaxValues, isPropertyChanged);
    }
 
    public void updateTourChart(final TourData tourData, final boolean keepMinMaxValues) {
-      updateTourChartInternal(tourData, _tcc, keepMinMaxValues, false);
+      updateTourChartInternal(tourData, _tourChartConfiguration, keepMinMaxValues, false);
 
    }
 
@@ -5970,9 +5967,9 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       }
 
       // keep min/max values for the 'old' chart in the chart config
-      if (_tcc != null && keepMinMaxValues) {
+      if (_tourChartConfiguration != null && keepMinMaxValues) {
 
-         final ChartYDataMinMaxKeeper oldMinMaxKeeper = _tcc.getMinMaxKeeper();
+         final ChartYDataMinMaxKeeper oldMinMaxKeeper = _tourChartConfiguration.getMinMaxKeeper();
 
          if (oldMinMaxKeeper != null) {
             oldMinMaxKeeper.saveMinMaxValues(getChartDataModel());
@@ -6003,7 +6000,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       // set current tour data and chart config to new values
       _tourData = newTourData;
-      _tcc = newTCC;
+      _tourChartConfiguration = newTCC;
 
       /*
        * Cleanup old data
@@ -6015,7 +6012,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       final ChartDataModel newChartDataModel = TourManager.getInstance()
             .createChartDataModel(
                   _tourData,
-                  _tcc,
+                  _tourChartConfiguration,
                   isPropertyChanged);
 
       // set the model BEFORE actions are created/enabled/checked
@@ -6037,7 +6034,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       updateTourActions();
 
       // restore min/max values from the chart config
-      final ChartYDataMinMaxKeeper newMinMaxKeeper = _tcc.getMinMaxKeeper();
+      final ChartYDataMinMaxKeeper newMinMaxKeeper = _tourChartConfiguration.getMinMaxKeeper();
       final boolean isMinMaxKeeper = (newMinMaxKeeper != null) && keepMinMaxValues;
       if (isMinMaxKeeper) {
          newMinMaxKeeper.setMinMaxValues(newChartDataModel);
@@ -6116,7 +6113,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
    private void updateUI_Marker(final Boolean isMarkerVisible) {
 
-      _tcc.isShowTourMarker = isMarkerVisible;
+      _tourChartConfiguration.isShowTourMarker = isMarkerVisible;
 
       updateUI_MarkerLayer(isMarkerVisible);
 
