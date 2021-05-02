@@ -155,7 +155,7 @@ public class Dialog_TourTag_Maintenance extends TitleAreaDialog {
       super.createButtonsForButtonBar(parent);
 
       // OK -> Save
-      getButton(IDialogConstants.OK_ID).setText(Messages.app_action_save);
+      getButton(IDialogConstants.OK_ID).setText(Messages.App_Action_Save);
    }
 
    @Override

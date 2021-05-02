@@ -12,6 +12,7 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins">
 		<accessrules>
 			<accessrule kind="accessible" pattern="org/eclipse/core/internal/databinding/conversion/**"/>
+			<accessrule kind="accessible" pattern="org/eclipse/e4/ui/css/swt/theme/**"/>
 		</accessrules>
 	</classpathentry>
 	<classpathentry kind="lib" path="opencsv-5.3.jar"/>
