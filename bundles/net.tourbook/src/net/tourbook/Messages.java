@@ -2429,6 +2429,24 @@ public class Messages extends NLS {
    public static String Tour_Book_Action_DeleteSelectedTours_MonitorSubtask;
    public static String Tour_Book_Action_ExportViewCSV;
 
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Title;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Message;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_AddTours;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_StartDate;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_EndDate;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptResult;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathDayActivities;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathSplitDay;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_Selected;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourDescription;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourPerson;
+
    public static String Tour_Book_Action_ToggleViewLayout_Tooltip;
    public static String Tour_Book_Combo_statistic_tooltip;
    public static String Tour_Book_Label_chart_title;

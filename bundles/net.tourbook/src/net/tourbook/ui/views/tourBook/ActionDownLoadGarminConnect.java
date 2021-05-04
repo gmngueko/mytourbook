@@ -64,10 +64,10 @@ class ActionDownLoadGarminConnect extends Action {
 
    private static final String   STATE_SELECTED_PERSON = "selectedPerson";                              //$NON-NLS-1$
 
-   private static final String   PATH_SCRIPT_DAY       = "C:\\Users\\gmngu\\Documents\\MyTourBook\\sel";
+   private static final String   PATH_SCRIPT_DAY       = "C:\\Users\\gmngu\\Documents\\MyTourBook\\sel";//$NON-NLS-1$
 
-   private static final String   PATH_SCRIPT_DAY_SPLIT = "C:\\Users\\gmngu\\Documents\\MyTourBook\\fit";
-   private static String         OS                    = System.getProperty("os.name").toLowerCase();
+   private static final String   PATH_SCRIPT_DAY_SPLIT = "C:\\Users\\gmngu\\Documents\\MyTourBook\\fit";//$NON-NLS-1$
+   private static String         OS                    = System.getProperty("os.name").toLowerCase();   //$NON-NLS-1$
    private final IDialogSettings _state                = TourbookPlugin.getDefault()                    //
          .getDialogSettingsSection("DialogSelectPerson");                                               //$NON-NLS-1$
 
@@ -108,7 +108,10 @@ class ActionDownLoadGarminConnect extends Action {
 
       private Composite                        _containerTourList;
       private Table                            _tableTours;
-      private String[]                         _titleTourList = { "Selected", "Tour Description", "Tour Person" };
+      private String[]                         _titleTourList = { Messages.Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_Selected,
+            Messages.Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourDescription,
+            Messages.Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourPerson };
+      //
       private Button                           _buttonAddTours;
 
       /**
@@ -127,8 +130,8 @@ class ActionDownLoadGarminConnect extends Action {
 
          super.create();
 
-         setTitle("Garmin Connect DownLoad Dialog Title");
-         setMessage("Garmin Connect DownLoad Workout or Daily Activities");
+         setTitle(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Title);
+         setMessage(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Message);
          //default value
          _textPathScriptDay.setText(PATH_SCRIPT_DAY);
          _textPathScriptDaySplit.setText(PATH_SCRIPT_DAY_SPLIT);
@@ -164,8 +167,8 @@ class ActionDownLoadGarminConnect extends Action {
 
          {
             _buttonChooseFolder = new Button(container, SWT.NONE);
-            _buttonChooseFolder.setText("Select Folder");
-            _buttonChooseFolder.setToolTipText("Select Folder for the Action");
+            _buttonChooseFolder.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder);
+            _buttonChooseFolder.setToolTipText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder_ToolTip);
             _buttonChooseFolder.addListener(SWT.Selection, new Listener() {
                @Override
                public void handleEvent(final Event e) {
@@ -190,7 +193,7 @@ class ActionDownLoadGarminConnect extends Action {
             // Text: Sript Day Path
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("script Day path:");
+            label.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathDayActivities);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _textPathScriptDay = new Text(container, SWT.BORDER);
@@ -200,7 +203,7 @@ class ActionDownLoadGarminConnect extends Action {
             // Text: Sript DaySplit Path
 
             final Label label = new Label(container, SWT.NONE);
-            label.setText("script DaySplit path:");
+            label.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathSplitDay);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             _textPathScriptDaySplit = new Text(container, SWT.BORDER);
@@ -214,7 +217,7 @@ class ActionDownLoadGarminConnect extends Action {
                // Text: start Date
 
                final Label label = new Label(containerDate, SWT.NONE);
-               label.setText("start Date");
+               label.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_StartDate);
                GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
                _textStartDate = new org.eclipse.swt.widgets.DateTime(containerDate, SWT.DATE);
@@ -228,10 +231,10 @@ class ActionDownLoadGarminConnect extends Action {
             }
 
             {
-               // Text: start Date
+               // Text: end Date
 
                final Label label = new Label(containerDate, SWT.NONE);
-               label.setText("end Date");
+               label.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_EndDate);
                GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
                _textEndDate = new org.eclipse.swt.widgets.DateTime(containerDate, SWT.DATE);
@@ -276,7 +279,7 @@ class ActionDownLoadGarminConnect extends Action {
             {
                //Add Tours Button
                _buttonAddTours = new Button(_containerTourList, SWT.NONE);
-               _buttonAddTours.setText("Add Tours in Selected Date Range");
+               _buttonAddTours.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_AddTours);
                _buttonAddTours.addListener(SWT.Selection, new Listener() {
                   @Override
                   public void handleEvent(final Event e) {
@@ -317,9 +320,9 @@ class ActionDownLoadGarminConnect extends Action {
                         mapOfMapToursForDay.clear();
                         for (final Long ids : tourIds) {
                            final TourData tourData = TourDatabase.getTourFromDb(ids);
-                           final String patternDate = "yyyy-MM-dd";
+                           final String patternDate = "yyyy-MM-dd"; //$NON-NLS-1$
                            final SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat(patternDate);
-                           final String patternTime = "HH:mm";
+                           final String patternTime = "HH:mm"; //$NON-NLS-1$
                            final SimpleDateFormat simpleDateFormatTime = new SimpleDateFormat(patternTime);
                            final Calendar calTourStart = Calendar.getInstance();
                            calTourStart.setTimeInMillis(tourData.getTourStartTimeMS());
@@ -332,16 +335,16 @@ class ActionDownLoadGarminConnect extends Action {
                            final Calendar calTourEnd = Calendar.getInstance();
                            calTourEnd.setTimeInMillis(tourData.getTourEndTimeMS());
                            final Date dateTourEnd = calTourEnd.getTime();
-                           String cmd = dayTourEntry.timeStartHHMM + ";";
+                           String cmd = dayTourEntry.timeStartHHMM + ";"; //$NON-NLS-1$
                            cmd += simpleDateFormatTime.format(dateTourEnd);
-                           String tourTypeName = "";
+                           String tourTypeName = ""; //$NON-NLS-1$
                            if (tourData.getTourType() != null) {
-                              if (tourData.getTourType().getName().toLowerCase().contains("cycling")) {
-                                 cmd += "=bike";
-                              } else if (tourData.getTourType().getName().toLowerCase().contains("running")) {
-                                 cmd += "=run";
-                              } else if (tourData.getTourType().getName().toLowerCase().contains("fitness")) {
-                                 cmd += "=bike";
+                              if (tourData.getTourType().getName().toLowerCase().contains("cycling")) { //$NON-NLS-1$
+                                 cmd += "=bike"; //$NON-NLS-1$
+                              } else if (tourData.getTourType().getName().toLowerCase().contains("running")) { //$NON-NLS-1$
+                                 cmd += "=run"; //$NON-NLS-1$
+                              } else if (tourData.getTourType().getName().toLowerCase().contains("fitness")) { //$NON-NLS-1$
+                                 cmd += "=bike"; //$NON-NLS-1$
                               }
                               tourTypeName = tourData.getTourType().getName();
                            }
@@ -350,7 +353,7 @@ class ActionDownLoadGarminConnect extends Action {
                            //populate table
                            final TableItem itemTour = new TableItem(_tableTours, SWT.NONE);
 
-                           itemTour.setText(1, String.valueOf(dayTourEntry.dayString + "/" + dayTourEntry.timeStartHHMM + "/" + tourTypeName));
+                           itemTour.setText(1, String.valueOf(dayTourEntry.dayString + "/" + dayTourEntry.timeStartHHMM + "/" + tourTypeName)); //$NON-NLS-1$ //$NON-NLS-2$
                            itemTour.setText(2, tourData.getDataPerson().getName());
                            final TableEditor editor = new TableEditor(_tableTours);
                            final Button button = new Button(_tableTours, SWT.CHECK);
@@ -393,15 +396,15 @@ class ActionDownLoadGarminConnect extends Action {
             GridLayoutFactory.swtDefaults().numColumns(2).applyTo(containerButton);
             {
                _buttonDownLoadDay = new Button(containerButton, SWT.NONE);
-               _buttonDownLoadDay.setText("DownLoad Activities For Days");
-               _buttonDownLoadDay.setToolTipText("DownLoad Activities for the selected Date span");
+               _buttonDownLoadDay.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays);
+               _buttonDownLoadDay.setToolTipText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays_ToolTip);
                _buttonDownLoadDay.addListener(SWT.Selection, new Listener() {
                   @Override
                   public void handleEvent(final Event e) {
                      switch (e.type) {
                      case SWT.Selection:
                         //call shell script
-                        final String pattern = "yyyy-MM-dd";
+                        final String pattern = "yyyy-MM-dd"; //$NON-NLS-1$
                         final SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
                         final Calendar calStart = Calendar.getInstance();
                         calStart.set(_textStartDate.getYear(),
@@ -420,24 +423,24 @@ class ActionDownLoadGarminConnect extends Action {
                         final Calendar nextDay = calStart.getInstance();
                         nextDay.add(Calendar.DAY_OF_MONTH, 1);
                         while (nextDay.before(calEnd)) {
-                           dayListChain += "_" + simpleDateFormat.format(nextDay);
+                           dayListChain += "_" + simpleDateFormat.format(nextDay); //$NON-NLS-1$
                            nextDay.add(Calendar.DAY_OF_MONTH, 1);
                         }
 
                         _textResult.setText(UI.EMPTY_STRING);
                         try {
                            if (_textPathFolder.getText().isBlank()) {
-                              _textResult.setText("Error: Download directory is empty !!!!");
+                              _textResult.setText("Error: Download directory is empty !!!!"); //$NON-NLS-1$
                               return;
                            }
                            if (_textPathScriptDay.getText().isBlank()) {
-                              _textResult.setText("Error: Script directory is empty !!!!");
+                              _textResult.setText("Error: Script directory is empty !!!!"); //$NON-NLS-1$
                               return;
                            }
-                           if (OS.contains("win")) {
+                           if (OS.contains("win")) { //$NON-NLS-1$
                               Process process;
-                              _textResult.setText("STARTED");
-                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait GarminDayAct.bat " + _textPathFolder.getText() + " "
+                              _textResult.setText("STARTED"); //$NON-NLS-1$
+                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait GarminDayAct.bat " + _textPathFolder.getText() + " " //$NON-NLS-1$ //$NON-NLS-2$
                                     + dayListChain,
                                     null,
                                     new File(_textPathScriptDay.getText()));
@@ -449,36 +452,34 @@ class ActionDownLoadGarminConnect extends Action {
 
                               String line;
                               while ((line = reader.readLine()) != null) {
-                                 output.append(line + "\n");
+                                 output.append(line + UI.NEW_LINE);
                               }
 
                               final int exitVal = process.waitFor();
-                              _textResult.setText("DONE with exit value=" + exitVal + UI.NEW_LINE2 + output);
+                              _textResult.setText("DONE with exit value=" + exitVal + UI.NEW_LINE2 + output); //$NON-NLS-1$
                               if (exitVal == 0) {
-                                 System.out.println("Success! Executing Script");
+                                 System.out.println("Success! Executing Script"); //$NON-NLS-1$
                                  System.out.println(output);
                               } else {
-                                 System.out.println("Failure! Executing Script");
+                                 System.out.println("Failure! Executing Script"); //$NON-NLS-1$
                                  System.out.println(output);
-                                 _textResult.setText("Failure! Executing Script");
+                                 _textResult.setText("Failure! Executing Script"); //$NON-NLS-1$
                                  return;
                               }
                            } else {
-                              _textResult.setText("only windows supported");
+                              _textResult.setText("only windows supported"); //$NON-NLS-1$
                               return;
                            }
 
                         } catch (final IOException e1) {
-                           // TODO Auto-generated catch block
                            e1.printStackTrace();
-                           _textResult.setText("exception:" + e1.getMessage());
+                           _textResult.setText("exception:" + e1.getMessage()); //$NON-NLS-1$
                         } catch (final InterruptedException e1) {
-                           // TODO Auto-generated catch block
                            e1.printStackTrace();
-                           _textResult.setText("interupt exception:" + e1.getMessage());
+                           _textResult.setText("interupt exception:" + e1.getMessage()); //$NON-NLS-1$
                         }
 
-                        _textResult.setText("Day Download Done");
+                        _textResult.setText("Day Download Done"); //$NON-NLS-1$
                         break;
                      }
                   }
@@ -486,100 +487,97 @@ class ActionDownLoadGarminConnect extends Action {
             }
             {
                _buttonSplitDays = new Button(containerButton, SWT.NONE);
-               _buttonSplitDays.setText("Split each Days Per Activity");
-               _buttonSplitDays.setToolTipText("Split Days per Selected Tours in List");
+               _buttonSplitDays.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays);
+               _buttonSplitDays.setToolTipText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays_ToolTip);
                _buttonSplitDays.addListener(SWT.Selection, new Listener() {
                   @Override
                   public void handleEvent(final Event e) {
                      switch (e.type) {
                      case SWT.Selection:
-                        //TODO: call shell script
                         _textResult.setText(UI.EMPTY_STRING);
-                        String finalResult = "";
+                        String finalResult = UI.EMPTY_STRING;
 
                         if (_textPathFolder.getText().isBlank()) {
-                           _textResult.setText("Error: Download directory is empty !!!!");
+                           _textResult.setText("Error: Download directory is empty !!!!"); //$NON-NLS-1$
                            return;
                         }
                         if (_textPathScriptDaySplit.getText().isBlank()) {
-                           _textResult.setText("Error: Day Split Script directory is empty !!!!");
+                           _textResult.setText("Error: Day Split Script directory is empty !!!!"); //$NON-NLS-1$
                            return;
                         }
                         if (mapOfMapToursForDay.isEmpty()) {
-                           _textResult.setText("Error: No Days Selected, First Select Days to Split!!");
+                           _textResult.setText("Error: No Days Selected, First Select Days to Split!!"); //$NON-NLS-1$
                            return;
                         }
 
                         //pre-processing script
-                        if (OS.contains("win")) {
+                        if (OS.contains("win")) { //$NON-NLS-1$
                            Process process;
                            //_textResult.setText("STARTED");
                            try {
-                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait preProcessing.bat " + "\"" + _textPathFolder.getText()
+                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait preProcessing.bat " + "\"" + _textPathFolder.getText() //$NON-NLS-1$ //$NON-NLS-2$
                                     + FileSystems
-                                          .getDefault().getSeparator() + "\"",
+                                          .getDefault().getSeparator() + "\"", //$NON-NLS-1$
                                     null,
                                     new File(_textPathScriptDaySplit.getText()));
                               final int exitVal = process.waitFor();
                               if (exitVal == 0) {
-                                 System.out.println("Success! Executing Split pre Script");
-                                 finalResult += "Success! Executing Split pre Script";
+                                 System.out.println("Success! Executing Split pre Script"); //$NON-NLS-1$
+                                 finalResult += "Success! Executing Split pre Script"; //$NON-NLS-1$
                                  //System.out.println(output);
                               } else {
-                                 System.out.println("Failure! Executing Split pre Script");
-                                 _textResult.setText("Failure! Executing Split pre Script");
+                                 System.out.println("Failure! Executing Split pre Script"); //$NON-NLS-1$
+                                 _textResult.setText("Failure! Executing Split pre Script"); //$NON-NLS-1$
                                  //System.out.println(output);
                                  return;
                               }
                            } catch (final IOException e1) {
-                              // TODO Auto-generated catch block
                               e1.printStackTrace();
-                              _textResult.setText("exception:" + e1.getMessage());
+                              _textResult.setText("exception:" + e1.getMessage()); //$NON-NLS-1$
                               return;
                            } catch (final InterruptedException e1) {
-                              // TODO Auto-generated catch block
                               e1.printStackTrace();
-                              _textResult.setText("InterruptedException:" + e1.getMessage());
+                              _textResult.setText("InterruptedException:" + e1.getMessage()); //$NON-NLS-1$
                               return;
                            }
                         } else {
-                           _textResult.setText("ONLY windows OS supported");
+                           _textResult.setText("ONLY windows OS supported"); //$NON-NLS-1$
                            return;
                         }
 
                         //main split process
                         //first gather commands list
-                        String curCmd = "";
-                        String prevDay = "";
+                        String curCmd = ""; //$NON-NLS-1$
+                        String prevDay = ""; //$NON-NLS-1$
                         int cntEntry = 0;
                         final TreeMap<String, String> listCmdDay = new TreeMap<>();
                         for (final Entry<Long, dayTour> entry : mapOfMapToursForDay.entrySet()) {
                            cntEntry++;
                            if (!prevDay.isBlank() && !prevDay.equalsIgnoreCase(entry.getValue().dayString)) {
                               if (curCmd.isBlank()) {
-                                 curCmd = "00:00;23:59";
+                                 curCmd = "00:00;23:59"; //$NON-NLS-1$
                               }
                               listCmdDay.put(prevDay, curCmd);
                               prevDay = entry.getValue().dayString;
                               if (entry.getValue().isChecked) {
                                  curCmd = entry.getValue().cmd;
                               } else {
-                                 curCmd = "";
+                                 curCmd = ""; //$NON-NLS-1$
                               }
                            } else if (prevDay.isBlank()) {
                               prevDay = entry.getValue().dayString;
-                              curCmd = "";
+                              curCmd = ""; //$NON-NLS-1$
                               if (entry.getValue().isChecked) {
                                  curCmd = entry.getValue().cmd;
                               }
                            } else {
                               if (entry.getValue().isChecked) {
-                                 curCmd += ";" + entry.getValue().cmd;
+                                 curCmd += ";" + entry.getValue().cmd; //$NON-NLS-1$
                               }
                            }
                            if (cntEntry == mapOfMapToursForDay.size()) {
                               if (curCmd.isBlank()) {
-                                 curCmd = "00:00;23:59";
+                                 curCmd = "00:00;23:59"; //$NON-NLS-1$
                               }
                               listCmdDay.put(prevDay, curCmd);
                            }
@@ -587,82 +585,78 @@ class ActionDownLoadGarminConnect extends Action {
 
                         //second execute script
                         for (final Entry<String, String> entryDay : listCmdDay.entrySet()) {
-                           if (OS.contains("win")) {
+                           if (OS.contains("win")) { //$NON-NLS-1$
                               Process process;
                               //_textResult.setText("STARTED");
                               try {
-                                 process = Runtime.getRuntime().exec("cmd.exe /c start /wait FitDaySingle2CSV.bat " + "\"" + _textPathFolder.getText()
+                                 process = Runtime.getRuntime().exec("cmd.exe /c start /wait FitDaySingle2CSV.bat " + "\"" + _textPathFolder.getText() //$NON-NLS-1$ //$NON-NLS-2$
                                        + FileSystems
                                              .getDefault().getSeparator()
-                                       + entryDay.getKey() + ".zip" + "\" "
-                                       + "\"" + entryDay.getValue() + "\"",
+                                       + entryDay.getKey() + ".zip" + "\" " //$NON-NLS-1$ //$NON-NLS-2$
+                                       + "\"" + entryDay.getValue() + "\"", //$NON-NLS-1$ //$NON-NLS-2$
                                        null,
                                        new File(_textPathScriptDaySplit.getText()));
                                  final int exitVal = process.waitFor();
                                  if (exitVal == 0) {
-                                    System.out.println("Success! Executing Split Script");
-                                    finalResult += UI.NEW_LINE + "Success! Executing Split Script:"
-                                          + entryDay.getKey() + ".zip "
+                                    System.out.println("Success! Executing Split Script"); //$NON-NLS-1$
+                                    finalResult += UI.NEW_LINE + "Success! Executing Split Script:" //$NON-NLS-1$
+                                          + entryDay.getKey() + ".zip " //$NON-NLS-1$
                                           + entryDay.getValue();
                                     //System.out.println(output);
                                  } else {
-                                    System.out.println("Failure! Executing Split Script");
-                                    _textResult.setText("Failure! Executing Split Script:" + entryDay.getKey());
+                                    System.out.println("Failure! Executing Split Script"); //$NON-NLS-1$
+                                    _textResult.setText("Failure! Executing Split Script:" + entryDay.getKey()); //$NON-NLS-1$
                                     //System.out.println(output);
                                     return;
                                  }
                               } catch (final IOException e1) {
-                                 // TODO Auto-generated catch block
                                  e1.printStackTrace();
-                                 _textResult.setText("exception:" + e1.getMessage());
+                                 _textResult.setText("exception:" + e1.getMessage()); //$NON-NLS-1$
                                  return;
                               } catch (final InterruptedException e1) {
-                                 // TODO Auto-generated catch block
                                  e1.printStackTrace();
-                                 _textResult.setText("InterruptedException:" + e1.getMessage());
+                                 _textResult.setText("InterruptedException:" + e1.getMessage()); //$NON-NLS-1$
                                  return;
                               }
                            } else {
-                              _textResult.setText("ONLY windows OS supported");
+                              _textResult.setText("ONLY windows OS supported"); //$NON-NLS-1$
                               return;
                            }
 
                         }
 
                         //post processing
-                        if (OS.contains("win")) {
+                        if (OS.contains("win")) { //$NON-NLS-1$
                            Process process;
                            //_textResult.setText("STARTED");
                            try {
-                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait postProcessing.bat " + "\"" + _textPathFolder.getText()
+                              process = Runtime.getRuntime().exec("cmd.exe /c start /wait postProcessing.bat " + "\"" + _textPathFolder.getText() //$NON-NLS-1$ //$NON-NLS-2$
                                     + FileSystems
-                                          .getDefault().getSeparator() + "\"",
+                                          .getDefault().getSeparator() + "\"", //$NON-NLS-1$
                                     null,
                                     new File(_textPathScriptDaySplit.getText()));
                               final int exitVal = process.waitFor();
                               if (exitVal == 0) {
-                                 System.out.println("Success! Executing Split post Script");
-                                 finalResult += UI.NEW_LINE + "Success! Executing Split post Script";
+                                 System.out.println("Success! Executing Split post Script"); //$NON-NLS-1$
+                                 finalResult += UI.NEW_LINE + "Success! Executing Split post Script"; //$NON-NLS-1$
                                  //System.out.println(output);
                               } else {
-                                 System.out.println("Failure! Executing Split post Script");
-                                 _textResult.setText("Failure! Executing Split post Script");
+                                 System.out.println("Failure! Executing Split post Script"); //$NON-NLS-1$
+                                 _textResult.setText("Failure! Executing Split post Script"); //$NON-NLS-1$
                                  //System.out.println(output);
                                  return;
                               }
                            } catch (final IOException e1) {
-                              // TODO Auto-generated catch block
                               e1.printStackTrace();
-                              _textResult.setText("exception:" + e1.getMessage());
+                              _textResult.setText("exception:" + e1.getMessage()); //$NON-NLS-1$
                               return;
                            } catch (final InterruptedException e1) {
-                              // TODO Auto-generated catch block
                               e1.printStackTrace();
-                              _textResult.setText("InterruptedException:" + e1.getMessage());
+                              _textResult.setText("InterruptedException:" + e1.getMessage()); //$NON-NLS-1$
                               return;
                            }
                         } else {
-                           _textResult.setText("ONLY windows OS supported");
+                           _textResult.setText("ONLY windows OS supported"); //$NON-NLS-1$
                            return;
                         }
 
@@ -676,7 +670,7 @@ class ActionDownLoadGarminConnect extends Action {
                // Text: Notes
 
                final Label label = new Label(containerButton, SWT.NONE);
-               label.setText("Script Result:");
+               label.setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptResult);
                GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(label);
 
                _textResult = new Text(containerButton, SWT.BORDER | SWT.WRAP | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
@@ -718,7 +712,7 @@ class ActionDownLoadGarminConnect extends Action {
 
       _tourBookView = tourBookView;
 
-      setText("Garmin Connect Download");
+      setText(Messages.Tour_Book_Action_DownLoadGarmin_Dialog_Title);
 
    }
 
