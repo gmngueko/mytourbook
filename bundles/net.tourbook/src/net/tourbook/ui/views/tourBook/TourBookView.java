@@ -657,7 +657,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
                      columnId);
 
                // clone header style
-               style = style.clone();
+               style = new Style(style);
                configRegistry.registerConfigAttribute(CellConfigAttributes.CELL_STYLE,
                      style,
                      DisplayMode.NORMAL,
