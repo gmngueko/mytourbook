@@ -32,6 +32,7 @@ import net.tourbook.device.garmin.fit.Activator;
 import net.tourbook.device.garmin.fit.DataConverters;
 import net.tourbook.device.garmin.fit.FitData;
 import net.tourbook.device.garmin.fit.FitData.CustomTracksFieldDefinition;
+import net.tourbook.device.garmin.fit.FitUtils;
 import net.tourbook.device.garmin.fit.IPreferences;
 import net.tourbook.device.garmin.fit.Messages;
 
@@ -113,10 +114,8 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
 
          boolean isCreateExceededMarker = false;
 
-         // convert garmin time into java time
-         final long garminTimeS = garminTime.getTimestamp();
-         final long garminTimeMS = garminTimeS * 1000;
-         final long sliceJavaTime = garminTimeMS + com.garmin.fit.DateTime.OFFSET;
+         final long sliceJavaTime = FitUtils.convertGarminTimeToJavaTime(
+               garminTime.getTimestamp());
 
          absoluteTime = sliceJavaTime;
          long timeDiff = 0;
