@@ -24,6 +24,8 @@ import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.action.ActionOpenPrefDialog;
+import net.tourbook.common.action.ActionResetToDefaults;
+import net.tourbook.common.action.IActionResetToDefault;
 import net.tourbook.common.font.MTFont;
 import net.tourbook.common.tooltip.ToolbarSlideout;
 import net.tourbook.common.util.Util;
@@ -32,7 +34,6 @@ import net.tourbook.data.TourData;
 import net.tourbook.preferences.PrefPageAppearanceTourChart;
 import net.tourbook.tour.TourManager;
 
-import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -49,9 +50,8 @@ import org.eclipse.swt.widgets.ToolBar;
 /**
  * Tour chart properties slideout.
  */
-public class SlideoutTourChartGraphs extends ToolbarSlideout {
+public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionResetToDefault {
 
-//<<<<<<< HEAD
    private static final String  GRAPH_LABEL_ALTITUDE                   = net.tourbook.common.Messages.Graph_Label_Altitude;
    public static final String   GRAPH_LABEL_HEARTBEAT                  = net.tourbook.common.Messages.Graph_Label_Heartbeat;
    public static final String   GRAPH_LABEL_SPEED                      = net.tourbook.common.Messages.Graph_Label_Speed;
@@ -71,14 +71,13 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
    public static final String   GRAPH_LABEL_SWIM_SWOLF                 = net.tourbook.common.Messages.Graph_Label_Swim_Swolf;
 
    private static final int    GRID_TOOLBAR_SLIDEOUT_NB_COLUMN        = 17;
-//=======
+
    private IDialogSettings      _state;
-//>>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
-   private Action               _actionRestoreDefaults;
-   private ActionOpenPrefDialog _actionPrefDialog;
+   private ActionOpenPrefDialog  _actionPrefDialog;
+   private ActionResetToDefaults _actionRestoreDefaults;
 
-   private SelectionAdapter     _defaultSelectionListener;
+   private SelectionAdapter      _defaultSelectionListener;
 
    /*
     * UI controls
@@ -122,18 +121,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
 
    private void createActions() {
 
-      /*
-       * Action: Restore default
-       */
-      _actionRestoreDefaults = new Action() {
-         @Override
-         public void run() {
-            resetToDefaults();
-         }
-      };
-
-      _actionRestoreDefaults.setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_RestoreDefault));
-      _actionRestoreDefaults.setToolTipText(Messages.App_Action_RestoreDefault_Tooltip);
+      _actionRestoreDefaults = new ActionResetToDefaults(this);
 
       _actionPrefDialog = new ActionOpenPrefDialog(
             Messages.Tour_Action_EditChartPreferences,
@@ -576,34 +564,6 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
       tbm.update(true);
    }
 
-   private Button createUI_GraphAction_CustomTracks_StandardTracks(final Composite parent,
-                                                                    final int graphId,
-                                                                    final String text,
-                                                                    final String image) {
-
-      final Button btngraph = new Button(parent, SWT.PUSH);
-
-      btngraph.setEnabled(true);
-      btngraph.setVisible(true);
-      btngraph.setImage(TourbookPlugin.getImageDescriptor(image).createImage());
-      //btngraph.setText(text);
-      GridDataFactory
-            .fillDefaults()
-            .grab(true, false)
-            .align(SWT.LEFT, SWT.FILL)
-            .applyTo(btngraph);
-
-      btngraph.addSelectionListener(new SelectionAdapter() {
-
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            _tourChart.getGraphAction(graphId).run();
-         }
-      });
-
-      return btngraph;
-   }
-
    private Button createUI_GraphAction_CustomTracks_StandardTrackswState(final Composite parent,
                                                                          final int graphId,
                                                                          final String text,
@@ -722,7 +682,8 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout {
 
    }
 
-   private void resetToDefaults() {
+   @Override
+   public void resetToDefaults() {
 
 // SET_FORMATTING_OFF
 
