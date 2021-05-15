@@ -19,6 +19,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 
 import net.tourbook.common.UI;
+import net.tourbook.common.color.ThemeUtil;
 import net.tourbook.common.util.ITourToolTipProvider;
 
 import org.eclipse.swt.SWT;
@@ -203,7 +204,7 @@ public class ChartComponentAxis extends Canvas {
       }
 
       final Color backgroundColor = UI.isDarkTheme()
-            ? _chart.getBackground() // this is the theme background color
+            ? ThemeUtil.getDarkestBackgroundColor()
             : _chart.getBackgroundColor();
 
       // draw into the image
@@ -235,6 +236,7 @@ public class ChartComponentAxis extends Canvas {
 
       final double zoomRatio = _componentGraph.getZoomRatio();
       if (zoomRatio == 1.0) {
+
          // chart is not zoomed
          return;
       }
@@ -410,6 +412,8 @@ public class ChartComponentAxis extends Canvas {
          /*
           * Draw y units
           */
+         gc.setForeground(_display.getSystemColor(SWT.COLOR_DARK_GRAY));
+
          int devY;
 
          for (final ChartUnit yUnit : yUnits) {
@@ -423,7 +427,6 @@ public class ChartComponentAxis extends Canvas {
                devY = devYTop + (int) devYUnit;
             }
 
-            gc.setForeground(_display.getSystemColor(SWT.COLOR_DARK_GRAY));
 
             final String valueLabel = yUnit.valueLabel;
 
@@ -452,7 +455,6 @@ public class ChartComponentAxis extends Canvas {
 
             // draw unit line only when units are available
 
-            gc.setForeground(_display.getSystemColor(SWT.COLOR_DARK_GRAY));
             gc.drawLine(devX, devYBottom, devX, devYTop);
          }
       }

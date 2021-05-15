@@ -1426,8 +1426,6 @@ public class Messages extends NLS {
    public static String        Pref_Graphs_Checkbox_SegmentAlternateColor_Tooltip;
    public static String        Pref_Graphs_Checkbox_ShowHorizontalGrid;
    public static String        Pref_Graphs_Checkbox_ShowVerticalGrid;
-   public static String        Pref_Graphs_ColorSelector_DarkTheme_Tooltip;
-   public static String        Pref_Graphs_ColorSelector_LightTheme_Tooltip;
    public static String        Pref_Graphs_Dialog_GridLine_Warning_Message;
    public static String        Pref_Graphs_Error_one_graph_must_be_selected;
    public static String        Pref_Graphs_grid_horizontal_distance;
@@ -1941,6 +1939,7 @@ public class Messages extends NLS {
    public static String Slideout_Map25TrackOptions_Label_OutlineColor;
    public static String Slideout_Map25TrackOptions_Label_OutlineWidth;
    public static String Slideout_Map25TrackOptions_Label_OutlineWidth_Tooltip;
+   public static String Slideout_Map25TrackOptions_Label_DirectionArrows;
 
    public static String Slideout_Map25MapOptions_Checkbox_Layer_3DBuilding;
    public static String Slideout_Map25MapOptions_Checkbox_Layer_Cartography;
