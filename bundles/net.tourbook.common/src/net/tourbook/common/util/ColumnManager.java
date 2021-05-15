@@ -225,7 +225,7 @@ public class ColumnManager {
          }
       };
 
-      _profileSorter = new Comparator<ColumnProfile>() {
+      _profileSorter = new Comparator<>() {
          @Override
          public int compare(final ColumnProfile colProfile1, final ColumnProfile colProfile2) {
             return colProfile1.name.compareTo(colProfile2.name);
@@ -1715,6 +1715,10 @@ public class ColumnManager {
       }
 
       return orderedColumnIds.toArray(new String[orderedColumnIds.size()]);
+   }
+
+   ColumnViewer getColumnViewer() {
+      return _columnViewer;
    }
 
    private int getColumnWidth(final String columnWidthId) {

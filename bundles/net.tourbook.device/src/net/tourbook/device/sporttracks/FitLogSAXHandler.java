@@ -191,6 +191,7 @@ public class FitLogSAXHandler extends DefaultHandler {
 
    private ArrayList<TourType>    _allTourTypes;
 
+   private boolean                _isReimport;
    {
       /*
        * Entries which are marked with *) have not a corresponding id/image within MyTourbook
@@ -409,12 +410,14 @@ public class FitLogSAXHandler extends DefaultHandler {
                            final String importFilePath,
                            final Map<Long, TourData> alreadyImportedTours,
                            final Map<Long, TourData> newlyImportedTours,
-                           final boolean isFitLogExFile) {
+                           final boolean isFitLogExFile,
+                           final boolean isReimport) {
 
       _device = device;
       _importFilePath = importFilePath;
       _alreadyImportedTours = alreadyImportedTours;
       _newlyImportedTours = newlyImportedTours;
+      _isReimport = isReimport;
 
       if (isFitLogExFile) {
          // We parse the custom field definitions and equipments
@@ -437,8 +440,10 @@ public class FitLogSAXHandler extends DefaultHandler {
          }
 
          _customDataFieldDefinitions = saxHandler.getCustomDataFieldDefinitions();
-         _equipments = saxHandler.getEquipments();
-         saveEquipmentsAsTags();
+         if (!_isReimport) {
+            _equipments = saxHandler.getEquipments();
+            saveEquipmentsAsTags();
+         }
       }
 
       _allTourTypes = TourDatabase.getAllTourTypes();
@@ -865,8 +870,10 @@ public class FitLogSAXHandler extends DefaultHandler {
          tourData.computeAltitudeUpDown();
          tourData.computeComputedValues();
 
-         finalizeTour_10_SetTourType(tourData);
-         finalizeTour_20_SetTags(tourData);
+         if (!_isReimport) {
+            finalizeTour_10_SetTourType(tourData);
+            finalizeTour_20_SetTags(tourData);
+         }
          finalizeTour_30_CreateMarkers(tourData);
       } else {
          //show already imported tour

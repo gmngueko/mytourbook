@@ -1,7 +1,5 @@
-package net.tourbook.common.color;
-
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,18 +13,22 @@ package net.tourbook.common.color;
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
+package net.tourbook.common.color;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import net.tourbook.common.CommonImages;
 import net.tourbook.common.UI;
 
 import org.eclipse.e4.core.contexts.IEclipseContext;
 import org.eclipse.e4.ui.css.swt.theme.ITheme;
 import org.eclipse.e4.ui.css.swt.theme.IThemeEngine;
 import org.eclipse.e4.ui.model.application.MApplication;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 
 public class ThemeUtil {
@@ -37,7 +39,7 @@ public class ThemeUtil {
    private static final String IMAGE_NAME_EXTENSION_PNG = ".png";
 
    /**
-    * All images for the dark theme should have this postfix.
+    * All images for the dark theme should have this postfix before the file extension
     */
    private static final String DARK_THEME_POSTFIX       = "-dark"; //$NON-NLS-1$
 
@@ -53,6 +55,33 @@ public class ThemeUtil {
    public static final String  E4_DARK_THEME_ID = "org.eclipse.e4.ui.css.theme.e4_dark"; //$NON-NLS-1$
 
    private static IThemeEngine _themeEngine;
+
+   /**
+    * The tour chart do not show a dark background color when displayed in a dialog, it shows the
+    * background color from the shell.
+    * <p>
+    * This color is used to show the tour chart with a dark background color, to have a contrast to
+    * the dialog background.
+    *
+    * <pre>
+    *
+    * W10 dark colors
+    *
+    * shell.getBackground()   Color {81, 86, 88, 255}
+    * table.getBackground()   Color {47, 47, 47, 255}
+    * </pre>
+    */
+   private static Color        _darkestBackgroundColor;
+
+   /**
+    * <pre>
+    * W10 dark colors
+    *
+    * shell.getForeground() Color {238, 238, 238, 255}
+    * table.getForeground() Color {238, 238, 238, 255}
+    * </pre>
+    */
+   private static Color        _darkestForegroundColor;
 
    /**
     * These are all Eclipse themes when using W10:
@@ -103,16 +132,26 @@ public class ThemeUtil {
       return allThemes;
    }
 
-   public static IThemeEngine getThemeEngine() {
+   /**
+    * @return The tour chart do not show a dark background color when displayed in a dialog, it
+    *         shows the background color from the shell.
+    *         <p>
+    *         Returns a color which is used to show the tour chart with a dark background color, to
+    *         have a contrast to the dialog background.
+    */
+   public static Color getDarkestBackgroundColor() {
 
-      setupTheme();
+      return _darkestBackgroundColor;
+   }
 
-      return _themeEngine;
+   public static Color getDarkestForegroundColor() {
+
+      return _darkestForegroundColor;
    }
 
    /**
     * @param imageName
-    * @return Returns the themed image name. The postfix {@value CommonImages#DARK_THEME_POSTFIX} is
+    * @return Returns the themed image name. The postfix {@value #DARK_THEME_POSTFIX} is
     *         appended to
     *         the image name when the dark theme image name is returned.
     */
@@ -129,6 +168,13 @@ public class ThemeUtil {
       }
 
       return imageNameThemed;
+   }
+
+   public static IThemeEngine getThemeEngine() {
+
+      setupTheme();
+
+      return _themeEngine;
    }
 
    /**
@@ -208,5 +254,27 @@ public class ThemeUtil {
 
          setDarkTheme(isDarkThemeSelected);
       }
+
+      final Shell shell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+      final Table table = new Table(shell, SWT.BORDER);
+
+//      System.out.println((System.currentTimeMillis() + " shell.getBackground()      1 " + shell.getBackground()));
+//      System.out.println((System.currentTimeMillis() + " table.getBackground()      1 " + table.getBackground()));
+//      System.out.println((System.currentTimeMillis() + " shell.getForeground()      1 " + shell.getForeground()));
+//      System.out.println((System.currentTimeMillis() + " table.getForeground()      1 " + table.getForeground()));
+
+      Display.getDefault().asyncExec(() -> {
+
+//         System.out.println((System.currentTimeMillis() + " shell.getBackground()      2 " + shell.getBackground()));
+//         System.out.println((System.currentTimeMillis() + " table.getBackground()      2 " + table.getBackground()));
+//         System.out.println((System.currentTimeMillis() + " shell.getForeground()      2 " + shell.getForeground()));
+//         System.out.println((System.currentTimeMillis() + " table.getForeground()      2 " + table.getForeground()));
+
+         // I found, that a table do have a darker background color than the shell
+
+         _darkestForegroundColor = table.getForeground();
+         _darkestBackgroundColor = table.getBackground();
+      });
+
    }
 }
