@@ -753,13 +753,13 @@ public class ValuePoint_ToolTip_UI extends Pinned_ToolTip_Shell implements IPinn
                   SWT.TRAIL,
                   4,
                   GRAPH_LABEL_TEMPERATURE,
-                  GraphColorManager.PREF_GRAPH_TEMPERATURE);
+                  GraphColorManager.PREF_GRAPH_TEMPTERATURE);
 
             final Label lblTemperatureUnit = createUI_Label_ValueUnit(
                   container,
                   SWT.LEAD,
                   GRAPH_LABEL_TEMPERATURE,
-                  GraphColorManager.PREF_GRAPH_TEMPERATURE);
+                  GraphColorManager.PREF_GRAPH_TEMPTERATURE);
 
             lblTemperatureUnit.setText(UI.UNIT_LABEL_TEMPERATURE);
          }
@@ -1117,9 +1117,9 @@ public class ValuePoint_ToolTip_UI extends Pinned_ToolTip_Shell implements IPinn
 
       } else {
 
-         final Color fgColor = _colorCache.getColor(//
-               colorId, //
-               _colorManager.getGraphColorDefinition(colorId).getTextColor_Active());
+         final Color fgColor = _colorCache.getColor(
+               colorId,
+               _colorManager.getGraphColorDefinition(colorId).getTextColor_Active_Themed());
 
          label.setForeground(fgColor);
       }
@@ -1161,9 +1161,9 @@ public class ValuePoint_ToolTip_UI extends Pinned_ToolTip_Shell implements IPinn
 
       if (colorId != null) {
 
-         final Color fgColor = _colorCache.getColor(//
-               colorId, //
-               _colorManager.getGraphColorDefinition(colorId).getTextColor_Active());
+         final Color fgColor = _colorCache.getColor(
+               colorId,
+               _colorManager.getGraphColorDefinition(colorId).getTextColor_Active_Themed());
 
          label.setForeground(fgColor);
       }
