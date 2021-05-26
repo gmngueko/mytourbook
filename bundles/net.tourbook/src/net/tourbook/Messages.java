@@ -2015,9 +2015,11 @@ public class Messages extends NLS {
    public static String Slideout_Map25TrackOptions_Label_ConfigName_Tooltip;
    public static String Slideout_Map25TrackOptions_Label_Name;
    public static String Slideout_Map25TrackOptions_Label_OutlineColor;
+   public static String Slideout_Map25TrackOptions_Label_OutlineColor_Tooltip;
    public static String Slideout_Map25TrackOptions_Label_OutlineWidth;
    public static String Slideout_Map25TrackOptions_Label_OutlineWidth_Tooltip;
    public static String Slideout_Map25TrackOptions_Label_DirectionArrows;
+   public static String Slideout_Map25TrackOptions_Label_DirectionArrows_Tooltip;
 
    public static String Slideout_Map25MapOptions_Checkbox_Layer_3DBuilding;
    public static String Slideout_Map25MapOptions_Checkbox_Layer_Cartography;
@@ -2108,6 +2110,7 @@ public class Messages extends NLS {
    public static String Slideout_Map_Options_Label_SliderLocation_Color_Tooltip;
    public static String Slideout_Map_Options_Label_SliderLocation_Size;
    public static String Slideout_Map_Options_Label_SliderPath_Color;
+   public static String Slideout_Map_Options_Label_SliderPath_Color_Tooltip;
    public static String Slideout_Map_Options_Label_SliderPath_Width;
    public static String Slideout_Map_Options_Label_Title;
 
@@ -2260,6 +2263,7 @@ public class Messages extends NLS {
    public static String Slideout_TourMarkerFilter_Label_GeoFilter_Tooltip;
    public static String Slideout_TourMarkerFilter_Label_GeoFilterArea;
    public static String Slideout_TourMarkerFilter_Label_GeoFilterNotAvailable;
+   public static String Slideout_TourMarkerFilter_Label_Title;
 
    public static String Slideout_TourTagFilter_Action_AddProfile_Tooltip;
    public static String Slideout_TourTagFilter_Action_CheckAllTags_Tooltip;
@@ -2619,6 +2623,9 @@ public class Messages extends NLS {
    public static String Tour_Info_Label_AllFields_Tooltip;
 
    public static String Tour_Log_Action_Clear_Tooltip;
+
+   public static String TourManager_Dialog_OutOfSyncError_Message;
+   public static String TourManager_Dialog_OutOfSyncError_Title;
 
    public static String Tour_Marker_Column_Description_ShortCut;
    public static String Tour_Marker_Column_Description_Tooltip;

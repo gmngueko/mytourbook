@@ -1021,7 +1021,10 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
          final String property = propertyChangeEvent.getProperty();
 
-         if (property.equals(ITourbookPreferences.APP_DATA_FILTER_IS_MODIFIED)) {
+         if (property.equals(ITourbookPreferences.APP_DATA_FILTER_IS_MODIFIED)
+
+               // when a tour type is deleted then the tours from the db must be reloaded
+               || property.equals(ITourbookPreferences.TOUR_TYPE_LIST_IS_MODIFIED)) {
 
             /*
              * Flat view do not preserve column reordering when reloaded -> recreate it
@@ -1037,16 +1040,6 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
                reloadViewer();
             }
-
-         } else if (property.equals(ITourbookPreferences.TOUR_TYPE_LIST_IS_MODIFIED)) {
-
-            _tourViewer_NatTable.refresh();
-
-            // update tourbook viewer
-            _tourViewer_Tree.refresh();
-
-            // redraw must be done to see modified tour type image colors
-            _tourViewer_Tree.getTree().redraw();
 
          } else if (property.equals(ITourbookPreferences.VIEW_TOOLTIP_IS_MODIFIED)) {
 

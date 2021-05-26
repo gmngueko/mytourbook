@@ -2805,7 +2805,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       _actionViewSettings = new ActionViewSettings();
 
-
       _tagMenuMgr = new TagMenuManager(this, false);
 
       // swim style actions
@@ -6277,7 +6276,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                   && (_isManualTour == false));
       _actionToggleReadEditMode.setEnabled(isCellEditorInactive && isTourInDb);
 
-
       _actionSetStartDistanceTo_0.setEnabled(isCellEditorInactive && isNotManualTour && canEdit && isDistanceLargerThan0);
       _actionDeleteDistanceValues.setEnabled(isCellEditorInactive && isNotManualTour && canEdit && isDistanceAvailable);
       _actionComputeDistanceValues.setEnabled(isCellEditorInactive && isNotManualTour && canEdit && isGeoAvailable);
@@ -7543,7 +7541,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
          _selectionTourId = tourData.getTourId();
 
-         if ((tourData != null) && (currentTourId == _selectionTourId)) {
+         if (currentTourId == _selectionTourId) {
             isCurrentTourSelected = true;
             selectedTourData = tourData;
          }
@@ -8002,7 +8000,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          /*
           * saveTour will check the tour editor dirty state, but when the tour is saved the dirty
           * flag
-          * can be set before to prevent an out of synch error
+          * can be set before to prevent an out of sync error
           */
          _isTourDirty = false;
 
