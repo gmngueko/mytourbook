@@ -4,15 +4,13 @@
 TODO's
 ======
 
+* SRTM         - Change color of SRTM line in tour chart, in dark mode it's almost not visible
+
 * Website      - Save action must not be done manually, they are saved in e.g. net.tourbook/.settings/org.eclipse.jdt.ui.prefs with the "sp_cleanup" key prefix
                  Need to check how to apply it to all projects, must maybe be done with the already existing ant script
 
                - Style rule for actions, use "Title Case" https://en.wikipedia.org/wiki/Title_case
                  mainly e.g. 'at', 'of', ... should be lowercase otherwise it looks ugly
-
-* Tour modification (Frederic) 
-               - Use multi-threading (ThreadPoolExecutor)
-
   
 New
 ===
@@ -41,9 +39,10 @@ Improvements
   - Extending the zoom levels capacity from 20 to 23
 
 * 2.5D Map (Thomas):
-  - Upgrading VTM lib to 0.15 321
+  - Upgrading VTM lib to 0.15 321 and further to 0.16 349
   - Size of photothumbnails can be changed via slideout 326
   - Show direction arrows on the tourpath, controlled via slideout 339
+  - Tourtrack and Sliderpath have round ends like in map2 349
 
 * 3D Map & Tour Chart Preferences (Frederic)
  - "Squeezed" several transparency values to be in between 0 and 100 instead of 0 & 255 or 0.0 and 1.0
@@ -93,6 +92,9 @@ Bugfix
 * Map25 Mapprovider (Thomas)
   - Map was not displayed correctly at the very first start of Mytourbook 343
 
+* Statistic Values View (Frederic)
+  - Fixed a bug where the elevation gain value was incorrect
+
 Translation    
 ===========
 
@@ -107,4 +109,4 @@ System
 ======
 
 * Eclipse 2021-?
-* FIT SDK 21.53
+* FIT SDK 21.54
