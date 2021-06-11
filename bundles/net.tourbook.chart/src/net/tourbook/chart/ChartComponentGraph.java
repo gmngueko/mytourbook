@@ -3197,8 +3197,10 @@ public class ChartComponentGraph extends Canvas {
       if (path2 != null) {
 
          // this color is not yet user defined
-         final RGB complimentColor = ColorUtil.getComplimentColor(rgbFg);
-         final Color path2Color = new Color(Display.getDefault(), complimentColor);
+         final RGB complimentColor = UI.IS_DARK_THEME
+               ? new RGB(255, 118, 255)
+               : ColorUtil.getComplimentColor(rgbFg);
+         final Color path2Color = new Color(complimentColor);
 
          gc.setForeground(path2Color);
          gc.drawPath(path2);
