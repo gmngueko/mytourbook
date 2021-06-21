@@ -3206,6 +3206,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       display.asyncExec(() -> {
 
+         if (_pageBook.isDisposed()) {
+            return;
+         }
+
          _foregroundColor_Default = parent.getForeground(); // Color {170, 170, 170, 255}    with dark mode
          _backgroundColor_Default = parent.getBackground(); // Color {47, 47, 47, 255}       with dark mode
 
@@ -3224,7 +3228,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
             _foregroundColor_1stColumn_NoRefTour = _foregroundColor_Default;
             _backgroundColor_1stColumn_NoRefTour = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
-
          }
       });
    }
@@ -7371,7 +7374,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             if (_isInfoInTitle == false) {
 
                /*
-                * show info only when it is not yet displayed, this is an optimization because
+                * Show info only when it is not yet displayed, this is an optimization because
                 * setting the message causes an layout and this is EXTREMLY SLOW because of the bad
                 * date time controls
                 */
@@ -7934,7 +7937,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             NLS.bind(Messages.tour_editor_dlg_save_tour_message, TourManager.getTourDateFull(_tourData)),
             MessageDialog.QUESTION,
             new String[] { IDialogConstants.YES_LABEL, IDialogConstants.NO_LABEL, IDialogConstants.CANCEL_LABEL },
-            0)//
+            0)
                   .open();
 
       if (returnCode == 0) {
@@ -7976,8 +7979,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
          /*
           * saveTour will check the tour editor dirty state, but when the tour is saved the dirty
-          * flag
-          * can be set before to prevent an out of sync error
+          * flag can be set before to prevent an out of sync error
           */
          _isTourDirty = false;
 
@@ -8034,7 +8036,13 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          // notify all views
          TourManager.fireEvent(TourEventId.TOUR_CHANGED, new TourEvent(_tourData), TourDataEditorView.this);
       }
-      _isSavingInProgress = false;
+
+      /*
+       * Linux needs async, otherwise the tour is modified again when pressing Ctrl+S
+       */
+      _parent.getDisplay().asyncExec(() -> {
+         _isSavingInProgress = false;
+      });
 
       getDataSeriesFromTourData();
 
@@ -8297,8 +8305,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       showDefaultTitle();
 
-      /*
-       * this is not an eclipse editor part but the property change must be fired to hide the "*"
+      /**
+       * This is not an eclipse editor part but the property change must be fired to hide the "*"
        * marker in the part name
        */
       firePropertyChange(PROP_DIRTY);
@@ -8790,7 +8798,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          _page_EditorForm.setImage(TourTypeImage.getTourTypeImage(tourType.getTypeId()));
       }
 
-      updateUI_TitleAsynch(getTourTitle());
+      updateUI_Title_Asynch(getTourTitle());
 
       updateUI_Tab_1_Tour();
       updateUI_Tab_2_TimeSlices();
@@ -9400,7 +9408,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          return;
       }
 
-      final ZoneId zoneId = _tourData == null //
+      final ZoneId zoneId = _tourData == null
             ? TimeTools.getDefaultTimeZone()
             : _tourData.getTimeZoneIdWithDefault();
 
@@ -9416,14 +9424,14 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       final String tourTitle = TourManager.getTourTitle(tourStartTime);
 
-      updateUI_TitleAsynch(tourTitle);
+      updateUI_Title_Asynch(tourTitle);
    }
 
    /**
-    * update the title is a really performance hog because of the date/time controls when they are
+    * Update the title is a really performance hog because of the date/time controls when they are
     * layouted
     */
-   private void updateUI_TitleAsynch(final String title) {
+   private void updateUI_Title_Asynch(final String title) {
 
       _uiUpdateTitleCounter++;
 
