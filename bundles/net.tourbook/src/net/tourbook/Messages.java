@@ -1644,7 +1644,6 @@ public class Messages extends NLS {
    public static String        pref_general_restart_app_title;
 
    public static String        pref_map_layout_BorderWidth;
-   public static String        pref_map_layout_dim_color;
    public static String        pref_map_layout_PaintBorder;
    public static String        pref_map_layout_symbol;
    public static String        pref_map_layout_symbol_dot;
@@ -2086,10 +2085,8 @@ public class Messages extends NLS {
    public static String Slideout_Map_Bookmark_Label_NumContextMenuItems_Tooltip;
    public static String Slideout_Map_Bookmark_Label_Title;
 
-   public static String Slideout_Map_Options_Checkbox_ZoomWithMousePosition;
-   public static String Slideout_Map_Options_Checkbox_ZoomWithMousePosition_Tooltip;
-   public static String Slideout_Map_Options_Label_SliderPath_Segements;
    public static String Slideout_Map_Options_Checkbox_ChartSlider;
+   public static String Slideout_Map_Options_Checkbox_DimMap;
    public static String Slideout_Map_Options_Checkbox_ShowEnhancedWarning;
    public static String Slideout_Map_Options_Checkbox_ShowEnhancedWarning_Tooltip;
    public static String Slideout_Map_Options_Checkbox_ShowHoveredSelectedTour;
@@ -2100,14 +2097,19 @@ public class Messages extends NLS {
    public static String Slideout_Map_Options_Checkbox_ToggleKeyboardPanning_Tooltip;
    public static String Slideout_Map_Options_Checkbox_TrackOpacity;
    public static String Slideout_Map_Options_Checkbox_TrackOpacity_Tooltip;
+   public static String Slideout_Map_Options_Checkbox_ZoomWithMousePosition;
+   public static String Slideout_Map_Options_Checkbox_ZoomWithMousePosition_Tooltip;
+   public static String Slideout_Map_Options_Color_DimColor_Tooltip;
    public static String Slideout_Map_Options_Group_TourTrack;
    public static String Slideout_Map_Options_Label_SliderLocation_Color;
    public static String Slideout_Map_Options_Label_SliderLocation_Color_Tooltip;
    public static String Slideout_Map_Options_Label_SliderLocation_Size;
    public static String Slideout_Map_Options_Label_SliderPath_Color;
    public static String Slideout_Map_Options_Label_SliderPath_Color_Tooltip;
+   public static String Slideout_Map_Options_Label_SliderPath_Segements;
    public static String Slideout_Map_Options_Label_SliderPath_Width;
    public static String Slideout_Map_Options_Label_Title;
+   public static String Slideout_Map_Options_Spinner_DimValue_Tooltip;
 
    public static String Slideout_Map_PhotoOptions_Label_Title;
 
@@ -2150,7 +2152,11 @@ public class Messages extends NLS {
    public static String Slideout_TourBookOptions_Checkbox_ShowTotalRow_Tooltip;
    public static String Slideout_TourBookOptions_Label_Title;
 
+   public static String Slideout_TourChartGraph_Checkbox_DefaultWhenOpened_Tooltip;
    public static String Slideout_TourChartGraph_Checkbox_ShowInChartToolbar_Tooltip;
+   public static String Slideout_TourChartGraph_Label_DefaultWhenOpened;
+   public static String Slideout_TourChartGraph_Label_ShowActionInToolbar;
+   public static String Slideout_TourChartGraph_Label_ShowGraph;
    public static String Slideout_TourChartGraph_Label_Title;
 
    public static String Slideout_TourChartGraph_Checkbox_ShowInChartToolbar_Tooltip_Custom_Tracks_part1;
@@ -2511,6 +2517,8 @@ public class Messages extends NLS {
    public static String Tour_Database_UpdateInfo_TourTag_ExtraData;
    public static String Tour_Database_UpdateInfo_TourTag_ExtraData_Exception;
 
+   public static String Tour_Editor_Action_DeleteTimeSlices_AdjustTourStartTime;
+   public static String Tour_Editor_Action_DeleteTimeSlices_AdjustTourStartTime_Tooltip;
    public static String Tour_Editor_Decorator_TimeZone_Tooltip;
    public static String Tour_Editor_Dialog_DeleteSwimTimeSlices_Message;
    public static String Tour_Editor_Dialog_DeleteSwimTimeSlices_Title;
