@@ -23,6 +23,7 @@ import java.util.Map;
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.common.action.ActionOpenPrefDialog;
 import net.tourbook.common.action.ActionResetToDefaults;
 import net.tourbook.common.action.IActionResetToDefault;
@@ -47,6 +48,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.ToolBar;
 
@@ -73,7 +75,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
    public static final String   GRAPH_LABEL_SWIM_STROKES               = net.tourbook.common.Messages.Graph_Label_Swim_Strokes;
    public static final String   GRAPH_LABEL_SWIM_SWOLF                 = net.tourbook.common.Messages.Graph_Label_Swim_Swolf;
 
-   private static final int       GRID_TOOLBAR_SLIDEOUT_NB_COLUMN        = 18;
+   private static final int       GRID_TOOLBAR_SLIDEOUT_NB_COLUMN        = 17;
 
    private final IPreferenceStore _prefStore = TourbookPlugin.getPrefStore();
    private IDialogSettings        _state;
@@ -253,7 +255,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
 
          GridDataFactory.fillDefaults().grab(true, false).applyTo(_container);
 
-         GridLayoutFactory.fillDefaults().numColumns(2).applyTo(_container);
+         GridLayoutFactory.fillDefaults().numColumns(3).applyTo(_container);
 
          GridDataFactory.fillDefaults().grab(true, false).applyTo(_containerLevel1);
 
@@ -270,6 +272,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getAltitudeSmoothedSerie(true) == null) {
             altitudeEnabled = false;
          }
+         _chkShowInChartToolbar_Elevation_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_ALTITUDE,
                GRAPH_LABEL_ALTITUDE,
@@ -282,6 +285,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getPulse_SmoothedSerie() == null) {
             heartrateEnabled = false;
          }
+         _chkShowInChartToolbar_Pulse_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_PULSE,
                GRAPH_LABEL_HEARTBEAT,
@@ -294,6 +298,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getSpeedSerie() == null) {
             speedEnabled = false;
          }
+         _chkShowInChartToolbar_Speed_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SPEED,
                GRAPH_LABEL_SPEED,
@@ -306,6 +311,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getPaceSerieSeconds() == null) {
             paceEnabled = false;
          }
+         _chkShowInChartToolbar_Pace_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_PACE,
                GRAPH_LABEL_PACE,
@@ -318,6 +324,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getPowerSerie() == null) {
             powerEnabled = false;
          }
+         _chkShowInChartToolbar_Power_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_POWER,
                GRAPH_LABEL_POWER,
@@ -330,6 +337,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getTemperatureSerie() == null) {
             temperatureEnabled = false;
          }
+         _chkShowInChartToolbar_Tempterature_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_TEMPERATURE,
                GRAPH_LABEL_TEMPERATURE,
@@ -342,6 +350,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.gradientSerie == null) {
             gradientEnabled = false;
          }
+         _chkShowInChartToolbar_Gradient_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_GRADIENT,
                GRAPH_LABEL_GRADIENT,
@@ -354,6 +363,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getAltimeterSerie() == null) {
             altimeterEnabled = false;
          }
+         _chkShowInChartToolbar_Altimeter_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_ALTIMETER,
                GRAPH_LABEL_ALTIMETER,
@@ -366,6 +376,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getCadenceSerieWithMuliplier() == null) {
             cadenceEnabled = false;
          }
+         _chkShowInChartToolbar_Cadence_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_CADENCE,
                GRAPH_LABEL_CADENCE,
@@ -378,6 +389,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getGears() == null) {
             gearsEnabled = false;
          }
+         _chkShowInChartToolbar_Gears_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_GEARS,
                GRAPH_LABEL_GEARS,
@@ -390,6 +402,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getRunDyn_StanceTime() == null) {
             runDynStanceTimeEnabled = false;
          }
+         _chkShowInChartToolbar_RunDyn_StanceTime_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STANCE_TIME,
                GRAPH_LABEL_RUNDYN_STANCETIME,
@@ -403,6 +416,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getRunDyn_StanceTimeBalance() == null) {
             runDynStanceTimeBalanceEnabled = false;
          }
+         _chkShowInChartToolbar_RunDyn_StanceTimeBalance_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STANCE_TIME_BALANCED,
                GRAPH_LABEL_RUNDYN_STANCETIMEBALANCE,
@@ -416,6 +430,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getRunDyn_StepLength() == null) {
             runDynStepLengthEnabled = false;
          }
+         _chkShowInChartToolbar_RunDyn_StepLength_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_STEP_LENGTH,
                GRAPH_LABEL_RUNDYN_STEPLENGTH,
@@ -429,6 +444,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getRunDyn_VerticalOscillation() == null) {
             runDynVerticalOscEnabled = false;
          }
+         _chkShowInChartToolbar_RunDyn_VerticalOscillation_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_VERTICAL_OSCILLATION,
                GRAPH_LABEL_RUNDYN_VERTICALOSCILLATION,
@@ -442,6 +458,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getRunDyn_VerticalRatio() == null) {
             runDynVerticalRatioEnabled = false;
          }
+         _chkShowInChartToolbar_RunDyn_VerticalRatio_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_RUN_DYN_VERTICAL_RATIO,
                GRAPH_LABEL_RUNDYN_VERTICALRATIO,
@@ -455,6 +472,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getSwim_Strokes() == null) {
             swimStrokesEnabled = false;
          }
+         _chkShowInChartToolbar_Swim_Strokes_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SWIM_STROKES,
                GRAPH_LABEL_SWIM_STROKES,
@@ -468,6 +486,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          if (tourData != null && tourData.getSwim_Swolf() == null) {
             swimSwolfEnabled = false;
          }
+         _chkShowInChartToolbar_Swim_Swolf_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
          createUI_GraphAction_CustomTracks_StandardTrackswState(_container,
                TourManager.GRAPH_SWIM_SWOLF,
                GRAPH_LABEL_SWIM_SWOLF,
@@ -624,6 +643,23 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
       return checkbox;
    }
 
+   private Button createUI_DefaulWhenOpened_CustomTracks(final Composite parent) {
+
+      final Button checkbox = new Button(parent, SWT.CHECK);
+
+      checkbox.setToolTipText(Messages.Slideout_TourChartGraph_Checkbox_DefaultWhenOpened_Tooltip);
+      checkbox.addSelectionListener(_defaultSelectionListener);
+      checkbox.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_CYAN));
+
+      GridDataFactory
+            .fillDefaults()
+            .grab(true, false)
+            .align(SWT.CENTER, SWT.FILL)
+            .applyTo(checkbox);
+
+      return checkbox;
+   }
+
    private void createUI_GraphAction(final Composite parent, final int graphId) {
 
       final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
@@ -651,6 +687,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          btngraph.setImage(TourbookPlugin.getImageDescriptor(imageDisabled).createImage());
       }
       //btngraph.setText(text);
+      btngraph.setToolTipText(Messages.Slideout_TourChartGraph_Checkbox_ShowHideGraph_Tooltip_Custom_Tracks + UI.SYMBOL_COLON + UI.SPACE + text);
       GridDataFactory
             .fillDefaults()
             .grab(true, false)
@@ -680,6 +717,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
             .grab(true, false)
             .align(SWT.LEFT, SWT.FILL)
             .applyTo(btngraph);
+      btngraph.setToolTipText(Messages.Slideout_TourChartGraph_Checkbox_ShowHideGraph_Tooltip_Custom_Tracks + UI.SYMBOL_COLON + UI.SPACE + text);
 
       btngraph.addSelectionListener(new SelectionAdapter() {
 
@@ -697,6 +735,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
       final Button checkbox = new Button(parent, SWT.CHECK);
 
       checkbox.setText(toolTip);
+      checkbox.setToolTipText(Messages.Slideout_TourChartGraph_Checkbox_ShowInChartToolbar_Tooltip + UI.SYMBOL_COLON + UI.SPACE + toolTip);
       checkbox.addSelectionListener(_defaultSelectionListener);
 
       GridDataFactory
@@ -833,9 +872,6 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
 
          numDisplayCustomTracks++;
       }
-      if (numDisplayCustomTracks > 0) {
-         return;
-      }
 
       final String[] allVisibleIds = StringToArrayConverter.convertStringToArray(
             _prefStore.getString(ITourbookPreferences.GRAPH_VISIBLE));
@@ -967,10 +1003,6 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          }
 
          numDisplayCustomTracks++;
-      }
-
-      if (numDisplayCustomTracks > 0) {
-         return;
       }
 
       final ArrayList<String> allDefaultGraphs = new ArrayList<>();
