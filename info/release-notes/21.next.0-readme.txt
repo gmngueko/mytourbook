@@ -36,12 +36,19 @@ New
 Improvements
 ============
 
-* Compare Tours by Elevation
+* Compare tours by elevation
   - Compare tours concurrently -> much less waiting time
   - Use fast app tour filters (person, tour type, tour, photo...)
   - New shortcut action to compare reference tour(s) with all tours
   - Automatically expand reference tour in compare result view, after comparison is done
   - Tour comparison can be restarted with other parameters in the "Compare Result" view, e.g. different years, other tour filter 
+
+* Repair close button in all views
+  - It can happen that the close button in the view tab disappear. This repair feature is performed when MyTourbook is closing.
+    This is an experimental feature and can be activated with the command line parameter -DsetAllViewsClosable 
+
+* Fitlog/FitlogEx import (Frederic)
+  - The timezone is used only when available, otherwise it's determined with the GPS position
 
 
 Changes  
@@ -56,6 +63,11 @@ Bugfix
 * 4k Display
   - Fixed positions for the vertical x-Axis units and vertical tour chart markers
   - Line width was growing on every paint event https://github.com/wolfgang-ch/mytourbook/issues/356
+
+* Tour cadence zones times (Frederic)
+  
+  - Cadence zone times computation should use either the recorded time or moving
+    time per the computed values preference 
 
 
 Translation    
