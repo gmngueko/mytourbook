@@ -1742,12 +1742,16 @@ public class TourManager {
 
       final String tourTitle = tourData.getTourTitle();
 
-      return getTourDateFull(tourData) //
+      return getTourDateFull(tourData)
             + UI.DASH_WITH_SPACE
             + getTourTimeShort(tourData)
             + ((tourTitle.length() == 0) ? UI.EMPTY_STRING : UI.DASH_WITH_SPACE + tourTitle);
    }
 
+   /**
+    * @param tourData
+    * @return Returns the tour title for multiple tours
+    */
    public static String getTourTitleMultiple(final TourData tourData) {
 
       final String[] multipleTourTitles = tourData.multipleTourTitles;
