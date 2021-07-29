@@ -83,6 +83,7 @@ import net.tourbook.common.map.GeoPosition;
 import net.tourbook.common.util.HoveredAreaContext;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.ITourToolTipProvider;
+import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.TourToolTip;
 import net.tourbook.common.util.Util;
@@ -141,6 +142,8 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Resource;
+import org.eclipse.swt.graphics.Transform;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -489,14 +492,24 @@ public class Map extends Canvas {
    private final int        _poi_Tooltip_OffsetY       = 5;
    private TourToolTip      _tour_ToolTip;
 
+   /**
+    * Hovered/selected tour
+    */
    private boolean          _isShowHoveredSelectedTour = Map2View.STATE_IS_SHOW_HOVERED_SELECTED_TOUR_DEFAULT;
    private long             _hovered_SelectedTourId    = Long.MIN_VALUE;
 
    private ArrayList<Long>  _allHoveredTourIds         = new ArrayList<>();
    private ArrayList<Point> _allDevHoveredPoints       = new ArrayList<>();
 
+   private int              _hoveredSelectedTour_Hovered_Opacity;
+   private Color            _hoveredSelectedTour_Hovered_Color;
+   private int              _hoveredSelectedTour_HoveredAndSelected_Opacity;
+   private Color            _hoveredSelectedTour_HoveredAndSelected_Color;
+   private int              _hoveredSelectedTour_Selected_Opacity;
+   private Color            _hoveredSelectedTour_Selected_Color;
+
    /**
-    * when <code>true</code> the loading... image is not displayed
+    * When <code>true</code> the loading... image is not displayed
     */
    private boolean          _isLiveView;
 
@@ -576,11 +589,20 @@ public class Map extends Canvas {
    private boolean                   _isFastMapPainting_Active;
    private boolean                   _isInInverseKeyboardPanning;
 
-   private int                       _fastMapPainting_skippedValues;
+   /*
+    * Direction arrows
+    */
+   private boolean           _isDrawTourDirection;
+   private int               _tourDirection_MarkerGap;
+   private int               _tourDirection_LineWidth;
+   private RGB               _tourDirection_RGB;
+   private float             _tourDirection_SymbolSize;
 
-   private MapTourBreadcrumb         _tourBreadcrumb;
+   private int               _fastMapPainting_skippedValues;
 
-   private Font                      _boldFont               = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
+   private MapTourBreadcrumb _tourBreadcrumb;
+
+   private Font              _boldFont = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
 
    /**
     * This observer is called in the {@link Tile} when a tile image is set into the tile
@@ -1238,15 +1260,13 @@ public class Map extends Canvas {
 
          final Set<GeoPosition> positions = new HashSet<>();
 
-         positions.add(
-               new GeoPosition(//
-                     Double.parseDouble(boundingBoxValues[0]),
-                     Double.parseDouble(boundingBoxValues[2])));
+         positions.add(new GeoPosition(
+               Double.parseDouble(boundingBoxValues[0]),
+               Double.parseDouble(boundingBoxValues[2])));
 
-         positions.add(
-               new GeoPosition(//
-                     Double.parseDouble(boundingBoxValues[1]),
-                     Double.parseDouble(boundingBoxValues[3])));
+         positions.add(new GeoPosition(
+               Double.parseDouble(boundingBoxValues[1]),
+               Double.parseDouble(boundingBoxValues[3])));
 
          return positions;
 
@@ -1440,7 +1460,7 @@ public class Map extends Canvas {
       while ((positionRect.width < viewport.width) && (positionRect.height < viewport.height)) {
 
          // center position in the map
-         final java.awt.Point center = new java.awt.Point(//
+         final java.awt.Point center = new java.awt.Point(
                positionRect.x + positionRect.width / 2,
                positionRect.y + positionRect.height / 2);
 
@@ -1833,7 +1853,7 @@ public class Map extends Canvas {
       final java.awt.Point worldGrid = _mp.geoToPixel(new GeoPosition(geoLat, geoLon), _mapZoomLevel);
 
       // get device rectangle for the position
-      final Point gridGeoPos = new Point(//
+      final Point gridGeoPos = new Point(
             worldGrid.x - _worldPixel_TopLeft_Viewport.x,
             worldGrid.y - _worldPixel_TopLeft_Viewport.y);
 
@@ -1979,7 +1999,7 @@ public class Map extends Canvas {
    private Point grid_World2Dev(final Point worldPosition) {
 
       // get device rectangle for the position
-      final Point gridGeoPos = new Point(//
+      final Point gridGeoPos = new Point(
             worldPosition.x - _worldPixel_TopLeft_Viewport.x,
             worldPosition.y - _worldPixel_TopLeft_Viewport.y);
 
@@ -2387,7 +2407,7 @@ public class Map extends Canvas {
       final java.awt.Point worldGrid = _mp.geoToPixel(new GeoPosition(geoLat, geoLon), _mapZoomLevel);
 
       // get device rectangle for the position
-      final Point gridGeoPos = new Point(//
+      final Point gridGeoPos = new Point(
             worldGrid.x - _worldPixel_TopLeft_Viewport.x,
             worldGrid.y - _worldPixel_TopLeft_Viewport.y);
 
@@ -2425,7 +2445,7 @@ public class Map extends Canvas {
       }
 
       // get device rectangle for this tile
-      return new Point(//
+      return new Point(
             tilePosX * _tilePixelSize - _worldPixel_TopLeft_Viewport.x,
             tilePosY * _tilePixelSize - _worldPixel_TopLeft_Viewport.y);
    }
@@ -2823,8 +2843,9 @@ public class Map extends Canvas {
          fireEvent_MapInfo();
 
          return;
+      }
 
-      } else if (_grid_Data_Hovered != null) {
+      if (_grid_Data_Hovered != null) {
 
          // tour geo filter is hovered
 
@@ -3225,7 +3246,8 @@ public class Map extends Canvas {
 
                // check if a newer runnable is available
                if (__asynchRunnableCounter != _redrawMapCounter.get()) {
-                  // a newer queryRedraw is available
+
+                  // a newer runnable is available
                   return;
                }
 
@@ -3762,6 +3784,9 @@ public class Map extends Canvas {
                   gc.setAlpha(0x80);
                   gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
 
+                  gc.setAlpha(_hoveredSelectedTour_Hovered_Opacity);
+                  gc.setForeground(_hoveredSelectedTour_Hovered_Color);
+
                   paint_HoveredTour_10(gc, hoveredTourId);
                }
             }
@@ -3774,11 +3799,20 @@ public class Map extends Canvas {
       if (_hovered_SelectedTourId != Long.MIN_VALUE) {
 
          if (isHoveredAndSelectedTour) {
+
             gc.setAlpha(0x40);
             gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+
+            gc.setAlpha(_hoveredSelectedTour_HoveredAndSelected_Opacity);
+            gc.setForeground(_hoveredSelectedTour_HoveredAndSelected_Color);
+
          } else {
+
             gc.setAlpha(0x40);
             gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_BLACK));
+
+            gc.setAlpha(_hoveredSelectedTour_Selected_Opacity);
+            gc.setForeground(_hoveredSelectedTour_Selected_Color);
          }
 
          paint_HoveredTour_10(gc, _hovered_SelectedTourId);
@@ -3796,6 +3830,8 @@ public class Map extends Canvas {
 
    private void paint_HoveredTour_10(final GC gc, final long tourId) {
 
+      int[] devXY;
+
       gc.setLineWidth(30);
 
       gc.setLineCap(SWT.CAP_ROUND);
@@ -3803,20 +3839,29 @@ public class Map extends Canvas {
 
       gc.setAntialias(SWT.ON);
       {
-         paint_HoveredTour_12_Tour(gc, tourId);
+         devXY = paint_HoveredTour_12_Tour(gc, tourId);
       }
       gc.setAntialias(SWT.OFF);
       gc.setAlpha(0xff);
+
+      if (_isDrawTourDirection && devXY != null) {
+         paint_HoveredTour_14_DirectionArrows(gc, devXY);
+      }
    }
 
-   private void paint_HoveredTour_12_Tour(final GC gc, final long tourId) {
+   /**
+    * @param gc
+    * @param tourId
+    * @return Return dev X/Y position of the hovered tour
+    */
+   private int[] paint_HoveredTour_12_Tour(final GC gc, final long tourId) {
 
       final TourData tourData = TourManager.getTour(tourId);
 
       if (tourData == null) {
 
          // this occurred, it can be that previously a history/multiple tour was displayed
-         return;
+         return null;
       }
 
       final MP mp = getMapProvider();
@@ -3825,15 +3870,14 @@ public class Map extends Canvas {
       final double[] latitudeSerie = tourData.latitudeSerie;
       final double[] longitudeSerie = tourData.longitudeSerie;
 
-      final int lastSerieIndex = latitudeSerie.length;
-
+      // paint with much less points to speed it up
       final int numMaxSegments = 200;
-      final float numSlices = lastSerieIndex;
+      final float numSlices = latitudeSerie.length;
       final int numSegments = (int) Math.min(numMaxSegments, numSlices);
 
       final Rectangle worldPosition_Viewport = _worldPixel_TopLeft_Viewport;
 
-      // get world position for the slider coordinates
+      // get world position for the first lat/lon
       final java.awt.Point worldPos_FirstAWT = mp.geoToPixel(
             new GeoPosition(latitudeSerie[0], longitudeSerie[0]),
             zoomLevel);
@@ -3844,6 +3888,7 @@ public class Map extends Canvas {
 
       final int[] devXY = new int[numSegments * 2];
 
+      // set first position
       devXY[0] = devPosX1;
       devXY[1] = devPosY1;
 
@@ -3851,7 +3896,7 @@ public class Map extends Canvas {
 
          final int nextSerieIndex = (int) (numSlices / numSegments * segmentIndex);
 
-         // get world position for the slider coordinates
+         // get world position for the current lat/lon
          final java.awt.Point worldPosAWT = mp.geoToPixel(
                new GeoPosition(latitudeSerie[nextSerieIndex], longitudeSerie[nextSerieIndex]),
                zoomLevel);
@@ -3871,6 +3916,111 @@ public class Map extends Canvas {
       }
 
       gc.drawPolyline(devXY);
+
+      return devXY;
+   }
+
+   private void paint_HoveredTour_14_DirectionArrows(final GC gc, final int[] devXY) {
+
+      int devX1 = devXY[0];
+      int devY1 = devXY[1];
+
+      int devX1_LastPainted = devX1;
+      int devY1_LastPainted = devY1;
+
+      final int numSegments = devXY.length / 2;
+
+      gc.setLineWidth(_tourDirection_LineWidth);
+      gc.setAntialias(SWT.ON);
+
+      gc.setLineCap(SWT.CAP_SQUARE);
+      gc.setLineJoin(SWT.JOIN_MITER);
+
+      final Color directionColor_Symbol = new Color(_tourDirection_RGB);
+      final Color directionColor_Contrast = SYS_COLOR_WHITE;
+
+      final Path directionPath_Color = new Path(_display);
+      final Path directionPath_Contrast = new Path(_display);
+      final Transform transform = new Transform(_display);
+      {
+         // draw direction symbol
+         final float directionPos1 = 1 * _tourDirection_SymbolSize;
+         final float directionPos2 = 0.8f * _tourDirection_SymbolSize;
+
+         directionPath_Color.moveTo(0, directionPos1);
+         directionPath_Color.lineTo(directionPos2, 0);
+         directionPath_Color.lineTo(0, -directionPos1);
+
+         directionPath_Contrast.moveTo(-1, directionPos1);
+         directionPath_Contrast.lineTo(directionPos2 - 1, 0);
+         directionPath_Contrast.lineTo(-1, -directionPos1);
+
+         for (int segmentIndex = 1; segmentIndex < numSegments; segmentIndex++) {
+
+            final int devXYIndex = segmentIndex * 2;
+
+            final int devX2 = devXY[devXYIndex + 0];
+            final int devY2 = devXY[devXYIndex + 1];
+
+            /*
+             * Skip locations which are too narrow
+             */
+            int xDiff;
+            int yDiff;
+
+            if (devX1_LastPainted > devX2) {
+               xDiff = devX1_LastPainted - devX2;
+            } else {
+               xDiff = devX2 - devX1_LastPainted;
+            }
+
+            if (devY1_LastPainted > devY2) {
+               yDiff = devY1_LastPainted - devY2;
+            } else {
+               yDiff = devY2 - devY1_LastPainted;
+            }
+
+            if (xDiff > _tourDirection_MarkerGap || yDiff > _tourDirection_MarkerGap
+
+            // paint 1st direction arrow
+                  || segmentIndex == 1) {
+
+               // paint direction arrow
+
+               final float directionRotation = (float) MtMath.angleOf(devX1, devY1, devX2, devY2);
+
+               final int xPos1 = DPIUtil.autoScaleUp(devX1);
+               final int yPos1 = DPIUtil.autoScaleUp(devY1);
+
+               // VERY IMPORTANT: Reset previous positions !!!
+               transform.identity();
+
+               transform.translate(xPos1, yPos1);
+               transform.rotate(-directionRotation);
+
+               gc.setTransform(transform);
+
+               gc.setForeground(directionColor_Contrast);
+               gc.drawPath(directionPath_Contrast);
+
+               gc.setForeground(directionColor_Symbol);
+               gc.drawPath(directionPath_Color);
+
+               // keep last painted position
+               devX1_LastPainted = devX1;
+               devY1_LastPainted = devY1;
+            }
+
+            // advance to the next segment
+            devX1 = devX2;
+            devY1 = devY2;
+         }
+      }
+      directionPath_Color.dispose();
+      directionPath_Contrast.dispose();
+      transform.dispose();
+
+      gc.setTransform(null);
    }
 
    private void paint_HoveredTour_50_TourInfo(final GC gc) {
@@ -4049,7 +4199,7 @@ public class Map extends Canvas {
 //         final int devX = _offline_PreviousOfflineArea.x;
 //         final int devY = _offline_PreviousOfflineArea.y;
 //         gc.setForeground(SYS_COLOR_GRAY);
-//         gc.drawRectangle(//
+//         gc.drawRectangle(
 //               devX + 1,
 //               devY + 1,
 //               _offline_PreviousOfflineArea.width - 2,
@@ -4578,7 +4728,7 @@ public class Map extends Canvas {
                final ImageDataResources idResources = tile.getOverlayImageDataResources();
 
                // draw center part into the tile image data
-               idResources.drawTileImageData(//
+               idResources.drawTileImageData(
                      imageData9Parts,
                      devXPart,
                      devYPart,
@@ -4625,7 +4775,7 @@ public class Map extends Canvas {
                final ImageDataResources neighborIDResources = neighborTile.getOverlayImageDataResources();
 
                // draw part image into the neighbor image
-               neighborIDResources.drawNeighborImageData(//
+               neighborIDResources.drawNeighborImageData(
                      imageData9Parts,
                      devXPart,
                      devYPart,
@@ -5632,6 +5782,57 @@ public class Map extends Canvas {
       paint();
    }
 
+   public void setConfig_HoveredSelectedTour(final boolean isVisible,
+                                             final RGB hoveredRGB,
+                                             final int hoveredOpacity,
+                                             final RGB hoveredAndSelectedRGB,
+                                             final int hoveredAndSelectedOpacity,
+                                             final RGB selectedRGB,
+                                             final int selectedOpacity) {
+
+// SET_FORMATTING_OFF
+
+      _isShowHoveredSelectedTour                      = isVisible;
+
+      _hoveredSelectedTour_Hovered_Color              = new Color(hoveredRGB);
+      _hoveredSelectedTour_Hovered_Opacity            = UI.convertOpacity(hoveredOpacity);
+
+      _hoveredSelectedTour_HoveredAndSelected_Color   = new Color(hoveredAndSelectedRGB);
+      _hoveredSelectedTour_HoveredAndSelected_Opacity = UI.convertOpacity(hoveredAndSelectedOpacity);
+
+      _hoveredSelectedTour_Selected_Color             = new Color(selectedRGB);
+      _hoveredSelectedTour_Selected_Opacity           = UI.convertOpacity(selectedOpacity);
+
+// SET_FORMATTING_ON
+
+      if (isVisible == false) {
+
+         // hide hovered/selected tour
+         _hovered_SelectedTourId = Long.MIN_VALUE;
+      }
+
+      _allHoveredTourIds.clear();
+      _allDevHoveredPoints.clear();
+
+      disposeOverlayImageCache();
+
+      paint();
+   }
+
+   public void setConfig_TourDirection(final boolean isShowTourDirection,
+                                       final int markerGap,
+                                       final int lineWidth,
+                                       final float symbolSize,
+                                       final RGB tourDirection_RGB) {
+
+      _isDrawTourDirection = isShowTourDirection;
+
+      _tourDirection_MarkerGap = markerGap;
+      _tourDirection_LineWidth = lineWidth;
+      _tourDirection_SymbolSize = symbolSize;
+      _tourDirection_RGB = tourDirection_RGB;
+   }
+
    /**
     * Set map dimming level for the current map factory, this will dimm the map images
     *
@@ -5809,7 +6010,7 @@ public class Map extends Canvas {
       wpTourRect = getWorldPixelFromGeoPositions(geoTourPositions, tourZoomLevel);
 
       // get tour center in world pixel for the max zoom level
-      wpTourCenter = new java.awt.Point(//
+      wpTourCenter = new java.awt.Point(
             wpTourRect.x + wpTourRect.width / 2,
             wpTourRect.y + wpTourRect.height / 2);
 
@@ -6086,24 +6287,6 @@ public class Map extends Canvas {
       paint();
    }
 
-   public void setShowHoveredSelectedTour(final boolean isVisible) {
-
-      if (isVisible == false) {
-
-         // hide hovered/selected tour
-         _hovered_SelectedTourId = Long.MIN_VALUE;
-      }
-
-      _isShowHoveredSelectedTour = isVisible;
-
-      _allHoveredTourIds.clear();
-      _allDevHoveredPoints.clear();
-
-      disposeOverlayImageCache();
-
-      paint();
-   }
-
    /**
     * Legend will be drawn into the map when the visibility is <code>true</code>
     *
@@ -6218,7 +6401,10 @@ public class Map extends Canvas {
 
       Point2D.Double wpNewMapCenter;
 
-      if (_isZoomWithMousePosition) {
+      if (_isZoomWithMousePosition
+
+            // fixes this "issue" https://github.com/wolfgang-ch/mytourbook/issues/370
+            && _mapZoomLevel != adjustedZoomLevel) {
 
          // set map center to the current mouse position
 
@@ -6233,7 +6419,7 @@ public class Map extends Canvas {
          // zoom behaviour until 18.5
       }
 
-      wpNewMapCenter = new Point2D.Double(//
+      wpNewMapCenter = new Point2D.Double(
             wpCurrentMapCenter.getX() * relativeWidth,
             wpCurrentMapCenter.getY() * relativeHeight);
 
@@ -6429,7 +6615,7 @@ public class Map extends Canvas {
       adjustedViewport.height += _poiImageBounds.height * 2;
 
       // check if poi is visible
-      if (adjustedViewport.intersects(//
+      if (adjustedViewport.intersects(
             worldPoiPos.x - _poiImageBounds.width / 2,
             worldPoiPos.y - _poiImageBounds.height,
             _poiImageBounds.width,
