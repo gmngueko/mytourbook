@@ -183,6 +183,20 @@ public class SerieData implements Serializable {
 
    public HashMap<String, CustomTrackDefinition>     customTracksDefinition;
 
+   /**
+    * Containing the battery time in seconds, relative to the tour start time
+    *
+    * @since after 21.6
+    */
+   public int[]                battery_Time;
+
+   /**
+    * Containing the battery percentage value
+    *
+    * @since after 21.6
+    */
+   public short[]              battery_Percentage;
+
    private String dataSerieValues(final boolean[] dataSerie) {
 
       if (dataSerie == null || dataSerie.length == 0) {
@@ -295,7 +309,7 @@ public class SerieData implements Serializable {
 
 // SET_FORMATTING_OFF
 
-      // this formatted data are displayed in the tour data view
+      // these formatted data are displayed in the tour data view
 
       return NL + NL
 
@@ -328,6 +342,9 @@ public class SerieData implements Serializable {
             + "   swim_Strokes               " + dataSerieValues(swim_Strokes)                  + NL //$NON-NLS-1$
             + "   swim_StrokeStyle           " + dataSerieValues(swim_StrokeStyle)              + NL //$NON-NLS-1$
             + "   swim_Time                  " + dataSerieValues(swim_Time)                     + NL //$NON-NLS-1$
+
+            + "   battery_Time               " + dataSerieValues(battery_Time)                  + NL //$NON-NLS-1$
+            + "   battery_Percentage         " + dataSerieValues(battery_Percentage)            + NL //$NON-NLS-1$
 
             + "   visiblePoints_Surfing      " + dataSerieValues(visiblePoints_Surfing)         + NL //$NON-NLS-1$
 
