@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -2021,10 +2021,13 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
    @Override
    public Set<Long> getSelectedTourIDs() {
 
-      final Set<Long> tourIds = new HashSet<>();
+      final LinkedHashSet<Long> tourIds = new LinkedHashSet<>();
 
       IStructuredSelection selectedTours;
 
+      /*
+       * Get selected items of any type from the view
+       */
       if (_isLayoutNatTable) {
 
          final RowSelectionModel<TVITourBookTour> rowSelectionModel = getNatTable_SelectionModel();
@@ -2049,13 +2052,18 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
          selectedTours = _tourViewer_Tree.getStructuredSelection();
       }
 
+      /*
+       * Convert selected items into selected tour id's
+       */
+      final boolean isSelectAllInHierarchy = _actionSelectAllTours.isChecked();
+
       for (final Object viewItem : selectedTours) {
 
          if (viewItem instanceof TVITourBookYear) {
 
             // one year is selected
 
-            if (_actionSelectAllTours.isChecked()) {
+            if (isSelectAllInHierarchy) {
 
                // loop: all months
                for (final TreeViewerItem viewerItem : ((TVITourBookYear) viewItem).getFetchedChildren()) {
@@ -2069,7 +2077,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
             // one month/week is selected
 
-            if (_actionSelectAllTours.isChecked()) {
+            if (isSelectAllInHierarchy) {
                getYearSubTourIDs((TVITourBookYearCategorized) viewItem, tourIds);
             }
 
@@ -2142,7 +2150,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
     * @param tourIds
     * @return Return all tours for one yearSubItem
     */
-   private void getYearSubTourIDs(final TVITourBookYearCategorized yearSubItem, final Set<Long> tourIds) {
+   private void getYearSubTourIDs(final TVITourBookYearCategorized yearSubItem, final LinkedHashSet<Long> tourIds) {
 
       // get all tours for the month item
       for (final TreeViewerItem viewerItem : yearSubItem.getFetchedChildren()) {
@@ -2429,7 +2437,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
     *
     * @param tourIds
     */
-   private void onSelect_CreateTourSelection(final HashSet<Long> tourIds) {
+   private void onSelect_CreateTourSelection(final LinkedHashSet<Long> tourIds) {
 
       ISelection selection;
       if (tourIds.isEmpty()) {
@@ -2478,7 +2486,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
          return;
       }
 
-      final HashSet<Long> tourIds = new HashSet<>();
+      final LinkedHashSet<Long> tourIds = new LinkedHashSet<>();
       final IStructuredSelection selection = (IStructuredSelection) event.getSelection();
 
       for (final Object selectedItem : selection) {
@@ -2550,7 +2558,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
       final boolean isSelectAllChildren = _actionSelectAllTours.isChecked();
 
-      final HashSet<Long> tourIds = new HashSet<>();
+      final LinkedHashSet<Long> tourIds = new LinkedHashSet<>();
 
       boolean isFirstYear = true;
       boolean isFirstYearSub = true;
