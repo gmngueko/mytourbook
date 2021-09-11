@@ -142,6 +142,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_WEATHER_TEMPFEEL             = "TempFeel";                            //$NON-NLS-1$
    private static final String                  ATTRIB_WEATHER_WINDDIRECTIONDEGREES = "WindDirectionDegrees";                //$NON-NLS-1$
    private static final String                  ATTRIB_WEATHER_WINDSPEEDKH          = "WindSpeedKilometersPerHour";          //$NON-NLS-1$
+   private static final String                  ATTRIB_WEATHER_CONDITIONSNOTES      = "ConditionsNotes";                     //$NON-NLS-1$
 
    private static final String                  NAME_GROUNDCONTACT_TIME_BALANCE     = "Ground Contact Time Balance";         //$NON-NLS-1$
    private static final String                  NAME_IF                             = "IF (Intensity Factor)";               //$NON-NLS-1$
@@ -278,6 +279,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
       private LinkedHashMap<String, String> customDataFields   = new LinkedHashMap<>();
       //custom tracks start
+      private String                        weatherConditionsNotes;
       private float                         weatherTemperatureFeel   = Float.MIN_VALUE;
       private float                         weatherWindDirection     = Float.MIN_VALUE;
       private float                         weatherPressure          = Float.MIN_VALUE;
@@ -636,7 +638,8 @@ public class FitLog_SAXHandler extends DefaultHandler {
       /*
        * weather
        */
-      tourData.setWeather(_currentActivity.weatherText);
+      //tourData.setWeather(_currentActivity.weatherText); //custom tracks commented out this line
+      tourData.setWeather(_currentActivity.weatherText + UI.NEW_LINE2 + _currentActivity.weatherConditionsNotes); //custom tracks
       tourData.setWeatherClouds(_weatherId.get(_currentActivity.weatherConditions));
 
       final float weatherTemperature = _currentActivity.weatherTemperature;
@@ -875,6 +878,10 @@ public class FitLog_SAXHandler extends DefaultHandler {
       } else if (name.equals(TAG_TRACK_CLOCK)) {
 
          _isInPauses = false;
+
+      } else if (name.equals(TAG_ACTIVITY_CUSTOMTRACKS)) {
+
+         _isInCustomTrackDefinition = false;
 
       } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
 
@@ -1241,6 +1248,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _currentActivity.weatherTemperature = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMP);
          _currentActivity.weatherConditions = attributes.getValue(ATTRIB_WEATHER_CONDITIONS);
          //custom tracks start
+         _currentActivity.weatherConditionsNotes = attributes.getValue(ATTRIB_WEATHER_CONDITIONSNOTES);
          _currentActivity.weatherTemperatureFeel = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMPFEEL);
          _currentActivity.weatherHumidity = Util.parseFloat(attributes, ATTRIB_WEATHER_HUMIDITYPERCENT);
          _currentActivity.weatherPrecipitation = Util.parseFloat(attributes, ATTRIB_WEATHER_PRECIPITATIONMM);
@@ -1583,9 +1591,9 @@ public class FitLog_SAXHandler extends DefaultHandler {
             //custom tracks end
          } else if (_isInPauses) {
             parsePauses(name, attributes);
-         } else if (_isInCustomTrackDefinition) {
+         } else if (_isInCustomTrackDefinition) {//custom tracks add else if...
             parseCustomTrackDefinitions(name, attributes);
-         } else if (_isInCustomDataFields) {//custom tracks add else if...
+         } else if (_isInCustomDataFields) {
             parseCustomDataFields(name, attributes);
          } else {
             parseActivity_01_Start(name, attributes);
@@ -1610,6 +1618,9 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
          _isInCustomTrackDefinition = true;
 
+      } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
+         _isInCustomDataFields = true;
+
       } else if (name.equals(TAG_TRACK_CLOCK)) {
 
          _isInPauses = true;
@@ -1623,9 +1634,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _isInActivity = true;
 
          initTour(attributes);
-      } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
-         _isInCustomDataFields = true;
-
       }
    }
 
