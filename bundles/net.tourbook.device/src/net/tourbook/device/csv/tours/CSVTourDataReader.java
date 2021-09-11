@@ -36,21 +36,16 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.data.TourData;
-import net.tourbook.data.TourTag;
 import net.tourbook.data.TourType;
-import net.tourbook.database.TourDatabase;
 import net.tourbook.importdata.DeviceData;
+import net.tourbook.importdata.ImportState_File;
+import net.tourbook.importdata.ImportState_Process;
+import net.tourbook.importdata.RawDataManager;
 import net.tourbook.importdata.SerialParameters;
+import net.tourbook.importdata.TourTypeWrapper;
 import net.tourbook.importdata.TourbookDevice;
-import net.tourbook.preferences.ITourbookPreferences;
-import net.tourbook.preferences.TourTypeColorDefinition;
-import net.tourbook.tour.TourEventId;
-import net.tourbook.tour.TourManager;
-
-import org.eclipse.swt.widgets.Display;
 
 public class CSVTourDataReader extends TourbookDevice {
 
@@ -351,72 +346,33 @@ public class CSVTourDataReader extends TourbookDevice {
     */
    private boolean parseTags(final TourData tourData, final String tagToken) {
 
-      boolean isNewTag = false;
-
-      final StringTokenizer tokenizer = new StringTokenizer(tagToken, CSV_TAG_SEPARATOR);
-      final Set<TourTag> tourTags = new HashSet<>();
-
-      HashMap<Long, TourTag> tourTagMap = TourDatabase.getAllTourTags();
-      TourTag[] allTourTags = tourTagMap.values().toArray(new TourTag[tourTagMap.size()]);
-
+      final StringTokenizer tagTokenizer = new StringTokenizer(tagToken, CSV_TAG_SEPARATOR);
+      final Set<String> allTourTagNames = new HashSet<>();
       try {
 
          String tagLabel;
 
-         while ((tagLabel = tokenizer.nextToken()) != null) {
+         // loop: all tag labels
+         while ((tagLabel = tagTokenizer.nextToken()) != null) {
 
-            tagLabel = tagLabel.trim();
-            boolean isTagAvailable = false;
+            tagLabel = tagLabel.strip();
 
-            for (final TourTag tourTag : allTourTags) {
-               if (tourTag.getTagName().equals(tagLabel)) {
-
-                  // existing tag is found
-
-                  isTagAvailable = true;
-
-                  tourTags.add(tourTag);
-                  break;
-               }
-            }
-
-            if (isTagAvailable == false) {
-
-               // create a new tag
-
-               final TourTag tourTag = new TourTag(tagLabel);
-               tourTag.setRoot(true);
-
-               // persist tag
-               final TourTag savedTag = TourDatabase.saveEntity(
-                     tourTag,
-                     TourDatabase.ENTITY_IS_NOT_SAVED,
-                     TourTag.class);
-
-               if (savedTag != null) {
-
-                  tourTags.add(savedTag);
-
-                  // reload tour tag list
-
-                  TourDatabase.clearTourTags();
-
-                  tourTagMap = TourDatabase.getAllTourTags();
-                  allTourTags = tourTagMap.values().toArray(new TourTag[tourTagMap.size()]);
-
-                  isNewTag = true;
-               }
-            }
+            allTourTagNames.add(tagLabel);
          }
 
       } catch (final NoSuchElementException e) {
-         // no further tokens
-      } finally {
 
-         tourData.setTourTags(tourTags);
+         // no further tokens
       }
 
-      return isNewTag;
+      if (allTourTagNames.size() == 0) {
+
+         // nothing to do
+
+         return false;
+      }
+
+      return RawDataManager.setTourTags(tourData, allTourTagNames);
 
    }
 
@@ -434,49 +390,9 @@ public class CSVTourDataReader extends TourbookDevice {
     */
    private boolean parseTourType(final TourData tourData, final String parsedTourTypeLabel) {
 
-      final ArrayList<TourType> tourTypeMap = TourDatabase.getAllTourTypes();
-      TourType tourType = null;
+      final TourTypeWrapper tourTypeWrapper = RawDataManager.setTourType(tourData, parsedTourTypeLabel);
 
-      // find tour type in existing tour types
-      for (final TourType mapTourType : tourTypeMap) {
-         if (parsedTourTypeLabel.equalsIgnoreCase(mapTourType.getName())) {
-            tourType = mapTourType;
-            break;
-         }
-      }
-
-      TourType newSavedTourType = null;
-
-      if (tourType == null) {
-
-         // create new tour type
-
-         final TourType newTourType = new TourType(parsedTourTypeLabel);
-
-         final TourTypeColorDefinition newColorDef = new TourTypeColorDefinition(
-               newTourType,
-               Long.toString(newTourType.getTypeId()),
-               newTourType.getName());
-
-         newTourType.setColor_Gradient_Bright(newColorDef.getGradientBright_Default());
-         newTourType.setColor_Gradient_Dark(newColorDef.getGradientDark_Default());
-         newTourType.setColor_Line(newColorDef.getLineColor_Default_Light(), newColorDef.getLineColor_Default_Dark());
-         newTourType.setColor_Text(newColorDef.getTextColor_Default_Light(), newColorDef.getTextColor_Default_Dark());
-
-         // save new entity
-         newSavedTourType = TourDatabase.saveEntity(newTourType, newTourType.getTypeId(), TourType.class);
-         if (newSavedTourType != null) {
-
-            tourType = newSavedTourType;
-
-            TourDatabase.clearTourTypes();
-            TourManager.getInstance().clearTourDataCache();
-         }
-      }
-
-      tourData.setTourType(tourType);
-
-      return newSavedTourType != null;
+      return tourTypeWrapper != null && tourTypeWrapper.isNewTourType;
    }
 
    private WeatherData parseWeatherST3(final String weatherInput) {//string must starts with " !!!
@@ -533,32 +449,16 @@ public class CSVTourDataReader extends TourbookDevice {
    }
 
    @Override
-   public boolean processDeviceData(final String importFilePath,
-                                    final DeviceData deviceData,
-                                    final Map<Long, TourData> alreadyImportedTours,
-                                    final Map<Long, TourData> newlyImportedTours,
-                                    final boolean isReimport) {
+   public void processDeviceData(final String importFilePath,
+                                 final DeviceData deviceData,
+                                 final Map<Long, TourData> alreadyImportedTours,
+                                 final Map<Long, TourData> newlyImportedTours,
+                                 final ImportState_File importState_File,
+                                 final ImportState_Process importState_Process) {
 
-      boolean returnValue = false;
 
       boolean isNewTag = false;
       boolean isNewTourType = false;
-
-//      final CSVParser parser = new CSVParserBuilder().withSeparator(CSV_TOKEN_SEPARATOR_CHAR).build();
-//      final Path myImportFilePath = Paths.get(importFilePath);
-//      List<String[]> listCSVLinesToken = new ArrayList<>();
-//      try (var bufferReader = Files.newBufferedReader(myImportFilePath, StandardCharsets.UTF_8);
-//            var csvReader = new CSVReaderBuilder(bufferReader).withCSVParser(parser).build();) {
-//
-//         listCSVLinesToken = csvReader.readAll();
-//         csvReader.close();
-//      } catch (final Exception e) {
-//
-//         StatusUtil.log(e);
-//
-//         return false;
-//
-//      }
 
       String fileHeader = "";
       try (FileReader fileReader = new FileReader(importFilePath);
@@ -567,13 +467,13 @@ public class CSVTourDataReader extends TourbookDevice {
          // check file header
          fileHeader = bufferedReader.readLine();
          if (isFileValid(fileHeader) == false) {
-            return false;
+            return;
          }
       } catch (final Exception e) {
 
          StatusUtil.log(e);
 
-         return false;
+         return;
 
       }
 
@@ -801,7 +701,8 @@ public class CSVTourDataReader extends TourbookDevice {
                      // add new tour to the map
                      newlyImportedTours.put(tourId, tourData);
 
-                     returnValue = true;
+                     importState_File.isFileImportedWithValidData = true;
+
                   }
                }
             }
@@ -811,28 +712,19 @@ public class CSVTourDataReader extends TourbookDevice {
 
          StatusUtil.log(e);
 
-         return false;
+         return;
 
       } finally {
 
          try {
             if (isNewTag) {
 
-               // fire modify event
-
-               Display.getDefault().syncExec(() -> TourManager.fireEvent(TourEventId.TAG_STRUCTURE_CHANGED));
-
+               importState_Process.isCreated_NewTag().set(true);
             }
 
             if (isNewTourType) {
 
-               // fire modify event
-
-               Display.getDefault().syncExec(() -> TourbookPlugin
-                     .getDefault()
-                     .getPreferenceStore()
-                     .setValue(ITourbookPreferences.TOUR_TYPE_LIST_IS_MODIFIED, Math.random()));
-
+               importState_Process.isCreated_NewTourType().set(true);
             }
 
          } catch (final Exception e) {
@@ -840,7 +732,7 @@ public class CSVTourDataReader extends TourbookDevice {
          }
       }
 
-      return returnValue;
+      return;
    }
 
    /**
@@ -867,4 +759,3 @@ public class CSVTourDataReader extends TourbookDevice {
    }
 
 }
-

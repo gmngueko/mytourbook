@@ -48,6 +48,7 @@ import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
 import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.time.TimeTools;
+import net.tourbook.common.util.ITourViewer3;
 import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.SQL;
 import net.tourbook.common.util.StatusUtil;
@@ -82,6 +83,9 @@ import net.tourbook.ui.tourChart.TourChartConfiguration;
 import net.tourbook.ui.tourChart.TourChartView;
 import net.tourbook.ui.tourChart.X_AXIS_START_TIME;
 import net.tourbook.ui.views.TourChartAnalyzerInfo;
+import net.tourbook.ui.views.collateTours.CollatedToursView;
+import net.tourbook.ui.views.rawData.RawDataView;
+import net.tourbook.ui.views.tourBook.TourBookView;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 import net.tourbook.weather.HistoricalWeatherOwmRetriever;
 import net.tourbook.weather.HistoricalWeatherRetriever;
@@ -269,58 +273,60 @@ public class TourManager {
 
    private static final StringBuilder                    _sbFormatter                      = new StringBuilder();
    private static final Formatter                        _formatter                        = new Formatter(_sbFormatter);
+   //
+   private static final ListenerList<ITourEventListener> _tourEventListeners               = new ListenerList<>(ListenerList.IDENTITY);
+   private static final ListenerList<ITourSaveListener>  _tourSaveListeners                = new ListenerList<>(ListenerList.IDENTITY);
 
+   public static final String                            cadenceZonesTimes_StatementUpdate = UI.EMPTY_STRING
+
+         + "UPDATE " + TourDatabase.TABLE_TOUR_DATA                                                                                    // //$NON-NLS-1$
+
+         + " SET"                                                                                                                      // //$NON-NLS-1$
+
+         + " cadenceZone_SlowTime=?, "                                                                                                 // //$NON-NLS-1$
+         + " cadenceZone_FastTime=?, "                                                                                                 // //$NON-NLS-1$
+         + " cadenceZones_DelimiterValue=? "                                                                                           // //$NON-NLS-1$
+
+         + " WHERE tourId=?";                                                                                                          // //$NON-NLS-1$
+
+   //
    /**
     * contains the instance of the {@link TourDataEditorView} or <code>null</code> when this part is
     * not opened
     */
-   private static TourDataEditorView                     _tourDataEditorInstance;
+   private static TourDataEditorView      _tourDataEditorInstance;
    //
-   private static LabelProviderMMSS                      _labelProviderMMSS                = new LabelProviderMMSS();
-   private static LabelProviderInt                       _labelProviderInt                 = new LabelProviderInt();
+   private static LabelProviderMMSS       _labelProviderMMSS = new LabelProviderMMSS();
+   private static LabelProviderInt        _labelProviderInt  = new LabelProviderInt();
    //
-   private static TourData                               _joined_TourData;
-   private static int                                    _joined_TourIds_Hash;
-   private static List<TourData>                         _allLoaded_TourData;
-   private static int                                    _allLoaded_TourData_Hash;
-   private static long                                   _allLoaded_TourData_Key;
-   private static int                                    _allLoaded_TourIds_Hash;
+   private static volatile TourData       _joined_TourData;
+   private static int                     _joined_TourIds_Hash;
+   private static volatile List<TourData> _allLoaded_TourData;
+   private static int                     _allLoaded_TourData_Hash;
+   private static long                    _allLoaded_TourData_Key;
+   private static int                     _allLoaded_TourIds_Hash;
    //
-   private static final ListenerList<ITourEventListener> _tourEventListeners               = new ListenerList<>(ListenerList.IDENTITY);
-   private static final ListenerList<ITourSaveListener>  _tourSaveListeners                = new ListenerList<>(ListenerList.IDENTITY);
-   public static final String                            cadenceZonesTimes_StatementUpdate = UI.EMPTY_STRING
-
-         + "UPDATE " + TourDatabase.TABLE_TOUR_DATA                                                                                    //   //$NON-NLS-1$
-
-         + " SET"                                                                                                                      //                                     //$NON-NLS-1$
-
-         + " cadenceZone_SlowTime=?, "                                                                                                 //                //$NON-NLS-1$
-         + " cadenceZone_FastTime=?, "                                                                                                 //                 //$NON-NLS-1$
-         + " cadenceZones_DelimiterValue=? "                                                                                           //          //$NON-NLS-1$
-
-         + " WHERE tourId=?";                                                                                                          //                        //$NON-NLS-1$
+   private ComputeChartValue              _computeAvg_Altimeter;
+   private ComputeChartValue              _computeAvg_Altitude;
+   private ComputeChartValue              _computeAvg_Cadence;
+   private ComputeChartValue              _computeAvg_Gradient;
+   private ComputeChartValue              _computeAvg_Pace;
+   private ComputeChartValue              _computeAvg_Power;
+   private ComputeChartValue              _computeAvg_Pulse;
+   private ComputeChartValue              _computeAvg_Speed;
    //
-   private ComputeChartValue                             _computeAvg_Altimeter;
-   private ComputeChartValue                             _computeAvg_Altitude;
-   private ComputeChartValue                             _computeAvg_Cadence;
-   private ComputeChartValue                             _computeAvg_Gradient;
-   private ComputeChartValue                             _computeAvg_Pace;
-   private ComputeChartValue                             _computeAvg_Power;
-   private ComputeChartValue                             _computeAvg_Pulse;
-   private ComputeChartValue                             _computeAvg_Speed;
+   private ComputeChartValue              _computeAvg_RunDyn_StanceTime;
+   private ComputeChartValue              _computeAvg_RunDyn_StanceTimeBalance;
+   private ComputeChartValue              _computeAvg_RunDyn_StepLength;
+   private ComputeChartValue              _computeAvg_RunDyn_VerticalOscillation;
+   private ComputeChartValue              _computeAvg_RunDyn_VerticalRatio;
    //
-   private ComputeChartValue                             _computeAvg_RunDyn_StanceTime;
-   private ComputeChartValue                             _computeAvg_RunDyn_StanceTimeBalance;
-   private ComputeChartValue                             _computeAvg_RunDyn_StepLength;
-   private ComputeChartValue                             _computeAvg_RunDyn_VerticalOscillation;
-   private ComputeChartValue                             _computeAvg_RunDyn_VerticalRatio;
-   //
-   private final TourDataCache                           _tourDataCache;
+   private final TourDataCache            _tourDataCache;
 
    /**
     * tour chart which shows the selected tour
     */
-   private TourChart                                     _activeTourChart;
+   private TourChart                      _activeTourChart;
 
    public static class LabelProviderInt implements IValueLabelProvider {
 
@@ -408,7 +414,7 @@ public class TourManager {
       // ensure data are available
       if (temperatureSerie == null) {
 
-         TourLogManager.subLog_Error(
+         TourLogManager.subLog_ERROR(
                String.format(//
                      LOG_TEMP_ADJUST_010_NO_TEMPERATURE_DATA_SERIE,
                      getTourDateTimeShort(tourData)));
@@ -418,7 +424,7 @@ public class TourManager {
 
       if (timeSerie == null) {
 
-         TourLogManager.subLog_Error(
+         TourLogManager.subLog_ERROR(
                String.format(//
                      LOG_TEMP_ADJUST_011_NO_TIME_DATA_SERIE,
                      getTourDateTimeShort(tourData)));
@@ -444,7 +450,7 @@ public class TourManager {
       // an initial temperature could not be computed because the tour is too short
       if (initialTemperature == Integer.MIN_VALUE) {
 
-         TourLogManager.subLog_Error(
+         TourLogManager.subLog_ERROR(
                String.format(//
                      LOG_TEMP_ADJUST_005_TOUR_IS_TOO_SHORT,
                      getTourDateTimeShort(tourData)));
@@ -472,14 +478,12 @@ public class TourManager {
 
       final float newAvgTemperature = tourData.getAvgTemperature();
 
-      TourLogManager.addSubLog(
-            TourLogState.IMPORT_OK,
-            String.format(
-                  LOG_TEMP_ADJUST_003_TOUR_CHANGES,
-                  getTourDateTimeShort(tourData),
-                  oldAvgTemperature,
-                  newAvgTemperature,
-                  newAvgTemperature - oldAvgTemperature));
+      TourLogManager.subLog_OK(String.format(
+            LOG_TEMP_ADJUST_003_TOUR_CHANGES,
+            getTourDateTimeShort(tourData),
+            oldAvgTemperature,
+            newAvgTemperature,
+            newAvgTemperature - oldAvgTemperature));
 
       return true;
    }
@@ -564,11 +568,14 @@ public class TourManager {
             }
          }
 
-         TourLogManager.addSubLog(TourLogState.IMPORT_OK, NLS.bind(Messages.Log_ComputeCadenceZonesTimes_010_Success, numComputedTour));
+         TourLogManager.subLog_OK(NLS.bind(
+               Messages.Log_ComputeCadenceZonesTimes_010_Success,
+               numComputedTour));
 
          if (numNotComputedTour >= 0) {
-            TourLogManager.addSubLog(TourLogState.IMPORT_ERROR,
-                  NLS.bind(Messages.Log_ComputeCadenceZonesTimes_011_NoSuccess, numNotComputedTour));
+            TourLogManager.subLog_ERROR(NLS.bind(
+                  Messages.Log_ComputeCadenceZonesTimes_011_NoSuccess,
+                  numNotComputedTour));
          }
       } catch (final SQLException e) {
          SQL.showException(e);
@@ -1766,6 +1773,26 @@ public class TourManager {
       return firstTour + UI.DASH_WITH_SPACE + lastTour;
    }
 
+   public static Object[] getTourViewerSelectedTourIds(final ITourViewer3 tourViewer) {
+
+      Object[] selectedItems = null;
+
+      if (tourViewer instanceof TourBookView) {
+
+         selectedItems = (((TourBookView) tourViewer).getSelectedTourIDs()).toArray();
+
+      } else if (tourViewer instanceof CollatedToursView) {
+
+         selectedItems = (((CollatedToursView) tourViewer).getSelectedTourIDs()).toArray();
+
+      } else if (tourViewer instanceof RawDataView) {
+
+         selectedItems = (((RawDataView) tourViewer).getSelectedTourIDs()).toArray();
+      }
+
+      return selectedItems;
+   }
+
    /**
     * Checks if {@link TourData} can be painted
     *
@@ -2481,10 +2508,9 @@ public class TourManager {
       // ensure data is available
       if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
 
-         TourLogManager.subLog_Error(
-               String.format(
-                     LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
-                     getTourDateTimeShort(tourData)));
+         TourLogManager.subLog_ERROR(String.format(
+               LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
+               getTourDateTimeShort(tourData)));
 
          return false;
       }
@@ -2495,11 +2521,11 @@ public class TourManager {
          historicalWeatherData = historicalWeatherRetriever.getHistoricalWeatherData();
       }
       if (historicalWeatherData == null) {
-         TourLogManager.subLog_Error(
-               NLS.bind(
-                     Messages.Dialog_RetrieveWeather_WeatherDataNotFound,
-                     new Object[] {
-                           TourManager.getTourDateTimeShort(tourData) }));
+
+         TourLogManager.subLog_ERROR(NLS.bind(
+               Messages.Dialog_RetrieveWeather_WeatherDataNotFound,
+               TourManager.getTourDateTimeShort(tourData)));
+
          return false;
       }
 
@@ -2518,7 +2544,7 @@ public class TourManager {
       tourData.setWeather_Temperature_Min(historicalWeatherData.getTemperatureMin());
       tourData.setWeather_Temperature_WindChill(historicalWeatherData.getWindChill());
 
-      TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
+      TourLogManager.subLog_OK(getTourDateTimeShort(tourData));
 
       return true;
    }
@@ -2538,7 +2564,7 @@ public class TourManager {
       // ensure data is available otherwise use default
       if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
 
-         TourLogManager.subLog_Info(
+         TourLogManager.subLog_INFO(
                String.format(
                      LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
                      getTourDateTimeShort(tourData) + UI.SPACE1 + LOG_RETRIEVE_OWM_WEATHER_USING_DEFAULT_GPS));
@@ -2555,7 +2581,7 @@ public class TourManager {
          historicalWeatherData = historicalWeatherOwmRetriever.getHistoricalWeatherData();
       }
       if (historicalWeatherData == null) {
-         TourLogManager.subLog_Error(
+         TourLogManager.subLog_ERROR(
                NLS.bind(
                      Messages.Dialog_RetrieveWeatherOwm_WeatherDataNotFound,
                      new Object[] {
@@ -2579,7 +2605,7 @@ public class TourManager {
       tourData.setWeather_Temperature_Min(historicalWeatherData.getTemperatureMin());
       tourData.setWeather_Temperature_WindChill(historicalWeatherData.getWindChill());
 
-      TourLogManager.addSubLog(TourLogState.IMPORT_OK, "OWM import done for interval:" + intervalSeconds);
+      TourLogManager.addSubLog(TourLogState.OK, "OWM import done for interval:" + intervalSeconds);
 
       //compute tail wind, cross wind, gps diretion of tour with OWM weather info
       historicalWeatherData.computeWindTour(tourData, intervalSeconds);
@@ -2588,7 +2614,7 @@ public class TourManager {
       //to avoid loosing "sensor temperature" !!! So this "sensor temperature" is created only once the first time you do a OWM retrieval
       historicalWeatherData.setCustomTracks(tourData);
 
-      TourLogManager.addSubLog(TourLogState.IMPORT_OK, getTourDateTimeShort(tourData));
+      TourLogManager.addSubLog(TourLogState.OK, getTourDateTimeShort(tourData));
 
       return true;
    }

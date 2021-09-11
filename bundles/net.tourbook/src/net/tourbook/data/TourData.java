@@ -2201,6 +2201,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       _tourWorldPosition.clear();
    }
 
+   /**
+    * This clone() method is cloning only a part of the tour, e.g. {@link #serieData} is not cloned
+    */
    @Override
    public Object clone() throws CloneNotSupportedException {
 
@@ -5353,7 +5356,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
        */
       for (double maxGeoDiff = MAX_GEO_DIFF; maxGeoDiff <= 1;) {
 
-         for (int timeDiffRange = 0; timeDiffRange < 1000; timeDiffRange++) {
+         for (int timeDiffRange = 0; timeDiffRange < 1000;) {
 
             final int timeDiffRangeMS = timeDiffRange * 1000;
 
@@ -5432,6 +5435,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
                // all waypoints are converted
 
                break;
+            }
+
+            if (timeDiffRange < 100) {
+               timeDiffRange += 10;
+            } else {
+               timeDiffRange += 100;
             }
          }
 
@@ -7617,11 +7626,17 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * @return Returns device name which is displayed in the tour editor info tab
     */
    public String getDeviceName() {
+
       if ((devicePluginId != null) && devicePluginId.equals(DEVICE_ID_FOR_MANUAL_TOUR)) {
+
          return Messages.tour_data_label_manually_created_tour;
+
       } else if ((devicePluginName == null) || (devicePluginName.length() == 0)) {
+
          return UI.EMPTY_STRING;
+
       } else {
+
          return devicePluginName;
       }
    }
@@ -10170,6 +10185,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       this.deviceModeName = deviceModeName;
    }
 
+   /**
+    * Set {@link #devicePluginName}
+    *
+    * @param deviceName
+    */
    public void setDeviceName(final String deviceName) {
       devicePluginName = deviceName;
    }

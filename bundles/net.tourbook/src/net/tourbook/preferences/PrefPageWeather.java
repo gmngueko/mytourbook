@@ -305,9 +305,9 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
                                  responseMessage });
 
                if (statusCode == HttpURLConnection.HTTP_OK) {
-                  TourLogManager.addSubLog(TourLogState.IMPORT_OK, "TEST OWM Connection result=>\n" + responseMessage);
+                  TourLogManager.addSubLog(TourLogState.OK, "TEST OWM Connection result=>\n" + responseMessage);
                } else {
-                  TourLogManager.addSubLog(TourLogState.IMPORT_ERROR, "TEST OWM Connection result=>\n" + responseMessage);
+                  TourLogManager.addSubLog(TourLogState.ERROR, "TEST OWM Connection result=>\n" + responseMessage);
                }
                MessageDialog.openInformation(
                      Display.getCurrent().getActiveShell(),
