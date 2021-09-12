@@ -28,7 +28,6 @@ import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.CustomTrackDefinition;
-import net.tourbook.data.DeviceSensorValue;
 import net.tourbook.data.GearData;
 import net.tourbook.data.SwimData;
 import net.tourbook.data.TimeData;
@@ -80,7 +79,7 @@ public class FitData {
 
    private final List<TimeData>          _allTimeData           = new ArrayList<>();
 
-   private final List<DeviceSensorValue> _allDeviceSensorValues = new ArrayList<>();
+//   private final List<DeviceSensorValue> _allDeviceSensorValues = new ArrayList<>();
    private final List<GearData>          _allGearData           = new ArrayList<>();
    private final List<SwimData>          _allSwimData           = new ArrayList<>();
    private final List<TourMarker>        _allTourMarker         = new ArrayList<>();
@@ -99,6 +98,8 @@ public class FitData {
    private TourMarker             _current_TourMarker;
 
    private long                   _timeDiffMS;
+   private ImportState_Process           _importState_Process;
+
    public class CustomTracksFieldDefinition {
 
       private String _Name;
@@ -138,8 +139,6 @@ public class FitData {
          _Unit = unit;
       }
    }
-
-   private ImportState_Process           _importState_Process;
 
    public FitData(final FitDataReader fitDataReader,
                   final String importFilePath,
@@ -656,9 +655,9 @@ public class FitData {
       return deviceName.toString();
    }
 
-   public List<DeviceSensorValue> getDeviceSensorValues() {
-      return _allDeviceSensorValues;
-   }
+//   public List<DeviceSensorValue> getDeviceSensorValues() {
+//      return _allDeviceSensorValues;
+//   }
 
    public List<GearData> getGearData() {
       return _allGearData;
