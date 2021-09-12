@@ -602,10 +602,15 @@ public class FitLog_SAXHandler extends DefaultHandler {
    @Override
    public void characters(final char[] chars, final int startIndex, final int length) throws SAXException {
 
-      if (_isInTimeZoneUtcOffset || _isInHasStartTime || _isInName || _isInNotes || _isInWeather || _isInLapNotes) {//custom tracks || _isInLapNotes
+      if (_isInTimeZoneUtcOffset || _isInHasStartTime || _isInName || _isInNotes || _isInWeather) {
 
          _characters.append(chars, startIndex, length);
       }
+      //custom tracks start
+      if (_isInLapNotes) {
+         _characters.append(chars, startIndex, length);
+      }
+      //custom tracks end
    }
 
    private TourData createTour() {
@@ -875,11 +880,20 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
          _isInLaps = false;
 
+      } else if (name.equals(TAG_LAP)) {//custom tracks
+
+         _isInLap = false;//custom tracks
+         _isInLapNotes = false;//custom tracks
+
       } else if (name.equals(TAG_TRACK_CLOCK)) {
 
          _isInPauses = false;
 
-      } else if (name.equals(TAG_ACTIVITY_CUSTOMTRACKS)) {
+      } else if (name.equals(TAG_ACTIVITY_WEATHER)) {//custom tracks
+
+         _isInWeather = false;
+
+      } else if (name.equals(TAG_ACTIVITY_CUSTOMTRACKS)) {//custom tracks
 
          _isInCustomTrackDefinition = false;
 
@@ -1585,7 +1599,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
          } else if (_isInLaps) {
             parseLaps(name, attributes);
             //custom tracks start
-            if (_isInLap) {
+            if (_isInLap || name.equals(TAG_LAP)) {
                parseLap(name, attributes);
             }
             //custom tracks end
