@@ -1935,6 +1935,10 @@ public class Messages extends NLS {
    public static String Slideout_ChartMarkerOptions_Label_Offset_Tooltip;
    public static String Slideout_ChartMarkerOptions_Label_Title;
 
+   public static String Slideout_ChartPausesOptions_Checkbox_IsShowPauseTooltip;
+   public static String Slideout_ChartPausesOptions_Combo_TooltipPosition_Tooltip;
+   public static String Slideout_ChartPausesOptions_Label_Title;
+
    public static String Slideout_ConconiOptions_Label_Title;
 
    public static String Slideout_GeoCompareOptions_Group_MapOptions;
@@ -2270,6 +2274,13 @@ public class Messages extends NLS {
    public static String Tag_Manager_Dialog_DeleteTag_Title;
    public static String Tag_Manager_LogInfo_DeletedTagCategory;
    public static String Tag_Manager_LogInfo_DeletedTags;
+
+   public static String Tooltip_Position_Bottom;
+   public static String Tooltip_Position_ChartBottom;
+   public static String Tooltip_Position_ChartTop;
+   public static String Tooltip_Position_Left;
+   public static String Tooltip_Position_Right;
+   public static String Tooltip_Position_Top;
 
    public static String Tooltip_ValuePoint_Action_CloseContextMenu;
    public static String Tooltip_ValuePoint_Action_OpenToolTipMenu_ToolTip;
@@ -2616,12 +2627,6 @@ public class Messages extends NLS {
    public static String Tour_Marker_Position_Vertical_Chart_Top;
    public static String Tour_Marker_Position_Vertical_MarkerPoint_Above;
    public static String Tour_Marker_Position_Vertical_MarkerPoint_Below;
-   public static String Tour_Marker_TooltipPosition_Bottom;
-   public static String Tour_Marker_TooltipPosition_ChartBottom;
-   public static String Tour_Marker_TooltipPosition_ChartTop;
-   public static String Tour_Marker_TooltipPosition_Left;
-   public static String Tour_Marker_TooltipPosition_Right;
-   public static String Tour_Marker_TooltipPosition_Top;
 
    public static String Tour_Segmenter_Action_ShowHideSegmentsInTourChart_Tooltip;
    public static String Tour_Segmenter_Button_SaveTour_Tooltip;
