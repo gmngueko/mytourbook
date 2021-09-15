@@ -54,7 +54,7 @@ import net.tourbook.database.TourDatabase;
 import net.tourbook.device.InvalidDeviceSAXException;
 import net.tourbook.device.Messages;
 import net.tourbook.preferences.TourTypeColorDefinition;
-import net.tourbook.ui.tourChart.ChartLabel;
+import net.tourbook.ui.tourChart.ChartLabelMarker;
 
 import org.eclipse.osgi.util.NLS;
 import org.xml.sax.Attributes;
@@ -760,7 +760,7 @@ public class FitLogSAXHandler extends DefaultHandler {
       final double[] latitudeSerie = tourData.latitudeSerie;
       final double[] longitudeSerie = tourData.longitudeSerie;
 
-      final TourMarker tourMarker = new TourMarker(tourData, ChartLabel.MARKER_TYPE_DEVICE);
+      final TourMarker tourMarker = new TourMarker(tourData, ChartLabelMarker.MARKER_TYPE_DEVICE);
 
       tourMarker.setLabel(label);
       tourMarker.setSerieIndex(serieIndex);
