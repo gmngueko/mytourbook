@@ -41,8 +41,6 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
-import net.tourbook.data.CustomTrackDefinition;
-import net.tourbook.data.CustomTrackValue;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
@@ -116,47 +114,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
    //
    private static final char                    NL                          = UI.NEW_LINE;
    private static final String                  COLON_SPACE                 = ": ";              //$NON-NLS-1$
-   //custom tracks constants start below
-   private static final String                  TAG_ACTIVITY_CUSTOMTRACKS   = "CustomTracks";    //$NON-NLS-1$
-   private static final String                  TAG_ACTIVITY_CUSTOMTRACK    = "CustomTrack";     //$NON-NLS-1$
-   //
-   private static final String                  TAG_LAP_NOTES               = "Notes";           //$NON-NLS-1$
-   //
-   private static final String                  ATTRIB_PT_GCT               = "gct";             //$NON-NLS-1$
-   //private static final String                  ATTRIB_PT_LP                        = "lp";  is not yet supported                                //$NON-NLS-1$
-   //private static final String                  ATTRIB_PT_SMO2                      = "smo2"; is not yet supported                               //$NON-NLS-1$
-   //private static final String                  ATTRIB_PT_THB                       = "thb";  is not yet supported                               //$NON-NLS-1$
-   private static final String                  ATTRIB_PT_VO                        = "vo";                                  //$NON-NLS-1$
 
-   private static final String                  ATTRIB_ID                           = "Id";                                  //$NON-NLS-1$
-   private static final String                  ATTRIB_AVERAGE_LP_WATTS             = "AvgLeftRightBalance";                 //$NON-NLS-1$
-
-   private static final String                  ATTRIB_PATHNAME                     = "PathName";                            //$NON-NLS-1$
-   private static final String                  ATTRIB_REST                         = "Rest";                                //$NON-NLS-1$
-   private static final String                  ATTRIB_SOURCE                       = "Source";                              //$NON-NLS-1$
-   private static final String                  ATTRIB_UNIT                         = "Unit";                                //$NON-NLS-1$
-   //
-   private static final String                  ATTRIB_WEATHER_PRECIPITATIONMM      = "Precipitation_mm";                    //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_PRESSUREMB           = "Pressure_mb";                         //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_HUMIDITYPERCENT      = "HumidityPercent";                     //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_TEMPFEEL             = "TempFeel";                            //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_WINDDIRECTIONDEGREES = "WindDirectionDegrees";                //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_WINDSPEEDKH          = "WindSpeedKilometersPerHour";          //$NON-NLS-1$
-   private static final String                  ATTRIB_WEATHER_CONDITIONSNOTES      = "ConditionsNotes";                     //$NON-NLS-1$
-
-   private static final String                  NAME_GROUNDCONTACT_TIME_BALANCE     = "Ground Contact Time Balance";         //$NON-NLS-1$
-   private static final String                  NAME_IF                             = "IF (Intensity Factor)";               //$NON-NLS-1$
-   private static final String                  NAME_LEFT_PEDAL_SMOOTH              = "Left Pedal Smoothness Avg. [%]";      //$NON-NLS-1$
-   private static final String                  NAME_LEFT_TORQUE_EFF                = "Left Torque Effectiveness Avg. [%]";  //$NON-NLS-1$
-   private static final String                  NAME_NORMALIZEDPOWER                = "NormalizedPower [W]";                 //$NON-NLS-1$
-   private static final String                  NAME_RIGHT_PEDAL_SMOOTH             = "Right Pedal Smoothness Avg. [%]";     //$NON-NLS-1$
-   private static final String                  NAME_RIGHT_TORQUE_EFF               = "Right Torque Effectiveness Avg. [%]"; //$NON-NLS-1$
-   private static final String                  NAME_STRIDELENGTH                   = "Stride length (recorded)";            //$NON-NLS-1$
-   private static final String                  NAME_TSS                            = "TSS (Training Stress Score)";         //$NON-NLS-1$
-   private static final String                  NAME_VERTICALRATIO                  = "Vertical Ratio";                      //$NON-NLS-1$
-
-   private static final String                  FITLOGEX_ERROR_PREFIX               = "FitlogEx parse error";                //$NON-NLS-1$
-   //custom tracks constants end
    private static final HashMap<String, String> _weatherId                  = new HashMap<>();
    static {
 
@@ -181,8 +139,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       _weatherId.put("Thunder",        IWeather.WEATHER_ID_LIGHTNING); //                 //$NON-NLS-1$
       _weatherId.put("Snow",           IWeather.WEATHER_ID_SNOW); //                      //$NON-NLS-1$
       _weatherId.put("Haze",           IWeather.WEATHER_ID_PART_CLOUDS); //         *)    //$NON-NLS-1$
-      //custom tracks
-      _weatherId.put("Mist",           IWeather.WEATHER_ID_PART_CLOUDS); //         *)    //$NON-NLS-1$
 
 // SET_FORMATTING_ON
    }
@@ -200,9 +156,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
    private double                          _prevLongitude;
 
    private double                          _distanceAbsolute;
-   //custom tracks start
-   private Lap                             _currentLap;
-   //custom tracks end
+
    /**
     * Is currently disabled because it should work for all cases
     */
@@ -217,11 +171,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
    private boolean                         _isInTimeZoneUtcOffset;
    private boolean                         _isInTrack;
    private boolean                         _isInWeather;
-   //custom tracks start
-   private boolean                         _isInCustomTrackDefinition;
-   private boolean                         _isInLapNotes;
-   private boolean                         _isInLap;
-   //custom tracks end
+
    private Map<String, Integer>            _customDataFieldDefinitions;
 
    private StringBuilder                   _characters       = new StringBuilder(100);
@@ -237,9 +187,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       private List<Lap>       laps               = new ArrayList<>();
       private List<Pause>     pauses             = new ArrayList<>();
       private List<Equipment> equipments         = new ArrayList<>();
-      //custom tracks start
-      private List<CustomST3TrackDefinition> customTrackDefinitions = new ArrayList<>();
-      //custom tracks end
 
       private ZonedDateTime   tourStartTime;
       private long            tourStartTimeMills = Long.MIN_VALUE;
@@ -261,7 +208,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
       private float           avgPower;
       private float           maxPower;
-      private String        srcPower           = UI.EMPTY_STRING;//custom tracks
 
       private int             timeZoneUtcOffset;
       private boolean         hasTimeZoneUtcOffset;
@@ -278,56 +224,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
       private int                           weatherWindSpeed   = Integer.MIN_VALUE;
 
       private LinkedHashMap<String, String> customDataFields   = new LinkedHashMap<>();
-      //custom tracks start
-      private String                        weatherConditionsNotes;
-      private float                         weatherTemperatureFeel   = Float.MIN_VALUE;
-      private float                         weatherWindDirection     = Float.MIN_VALUE;
-      private float                         weatherPressure          = Float.MIN_VALUE;
-      private float                         weatherHumidity          = Float.MIN_VALUE;
-      private float                         weatherPrecipitation     = Float.MIN_VALUE;
-
-      private float                         avgPowerBalance          = Float.MIN_VALUE;
-      private float                         avgPowerLeftPedalSmooth  = Float.MIN_VALUE;
-      private float                         avgPowerRightPedalSmooth = Float.MIN_VALUE;
-      private float                         avgPowerLeftTorqueEff    = Float.MIN_VALUE;
-      private float                         avgPowerRightTorqueEff   = Float.MIN_VALUE;
-      private float                         powerIntensityFactor     = Float.MIN_VALUE;
-      private float                         powerNormalized          = Float.MIN_VALUE;
-      private float                         powerTSS                 = Float.MIN_VALUE;      // TrainingStress Score
-      //custom tracks end
    }
-
-   //custom tracks start
-   private class CustomST3TrackDefinition {
-      private String _Name;
-      private String _Id;
-      private String _Unit;
-
-      public String getId() {
-         return _Id;
-      }
-
-      public String getName() {
-         return _Name;
-      }
-
-      public String getUnit() {
-         return _Unit;
-      }
-
-      public void setId(final String id) {
-         _Id = id;
-      }
-
-      public void setName(final String name) {
-         _Name = name;
-      }
-
-      public void setUnit(final String unit) {
-         _Unit = unit;
-      }
-   }//custom tracks end
-
 
    public static class Equipment {
 
@@ -445,10 +342,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
       private long startTime;
       private long endTime;
-      //custom tracks start
-      private String  notes;
-      private boolean rest;
-      //custom tracks end
    }
 
    private class Pause {
@@ -606,11 +499,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
          _characters.append(chars, startIndex, length);
       }
-      //custom tracks start
-      if (_isInLapNotes) {
-         _characters.append(chars, startIndex, length);
-      }
-      //custom tracks end
    }
 
    private TourData createTour() {
@@ -639,12 +527,11 @@ public class FitLog_SAXHandler extends DefaultHandler {
       tourData.setTourStartPlace(_currentActivity.location);
 
       tourData.setCalories(_currentActivity.calories);
-      tourData.setPower_DataSource(_currentActivity.srcPower);//custom tracks
+
       /*
        * weather
        */
-      //tourData.setWeather(_currentActivity.weatherText); //custom tracks commented out this line
-      tourData.setWeather(_currentActivity.weatherText + UI.NEW_LINE2 + _currentActivity.weatherConditionsNotes); //custom tracks
+      tourData.setWeather(_currentActivity.weatherText);
       tourData.setWeatherClouds(_weatherId.get(_currentActivity.weatherConditions));
 
       final float weatherTemperature = _currentActivity.weatherTemperature;
@@ -655,22 +542,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       if (_currentActivity.weatherWindSpeed != Integer.MIN_VALUE) {
          tourData.setWeatherWindSpeed(_currentActivity.weatherWindSpeed);
       }
-      //custom tracks start
-      if (_currentActivity.weatherTemperatureFeel != Float.MIN_VALUE) {
-         tourData.setWeather_Temperature_WindChill(_currentActivity.weatherTemperatureFeel);
-      }
-      if (_currentActivity.weatherHumidity != Float.MIN_VALUE) {
-         tourData.setWeather_Humidity((short) _currentActivity.weatherHumidity);
-      }
-      if (_currentActivity.weatherWindDirection != Float.MIN_VALUE) {
-         tourData.setWeatherWindDir((int) _currentActivity.weatherWindDirection);
-      }
-      if (_currentActivity.weatherPressure != Float.MIN_VALUE) {
-         tourData.setWeather_Pressure(_currentActivity.weatherPressure);
-      }
-      if (_currentActivity.weatherPrecipitation != Float.MIN_VALUE) {
-         tourData.setWeather_Precipitation(_currentActivity.weatherPrecipitation);
-      } //custom tracks end
 
       if (_currentActivity.customDataFields.size() > 0) {
 
@@ -690,79 +561,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
          });
 
          tourData.setTourDescription(tourNotes.toString());
-
-         //custom tracks start
-         if (_currentActivity.customDataFields.containsKey(NAME_NORMALIZEDPOWER)) {
-            try {
-               _currentActivity.powerNormalized = Float.parseFloat(_currentActivity.customDataFields.get(NAME_NORMALIZEDPOWER));
-               tourData.setPower_Normalized((int) _currentActivity.powerNormalized);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_NORMALIZEDPOWER + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_TSS)) {
-            try {
-               _currentActivity.powerTSS = Float.parseFloat(_currentActivity.customDataFields.get(NAME_TSS));
-               tourData.setPower_TrainingStressScore(_currentActivity.powerTSS);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_TSS + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_IF)) {
-            try {
-               _currentActivity.powerIntensityFactor = Float.parseFloat(_currentActivity.customDataFields.get(NAME_IF));
-               tourData.setPower_IntensityFactor(_currentActivity.powerIntensityFactor);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_IF + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_LEFT_TORQUE_EFF)) {
-            try {
-               _currentActivity.avgPowerLeftTorqueEff = Float.parseFloat(_currentActivity.customDataFields.get(NAME_LEFT_TORQUE_EFF));
-               tourData.setPower_AvgLeftTorqueEffectiveness(_currentActivity.avgPowerLeftTorqueEff);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_LEFT_TORQUE_EFF + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_RIGHT_TORQUE_EFF)) {
-            try {
-               _currentActivity.avgPowerRightTorqueEff = Float.parseFloat(_currentActivity.customDataFields.get(NAME_RIGHT_TORQUE_EFF));
-               tourData.setPower_AvgRightTorqueEffectiveness(_currentActivity.avgPowerRightTorqueEff);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_RIGHT_TORQUE_EFF + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_LEFT_PEDAL_SMOOTH)) {
-            try {
-               _currentActivity.avgPowerLeftPedalSmooth = Float.parseFloat(_currentActivity.customDataFields.get(NAME_LEFT_PEDAL_SMOOTH));
-               tourData.setPower_AvgLeftPedalSmoothness(_currentActivity.avgPowerLeftPedalSmooth);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_LEFT_PEDAL_SMOOTH + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         }
-
-         if (_currentActivity.customDataFields.containsKey(NAME_RIGHT_PEDAL_SMOOTH)) {
-            try {
-               _currentActivity.avgPowerRightPedalSmooth = Float.parseFloat(_currentActivity.customDataFields.get(NAME_RIGHT_PEDAL_SMOOTH));
-               tourData.setPower_AvgRightPedalSmoothness(_currentActivity.avgPowerRightPedalSmooth);
-            } catch (final Exception exc) {
-               StatusUtil.log(NAME_RIGHT_PEDAL_SMOOTH + ": " + FITLOGEX_ERROR_PREFIX, exc); //$NON-NLS-1$
-            }
-         } //custom tracks end
       }
-
-      //custom tracks start
-      if (_currentActivity.avgPowerBalance != Float.MIN_VALUE) {
-         tourData.setPower_PedalLeftRightBalance((int) _currentActivity.avgPowerBalance);
-      }
-      if (_currentActivity.powerNormalized != Float.MIN_VALUE && _currentActivity.powerIntensityFactor != Float.MIN_VALUE) {
-         tourData.setPower_FTP((int) (_currentActivity.powerNormalized / _currentActivity.powerIntensityFactor));
-      } //custom tracks end
 
       tourData.setImportFilePath(_importFilePath);
 
@@ -785,24 +584,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       } else {
 
          // create 'normal' tour
-
-         //custom tracks start
-         //setting up customTracksDefinition with call to "tourData.customTracksDefinition.put(...)"
-         //must be set before calling "tourData.createTimeSeries(....)"
-         for (final CustomST3TrackDefinition customST3TrackDefinition : _currentActivity.customTrackDefinitions) {
-            final String idS = customST3TrackDefinition.getId();
-            final String nameS = customST3TrackDefinition.getName();
-            final String unitS = customST3TrackDefinition.getUnit();
-            if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
-                  .compareTo(NAME_VERTICALRATIO) == 0) {} else {
-               final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setId(idS);
-               customTrackDefinition.setName(nameS);
-               customTrackDefinition.setUnit(unitS);
-               tourData.customTracksDefinition.put(idS, customTrackDefinition);
-            }
-         }
-         //custom tracks end
 
          tourData.createTimeSeries(_currentActivity.timeSlices, false);
 
@@ -880,22 +661,9 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
          _isInLaps = false;
 
-      } else if (name.equals(TAG_LAP)) {//custom tracks
-
-         _isInLap = false;//custom tracks
-         _isInLapNotes = false;//custom tracks
-
       } else if (name.equals(TAG_TRACK_CLOCK)) {
 
          _isInPauses = false;
-
-      } else if (name.equals(TAG_ACTIVITY_WEATHER)) {//custom tracks
-
-         _isInWeather = false;
-
-      } else if (name.equals(TAG_ACTIVITY_CUSTOMTRACKS)) {//custom tracks
-
-         _isInCustomTrackDefinition = false;
 
       } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
 
@@ -988,7 +756,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       _currentActivity.timeSlices.clear();
       _currentActivity.laps.clear();
       _currentActivity.equipments.clear();
-      _currentActivity.customTrackDefinitions.clear();//custom tracks
 
       _importState_File.isFileImportedWithValidData = true;
    }
@@ -1085,15 +852,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
                lapRelativeTime,
                serieIndex);
 
-         //custom tracks start
-         String notes = ATTRIB_REST + UI.SYMBOL_COLON;
-         notes += Boolean.toString(lap.rest) + UI.SYMBOL_SEMICOLON;
-         if (lap.notes != null && lap.notes.trim().length() > 0) {
-            notes += TAG_LAP_NOTES + UI.SYMBOL_COLON + lap.notes.trim();
-         }
-         tourMarker.setDescription(notes);
-         //custom tracks end
-
          tourMarkers.add(tourMarker);
 
          lapCounter++;
@@ -1171,15 +929,7 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _currentActivity.location = attributes.getValue(ATTRIB_NAME);
          break;
       case TAG_ACTIVITY_CATEGORY:
-         //_currentActivity.categoryName = attributes.getValue(ATTRIB_NAME);//custom tracks commented out this line
-         //custom tracks start
-         final String CategoryName = attributes.getValue(ATTRIB_PATHNAME);
-         if (CategoryName == null || CategoryName.trim().length() == 0) {
-            _currentActivity.categoryName = attributes.getValue(ATTRIB_NAME);
-         } else {
-            _currentActivity.categoryName = CategoryName;
-         }
-         //custom tracks end
+         _currentActivity.categoryName = attributes.getValue(ATTRIB_NAME);
          break;
 
       case TAG_ACTIVITY_EQUIPMENT_ITEM:
@@ -1235,10 +985,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
       case TAG_ACTIVITY_POWER:
          _currentActivity.avgPower = Util.parseFloat0(attributes, ATTRIB_AVERAGE_WATTS);
          _currentActivity.maxPower = Util.parseFloat0(attributes, ATTRIB_MAXIMUM_WATTS);
-         //custom tracks start
-         _currentActivity.avgPowerBalance = Util.parseFloat0(attributes, ATTRIB_AVERAGE_LP_WATTS);
-         _currentActivity.srcPower = attributes.getValue(ATTRIB_SOURCE);
-         //custom tracks end
          break;
       case FitLogEx_SAXHandler.TAG_ACTIVITY_TIMEZONE_UTC_OFFSET:
          _isInTimeZoneUtcOffset = true;
@@ -1261,15 +1007,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _isInWeather = true;
          _currentActivity.weatherTemperature = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMP);
          _currentActivity.weatherConditions = attributes.getValue(ATTRIB_WEATHER_CONDITIONS);
-         //custom tracks start
-         _currentActivity.weatherConditionsNotes = attributes.getValue(ATTRIB_WEATHER_CONDITIONSNOTES);
-         _currentActivity.weatherTemperatureFeel = Util.parseFloat(attributes, ATTRIB_WEATHER_TEMPFEEL);
-         _currentActivity.weatherHumidity = Util.parseFloat(attributes, ATTRIB_WEATHER_HUMIDITYPERCENT);
-         _currentActivity.weatherPrecipitation = Util.parseFloat(attributes, ATTRIB_WEATHER_PRECIPITATIONMM);
-         _currentActivity.weatherPressure = Util.parseFloat(attributes, ATTRIB_WEATHER_PRESSUREMB);
-         _currentActivity.weatherWindSpeed = (int) Util.parseFloat(attributes, ATTRIB_WEATHER_WINDSPEEDKH);
-         _currentActivity.weatherWindDirection = Util.parseFloat(attributes, ATTRIB_WEATHER_WINDDIRECTIONDEGREES);
-         //custom tracks end
          break;
       default:
          return;
@@ -1290,21 +1027,11 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _isInNotes = false;
          _currentActivity.notes = _characters.toString();
 
-      } else if (_isInLapNotes) {//custom traks
-
-         _isInLapNotes = false;
-         if (_currentLap != null) {
-            _currentLap.notes = _characters.toString();
-         }
-         _characters.delete(0, _characters.length());
-
       } else if (_isInWeather) {
 
          _isInWeather = false;
          _currentActivity.weatherText = _characters.toString();
-         if (_currentActivity.weatherWindSpeed == Integer.MIN_VALUE) {//custom tracks add if(...
-            _currentActivity.weatherWindSpeed = parseWindSpeed(_characters.toString());
-         }
+         _currentActivity.weatherWindSpeed = parseWindSpeed(_characters.toString());
 
       } else if (_isInTimeZoneUtcOffset) {
 
@@ -1362,42 +1089,12 @@ public class FitLog_SAXHandler extends DefaultHandler {
       }
    }
 
-   //custom tracks start
-   private void parseCustomTrackDefinitions(final String name, final Attributes attributes) {
-
-      if (name.equals(TAG_ACTIVITY_CUSTOMTRACK)) {
-
-         final String nameT = attributes.getValue(ATTRIB_NAME);
-         final String idT = attributes.getValue(ATTRIB_ID);
-         final String unitT = attributes.getValue(ATTRIB_UNIT);
-
-         if (!StringUtils.isNullOrEmpty(nameT) && !StringUtils.isNullOrEmpty(idT)) {
-
-            final CustomST3TrackDefinition custT = new CustomST3TrackDefinition();
-            custT.setId(idT);
-            custT.setName(nameT);
-            custT.setUnit(unitT);
-
-            _currentActivity.customTrackDefinitions.add(custT);
-         }
-      }
-   }//custom tracks end
-
-   //custom tracks start
-   private void parseLap(final String name, final Attributes attributes) {
-
-      if (name.equals(TAG_LAP_NOTES)) {
-         _isInLapNotes = true;
-      }
-   }//custom tracks end
-
    private void parseLaps(final String name, final Attributes attributes) {
 
       if (name.equals(TAG_LAP)) {
 
          final String startTime = attributes.getValue(ATTRIB_START_TIME);
          final String durationSeconds = attributes.getValue(ATTRIB_DURATION_SECONDS);
-         final String rest = attributes.getValue(ATTRIB_REST);//custom tracks
 
          if (StringUtils.hasContent(startTime)) {
 
@@ -1409,14 +1106,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
             final ZonedDateTime lapEndTime = startZonedDateTime.plusSeconds(lapDurationSeconds);
             lap.startTime = startZonedDateTime.toInstant().toEpochMilli();
             lap.endTime = lapEndTime.toInstant().toEpochMilli();
-
-            //custom tracks start
-            if (rest == null) {
-               lap.rest = false;
-            } else {
-               lap.rest = Boolean.parseBoolean(rest.trim().toLowerCase());
-            }
-            //custom tracks end
 
             _currentActivity.laps.add(lap);
          }
@@ -1468,46 +1157,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
          final double tpDistance = Util.parseDouble(attributes, ATTRIB_PT_DIST);
          final double latitude = Util.parseDouble(attributes, ATTRIB_PT_LAT);
          final double longitude = Util.parseDouble(attributes, ATTRIB_PT_LON);
-
-         //custom tracks start
-         final double runD_vo = Util.parseDouble(attributes, ATTRIB_PT_VO);
-         final double runD_gct = Util.parseDouble(attributes, ATTRIB_PT_GCT);
-         if (runD_vo != Double.MIN_VALUE) {
-            timeSlice.runDyn_VerticalOscillation = (short) (runD_vo * TourData.RUN_DYN_DATA_MULTIPLIER);
-         }
-         if (runD_gct != Double.MIN_VALUE) {
-            timeSlice.runDyn_StanceTime = (short) runD_gct;
-         }
-         timeSlice.powerDataSource = _currentActivity.srcPower;
-
-         final ArrayList<CustomTrackValue> customTracksT = new ArrayList<>();
-         for (final CustomST3TrackDefinition element : _currentActivity.customTrackDefinitions) {
-            final String idS = element.getId();
-            final String nameS = element.getName();
-            if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {
-               final float value = Util.parseFloat(attributes, idS);
-               if (value != Float.MIN_VALUE) {
-                  timeSlice.runDyn_StepLength = (short) (value * 1000.0f);//meter to mm
-               }
-            } else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {
-               final float value = Util.parseFloat(attributes, idS);
-               if (value != Float.MIN_VALUE) {
-                  timeSlice.runDyn_StanceTimeBalance = (short) (value * TourData.RUN_DYN_DATA_MULTIPLIER);
-               }
-            } else if (nameS.compareTo(NAME_VERTICALRATIO) == 0) {
-               final float value = Util.parseFloat(attributes, idS);
-               if (value != Float.MIN_VALUE) {
-                  timeSlice.runDyn_VerticalRatio = (short) (value * TourData.RUN_DYN_DATA_MULTIPLIER);
-               }
-            } else {
-               final CustomTrackValue item = new CustomTrackValue();
-               item.id = idS;
-               item.value = Util.parseFloat(attributes, idS);
-               customTracksT.add(item);
-            }
-         }
-         timeSlice.customTracks = customTracksT.toArray(new CustomTrackValue[customTracksT.size()]);
-         //custom tracks end
 
          if (tpDistance != Double.MIN_VALUE) {
 
@@ -1598,15 +1247,8 @@ public class FitLog_SAXHandler extends DefaultHandler {
             parseTrackPoints(name, attributes);
          } else if (_isInLaps) {
             parseLaps(name, attributes);
-            //custom tracks start
-            if (_isInLap || name.equals(TAG_LAP)) {
-               parseLap(name, attributes);
-            }
-            //custom tracks end
          } else if (_isInPauses) {
             parsePauses(name, attributes);
-         } else if (_isInCustomTrackDefinition) {//custom tracks add else if...
-            parseCustomTrackDefinitions(name, attributes);
          } else if (_isInCustomDataFields) {
             parseCustomDataFields(name, attributes);
          } else {
@@ -1624,17 +1266,6 @@ public class FitLog_SAXHandler extends DefaultHandler {
 
          _isInLaps = true;
 
-      } else if (name.equals(TAG_LAP)) {//custom tracks add else if...
-
-         _isInLap = true;
-
-      } else if (name.equals(TAG_ACTIVITY_CUSTOMTRACKS)) {//custom tracks add else if...
-
-         _isInCustomTrackDefinition = true;
-
-      } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
-         _isInCustomDataFields = true;
-
       } else if (name.equals(TAG_TRACK_CLOCK)) {
 
          _isInPauses = true;
@@ -1648,6 +1279,9 @@ public class FitLog_SAXHandler extends DefaultHandler {
          _isInActivity = true;
 
          initTour(attributes);
+      } else if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELDS)) {
+         _isInCustomDataFields = true;
+
       }
    }
 
