@@ -1,39 +1,39 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<FitnessWorkbookExFree xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Id="4cb21165-b4ca-4198-8968-bad045e72475" xmlns="http://www.sporttracks-plugins.com/xmlschemas/FitnessLogbookExtended/v2">
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<FitnessWorkbookExFree xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.sporttracks-plugins.com/xmlschemas/FitnessLogbookExtended/v2" Id="2eec11b1-77fd-4993-b86e-88b1ea8b9e51">
   <!-- extended fitlog format for SportTracks, created with Old Man Biking's Copy Data Plugin, see http://www.sporttracks-plugins.com/SportTracksPlugins3/MyPlugins/Copy%20Data%20Plugin -->
   <AthleteLog xmlns="">
-    <Athlete Id="330559c7-b0ea-45ee-a8f3-03da2693fdda">
-      <Name>
-      </Name>
-      <DateOfBirth>0001-01-01T00:00:00.000Z</DateOfBirth>
-      <HeightCentimeters>NaN</HeightCentimeters>
-      <WeightKilograms>0.0</WeightKilograms>
+    <Athlete Id="114b6806-37fa-4eb0-9714-6d12b852e79e">
+      <Name>AthleteName</Name>
+      <DateOfBirth>1974-07-07T00:00:00.000Z</DateOfBirth>
+      <HeightCentimeters>162.9</HeightCentimeters>
+      <WeightKilograms>89.5</WeightKilograms>
     </Athlete>
-    <Activity Id="ac47aa53-5ca6-47ea-95ca-37043dca1202" StartTime="2015-05-31T09:51:13.000Z">
-      <TimeZoneUtcOffset>0</TimeZoneUtcOffset>
+    <Activity Id="47f260b0-c9be-4801-a8db-b4b746de6509" StartTime="2015-05-31T16:51:13.000Z">
+      <TimeZoneUtcOffset>-25200</TimeZoneUtcOffset>
       <HasStartTime>True</HasStartTime>
       <UseEnteredData>False</UseEnteredData>
-      <Metadata Source="" Created="2020-11-23T22:45:22.000Z" Modified="2020-11-23T22:51:08.000Z" />
-      <Distance TotalMeters="42998.000" />
-      <Duration TotalSeconds="16823.801" />
-      <HeartRate AverageBPM="124.000" MaximumBPM="147.000" />
-      <Cadence AverageRPM="84.000" MaximumRPM="127.000" />
-      <Elevation AscendMeters="721.000" DescendMeters="-919.000" />
-      <Calories TotalCal="2016.350" />
+      <Metadata Source="" Created="2015-12-24T01:34:22.000Z" Modified="2021-03-07T02:25:27.000Z"/>
+      <Distance TotalMeters="42998.000"/>
+      <Duration TotalSeconds="16823.801"/>
+      <HeartRate AverageBPM="124.000" MaximumBPM="147.000"/>
+      <Cadence AverageRPM="84.000" MaximumRPM="127.000"/>
+      <Elevation AscendMeters="721.000" DescendMeters="-919.000"/>
+      <Calories TotalCal="2016.350"/>
+      <Notes>Text...</Notes>
       <Intensity Id="0">0</Intensity>
-      <Category Id="311a75d7-19f0-45d2-847c-b2ef201ec448" Name="Running" />
+      <Category Id="5f6162b2-842c-4949-9119-62e365a30720" Name="Running"/>
       <EquipmentUsed>
-        <EquipmentItem Id="53207278-4ba0-4238-aed6-0d3015299800" Name="Shoes 2" />
+        <EquipmentItem Id="53207278-4ba0-4238-aed6-0d3015299800" Name="Shoes 2"/>
       </EquipmentUsed>
       <Laps>
-        <Lap StartTime="2015-05-31T09:51:13.000Z" DurationSeconds="16823.800">
-          <Distance TotalMeters="42998.000" />
+        <Lap StartTime="2015-05-31T16:51:13.000Z" DurationSeconds="16823.800">
+          <Distance TotalMeters="42998.000"/>
         </Lap>
       </Laps>
       <CustomTracks Cnt="1">
         <CustomTrack Name="Elevation_sensor" Id="_0" RefId="01429640-7ecb-4ee8-b673-3768485c81f2" Unit="m" />
       </CustomTracks>
-     <Track StartTime="2015-05-31T09:51:13.000Z">
+     <Track StartTime="2015-05-31T16:51:13.000Z">
         <pt tm="0" lat="45.2295952" lon="-121.6998901" hr="93.000" cadence="100.000" _0="71.000"/>
         <pt tm="1" hr="93.000" cadence="0.000" />
         <pt tm="2" hr="93.000" cadence="97.000" />
@@ -16865,14 +16865,18 @@
         <pt tm="17777" lat="45.1123352" lon="-121.7993317" ele="994.000" hr="138.000" cadence="79.000" dist="42998.000" _0="71.000"/>
       </Track>
       <TrackClock>
-        <Pause StartTime="2015-05-31T10:56:46.000Z" EndTime="2015-05-31T11:03:42.000Z" />
-        <Pause StartTime="2015-05-31T11:09:38.000Z" EndTime="2015-05-31T11:11:20.000Z" />
-        <Pause StartTime="2015-05-31T12:57:07.000Z" EndTime="2015-05-31T12:59:55.000Z" />
-        <Pause StartTime="2015-05-31T13:29:57.000Z" EndTime="2015-05-31T13:30:39.000Z" />
-        <Pause StartTime="2015-05-31T13:32:27.000Z" EndTime="2015-05-31T13:36:13.000Z" />
+        <Pause StartTime="2015-05-31T17:56:46.000Z" EndTime="2015-05-31T18:03:42.000Z"/>
+        <Pause StartTime="2015-05-31T18:09:38.000Z" EndTime="2015-05-31T18:11:20.000Z"/>
+        <Pause StartTime="2015-05-31T19:57:07.000Z" EndTime="2015-05-31T19:59:55.000Z"/>
+        <Pause StartTime="2015-05-31T20:29:57.000Z" EndTime="2015-05-31T20:30:39.000Z"/>
+        <Pause StartTime="2015-05-31T20:32:27.000Z" EndTime="2015-05-31T20:36:13.000Z"/>
       </TrackClock>
-      <Weather>
+      <Weather Conditions="PartClouds">
       </Weather>
+      <CustomDataFields>
+        <CustomDataField Id="2622fa98-08a3-485f-b199-674f2b2ecac6" name="TRIMP" v="424.44497680664062"/>
+        <CustomDataField Id="9c14447e-3d0a-4faf-b63f-f7727edd7f4a" name="Elevation Change/mile" v="249.309186736876"/>
+      </CustomDataFields>
     </Activity>
     <HeartRateZones Id="47775905-58d9-4a5d-977b-4a3326906841">
       <Name>Standard</Name>
