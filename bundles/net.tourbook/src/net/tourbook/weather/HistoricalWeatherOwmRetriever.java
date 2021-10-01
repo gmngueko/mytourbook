@@ -405,7 +405,7 @@ public class HistoricalWeatherOwmRetriever {
 
                }
             } catch (final Exception e) {
-               StatusUtil.log(
+               StatusUtil.logError(
                      "OWMWeatherHistoryRetriever.parseWeatherData : Error while parsing the historical weather JSON object :" //$NON-NLS-1$
                            + rawWeatherData + "\n" + e.getMessage()); //$NON-NLS-1$
                return null;
@@ -516,7 +516,7 @@ public class HistoricalWeatherOwmRetriever {
          weatherSummary += UI.NEW_LINE1 + "OWM retrieval interval(seconds):" + intervalSeconds; //$NON-NLS-1$
          historicalWeatherData.setWeatherDescription(weatherSummary);
       } catch (final JsonProcessingException e) {
-         StatusUtil.log(
+         StatusUtil.logError(
                "OWMWeatherHistoryRetriever.parseWeatherData : Error while pretty printing weather condition notes :" //$NON-NLS-1$
                      + "\n" + e.getMessage()); //$NON-NLS-1$
          return null;
@@ -556,7 +556,7 @@ public class HistoricalWeatherOwmRetriever {
          weatherHistory = response.body();
 
       } catch (final Exception ex) {
-         StatusUtil.log(
+         StatusUtil.logError(
                "WeatherHistoryRetriever.processRequest : Error while executing the historical weather request with the parameters " //$NON-NLS-1$
                      + weatherRequestWithParameters + "\n" + ex.getMessage()); //$NON-NLS-1$
          return UI.EMPTY_STRING;

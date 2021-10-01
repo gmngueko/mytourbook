@@ -527,7 +527,7 @@ public class TagManager {
          }
 
       } catch (final SQLException e) {
-         StatusUtil.log(sql);
+         StatusUtil.logError(sql);
          UI.showSQLException(e);
       } finally {
          Util.closeSql(statement);
