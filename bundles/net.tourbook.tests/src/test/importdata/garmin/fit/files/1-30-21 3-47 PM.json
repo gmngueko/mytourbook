@@ -19,6 +19,7 @@
   "calories" : 11000,
   "conconiDeflection" : 0,
   "containReferenceTour" : false,
+  "customTracksAvailable" : false,
   "deviceModeName" : "CYCLING",
   "deviceName" : "SUUNTO ",
   "devicePluginName" : "SUUNTO ",
