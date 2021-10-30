@@ -26,6 +26,7 @@ import javax.xml.parsers.SAXParser;
 import net.tourbook.common.NIO;
 import net.tourbook.data.TourData;
 import net.tourbook.device.sporttracks.FitLogDeviceDataReader;
+import net.tourbook.device.sporttracks.FitLogEx2_SAXHandler;
 import net.tourbook.device.sporttracks.FitLog_SAXHandler;
 import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
@@ -113,6 +114,32 @@ class FitLogExTests {
             alreadyImportedTours,
             newlyImportedTours,
             true,
+            new ImportState_File(),
+            new ImportState_Process(),
+            deviceDataReader);
+
+      parser.parse(fitLogExFile, handler);
+
+      final TourData tour = Comparison.retrieveImportedTour(newlyImportedTours);
+
+      // set relative path that it works with different OS
+      tour.setImportFilePath(importFilePath);
+
+      Comparison.compareTourDataAgainstControl(tour, FilesUtils.rootPath + filePathWithoutExtension);
+   }
+
+   @Test
+   void testImportTimothyLakeCustomTracks() throws SAXException, IOException {
+
+      final String filePathWithoutExtension = IMPORT_PATH + "TimothyLakeCustomTracks"; //$NON-NLS-1$
+      final String importFilePath = filePathWithoutExtension + ".fitlogEx"; //$NON-NLS-1$
+      final InputStream fitLogExFile = FitLogExTests.class.getResourceAsStream(importFilePath);
+      final URL importFile_BundleUrl = FitLogExTests.class.getResource(importFilePath);
+
+      final FitLogEx2_SAXHandler handler = new FitLogEx2_SAXHandler(NIO.getAbsolutePathFromBundleUrl(importFile_BundleUrl),
+            alreadyImportedTours,
+            newlyImportedTours,
+//            true,
             new ImportState_File(),
             new ImportState_Process(),
             deviceDataReader);
