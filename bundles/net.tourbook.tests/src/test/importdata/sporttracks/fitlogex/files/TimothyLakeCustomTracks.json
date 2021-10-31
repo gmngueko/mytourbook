@@ -185,6 +185,13 @@
   "tourStartTimeMS" : 1433091073000,
   "tourTags" : [ {
     "expandType" : 1,
+    "extraData" : {
+      "maintenanceInfo" : {
+        "extraHourUsed" : 0,
+        "extraLifeMonthUsage" : 0,
+        "purchaseDateEpochSeconds" : 0
+      }
+    },
     "notes" : "Id(SportTracks): 53207278-4ba0-4238-aed6-0d3015299800\nInUse: True",
     "root" : true,
     "tagId" : -1,
