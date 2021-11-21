@@ -362,13 +362,15 @@ public class Util {
          return null;
       }
 
-      if (intValues.length == 0) {
+      final int numValues = intValues.length;
+
+      if (numValues == 0) {
          return new double[0];
       }
 
-      final double[] doubleValues = new double[intValues.length];
+      final double[] doubleValues = new double[numValues];
 
-      for (int valueIndex = 0; valueIndex < intValues.length; valueIndex++) {
+      for (int valueIndex = 0; valueIndex < numValues; valueIndex++) {
          doubleValues[valueIndex] = intValues[valueIndex];
       }
 
@@ -591,7 +593,7 @@ public class Util {
       try {
 
          if (tempFile.delete() == false) {
-            StatusUtil.log(String.format("Temp file cannot be deleted: %s", tempFile.getAbsolutePath())); //$NON-NLS-1$
+            StatusUtil.logError(String.format("Temp file cannot be deleted: %s", tempFile.getAbsolutePath())); //$NON-NLS-1$
          }
 
       } catch (final SecurityException e) {
@@ -1829,7 +1831,7 @@ public class Util {
 
    public static void logSystemProperty_IsEnabled(final Class<?> clazz, final String propertyName, final String propertyDescription) {
 
-      StatusUtil.log(String.format("%s [System Property - %s] - \"%s\" is enabled -> %s", //$NON-NLS-1$
+      StatusUtil.logInfo(String.format("%s [System Property - %s] - \"%s\" is enabled -> %s", //$NON-NLS-1$
             UI.timeStampNano(),
             clazz.getSimpleName(),
             propertyName,
@@ -1841,7 +1843,7 @@ public class Util {
                                               final String propertyValue,
                                               final String propertyDescription) {
 
-      StatusUtil.log(String.format("%s [System Property - %s] - \"%s=%s\" -> %s", //$NON-NLS-1$
+      StatusUtil.logInfo(String.format("%s [System Property - %s] - \"%s=%s\" -> %s", //$NON-NLS-1$
             UI.timeStampNano(),
             clazz.getSimpleName(),
             propertyName,
@@ -2519,11 +2521,11 @@ public class Util {
    }
 
    public static <E extends Enum<E>> void setStateEnum(final IDialogSettings state,
-                                                       final String key,
+                                                       final String stateKey,
                                                        final Enum<E> value) {
 
       if (value != null) {
-         state.put(key, value.name());
+         state.put(stateKey, value.name());
       }
    }
 

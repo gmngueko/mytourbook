@@ -254,6 +254,10 @@ public class ChartLayerPause implements IChartLayer, IChartOverlay {
       }
    }
 
+   public ChartLabelPause getHoveredLabel() {
+      return _hoveredLabel;
+   }
+
    private Color getLabelColor() {
 
       final Color color = UI.isDarkTheme()
