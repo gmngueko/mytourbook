@@ -1219,7 +1219,6 @@ public class Messages extends NLS {
    public static String        Log_EasyImport_004_SetLastMarker;
    public static String        Log_EasyImport_005_AdjustTemperatureValues;
    public static String        Log_EasyImport_006_AdjustElevation;
-   public static String        Log_EasyImport_006_AdjustElevation_Tour;
    public static String        Log_EasyImport_050_RetrieveWeatherData;
    public static String        Log_EasyImport_099_SaveTour;
    public static String        Log_EasyImport_100_DeleteTourFiles;
@@ -1860,6 +1859,7 @@ public class Messages extends NLS {
    public static String        Sensor_Type_Other;
    public static String        Sensor_Type_RecordingDevice;
 
+   public static String        Sensor_View_Action_EditSensor;
    public static String        Sensor_View_Action_OpenSensorChart;
 
    public static String        Slideout_CalendarOptions_Action_AddProfile_Tooltip;
@@ -2160,7 +2160,6 @@ public class Messages extends NLS {
    public static String        Slideout_SensorTourFilter_Checkbox_IsFilterDuration;
    public static String        Slideout_SensorTourFilter_Checkbox_IsUseAppFilter;
    public static String        Slideout_SensorTourFilter_Label_Title;
-   public static String        Slideout_SensorTourFilter_Link_ResetValue;
    public static String        Slideout_SensorTourFilter_Radio_Day;
    public static String        Slideout_SensorTourFilter_Radio_Day_Tooltip;
    public static String        Slideout_SensorTourFilter_Radio_Month;
@@ -2169,6 +2168,13 @@ public class Messages extends NLS {
    public static String        Slideout_SensorTourFilter_Radio_Year_Tooltip;
 
    public static String        Slideout_StatisticOptions_Label_Title;
+
+   public static String        Slideout_TMVOptions_Label_TimeUsedBetweenMarkers;
+   public static String        Slideout_TMVOptions_Label_TimeUsedBetweenMarkers_Tooltip;
+   public static String        Slideout_TMVOptions_Label_Title;
+   public static String        Slideout_TMVOptions_Radio_ElapsedTime;
+   public static String        Slideout_TMVOptions_Radio_MovingTime;
+   public static String        Slideout_TMVOptions_Radio_RecordedTime;
 
    public static String        Slideout_TourBlogOptions_Label_Title;
    public static String        Slideout_TourBookOptions_Checkbox_ShowTotalRow;
