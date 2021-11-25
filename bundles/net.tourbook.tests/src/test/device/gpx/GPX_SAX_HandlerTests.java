@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Set;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -57,7 +58,7 @@ class GPX_SAX_HandlerTests {
 
    private static SAXParser                  parser;
    private static DeviceData                 deviceData;
-   private static HashMap<Long, TourData>    newlyImportedTours;
+   private static LinkedHashMap<Long, TourData> newlyImportedTours;
    private static HashMap<Long, TourData>    alreadyImportedTours;
    private static GarminTCX_DeviceDataReader deviceDataReader;
 
@@ -72,7 +73,7 @@ class GPX_SAX_HandlerTests {
 
       parser = Initializer.initializeParser();
       deviceData = new DeviceData();
-      newlyImportedTours = new HashMap<>();
+      newlyImportedTours = new LinkedHashMap<>();
       alreadyImportedTours = new HashMap<>();
       deviceDataReader = new GarminTCX_DeviceDataReader();
    }
