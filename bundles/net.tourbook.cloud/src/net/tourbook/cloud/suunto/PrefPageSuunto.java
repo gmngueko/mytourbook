@@ -97,6 +97,12 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
    /*
     * UI controls
     */
+   private Button   _btnCleanup;
+   private Button   _btnSelectFolder;
+   private Button   _chkUseDateFilter;
+   private Combo    _comboDownloadFolderPath;
+   private Combo    _comboPeopleList;
+   private DateTime _dtFilterSince;
    private Group    _groupCloudAccount;
    private Label    _labelAccessToken;
    private Label    _labelAccessToken_Value;
@@ -105,14 +111,11 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
    private Label    _labelRefreshToken;
    private Label    _labelRefreshToken_Value;
    private Label    _labelDownloadFolder;
-   private Combo    _comboDownloadFolderPath;
-   private Button   _btnSelectFolder;
-   private Button   _chkUseDateFilter;
-   private DateTime _dtFilterSince;
-   private Combo    _comboPeopleList;
 
    @Override
    protected void createFieldEditors() {
+
+      initUI();
 
       createUI();
 
@@ -158,6 +161,7 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
       createUI_10_Authorize(parent);
       createUI_20_TokensInformation(parent);
       createUI_30_TourDownload(parent);
+      createUI_100_AccountCleanup(parent);
 
       return parent;
    }
@@ -188,6 +192,23 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
          btnAuthorizeConnection.setText(PREFPAGE_CLOUDCONNECTIVITY_BUTTON_AUTHORIZE);
          btnAuthorizeConnection.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onClickAuthorize()));
          GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.FILL).grab(true, true).applyTo(btnAuthorizeConnection);
+      }
+   }
+
+   private void createUI_100_AccountCleanup(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.fillDefaults().applyTo(container);
+      {
+         /*
+          * Clean-up button
+          */
+         _btnCleanup = new Button(container, SWT.NONE);
+         _btnCleanup.setText(Messages.PrefPage_CloudConnectivity_Label_Cleanup);
+         _btnCleanup.setToolTipText(Messages.PrefPage_CloudConnectivity_Label_Cleanup_Tooltip);
+         _btnCleanup.addSelectionListener(widgetSelectedAdapter(selectionEvent -> performDefaults()));
+         GridDataFactory.fillDefaults().align(SWT.END, SWT.FILL).grab(true, true).applyTo(_btnCleanup);
       }
    }
 
@@ -298,6 +319,7 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
       _btnSelectFolder.setEnabled(isAuthorized);
       _chkUseDateFilter.setEnabled(isAuthorized);
       _dtFilterSince.setEnabled(isAuthorized && _chkUseDateFilter.getSelection());
+      _btnCleanup.setEnabled(isAuthorized);
    }
 
    private long getFilterSinceDate() {
@@ -328,6 +350,11 @@ public class PrefPageSuunto extends FieldEditorPreferencePage implements IWorkbe
 
    @Override
    public void init(final IWorkbench workbench) {}
+
+   private void initUI() {
+
+      noDefaultAndApplyButton();
+   }
 
    @Override
    public boolean okToLeave() {
