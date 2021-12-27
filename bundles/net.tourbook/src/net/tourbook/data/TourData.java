@@ -10411,6 +10411,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       _customTracks = newCustTracks;
    }
 
+   public void setCustomTracksSerie(final String key, final float[] newSerie) {
+      _customTracks.put(key, newSerie);
+   }
+
    public void setDateTimeCreated(final long dateTimeCreated) {
       this.dateTimeCreated = dateTimeCreated;
    }

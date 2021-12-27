@@ -29,7 +29,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -464,9 +463,10 @@ public class ActionRetrieveCustomTracksJson extends Action {
             newCustomTrackSerie[serieIndex] = interpolatedValue;
          }
       }
-      final HashMap<String, float[]> newCustomTracks = tour.getCustomTracks();
-      newCustomTracks.put(garminData.trackId, newCustomTrackSerie);
-      tour.setCustomTracks(newCustomTracks);
+      //final HashMap<String, float[]> newCustomTracks = tour.getCustomTracks();
+      //newCustomTracks.put(garminData.trackId, newCustomTrackSerie);
+      //tour.setCustomTracks(newCustomTracks);
+      tour.setCustomTracksSerie(garminData.trackId, newCustomTrackSerie);
       isModified = true;
 
       return isModified;

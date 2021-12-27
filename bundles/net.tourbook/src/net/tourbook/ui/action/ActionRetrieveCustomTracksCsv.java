@@ -15,8 +15,6 @@
  *******************************************************************************/
 package net.tourbook.ui.action;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +31,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import net.tourbook.Messages;
+import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider2;
@@ -93,8 +92,18 @@ public class ActionRetrieveCustomTracksCsv extends Action {
    public static final String        COL4_NAME                    = "Track Unit";                                                  //$NON-NLS-1$
    public static final String        COL5_NAME                    = "Start Date";                                                  //$NON-NLS-1$
    public static final String        COL6_NAME                    = "End Date";                                                    //$NON-NLS-1$
-   public static final String   BUTTON_OPENFILE_NAME         = "Open CSV(Fitbit) File";                                       //$NON-NLS-1$
-   public static final String   BUTTON_OPENFILE_TOOLTIP      = "Open and Parce CSV File(Fitbit)";                             //$NON-NLS-1$
+   public static final String        BUTTON_OPENFILE_NAME         = "Open CSV(Fitbit) File";                                       //$NON-NLS-1$
+   public static final String        BUTTON_OPENFILE_TOOLTIP      = "Open and Parce CSV File(Fitbit)";                             //$NON-NLS-1$
+   public static final String        BUTTON_LOADTRACK_NAME        = "Load csv track(s)";                                           //$NON-NLS-1$
+   public static final String        BUTTON_LOADTRACK_TOOLTIP     = "Load selected csv tracks to Custom Tracks";                   //$NON-NLS-1$
+   public static final String        CHECKBOX_TAG                 = "CHECK_BOX";                                                   //$NON-NLS-1$
+   public static final String        TEXTBOX_ID_TAG               = "TEXT_BOX_ID";                                                 //$NON-NLS-1$
+   public static final String        TEXTBOX_NAME_TAG             = "TEXT_BOX_NAME";                                               //$NON-NLS-1$
+   public static final String        TEXTBOX_UNIT_TAG             = "TEXT_BOX_UNIT";                                               //$NON-NLS-1$
+   public static final int           OBJTYPE_STEPS_NEXT_15MIN     = 11;
+   public static final int           OBJTYPE_CALORIES_NEXT_15MIN  = 12;
+   public static final int           OBJTYPE_KM_NEXT_15MIN        = 15;
+   public static final int           OBJTYPE_HR_5SEC              = 18;
 
    private TreeMap<Integer, CsvData> csvDataList                  = new TreeMap<>();
 
@@ -106,6 +115,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
       String trackName;
       String trackUnit;
       Integer objType;
+      Boolean              isSelected = false;
 
       public Float GetInterpolatedValue(final Long epochTime) {
          Float value = null;
@@ -130,11 +140,6 @@ public class ActionRetrieveCustomTracksCsv extends Action {
       }
    }
 
-   private class CsvEntry {
-      long  epochMilliseconds;
-      float value;            //value in csv
-   }
-
    private class CustomTracksCsvSettingsDialog extends TitleAreaDialog {
 
       private Composite _containerTrackList;
@@ -143,12 +148,14 @@ public class ActionRetrieveCustomTracksCsv extends Action {
 
       private Button    buttonOpenFile;
       private Text      txtFileName;
-      private String    csvFileContent;
+      //private String    csvFileContent;
       private Text      txtHeader;
+      //private Button    buttonLoadTracks;
 
       public CustomTracksCsvSettingsDialog(final Shell parentShell) {
          super(parentShell);
       }
+
 
       @Override
       public void create() {
@@ -222,7 +229,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
                      int lineNbr = 0;
                      try {
                         final List<String> csvDocument = Files.readAllLines(path);
-                        csvFileContent = UI.EMPTY_STRING;
+                        //csvFileContent = UI.EMPTY_STRING;
 
                         for (final String csvLine : csvDocument) {
                            if (lineNbr == 0) {
@@ -230,19 +237,28 @@ public class ActionRetrieveCustomTracksCsv extends Action {
                               lineNbr++;
                               continue;
                            }
-                           csvFileContent += csvLine;
+                           //csvFileContent += csvLine;
                            final List<String> result = new ArrayList<>(Arrays.asList(csvLine.split("\\s*;\\s*")));
                            final long epochMs = Long.parseLong(result.get(1));
                            final int objType = Integer.parseInt(result.get(3));
                            final float value = Float.parseFloat(result.get(2));
+                           TreeMap<Long, Float> csvEntries = null;
                            if (csvDataList.containsKey(objType)) {
                               csvDataList.get(objType).valueMap.put(epochMs, value);
+                              csvEntries = csvDataList.get(objType).valueMap;
                            } else {
                               final CsvData newData = new CsvData();
                               newData.objType = objType;
                               newData.valueMap = new TreeMap<>();
                               newData.valueMap.put(epochMs, value);
                               csvDataList.put(objType, newData);
+                              csvEntries = csvDataList.get(objType).valueMap;
+                           }
+                           if (csvEntries != null && !csvEntries.isEmpty() && (objType == OBJTYPE_CALORIES_NEXT_15MIN
+                                 || objType == OBJTYPE_KM_NEXT_15MIN
+                                 || objType == OBJTYPE_STEPS_NEXT_15MIN)) {
+                              //add data of 15min-1sec
+                              csvEntries.put((epochMs + (15 * 60000) - 1000), value);
                            }
                            lineNbr++;
                         }
@@ -271,6 +287,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
                            final TableEditor editor = new TableEditor(_tableTracks);
                            final Button button = new Button(_tableTracks, SWT.CHECK);
                            button.setData(entry.getValue());
+                           itemEvent.setData(CHECKBOX_TAG, button);
                            button.addSelectionListener(new SelectionAdapter() {
                               @Override
                               public void widgetSelected(final SelectionEvent e) {
@@ -289,20 +306,48 @@ public class ActionRetrieveCustomTracksCsv extends Action {
 
                            final TableEditor editorId = new TableEditor(_tableTracks);
                            final Text textId = new Text(_tableTracks, SWT.SINGLE);
+                           itemEvent.setData(TEXTBOX_ID_TAG, textId);
                            textId.pack();
-                           //editorId.minimumWidth = textId.getSize().x;
                            editorId.horizontalAlignment = SWT.LEFT;
                            editorId.setEditor(textId, itemEvent, 3);
                            editorId.grabHorizontal = true;
 
-                           if (entry.getValue().objType == 11) {
+                           final TableEditor editorName = new TableEditor(_tableTracks);
+                           final Text textName = new Text(_tableTracks, SWT.SINGLE);
+                           itemEvent.setData(TEXTBOX_NAME_TAG, textName);
+                           textName.pack();
+                           editorName.horizontalAlignment = SWT.LEFT;
+                           editorName.setEditor(textName, itemEvent, 2);
+                           editorName.grabHorizontal = true;
+
+                           final TableEditor editorUnit = new TableEditor(_tableTracks);
+                           final Text textUnit = new Text(_tableTracks, SWT.SINGLE);
+                           itemEvent.setData(TEXTBOX_UNIT_TAG, textUnit);
+                           textUnit.pack();
+                           editorUnit.horizontalAlignment = SWT.LEFT;
+                           editorUnit.setEditor(textUnit, itemEvent, 4);
+                           editorUnit.grabHorizontal = true;
+
+                           if (entry.getValue().objType == OBJTYPE_STEPS_NEXT_15MIN) {
                               textId.setText(TRACKID_STEPS_NEXT15MIN);
-                           } else if (entry.getValue().objType == 12) {
+                              textName.setText(TRACKNAME_STEPS_NEXT15MIN);
+                              textUnit.setText(TRACKUNIT_STEPS_NEXT15MIN);
+                              button.setSelection(true);
+                           } else if (entry.getValue().objType == OBJTYPE_CALORIES_NEXT_15MIN) {
                               textId.setText(TRACKID_CALORIES_NEXT15MIN);
-                           } else if (entry.getValue().objType == 15) {
+                              textName.setText(TRACKNAME_CALORIES_NEXT15MIN);
+                              textUnit.setText(TRACKUNIT_CALORIES_NEXT15MIN);
+                              button.setSelection(true);
+                           } else if (entry.getValue().objType == OBJTYPE_KM_NEXT_15MIN) {
                               textId.setText(TRACKID_DISTANCE_NEXT15MIN);
-                           } else if (entry.getValue().objType == 18) {
+                              textName.setText(TRACKNAME_DISTANCE_NEXT15MIN);
+                              textUnit.setText(TRACKUNIT_DISTANCE_NEXT15MIN);
+                              button.setSelection(true);
+                           } else if (entry.getValue().objType == OBJTYPE_HR_5SEC) {
                               textId.setText(TRACKID_HR3);
+                              textName.setText(TRACKNAME_HR3);
+                              textUnit.setText(TRACKUNIT_HR3);
+                              button.setSelection(true);
                            }
                         });
 
@@ -327,6 +372,20 @@ public class ActionRetrieveCustomTracksCsv extends Action {
             dataFileHeader.horizontalAlignment = GridData.FILL;
             txtHeader = new Text(_containerTrackList, SWT.BORDER);
             txtHeader.setLayoutData(dataFileHeader);
+
+            /*
+             * buttonLoadTracks = new Button(_containerTrackList, SWT.NONE);
+             * buttonLoadTracks.setText(BUTTON_LOADTRACK_NAME);
+             * buttonLoadTracks.setToolTipText(BUTTON_LOADTRACK_TOOLTIP);
+             * buttonLoadTracks.addListener(SWT.Selection, new Listener() {
+             * @Override
+             * public void handleEvent(final Event e) {
+             * switch (e.type) {
+             * case SWT.Selection:
+             * }
+             * }
+             * });
+             */
          }
 
          return area;
@@ -346,6 +405,52 @@ public class ActionRetrieveCustomTracksCsv extends Action {
       // save content of the Text fields because they get disposed
       // as soon as the Dialog closes
       private void saveInput() {
+         setSelectedTracks();
+      }
+
+      public void setSelectedTracks() {
+         final TableItem[] itemTracks = _tableTracks.getItems();
+         for (final TableItem itemTrack : itemTracks) {
+            final Object data = itemTrack.getData(CHECKBOX_TAG);
+            final Object dataId = itemTrack.getData(TEXTBOX_ID_TAG);
+            final Object dataName = itemTrack.getData(TEXTBOX_NAME_TAG);
+            final Object dataUnit = itemTrack.getData(TEXTBOX_UNIT_TAG);
+            if (data != null && dataId != null && dataName != null && dataUnit != null) {
+                final Button checkButton = (Button)data;
+               final Text textId = (Text) dataId;
+               final Text textName = (Text) dataName;
+               final Text textUnit = (Text) dataUnit;
+               if (!checkButton.isDisposed() && !textId.isDisposed()
+                     && !textName.isDisposed() && !textUnit.isDisposed()) {
+                    //System.out.println("For row " + (i+1) + " check status is " + checkButton.getSelection());
+                   if(checkButton.getSelection() && !itemTrack.getText(1).isBlank()) {
+                      try {
+                        final int objType = Integer.parseInt(itemTrack.getText(1));
+                        final String trackId = textId.getText();
+                        final String trackName = textName.getText();
+                        final String trackUnit = textUnit.getText();
+                        if (!trackId.isBlank() && !trackName.isBlank()) {
+                           csvDataList.get(objType).isSelected = true;
+                           csvDataList.get(objType).trackName = trackName;
+                           csvDataList.get(objType).trackId = trackId;
+                           csvDataList.get(objType).trackUnit = trackUnit;
+                        }
+                     } catch (final NumberFormatException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                     } catch (final ClassCastException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                     } catch (final NullPointerException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                     }
+                   }
+                }
+            }
+
+         }
+         return;
 
       }
    }
@@ -357,6 +462,57 @@ public class ActionRetrieveCustomTracksCsv extends Action {
       _tourProvider = tourProvider;
 
       setText(MENU_NAME);
+   }
+
+   public boolean AddCsvCustomTracksToTour(final TourData tour, final TreeMap<Integer, CsvData> csvData) {
+      boolean isModified = false;
+
+      //iterate csv entries using the forEach
+      for (final Map.Entry<Integer, CsvData> csvEntry : csvData.entrySet()) {
+         //System.out.println(entry.getKey() + "->" + entry.getValue());
+         //firt eliminate tours which start after the end of the track
+         //or end before the start of the custom track
+         if (csvEntry.getValue() == null || !csvEntry.getValue().isSelected ||
+               csvEntry.getValue().trackId.isBlank() || csvEntry.getValue().trackName.isBlank() ||
+               csvEntry.getValue().valueMap == null || csvEntry.getValue().valueMap.isEmpty()) {
+            continue;
+         }
+         if (tour.getTourStartTimeMS() > csvEntry.getValue().valueMap.lastKey()) {
+            continue;
+         }
+         if (tour.getTourEndTimeMS() < csvEntry.getValue().valueMap.firstKey()) {
+            continue;
+         }
+
+         //now add custom track value by interpolating if necessary
+         //while looping on the tour timeserie entries
+         final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+         customTrackDefinition.setId(csvEntry.getValue().trackId);
+         customTrackDefinition.setName(csvEntry.getValue().trackName);
+         customTrackDefinition.setUnit(csvEntry.getValue().trackUnit);
+         if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getId())) {
+            tour.customTracksDefinition.put(customTrackDefinition.getId(), customTrackDefinition);
+         }
+
+         final int[] timeSerie = tour.timeSerie;
+         final float[] newCustomTrackSerie = new float[timeSerie.length];
+         for (int serieIndex = 0; serieIndex < timeSerie.length; serieIndex++) {
+            final long timeIndex = tour.getTourStartTimeMS() + timeSerie[serieIndex] * 1000;
+            final Float interpolatedValue = csvEntry.getValue().GetInterpolatedValue(timeIndex);
+            if (interpolatedValue == null) {
+               newCustomTrackSerie[serieIndex] = 0;
+            } else {
+               newCustomTrackSerie[serieIndex] = interpolatedValue;
+            }
+         }
+         //final HashMap<String, float[]> newCustomTracks = tour.getCustomTracks();
+         //newCustomTracks.put(csvEntry.getValue().trackId, newCustomTrackSerie);
+         //tour.setCustomTracks(newCustomTracks);
+         tour.setCustomTracksSerie(csvEntry.getValue().trackId, newCustomTrackSerie);
+         isModified = true;
+      }
+
+      return isModified;
    }
 
    @Override
@@ -375,7 +531,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
          // a tour is not selected
          MessageDialog.openInformation(
                shell,
-               Messages.Dialog_RetrieveCustomTracksJson_Dialog_Title,
+               DIALOG_OPEN_TITLE,
                Messages.UI_Label_TourIsNotSelected);
 
          return;
@@ -384,7 +540,12 @@ public class ActionRetrieveCustomTracksCsv extends Action {
       final CustomTracksCsvSettingsDialog dialog = new CustomTracksCsvSettingsDialog(shell);
       dialog.create();
       if (dialog.open() == Window.OK) {
-         //TODO
+         //retrieve UI data before execution of custom trak loading below
+         //put mapping of objet type to custom tracks
+         if (csvDataList == null || csvDataList.isEmpty()) {
+            System.out.println("ActionRetrieveCustomTracksCsv: No Custom Tracks to load!!");
+            return;
+         }
       } else {
          return;
       }
@@ -396,13 +557,11 @@ public class ActionRetrieveCustomTracksCsv extends Action {
 
             for (final TourData tour : selectedTours) {
 
-               //TODO
+               final boolean isDataRetrieved = AddCsvCustomTracksToTour(tour, csvDataList);
 
-               /*
-                * if (isDataRetrieved) {
-                * modifiedTours.add(tour);
-                * }
-                */
+               if (isDataRetrieved) {
+                  modifiedTours.add(tour);
+               }
             }
 
             if (modifiedTours.size() > 0) {
