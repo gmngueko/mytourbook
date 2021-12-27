@@ -319,11 +319,13 @@ public class OWMWeatherData {
    }
 
    public void setCustomTracks(final TourData tourData) {
-      HashMap<String, float[]> newCustTracks = tourData.getCustomTracks();
+      final HashMap<String, float[]> newCustTracks = tourData.getCustomTracksInit();
       String customTrackId;
-      if (newCustTracks == null) {
-         newCustTracks = new HashMap<>();
-      }
+      /*
+       * if (newCustTracks == null) {
+       * newCustTracks = new HashMap<>();
+       * }
+       */
       if (tourData.customTracksDefinition == null) {
          tourData.customTracksDefinition = new HashMap<>();
       }
@@ -491,7 +493,7 @@ public class OWMWeatherData {
          System.arraycopy(OWM_Temperature_Serie, 0, tourData.temperatureSerie, 0, OWM_Temperature_Serie.length);
       }
 
-      tourData.setCustomTracks(newCustTracks);
+      //tourData.setCustomTracks(newCustTracks);
    }
 
    public void setPrecipitation(final float precipitation) {

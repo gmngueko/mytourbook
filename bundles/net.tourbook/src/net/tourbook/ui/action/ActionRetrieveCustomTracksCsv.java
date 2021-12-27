@@ -292,10 +292,16 @@ public class ActionRetrieveCustomTracksCsv extends Action {
                               @Override
                               public void widgetSelected(final SelectionEvent e) {
                                  final Button button = (Button) e.widget;
-                                 if (button.getSelection()) {
-                                    //System.out.println(" Maintenance check for True:" + button.getData());
-                                 } else {
-                                    //System.out.println(" Maintenance check for False:" + button.getData());
+                                 final Object data = button.getData();
+                                 if (data != null) {
+                                    final CsvData cData = (CsvData) data;
+                                    if (button.getSelection()) {
+                                       //System.out.println(" Maintenance check for True:" + button.getData());
+                                       cData.isSelected = true;
+                                    } else {
+                                       //System.out.println(" Maintenance check for False:" + button.getData());
+                                       cData.isSelected = false;
+                                    }
                                  }
                               }
                            });

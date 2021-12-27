@@ -7710,6 +7710,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return new HashMap<>(customTracksDefinition);
    }
 
+   public HashMap<String, float[]> getCustomTracksInit() {
+      if (_customTracks == null) {
+         _customTracks = new HashMap<>();
+      }
+      return _customTracks;
+   }
+
    public HashMap<String, CustomTrackStatisticEntry> getCustomTracksStatistics() {
       if (_customTracksStatistics == null) {
          return new HashMap<>();
@@ -10412,6 +10419,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    }
 
    public void setCustomTracksSerie(final String key, final float[] newSerie) {
+      if (_customTracks == null) {
+         _customTracks = new HashMap<>();
+      }
       _customTracks.put(key, newSerie);
    }
 
