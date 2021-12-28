@@ -542,7 +542,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
 
          return;
       }
-
+      csvDataList.clear();
       final CustomTracksCsvSettingsDialog dialog = new CustomTracksCsvSettingsDialog(shell);
       dialog.create();
       if (dialog.open() == Window.OK) {
@@ -553,6 +553,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
             return;
          }
       } else {
+         csvDataList.clear();
          return;
       }
 
@@ -569,6 +570,8 @@ public class ActionRetrieveCustomTracksCsv extends Action {
                   modifiedTours.add(tour);
                }
             }
+
+            csvDataList.clear();
 
             if (modifiedTours.size() > 0) {
                TourManager.saveModifiedTours(modifiedTours);

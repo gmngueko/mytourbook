@@ -35,6 +35,7 @@ public class SubMenu_CustomTracks extends Action implements IMenuCreator {
 
    private ActionRetrieveCustomTracksJson _action_RetrieveCustomTracksJsonData;
    private ActionRetrieveCustomTracksCsv  _action_RetrieveCustomTracksCsvData;
+   private ActionDeleteCustomTracks       _action_DeleteCustomTracksData;
 
    private ITourProvider2                 _tourProvider;
 
@@ -48,6 +49,7 @@ public class SubMenu_CustomTracks extends Action implements IMenuCreator {
 
       _action_RetrieveCustomTracksJsonData = new ActionRetrieveCustomTracksJson(_tourProvider);
       _action_RetrieveCustomTracksCsvData = new ActionRetrieveCustomTracksCsv(_tourProvider);
+      _action_DeleteCustomTracksData = new ActionDeleteCustomTracks(_tourProvider);
    }
 
    @Override
@@ -63,8 +65,13 @@ public class SubMenu_CustomTracks extends Action implements IMenuCreator {
 
       new ActionContributionItem(_action_RetrieveCustomTracksJsonData).fill(menu, -1);
       new ActionContributionItem(_action_RetrieveCustomTracksCsvData).fill(menu, -1);
+      new ActionContributionItem(_action_DeleteCustomTracksData).fill(menu, -1);
    }
 
+
+   public ActionDeleteCustomTracks getActionDeleteCustomTracksData() {
+      return _action_DeleteCustomTracksData;
+   }
 
    public ActionRetrieveCustomTracksCsv getActionRetrieveCustomTracksCsvData() {
       return _action_RetrieveCustomTracksCsvData;
