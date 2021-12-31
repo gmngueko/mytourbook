@@ -836,7 +836,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             _pausedTime_End.add(element.endTime);
          }
 
-         tourData.finalizeTour_TimerPauses(_pausedTime_Start, _pausedTime_End);
+         tourData.finalizeTour_TimerPauses(_pausedTime_Start, _pausedTime_End, null);
       }
 
       adjustTourTimeZoneId(tourData, tourStartTime_FromImport);
