@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -13,31 +13,13 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.ui.tourChart;
+package net.tourbook.common.ui;
 
-import net.tourbook.data.TourData;
+public interface IChangeUIListener {
 
-public class HoveredValueData {
-
-   public TourData tourData;
-   public int      hoveredValuePointIndex;
-
-   public HoveredValueData(final TourData tourData, final int hoveredValuePointIndex) {
-
-      this.tourData = tourData;
-      this.hoveredValuePointIndex = hoveredValuePointIndex;
-   }
-
-   @Override
-   public String toString() {
-
-      return "HoveredValueData\n" //$NON-NLS-1$
-            + "[\n" //$NON-NLS-1$
-
-            + "hoveredValuePointIndex  =" + hoveredValuePointIndex //$NON-NLS-1$
-            + "tourData                =" + tourData //$NON-NLS-1$
-
-            + "\n]"; //$NON-NLS-1$
-   }
+   /**
+    * Common interface when the UI changes to update something else.
+    */
+   void onChangeUI_External();
 
 }

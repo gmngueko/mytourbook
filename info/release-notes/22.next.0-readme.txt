@@ -1,11 +1,11 @@
-21.next.0                                                 ?.Month 2021
+22.next.0                                                 ?.Month 2021
 
 
 TODO's
 ======
 
-https://adoptium.net/ Temurin
-
+* Bundle MT with JRE       
+                  https://github.com/mytourbook/mytourbook/issues/381#issue-971079239
 
 * Tour Chart      - Select color for 2nd graph line instead of compliment color
                   - Set default graphs in the graph slideout, sorting still needs the pref page
@@ -37,8 +37,18 @@ New
 Improvements
 ============
 
-* 
+* Tour Chart
+  - Filter tour pauses
+  - Stack tour pauses that they don't overlap
+  
+  							https://github.com/mytourbook/mytourbook/issues/428
 
+* 2D Map
+  - Filter tour pauses 		https://github.com/mytourbook/mytourbook/issues/428
+  - Tour breadcrumbs 		https://github.com/mytourbook/mytourbook/issues/431
+  - Update tour geo filter default location and zoom level 
+                          	https://github.com/mytourbook/mytourbook/issues/433
+  
 
 Changes  
 =======
