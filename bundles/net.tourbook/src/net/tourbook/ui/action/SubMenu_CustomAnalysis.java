@@ -19,6 +19,7 @@ import net.tourbook.Messages;
 import net.tourbook.ui.ITourProvider2;
 
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IMenuCreator;
 import org.eclipse.swt.events.MenuAdapter;
 import org.eclipse.swt.events.MenuEvent;
@@ -29,6 +30,8 @@ import org.eclipse.swt.widgets.MenuItem;
 public class SubMenu_CustomAnalysis extends Action implements IMenuCreator {
    private Menu           _menu;
 
+   private ActionComputeCustomLaps _action_ComputeCustomLapsData;
+
    private ITourProvider2 _tourProvider;
 
    public SubMenu_CustomAnalysis(final ITourProvider2 tourViewer) {
@@ -37,6 +40,8 @@ public class SubMenu_CustomAnalysis extends Action implements IMenuCreator {
       setMenuCreator(this);
 
       _tourProvider = tourViewer;
+
+      _action_ComputeCustomLapsData = new ActionComputeCustomLaps(_tourProvider);
 
    }
 
@@ -50,7 +55,11 @@ public class SubMenu_CustomAnalysis extends Action implements IMenuCreator {
    }
 
    private void fillMenu(final Menu menu) {
+      new ActionContributionItem(_action_ComputeCustomLapsData).fill(menu, -1);
+   }
 
+   public ActionComputeCustomLaps getActionComputeCustomLapsData() {
+      return _action_ComputeCustomLapsData;
    }
 
    @Override
