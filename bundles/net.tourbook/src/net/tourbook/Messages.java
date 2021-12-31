@@ -2525,7 +2525,8 @@ public class Messages extends NLS {
    public static String        Tour_Action_ComputeCadenceZonesTimes_Message;
    public static String        Tour_Action_ComputeCadenceZonesTimes_Title;
 
-   public static String Tour_Action_Custom_Tracks;
+   public static String        Tour_Action_Custom_Analysis;
+   public static String        Tour_Action_Custom_Tracks;
    public static String        Tour_Action_Custom_Tracks_Tooltip_Prefix;
 
    public static String        Tour_Action_DuplicateTour;
