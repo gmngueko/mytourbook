@@ -3,11 +3,16 @@ package net.tourbook.ui.action;
 import de.byteholder.geoclipse.map.UI;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 import net.tourbook.Messages;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourMarker;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider2;
+import net.tourbook.ui.tourChart.ChartLabelMarker;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.IMessageProvider;
@@ -20,6 +25,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -34,29 +41,40 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 public class ActionComputeCustomLaps extends Action {
-   public static final String   DIALOG_TITLE        = "Compute Custom Laps from Tours";     //$NON-NLS-1$
-   public static final String   DIALOG_MSG          = "Compute Custom Laps";                //$NON-NLS-1$
-   public static final String   DIALOG_OPEN_TITLE   = "Custom Laps Compute";                //$NON-NLS-1$
-   public static final String   DIALOG_OPEN_MSG     = "No Tracks to delete";                //$NON-NLS-1$
-   public static final String   MENU_NAME           = "&Compute Custom Laps from tours..."; //$NON-NLS-1$
-   public static final String   LABEL_MIN_SPEED       = "Min Speed(k/h) :";                   //$NON-NLS-1$
-   public static final String   LABEL_MIN_SPEED_LAP   = "Min Lap Speed(k/h) :";               //$NON-NLS-1$
-   public static final String   LABEL_MIN_POWER       = "Min Power(w) :";                     //$NON-NLS-1$
-   public static final String   LABEL_MIN_POWER_LAP   = "Min Lap Speed(w) :";                 //$NON-NLS-1$
-   public static final String   LABEL_MIN_CADENCE     = "Min Cadence(rpm) :";                 //$NON-NLS-1$
-   public static final String   LABEL_MIN_DURATION     = "Min Duration(sec) :";                //$NON-NLS-1$
-   public static final String   LABEL_MIN_CADENCE_LAP = "Min Lap Cadence(rpm) :";             //$NON-NLS-1$
-   public static final String   LABEL_MIN_DISTANCE_LAP = "Min Lap Distance(m) :";              //$NON-NLS-1$
-   public static final String   BUTTON_COMPUTE_LAPS    = "Compute Laps";                       //$NON-NLS-1$
-   public static final String   BUTTON_COMPUTE_LAPS_TOOLTIP = "Compute Laps with above settings";   //$NON-NLS-1$
-   public static final String   GROUP_THRESHOLD             = "Lap Computation";                    //$NON-NLS-1$
+   public static final String   DIALOG_TITLE                = "Compute Custom Laps from Tours";                //$NON-NLS-1$
+   public static final String   DIALOG_MSG                  = "Compute Custom Laps";                           //$NON-NLS-1$
+   public static final String   DIALOG_OPEN_TITLE           = "Custom Laps Compute";                           //$NON-NLS-1$
+   public static final String   DIALOG_OPEN_MSG             = "No Tracks to delete";                           //$NON-NLS-1$
+   public static final String   MENU_NAME                   = "&Compute Custom Laps from tours...";            //$NON-NLS-1$
+   public static final String   LABEL_MIN_SPEED             = "Min Speed[K/h] :";                              //$NON-NLS-1$
+   public static final String   LABEL_MIN_SPEED_LAP         = "Min Lap Speed[K/h] :";                          //$NON-NLS-1$
+   public static final String   LABEL_MIN_POWER             = "Min Power[W] :";                                //$NON-NLS-1$
+   public static final String   LABEL_MIN_POWER_LAP         = "Min Lap Power[W] :";                            //$NON-NLS-1$
+   public static final String   LABEL_MIN_CADENCE           = "Min Cadence[rpm] :";                            //$NON-NLS-1$
+   public static final String   LABEL_MIN_DURATION          = "Min Duration[sec] :";                           //$NON-NLS-1$
+   public static final String   LABEL_MIN_CADENCE_LAP       = "Min Lap Cadence[rpm] :";                        //$NON-NLS-1$
+   public static final String   LABEL_MIN_DISTANCE_LAP      = "Min Lap Distance[m] :";                         //$NON-NLS-1$
+   public static final String   BUTTON_COMPUTE_LAPS         = "Compute Laps";                                  //$NON-NLS-1$
+   public static final String   BUTTON_COMPUTE_LAPS_TOOLTIP = "Compute Laps with above settings";              //$NON-NLS-1$
+   public static final String   GROUP_THRESHOLD             = "Laps Computation";                              //$NON-NLS-1$
+   public static final String   BUTTON_SET_LAPS             = "Set Rest Laps Tag";                             //$NON-NLS-1$
+   public static final String   BUTTON_SET_LAPS_TOOLTIP     = "Set if Laps is a Rest based on above settings"; //$NON-NLS-1$
+   public static final String   GROUP_TAGGING               = "Laps Tagging";                                  //$NON-NLS-1$
+
+   public static final int            INIT_LAP_DURATION_SEC       = 5;
+   public static final float          INIT_LAP_POWER_WATT         = 60;
+   public static final int            INIT_LAP_CADENCE            = 30;
+   public static final float          INIT_LAP_SPEED              = 0;
+   public static final float          INIT_LAP_DISTANCE           = 0;
 
    private final ITourProvider2 _tourProvider;
+
+   private TreeMap<Long, List<Integer>> lapTreeList                 = new TreeMap<>();
 
    private class CustomLapsComputeSettingsDialog extends TitleAreaDialog {
 
       private Group     _containerThresholdCompute;
-      private Composite _containerLapTagging;
+      private Group     _containerLapTagging;
       private Text      _textMinSpeed;
       private Text      _textMinSpeedLap;
       private Text      _textMinPower;
@@ -67,6 +85,8 @@ public class ActionComputeCustomLaps extends Action {
       private Text      _textMinDistanceLap;
       private Button    _buttonComputeLaps;
       private Text      _textLapsComputeLog;
+      private Button    _buttonSetLaps;
+      private Text      _textLapsSetLog;
 
       private Shell shell;
 
@@ -90,10 +110,16 @@ public class ActionComputeCustomLaps extends Action {
          final GridLayout layout = new GridLayout(1, false);
          container.setLayout(layout);
 
+
          _containerThresholdCompute = new Group(parent, SWT.BORDER);
          GridDataFactory.fillDefaults().grab(true, true).applyTo(_containerThresholdCompute);
          GridLayoutFactory.swtDefaults().numColumns(2).applyTo(_containerThresholdCompute);
          _containerThresholdCompute.setText(GROUP_THRESHOLD);
+         _containerThresholdCompute.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
+         final FontData[] fD = _containerThresholdCompute.getFont().getFontData();
+         fD[0].setHeight(12);
+         fD[0].setStyle(SWT.BOLD);
+         _containerThresholdCompute.setFont(new Font(Display.getCurrent(), fD[0]));
          {
             //minimum speed
             final Label labelSpeed = new Label(_containerThresholdCompute, SWT.NONE);
@@ -101,6 +127,7 @@ public class ActionComputeCustomLaps extends Action {
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelSpeed);
 
             _textMinSpeed = new Text(_containerThresholdCompute, SWT.BORDER);
+            _textMinSpeed.setText(String.valueOf(INIT_LAP_SPEED));
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinSpeed);
             _textMinSpeed.addVerifyListener(new VerifyListener() {
@@ -127,6 +154,7 @@ public class ActionComputeCustomLaps extends Action {
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelPower);
 
             _textMinPower = new Text(_containerThresholdCompute, SWT.BORDER);
+            _textMinPower.setText(String.valueOf(INIT_LAP_POWER_WATT));
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinPower);
             _textMinPower.addVerifyListener(new VerifyListener() {
@@ -153,6 +181,7 @@ public class ActionComputeCustomLaps extends Action {
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelCadence);
 
             _textMinCadence = new Text(_containerThresholdCompute, SWT.BORDER);
+            _textMinCadence.setText(String.valueOf(INIT_LAP_CADENCE));
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinCadence);
             _textMinCadence.addVerifyListener(new VerifyListener() {
@@ -179,6 +208,7 @@ public class ActionComputeCustomLaps extends Action {
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelDuration);
 
             _textMinDuration = new Text(_containerThresholdCompute, SWT.BORDER);
+            _textMinDuration.setText(String.valueOf(INIT_LAP_DURATION_SEC));
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinDuration);
             _textMinDuration.addVerifyListener(new VerifyListener() {
@@ -208,6 +238,73 @@ public class ActionComputeCustomLaps extends Action {
                public void handleEvent(final Event e) {
                   switch (e.type) {
                   case SWT.Selection:
+                     final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+                     final float minSpeed = Float.parseFloat(_textMinSpeed.getText());
+                     final float minCad = Float.parseFloat(_textMinCadence.getText());
+                     final float minPower = Float.parseFloat(_textMinPower.getText());
+                     final int minDuration = Integer.parseInt(_textMinDuration.getText());
+                     if (minPower == 0 && minCad == 0 && minSpeed == 0) {
+                        //cannot compute anything returning
+                        _textLapsComputeLog.append("At least one Threshold value must be bigger then zero!!!!" + UI.NEW_LINE);
+                        return;
+                     }
+
+                     for (final TourData tour : selectedTours) {
+                        final List<Integer> tourLaps = new ArrayList<>();
+
+                        final float[] distanceSerie = tour.distanceSerie;
+                        final float[] powerSerie = tour.getPowerSerie();
+                        final float[] speedSerie = tour.getSpeedSerie();
+                        final float[] cadenceSerie = tour.getCadenceSerie();
+                        final int[] timeSerie = tour.timeSerie;
+
+                        int currentState = 0;
+                        int previousState = 0;
+                        int prevIndex = 0;
+
+
+                        // get serie index
+                        for (int serieIndex = 0; serieIndex < timeSerie.length; serieIndex++) {
+
+                           if (serieIndex == 0) {
+                              //compute initial state
+                              if (minPower > 0 && powerSerie[serieIndex] > minPower) {
+                                 currentState = 1;
+                              } else if (minCad > 0 && cadenceSerie[serieIndex] > minCad) {
+                                 currentState = 1;
+                              } else if (minSpeed > 0 && speedSerie[serieIndex] > minSpeed) {
+                                 currentState = 1;
+                              }
+                              previousState = currentState;
+                           } else {
+                              if (minPower > 0 && powerSerie[serieIndex] > minPower) {
+                                 currentState = 1;
+                              } else if (minCad > 0 && cadenceSerie[serieIndex] > minCad) {
+                                 currentState = 1;
+                              } else if (minSpeed > 0 && speedSerie[serieIndex] > minSpeed) {
+                                 currentState = 1;
+                              } else {
+                                 currentState = 0;
+                              }
+
+                              final int durationLap = serieIndex - prevIndex;
+                              if (durationLap > minDuration && currentState != previousState) {
+                                 tourLaps.add(serieIndex);
+                                 previousState = currentState;
+                                 prevIndex = serieIndex;
+                              }
+                           }
+                        }
+                        String lapLog10 = "[";
+                        for (int idx = 0; idx < tourLaps.size() && idx < 10; idx++) {
+                           final int serieIdx = tourLaps.get(idx);
+                           lapLog10 += serieIdx + "-" + timeSerie[serieIdx] + ",";
+                        }
+                        lapLog10 += "...]";
+                        lapTreeList.put(tour.getTourId(), tourLaps);
+                        _textLapsComputeLog.append("id=" + tour.getTourId() + " - " + tour.getTourStartTime() + " : " + tourLaps.size() + " laps"
+                              + lapLog10 + UI.NEW_LINE);
+                     }
                      break;
                   }
                }
@@ -219,15 +316,21 @@ public class ActionComputeCustomLaps extends Action {
             final GridData gridData = new GridData(SWT.FILL, SWT.CENTER, true, false);
             gridData.heightHint = 5 * _textLapsComputeLog.getLineHeight();
             _textLapsComputeLog.setLayoutData(gridData);
-         }
+         } //end compute section
 
-         _containerLapTagging = new Composite(parent, SWT.BORDER);
+         _containerLapTagging = new Group(parent, SWT.BORDER);
          GridDataFactory.fillDefaults().grab(true, true).applyTo(_containerLapTagging);
          GridLayoutFactory.swtDefaults().numColumns(2).applyTo(_containerLapTagging);
+         _containerLapTagging.setText(GROUP_TAGGING);
+         _containerLapTagging.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_CYAN));
+         final FontData[] fD2 = _containerLapTagging.getFont().getFontData();
+         fD2[0].setHeight(12);
+         fD2[0].setStyle(SWT.BOLD);
+         _containerLapTagging.setFont(new Font(Display.getCurrent(), fD2[0]));
          {
-            final Label label = new Label(_containerLapTagging, SWT.NONE);
-            label.setText(LABEL_MIN_SPEED_LAP);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
+            final Label labelSpeed = new Label(_containerLapTagging, SWT.NONE);
+            labelSpeed.setText(LABEL_MIN_SPEED_LAP);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelSpeed);
 
             _textMinSpeedLap = new Text(_containerLapTagging, SWT.BORDER);
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
@@ -250,7 +353,124 @@ public class ActionComputeCustomLaps extends Action {
                   }
                }
             });
-         }
+
+            final Label labelPower = new Label(_containerLapTagging, SWT.NONE);
+            labelPower.setText(LABEL_MIN_POWER_LAP);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelPower);
+
+            _textMinPowerLap = new Text(_containerLapTagging, SWT.BORDER);
+            //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinPowerLap);
+            _textMinPowerLap.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final Float value = Float.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals(UI.EMPTY_STRING)) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+
+            final Label labelCadence = new Label(_containerLapTagging, SWT.NONE);
+            labelCadence.setText(LABEL_MIN_CADENCE_LAP);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelCadence);
+
+            _textMinCadenceLap = new Text(_containerLapTagging, SWT.BORDER);
+            //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinCadenceLap);
+            _textMinCadenceLap.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final Integer value = Integer.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals(UI.EMPTY_STRING)) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+
+            final Label labelDistance = new Label(_containerLapTagging, SWT.NONE);
+            labelDistance.setText(LABEL_MIN_DISTANCE_LAP);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(labelDistance);
+
+            _textMinDistanceLap = new Text(_containerLapTagging, SWT.BORDER);
+            //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_textMinDistanceLap);
+            _textMinDistanceLap.addVerifyListener(new VerifyListener() {
+               @Override
+               public void verifyText(final VerifyEvent e) {
+                  /* Notice how we combine the old and new below */
+                  final String currentText = ((Text) e.widget).getText();
+                  final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                  try {
+                     final Integer value = Integer.valueOf(valueTxt);
+                     if (value < 0) {
+                        e.doit = false;
+                     }
+                  } catch (final NumberFormatException ex) {
+                     if (!valueTxt.equals(UI.EMPTY_STRING)) {
+                        e.doit = false;
+                     }
+                  }
+               }
+            });
+
+            _buttonSetLaps = new Button(_containerLapTagging, SWT.NONE);
+            _buttonSetLaps.setText(BUTTON_SET_LAPS);
+            _buttonSetLaps.setToolTipText(BUTTON_SET_LAPS_TOOLTIP);
+            _buttonSetLaps.addListener(SWT.Selection, new Listener() {
+               @Override
+               public void handleEvent(final Event e) {
+                  switch (e.type) {
+                  case SWT.Selection:
+                     final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+                     final float minSpeed = Float.parseFloat(_textMinSpeedLap.getText());
+                     final float minCad = Float.parseFloat(_textMinCadenceLap.getText());
+                     final float minPower = Float.parseFloat(_textMinPowerLap.getText());
+                     final int minDistance = Integer.parseInt(_textMinDistanceLap.getText());
+                     if (minPower == 0 && minCad == 0 && minSpeed == 0 && minDistance == 0) {
+                        //cannot compute anything returning
+                        _textLapsSetLog.append("At least one Tagging Threshold value must be bigger then zero!!!!" + UI.NEW_LINE);
+                        return;
+                     }
+
+                     for (final TourData tour : selectedTours) {
+                        final List<Integer> tourLaps = lapTreeList.get(tour.getTourId());
+                        if (tourLaps == null) {
+                           continue;
+                        }
+
+                     }
+
+                     break;
+                  }
+               }
+            });
+
+            _textLapsSetLog = new Text(_containerLapTagging, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+            //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
+            //GridDataFactory.fillDefaults().grab(true, false).applyTo(_textLapsComputeLog);
+            final GridData gridData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+            gridData.heightHint = 5 * _textLapsSetLog.getLineHeight();
+            _textLapsSetLog.setLayoutData(gridData);
+         } //end tagging section
 
          return area;
       }
@@ -283,6 +503,36 @@ public class ActionComputeCustomLaps extends Action {
       setText(MENU_NAME);
    }
 
+   private TourMarker createTourMarker(final TourData tourData,
+                                       final String label,
+                                       final int lapRelativeTime,
+                                       final int serieIndex) {
+
+      final float[] altitudeSerie = tourData.altitudeSerie;
+      final float[] distanceSerie = tourData.distanceSerie;
+      final double[] latitudeSerie = tourData.latitudeSerie;
+      final double[] longitudeSerie = tourData.longitudeSerie;
+
+      final TourMarker tourMarker = new TourMarker(tourData, ChartLabelMarker.MARKER_TYPE_CUSTOM);
+
+      tourMarker.setLabel(label);
+      tourMarker.setSerieIndex(serieIndex);
+      tourMarker.setTime(lapRelativeTime, tourData.getTourStartTimeMS() + (lapRelativeTime * 1000));
+
+      if (distanceSerie != null) {
+         tourMarker.setDistance(distanceSerie[serieIndex]);
+      }
+
+      if (altitudeSerie != null) {
+         tourMarker.setAltitude(altitudeSerie[serieIndex]);
+      }
+
+      if (latitudeSerie != null) {
+         tourMarker.setGeoPosition(latitudeSerie[serieIndex], longitudeSerie[serieIndex]);
+      }
+      return tourMarker;
+   }
+
    @Override
    public void run() {
 
@@ -304,7 +554,12 @@ public class ActionComputeCustomLaps extends Action {
 
          return;
       }
-
+      for (final Entry<Long, List<Integer>> treeListEntry : lapTreeList.entrySet()) {
+         if (treeListEntry.getValue() != null) {
+            treeListEntry.getValue().clear();
+         }
+      }
+      lapTreeList.clear();
       final CustomLapsComputeSettingsDialog dialog = new CustomLapsComputeSettingsDialog(shell);
       dialog.create();
       if (dialog.open() == Window.OK) {
