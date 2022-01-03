@@ -609,6 +609,10 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
       defineColumn_Motion_AvgPace();
       defineColumn_Motion_AvgSpeed();
 
+      defineColumn_Power_AvgPower();
+
+      defineColumn_PowerTrain_AvgCadence();
+
       defineColumn_Altitude_ElevationGainDelta();
       defineColumn_Altitude_ElevationLossDelta();
       defineColumn_Altitude_AvgGradient();
@@ -902,6 +906,48 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
                final double value = (markerDistance - prevDistance) / 1000 / UI.UNIT_VALUE_DISTANCE;
                colDef.printDetailValue(cell, value);
             }
+         }
+      });
+   }
+
+   /**
+    * Column: Average Power
+    */
+   private void defineColumn_Power_AvgPower() {
+      final ColumnDefinition colDef = TableColumnFactory.POWER_AVG.createColumn(_columnManager, _pc);
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final int previousMarkerIndex = getPreviousMarkerIndex(cell);
+
+            final int currentMarkerIndex = getCurrentMarkerIndex(cell);
+            final float[] powerSerie = _tourData.getPowerSerie();
+            final float averagePower = _tourData.computeAvg_FromValues(powerSerie, previousMarkerIndex, currentMarkerIndex);
+
+            colDef.printValue_0(cell, averagePower);
+         }
+      });
+   }
+
+   /**
+    * Column: Average Cadence
+    */
+   private void defineColumn_PowerTrain_AvgCadence() {
+      final ColumnDefinition colDef = TableColumnFactory.POWERTRAIN_AVG_CADENCE.createColumn(_columnManager, _pc);
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final int previousMarkerIndex = getPreviousMarkerIndex(cell);
+
+            final int currentMarkerIndex = getCurrentMarkerIndex(cell);
+
+            final float averageCadence = _tourData.computeAvg_CadenceSegment(previousMarkerIndex, currentMarkerIndex);
+
+            colDef.printValue_0(cell, averageCadence);
          }
       });
    }
