@@ -136,13 +136,14 @@ public class UI {
    public static final String       NEW_LINE1                          = "\n";            //$NON-NLS-1$
    public static final String       NEW_LINE2                          = "\n\n";          //$NON-NLS-1$
    public static final String       NEW_LINE3                          = "\n\n\n";        //$NON-NLS-1$
-   public static final String       TAB1                               = "\t";            //$NON-NLS-1$
+   public static final String       RESET_LABEL                        = " X ";           //$NON-NLS-1$
    public static final String       SLASH                              = "/";             //$NON-NLS-1$
    public static final String       SLASH_WITH_SPACE                   = " / ";           //$NON-NLS-1$
    public static final String       SPACE1                             = " ";             //$NON-NLS-1$
    public static final String       SPACE2                             = "  ";            //$NON-NLS-1$
    public static final String       SPACE3                             = "   ";           //$NON-NLS-1$
    public static final String       SPACE4                             = "    ";          //$NON-NLS-1$
+   public static final String       TAB1                               = "\t";            //$NON-NLS-1$
    public static final String       ZERO                               = "0";             //$NON-NLS-1$
 
    private static final String      JS_APOSTROPHE                      = "'";             //$NON-NLS-1$
@@ -154,6 +155,7 @@ public class UI {
 
    public static final String       SYMBOL_ARROW_UP                    = "\u2191";        //$NON-NLS-1$
    public static final String       SYMBOL_ARROW_DOWN                  = "\u2193";        //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_LEFT                  = "\u2190";        //$NON-NLS-1$
    public static final String       SYMBOL_ARROW_RIGHT                 = "\u2192";        //$NON-NLS-1$
    public static final String       SYMBOL_ARROW_LEFT_RIGHT            = "\u2194";        //$NON-NLS-1$
    public static final String       SYMBOL_ARROW_UP_DOWN               = "\u2195";        //$NON-NLS-1$
@@ -618,6 +620,17 @@ public class UI {
    public static final String    IMAGE_CONFIGURE_COLUMNS                = "IMAGE_CONFIGURE_COLUMNS";                 //$NON-NLS-1$
    public static final String    IMAGE_EMPTY_16                         = "_empty16";                                //$NON-NLS-1$
 
+
+   public static Color           SYS_COLOR_BLACK;
+   public static Color           SYS_COLOR_BLUE;
+   public static Color           SYS_COLOR_DARK_GRAY;
+   public static Color           SYS_COLOR_GRAY;
+   public static Color           SYS_COLOR_GREEN;
+   public static Color           SYS_COLOR_MAGENTA;
+   public static Color           SYS_COLOR_RED;
+   public static Color           SYS_COLOR_WHITE;
+   public static Color           SYS_COLOR_YELLOW;
+
 // SET_FORMATTING_ON
 
    public static final ImageRegistry IMAGE_REGISTRY;
@@ -656,6 +669,16 @@ public class UI {
       IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SNOW,                   CommonActivator.getImageDescriptor(CommonImages.Weather_Snow));
       IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SCATTERED_SHOWERS,      CommonActivator.getImageDescriptor(CommonImages.Weather_ScatteredShowers));
       IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SEVERE_WEATHER_ALERT,   CommonActivator.getImageDescriptor(CommonImages.Weather_Severe));
+
+      SYS_COLOR_BLACK       = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
+      SYS_COLOR_BLUE        = Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
+      SYS_COLOR_DARK_GRAY   = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
+      SYS_COLOR_GRAY        = Display.getCurrent().getSystemColor(SWT.COLOR_GRAY);
+      SYS_COLOR_GREEN       = Display.getCurrent().getSystemColor(SWT.COLOR_GREEN);
+      SYS_COLOR_MAGENTA     = Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA);
+      SYS_COLOR_RED         = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+      SYS_COLOR_WHITE       = Display.getCurrent().getSystemColor(SWT.COLOR_WHITE);
+      SYS_COLOR_YELLOW      = Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW);
 
 // SET_FORMATTING_ON
 

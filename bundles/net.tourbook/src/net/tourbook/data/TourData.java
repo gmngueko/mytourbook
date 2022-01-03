@@ -1224,7 +1224,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * 2nd item contains lat/lon maximum values<br>
     */
    @Transient
-   private GeoPosition[]         _gpsBounds;
+   private GeoPosition[]         _geoBounds;
+
+   /**
+    * Is <code>true</code> when geo bounds are checked
+    */
+   @Transient
+   private boolean               _isGeoBoundsChecked;
 
    /**
     * Contains the rough geo parts of the tour or <code>null</code> when geo data are not available. A
@@ -1500,8 +1506,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private double[]           timeSerieWithTimeZoneAdjustment;
 
    /**
-    * {@link TourData} contains multiple tours or a virtual tour. It is created when multiple tours
-    * are selected to be displayed in the {@link TourChart}.
+    * {@link TourData} contains multiple tours or a virtual tour or sub tours. It is created when
+    * multiple tours are selected to be displayed in the {@link TourChart}.
     */
    @Transient
    private boolean            isMultipleTours;
@@ -1554,7 +1560,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * List containing all the tour pauses used only for multiple tours.
     */
    @Transient
-   public List<List<Long>>   multiTourPauses;
+   public List<List<Long>>    multiTourPauses;
 
 
    @Transient
@@ -1769,6 +1775,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     */
    @Transient
    private long[]       pausedTime_End;
+
+   /**
+    * An auto-pause happened when a value is 1, otherwise it was triggered by the user.
+    * This field could also be <code>null</code> when pause data are not available.
+    */
+   @Transient
+   private long[]       pausedTime_Data;
 
    /**
     * Containing the battery time in seconds, relative to the tour start time
@@ -2216,7 +2229,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       srtmSerie = null;
       srtmSerieImperial = null;
 
-      _gpsBounds = null;
+      _geoBounds = null;
+      _isGeoBoundsChecked = false;
+
       _rasterizedLatLon = null;
       geoGrid = null;
 //      latitudeMinE6 = 0;
@@ -4176,23 +4191,46 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     */
    public void computeGeo_Bounds() {
 
-      if (latitudeSerie == null || longitudeSerie == null || latitudeSerie.length == 0 || longitudeSerie.length == 0) {
+      if (latitudeSerie == null || longitudeSerie == null
+            || latitudeSerie.length == 0 || longitudeSerie.length == 0
+            || _isGeoBoundsChecked) {
+
          return;
       }
 
-      /*
-       * get min/max longitude/latitude
-       */
+      double minLatitude = Double.MIN_VALUE;
+      double maxLatitude = Double.MIN_VALUE;
+      double minLongitude = Double.MIN_VALUE;
+      double maxLongitude = Double.MIN_VALUE;
 
-      double minLatitude = latitudeSerie[0];
-      double maxLatitude = latitudeSerie[0];
-      double minLongitude = longitudeSerie[0];
-      double maxLongitude = longitudeSerie[0];
+      int serieIndex = 0;
 
-      for (int serieIndex = 1; serieIndex < latitudeSerie.length; serieIndex++) {
+      // find first value where lat/long != 0
+      for (; serieIndex < latitudeSerie.length; serieIndex++) {
 
          final double latitude = latitudeSerie[serieIndex];
          final double longitude = longitudeSerie[serieIndex];
+
+         if (latitude != 0 || longitude != 0) {
+
+            minLatitude = latitudeSerie[serieIndex];
+            maxLatitude = latitudeSerie[serieIndex];
+            minLongitude = longitudeSerie[serieIndex];
+            maxLongitude = longitudeSerie[serieIndex];
+
+            break;
+         }
+      }
+
+      for (; serieIndex < latitudeSerie.length; serieIndex++) {
+
+         final double latitude = latitudeSerie[serieIndex];
+         final double longitude = longitudeSerie[serieIndex];
+
+         // ignore lat/long == 0
+         if (latitude == 0 && longitude == 0) {
+            continue;
+         }
 
          minLatitude = latitude < minLatitude ? latitude : minLatitude;
          maxLatitude = latitude > maxLatitude ? latitude : maxLatitude;
@@ -4205,15 +4243,16 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          }
       }
 
-//      latitudeMinE6 = (int) (minLatitude * 1_000_000);
-//      longitudeMinE6 = (int) (minLongitude * 1_000_000);
-//
-//      latitudeMaxE6 = (int) (maxLatitude * 1_000_000);
-//      longitudeMaxE6 = (int) (maxLongitude * 1_000_000);
+      _isGeoBoundsChecked = true;
 
-      _gpsBounds = new GeoPosition[] {
-            new GeoPosition(minLatitude, minLongitude),
-            new GeoPosition(maxLatitude, maxLongitude) };
+      _geoBounds = minLatitude == Double.MIN_VALUE
+
+            ? null
+
+            // geo data are available
+            : new GeoPosition[] {
+                  new GeoPosition(minLatitude, minLongitude),
+                  new GeoPosition(maxLatitude, maxLongitude) };
    }
 
    /**
@@ -7263,21 +7302,37 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     *           A given array of paused time start times
     * @param pausedTime_End
     *           A given array of paused time end times
+    * @param pausedTime_Data
+    *           A value of 1 indicate that it is an auto-pause
     */
    public void finalizeTour_TimerPauses(List<Long> pausedTime_Start,
-                                        final List<Long> pausedTime_End) {
+                                        final List<Long> pausedTime_End,
+                                        List<Long> pausedTime_Data) {
 
       if (pausedTime_Start == null || pausedTime_Start.isEmpty() ||
             pausedTime_End == null || pausedTime_End.isEmpty()) {
+
          return;
       }
 
-      if (pausedTime_Start.size() > pausedTime_End.size()) {
-         pausedTime_Start = pausedTime_Start.subList(0, pausedTime_End.size());
+      final int numPauses = pausedTime_End.size();
+
+      /*
+       * Ensure bounds
+       */
+      if (pausedTime_Start.size() > numPauses) {
+         pausedTime_Start = pausedTime_Start.subList(0, numPauses);
+      }
+      if (pausedTime_Data != null && pausedTime_Data.size() > numPauses) {
+         pausedTime_Data = pausedTime_Data.subList(0, numPauses);
       }
 
       setPausedTime_Start(pausedTime_Start.stream().mapToLong(l -> l).toArray());
       setPausedTime_End(pausedTime_End.stream().mapToLong(l -> l).toArray());
+
+      if (pausedTime_Data != null) {
+         setPausedTime_Data(pausedTime_Data.stream().mapToLong(l -> l).toArray());
+      }
 
       setTourDeviceTime_Paused(getTotalTourTimerPauses());
    }
@@ -8023,11 +8078,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public GeoPosition[] getGeoBounds() {
 
-      if (_gpsBounds == null) {
+      if (_geoBounds == null) {
          computeGeo_Bounds();
       }
 
-      return _gpsBounds;
+      return _geoBounds;
    }
 
    /**
@@ -8333,6 +8388,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       }
 
       return totalPausedTime;
+   }
+
+   public long[] getPausedTime_Data() {
+      return pausedTime_Data;
    }
 
    public long[] getPausedTime_End() {
@@ -10085,6 +10144,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       speedSerie           = serieData.speedSerie20;
       pausedTime_Start     = serieData.pausedTime_Start;
       pausedTime_End       = serieData.pausedTime_End;
+      pausedTime_Data      = serieData.pausedTime_Data;
 
       if (serieData.latitude != null) {
 
@@ -10173,6 +10233,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       serieData.temperatureSerie20  = temperatureSerie;
       serieData.pausedTime_Start    = pausedTime_Start;
       serieData.pausedTime_End      = pausedTime_End;
+      serieData.pausedTime_Data     = pausedTime_Data;
 
       /*
        * don't save computed data series
@@ -10685,6 +10746,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public void setMergeTargetTourId(final Long mergeTargetTourId) {
       this.mergeTargetTourId = mergeTargetTourId;
+   }
+
+   public void setPausedTime_Data(final long[] pausedTime_Data) {
+      this.pausedTime_Data = pausedTime_Data;
    }
 
    public void setPausedTime_End(final long[] pausedTime_End) {
@@ -11867,10 +11932,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
       return "TourData [" + NL //                                                                     //$NON-NLS-1$
 
-            + "start    = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //     //$NON-NLS-1$
+            + "start          = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //$NON-NLS-1$
             + startHour + UI.SYMBOL_COLON + startMinute + UI.SYMBOL_COLON + startSecond + NL
 
-            + "tourId   = " + tourId + NL //                                                          //$NON-NLS-1$
+            + "tourId         = " + tourId + NL //                                                    //$NON-NLS-1$
+            + "isMultipleTours= " + isMultipleTours + NL //                                           //$NON-NLS-1$
 
 //            + "object   = " + super.toString() + NL //                                              //$NON-NLS-1$
 //            + "identityHashCode=" + System.identityHashCode(this) + NL //                           //$NON-NLS-1$

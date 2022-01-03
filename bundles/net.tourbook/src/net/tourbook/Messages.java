@@ -1141,7 +1141,6 @@ public class Messages extends NLS {
    public static String        Log_EasyImport_004_SetLastMarker;
    public static String        Log_EasyImport_005_AdjustTemperatureValues;
    public static String        Log_EasyImport_006_AdjustElevation;
-   public static String        Log_EasyImport_006_AdjustElevation_Tour;
    public static String        Log_EasyImport_050_RetrieveWeatherData;
    public static String        Log_EasyImport_099_SaveTour;
    public static String        Log_EasyImport_100_DeleteTourFiles;
@@ -1766,6 +1765,7 @@ public class Messages extends NLS {
    public static String        Sensor_Type_Other;
    public static String        Sensor_Type_RecordingDevice;
 
+   public static String        Sensor_View_Action_EditSensor;
    public static String        Sensor_View_Action_OpenSensorChart;
 
    public static String        Slideout_CalendarOptions_Action_AddProfile_Tooltip;
@@ -1990,8 +1990,11 @@ public class Messages extends NLS {
    public static String        Slideout_Map_Bookmark_Label_NumContextMenuItems;
    public static String        Slideout_Map_Bookmark_Label_NumContextMenuItems_Tooltip;
    public static String        Slideout_Map_Bookmark_Label_Title;
+
    public static String        Slideout_Map_Options_Checkbox_ChartSlider;
    public static String        Slideout_Map_Options_Checkbox_DimMap;
+   public static String        Slideout_Map_Options_Checkbox_ShowBreadcrumbs;
+   public static String        Slideout_Map_Options_Checkbox_ShowBreadcrumbs_Tooltip;
    public static String        Slideout_Map_Options_Checkbox_ShowEnhancedWarning;
    public static String        Slideout_Map_Options_Checkbox_ShowEnhancedWarning_Tooltip;
    public static String        Slideout_Map_Options_Checkbox_ShowHoveredSelectedTour;
@@ -2008,6 +2011,8 @@ public class Messages extends NLS {
    public static String        Slideout_Map_Options_Checkbox_ZoomWithMousePosition_Tooltip;
    public static String        Slideout_Map_Options_Color_DimColor_Tooltip;
    public static String        Slideout_Map_Options_Group_TourTrack;
+   public static String        Slideout_Map_Options_Label_BreadcrumbItems;
+   public static String        Slideout_Map_Options_Label_BreadcrumbItems_Tooltip;
    public static String        Slideout_Map_Options_Label_HoveredAndSelectedColor;
    public static String        Slideout_Map_Options_Label_HoveredAndSelectedColor_Tooltip;
    public static String        Slideout_Map_Options_Label_HoveredColor;
@@ -2066,7 +2071,6 @@ public class Messages extends NLS {
    public static String        Slideout_SensorTourFilter_Checkbox_IsFilterDuration;
    public static String        Slideout_SensorTourFilter_Checkbox_IsUseAppFilter;
    public static String        Slideout_SensorTourFilter_Label_Title;
-   public static String        Slideout_SensorTourFilter_Link_ResetValue;
    public static String        Slideout_SensorTourFilter_Radio_Day;
    public static String        Slideout_SensorTourFilter_Radio_Day_Tooltip;
    public static String        Slideout_SensorTourFilter_Radio_Month;
@@ -2075,6 +2079,13 @@ public class Messages extends NLS {
    public static String        Slideout_SensorTourFilter_Radio_Year_Tooltip;
 
    public static String        Slideout_StatisticOptions_Label_Title;
+
+   public static String        Slideout_TMVOptions_Label_TimeUsedBetweenMarkers;
+   public static String        Slideout_TMVOptions_Label_TimeUsedBetweenMarkers_Tooltip;
+   public static String        Slideout_TMVOptions_Label_Title;
+   public static String        Slideout_TMVOptions_Radio_ElapsedTime;
+   public static String        Slideout_TMVOptions_Radio_MovingTime;
+   public static String        Slideout_TMVOptions_Radio_RecordedTime;
 
    public static String        Slideout_TourBlogOptions_Label_Title;
    public static String        Slideout_TourBookOptions_Checkbox_ShowTotalRow;
@@ -2833,6 +2844,14 @@ public class Messages extends NLS {
    public static String        tour_merger_label_adjust_minutes;
    public static String        tour_merger_label_adjust_seconds;
    public static String        tour_merger_save_target_tour;
+
+   public static String        Tour_Pauses_Checkbox_AutoPauses;
+   public static String        Tour_Pauses_Checkbox_Duration_Hours;
+   public static String        Tour_Pauses_Checkbox_Duration_Minutes;
+   public static String        Tour_Pauses_Checkbox_Duration_Seconds;
+   public static String        Tour_Pauses_Checkbox_PauseDurationFilter;
+   public static String        Tour_Pauses_Checkbox_UserPauses;
+   public static String        Tour_Pauses_Checkbox_TourPauseFilter;
 
    public static String        Tour_Segmenter_Action_ShowHideSegmentsInTourChart_Tooltip;
    public static String        Tour_Segmenter_Button_SaveTour_Tooltip;
