@@ -27,7 +27,7 @@
 
    <extension        point="org.eclipse.core.runtime.products"       id="productWithoutJRE">
 
-      <product       name="MyTourbook"                application="appWithoutJRE">
+      <product       name="MyTourbook"                application="net.tourbook.appWithoutJRE">
 
          <property   name="appName"                   value="MyTourbook"/>
          <property   name="aboutText"                 value="%Product_about"/>
@@ -42,7 +42,7 @@
 
    <extension        point="org.eclipse.core.runtime.products"    id="productWithJRE">
 
-      <product       name="MyTourbook"                application="appWithJRE">
+      <product       name="MyTourbook"                application="net.tourbook.appWithJRE">
 
          <property   name="appName"                   value="MyTourbook"/>
          <property   name="aboutText"                 value="%Product_about"/>
