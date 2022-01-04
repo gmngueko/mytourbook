@@ -3,13 +3,13 @@
 
 <product 
 
-   name              ="MyTourbook Product" 
+   name              ="MyTourbook Product - With Java Runtime" 
    version           ="22.1.0.qualifier" 
 
-   id                ="net.tourbook.productWithoutJRE" 
-   uid               ="net.tourbook.productWithoutJRE" 
+   id                ="net.tourbook.productWithJRE" 
+   uid               ="net.tourbook.productWithJRE" 
 
-   application       ="net.tourbook.appWithoutJRE" 
+   application       ="net.tourbook.appWithJRE" 
    
    useFeatures       ="true" 
    includeLaunchers  ="true"
@@ -108,6 +108,8 @@
       <feature id="feature.net.tourbook.app"                installMode="root"/>
       <feature id="feature.net.tourbook.app.nl"             installMode="root"/>
       <feature id="feature.net.tourbook.app.version"/>
+      
+      <feature id="feature.net.tourbook.jre"                installMode="root"/>      
    </features>
 
    <configurations>
