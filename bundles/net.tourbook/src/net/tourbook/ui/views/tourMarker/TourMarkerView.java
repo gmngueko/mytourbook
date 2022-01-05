@@ -624,6 +624,8 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
       defineColumn_Marker_Url();
 
       defineColumn_Data_SerieIndex();
+
+      defineColumn_Custom_Tracks_LapIsActive();
    }
 
    private void defineColumn_Altitude_AvgGradient() {
@@ -717,6 +719,25 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
             final float averagePace = _tourData.computeAvg_PulseSegment(previousMarkerIndex, currentMarkerIndex);
 
             colDef.printValue_0(cell, averagePace);
+         }
+      });
+   }
+
+   /**
+    * Column: Is Lap Active
+    */
+   private void defineColumn_Custom_Tracks_LapIsActive() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_LAP_ISACTIVE.createColumn(_columnManager, _pc);
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final TourMarker marker = (TourMarker) cell.getElement();
+            cell.setText("...");
          }
       });
    }
