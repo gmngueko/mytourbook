@@ -43,15 +43,15 @@ public class CustomTrackIsActiveSettings implements Serializable{
          result = "N/A";
       } else {
          if (minCadenceRpm > 0 && avgCadence < minCadenceRpm) {
-            result = "false";
+            result = Boolean.toString(false);
          } else if (minSpeedKmPerHour > 0 && avgSpeed < minSpeedKmPerHour) {
-            result = "false";
+            result = Boolean.toString(false);
          } else if (minPowerWatt > 0 && avgPower < minPowerWatt) {
-            result = "false";
+            result = Boolean.toString(false);
          } else if (minDistanceMeter > 0 && distance < minDistanceMeter) {
-            result = "false";
+            result = Boolean.toString(false);
          } else {
-            result = "true";
+            result = Boolean.toString(true);
          }
       }
       return result;

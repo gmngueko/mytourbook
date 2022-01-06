@@ -61,10 +61,12 @@ public class ActionComputeCustomLaps extends Action {
    public static final String   BUTTON_COMPUTE_LAPS         = "Compute Laps";                                  //$NON-NLS-1$
    public static final String   BUTTON_COMPUTE_LAPS_TOOLTIP = "Compute Laps with above settings";              //$NON-NLS-1$
    public static final String   GROUP_THRESHOLD             = "Laps Computation";                              //$NON-NLS-1$
-   public static final String   BUTTON_SET_LAPS             = "Set Rest Laps Tag";                             //$NON-NLS-1$
-   public static final String   BUTTON_SET_LAPS_TOOLTIP     = "Set if Laps is a Rest based on above settings"; //$NON-NLS-1$
-   public static final String   BUTTON_SET_OLD_LAPS         = "Set Rest Orig.Laps Tag";                        //$NON-NLS-1$
-   public static final String   BUTTON_SET_OLD_LAPS_TOOLTIP = "Set if Original Laps is a Rest based on above settings"; //$NON-NLS-1$
+   public static final String   BUTTON_SET_LAPS             = "Set Computed Laps Tag";                             //$NON-NLS-1$
+   public static final String   BUTTON_SET_LAPS_TOOLTIP     = "Set if Computed and Original Laps are a Active based on above settings"; //$NON-NLS-1$
+   public static final String   BUTTON_REM_DATA             = "Del. Saved Data";                               //$NON-NLS-1$
+   public static final String   BUTTON_REM_DATA_TOOLTIP     = "Remove Saved Data from Description field";      //$NON-NLS-1$
+   public static final String   BUTTON_SAVE_DATA            = "Save Data";                                     //$NON-NLS-1$
+   public static final String   BUTTON_SAVE_DATA_TOOLTIP    = "Save Average Data Series Value of Laps in Description";         //$NON-NLS-1$
    public static final String   BUTTON_SET_SETTINGS         = "Set 'IsActive' Settings";                       //$NON-NLS-1$
    public static final String   BUTTON_SET_SETTINGS_TOOLTIP = "Set 'IsActive' Settings on Tour";               //$NON-NLS-1$
    public static final String   GROUP_TAGGING               = "Laps Tagging";                                  //$NON-NLS-1$
@@ -103,10 +105,11 @@ public class ActionComputeCustomLaps extends Action {
       private Text      _textLapsComputeLog;
       private Button    _buttonSetLaps;
       private Button    _buttonSetSettings;
-      private Button    _buttonSetOrigLaps;
+      private Button    _buttonRemoveSaveData;
       private Text      _textLapsSetLog;
       private Button    _buttonMarkerDelPrevCustom;
       private Button    _buttonMarkerDelPrevAll;
+      private Button    _buttonMarkerSaveData;
 
       //private Shell shell;
 
@@ -120,6 +123,14 @@ public class ActionComputeCustomLaps extends Action {
          super.create();
          setTitle(DIALOG_TITLE);
          setMessage(DIALOG_MSG, IMessageProvider.INFORMATION);
+         final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+         if (selectedTours != null && !selectedTours.isEmpty()) {
+            final CustomTrackIsActiveSettings settings = selectedTours.get(0).getCustomTrackIsActiveSettings();
+            _textMinCadenceLap.setText(String.valueOf(settings.minCadenceRpm));
+            _textMinDistanceLap.setText(String.valueOf(settings.minDistanceMeter));
+            _textMinPowerLap.setText(String.valueOf(settings.minPowerWatt));
+            _textMinSpeedLap.setText(String.valueOf(settings.minSpeedKmPerHour));
+         }
       }
 
       @Override
@@ -265,7 +276,7 @@ public class ActionComputeCustomLaps extends Action {
                      final int minDuration = Integer.parseInt(_textMinDuration.getText());
                      if (minPower == 0 && minCad == 0 && minSpeed == 0) {
                         //cannot compute anything returning
-                        _textLapsComputeLog.append("At least one Threshold value must be bigger then zero!!!!" + UI.NEW_LINE);
+                        _textLapsComputeLog.append("At least one Threshold value must be bigger then zero!!!!" + UI.NEW_LINE); //$NON-NLS-1$
                         return;
                      }
                      ClearData();
@@ -435,7 +446,7 @@ public class ActionComputeCustomLaps extends Action {
                   final String currentText = ((Text) e.widget).getText();
                   final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
                   try {
-                     final Integer value = Integer.valueOf(valueTxt);
+                     final Float value = Float.valueOf(valueTxt);
                      if (value < 0) {
                         e.doit = false;
                      }
@@ -486,6 +497,10 @@ public class ActionComputeCustomLaps extends Action {
             GridDataFactory.fillDefaults().grab(false, false).applyTo(groupButtonsSet);
             GridLayoutFactory.swtDefaults().numColumns(1).applyTo(groupButtonsSet);
 
+            _buttonMarkerSaveData = new Button(groupButtonsSet, SWT.CHECK);
+            _buttonMarkerSaveData.setText(BUTTON_SAVE_DATA);
+            _buttonMarkerSaveData.setToolTipText(BUTTON_SAVE_DATA_TOOLTIP);
+
             _buttonSetLaps = new Button(groupButtonsSet, SWT.NONE);
             _buttonSetLaps.setText(BUTTON_SET_LAPS);
             _buttonSetLaps.setToolTipText(BUTTON_SET_LAPS_TOOLTIP);
@@ -501,22 +516,22 @@ public class ActionComputeCustomLaps extends Action {
                      final float minDistance = Float.parseFloat(_textMinDistanceLap.getText());
                      if (minPower == 0 && minCad == 0 && minSpeed == 0 && minDistance == 0) {
                         //cannot compute anything returning
-                        _textLapsSetLog.append("At least one Tagging Threshold value must be bigger then zero!!!!" + UI.NEW_LINE);
+                        _textLapsSetLog.append("At least one Tagging Threshold value must be bigger then zero!!!!" + UI.NEW_LINE); //$NON-NLS-1$
                         return;
                      }
 
                      if (_buttonMarkerDelPrevCustom.getSelection()) {
-                        _textLapsSetLog.append("Previous 'Custom Computed Markers' will be deleted!!!!" + UI.NEW_LINE);
+                        _textLapsSetLog.append("Previous 'Custom Computed Markers' will be deleted!!!!" + UI.NEW_LINE); //$NON-NLS-1$
 
                      } else {
-                        _textLapsSetLog.append("Previous 'Custom Computed Markers' will NOT be deleted!!" + UI.NEW_LINE);
+                        _textLapsSetLog.append("Previous 'Custom Computed Markers' will NOT be deleted!!" + UI.NEW_LINE); //$NON-NLS-1$
                      }
 
                      if (_buttonMarkerDelPrevAll.getSelection()) {
-                        _textLapsSetLog.append("All Previous Markers(Computed or not!) will be deleted!!!!" + UI.NEW_LINE);
+                        _textLapsSetLog.append("All Previous Markers(Computed or not!) will be deleted!!!!" + UI.NEW_LINE); //$NON-NLS-1$
 
                      } else {
-                        _textLapsSetLog.append("All Previous Markers(Computed or not!) will NOT be deleted!!" + UI.NEW_LINE);
+                        _textLapsSetLog.append("All Previous Markers(Computed or not!) will NOT be deleted!!" + UI.NEW_LINE); //$NON-NLS-1$
                      }
 
                      for (final TourData tour : selectedTours) {
@@ -562,9 +577,15 @@ public class ActionComputeCustomLaps extends Action {
                            calcMarkers.put(serieIndex, tourMarker);
                            lapCounter++;
                         }
+
+                        tourMarkerInfo.settings.minCadenceRpm = minCad;
+                        tourMarkerInfo.settings.minDistanceMeter = minDistance;
+                        tourMarkerInfo.settings.minPowerWatt = minPower;
+                        tourMarkerInfo.settings.minSpeedKmPerHour = minSpeed;
+
                         //now compute test on Rest Lap on all Markers
                         final float[] distanceSerie = tour.distanceSerie;
-                        final float[] cadenceSerie = tour.getCadenceSerie();
+                        //final float[] cadenceSerie = tour.getCadenceSerie();
                         final float[] powerSerie = tour.getPowerSerie();
                         //final float[] speedSerie = tour.getSpeedSerie();
                         final int[] timeSerie = tour.timeSerie;
@@ -590,58 +611,49 @@ public class ActionComputeCustomLaps extends Action {
 
                               distanceLap = distanceSerie[serieIndex] - distanceSerie[lastSerieIndex];
                               speedLap = (float) (3.6) * distanceLap / (timeSerie[serieIndex] - timeSerie[lastSerieIndex]);
-                              cadenceLap = computeAverageOnInterval(cadenceSerie, lastSerieIndex, serieIndex);
-                              powerLap = computeAverageOnInterval(powerSerie, lastSerieIndex, serieIndex);
+                              //cadenceLap = computeAverageOnInterval(cadenceSerie, lastSerieIndex, serieIndex);
+                              cadenceLap = tour.computeAvg_CadenceSegment(lastSerieIndex, serieIndex);
+                              //powerLap = computeAverageOnInterval(powerSerie, lastSerieIndex, serieIndex);
+                              powerLap = tour.computeAvg_FromValues(powerSerie, lastSerieIndex, serieIndex);
+
                               //test if rest or not based on input in dialog
-                              Boolean isRest = false;
-                              if (minDistance > 0 && distanceLap < minDistance) {
-                                 isRest = true;
-                              } else if (minSpeed > 0 && speedLap < minSpeed) {
-                                 isRest = true;
-                              } else if (minPower > 0 && powerLap < minPower) {
-                                 isRest = true;
-                              } else if (minCad > 0 && cadenceLap < minCad) {
-                                 isRest = true;
+                              final String isActive = tourMarkerInfo.settings.getIsActive(powerLap, speedLap, cadenceLap, distanceLap);
+                              if (_buttonMarkerSaveData.getSelection()) {
+                                 //save average values in description between [[ ]]
+                                 //final String descriptionNew = "";
+                                 final String descriptionOld = calcMarker.getValue().getDescription();
+                                 String descriptionNew = "";
+                                 if (descriptionOld.contains("[[") && descriptionOld.contains("]]")) {
+                                    descriptionNew = descriptionOld.replaceAll("\\[\\[.*?\\]\\]", "");//need to escape for regex !!!
+                                 } else {
+                                    descriptionNew = descriptionOld;
+                                 }
+                                 descriptionNew += "[[";
+                                 descriptionNew += "rpm=" + Float.toString(cadenceLap) + ";";
+                                 descriptionNew += "Watt=" + Float.toString(powerLap) + ";";
+                                 descriptionNew += "k/h=" + Float.toString(speedLap) + ";";
+                                 descriptionNew += "m=" + Float.toString(distanceLap) + ";";
+                                 descriptionNew += "]]";
+                                 calcMarker.getValue().setDescription(descriptionNew);
                               }
-                              final String descriptionOld = calcMarker.getValue().getDescription();
-                              final String restTrue = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                    + Boolean.toString(true) + net.tourbook.common.UI.SYMBOL_SEMICOLON;
-                              final String restFalse = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                    + Boolean.toString(false) + net.tourbook.common.UI.SYMBOL_SEMICOLON;
-                              String descriptionNew = "";
-                              if (descriptionOld.contains(restFalse)) {
-                                 descriptionNew = descriptionOld.replace(restFalse, "");
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionNew;
-                              } else if (descriptionOld.contains(restTrue)) {
-                                 descriptionNew = descriptionOld.replace(restTrue, "");
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionNew;
-                              } else {
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionOld;
-                              }
-                              calcMarker.getValue().setDescription(descriptionNew);
+
                               lastSerieIndex = serieIndex;
                               lapCount++;
-                              if (isRest) {
+                              if (isActive.contains(Boolean.toString(false))) {
                                  tourMarkerInfo.restLap++;
                               } else {
                                  tourMarkerInfo.nonRestLap++;
                               }
                               if (lapCount < 10) {
-                                 logfirst10 += Boolean.toString(isRest) + ",";
+                                 logfirst10 += isActive + ",";
                               } else if (lapCount == 10) {
-                                 logfirst10 += Boolean.toString(isRest) + ",...]";
+                                 logfirst10 += isActive + ",...]";
                               }
                            }
                         }
                         tourMarkerInfo.lapCount = lapCount;
                         _textLapsSetLog.append(tour.getTourStartTime() + "laps:" + tourMarkerInfo.lapCount
-                              + ";rest:" + tourMarkerInfo.restLap + ";non-rest:" + tourMarkerInfo.nonRestLap
+                              + ";rest:" + tourMarkerInfo.restLap + ";active:" + tourMarkerInfo.nonRestLap
                               + net.tourbook.common.UI.NEW_LINE);
 
                         _textLapsSetLog.append(logfirst10 + net.tourbook.common.UI.NEW_LINE);
@@ -652,28 +664,17 @@ public class ActionComputeCustomLaps extends Action {
                }
             });
 
-            _buttonSetOrigLaps = new Button(groupButtonsSet, SWT.NONE);
-            _buttonSetOrigLaps.setText(BUTTON_SET_OLD_LAPS);
-            _buttonSetOrigLaps.setToolTipText(BUTTON_SET_OLD_LAPS_TOOLTIP);
-            _buttonSetOrigLaps.addListener(SWT.Selection, new Listener() {
+            _buttonRemoveSaveData = new Button(groupButtonsSet, SWT.NONE);
+            _buttonRemoveSaveData.setText(BUTTON_REM_DATA);
+            _buttonRemoveSaveData.setToolTipText(BUTTON_REM_DATA_TOOLTIP);
+            _buttonRemoveSaveData.addListener(SWT.Selection, new Listener() {
                @Override
                public void handleEvent(final Event e) {
                   switch (e.type) {
                   case SWT.Selection:
                      final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
-                     final float minSpeed = Float.parseFloat(_textMinSpeedLap.getText());
-                     final float minCad = Float.parseFloat(_textMinCadenceLap.getText());
-                     final float minPower = Float.parseFloat(_textMinPowerLap.getText());
-                     final float minDistance = Float.parseFloat(_textMinDistanceLap.getText());
-                     if (minPower == 0 && minCad == 0 && minSpeed == 0 && minDistance == 0) {
-                        //cannot compute anything returning
-                        _textLapsSetLog.append("At least one Tagging Threshold value must be bigger then zero!!!!" + UI.NEW_LINE);
-                        return;
-                     }
-
-                     _textLapsSetLog.append("Set Rest Tag on Original laps(not computed)!!" + UI.NEW_LINE);
+                     _textLapsSetLog.append("Removing Saved Data from Laps" + UI.NEW_LINE); //$NON-NLS-1$
                      ClearData();
-                     String logfirst10 = "[";
 
                      for (final TourData tour : selectedTours) {
                         final TourMarkerInfo tourMarkerInfo = new TourMarkerInfo();
@@ -687,12 +688,6 @@ public class ActionComputeCustomLaps extends Action {
                            calcMarkers.put(tourMarker.getSerieIndex(), tourMarker);
                         }
 
-                        //now compute test on Rest Lap on all Markers
-                        final float[] distanceSerie = tour.distanceSerie;
-                        final float[] cadenceSerie = tour.getCadenceSerie();
-                        final float[] powerSerie = tour.getPowerSerie();
-                        //final float[] speedSerie = tour.getSpeedSerie();
-                        final int[] timeSerie = tour.timeSerie;
 
                         // Get a set of the entries
                         final Set<Entry<Integer, TourMarker>> setCalcMarkers = calcMarkers.entrySet();
@@ -700,77 +695,24 @@ public class ActionComputeCustomLaps extends Action {
                         // Get an iterator
                         final Iterator<Entry<Integer, TourMarker>> itCalcMarkers = setCalcMarkers.iterator();
                         int lapCount = 0;
-                        int lastSerieIndex = 0;
                         while (itCalcMarkers.hasNext()) {
                            final Entry<Integer, TourMarker> calcMarker = itCalcMarkers.next();
-                           //System.out.print("Key is: "+me.getKey() + " & ");
-                           //System.out.println("Value is: "+me.getValue());
-                           final int serieIndex = calcMarker.getKey();
-                           if (serieIndex > 0) {
-                              float distanceLap = 0;
-                              float speedLap = 0;
-                              float cadenceLap = 0;
-                              float powerLap = 0;
-
-                              distanceLap = distanceSerie[serieIndex] - distanceSerie[lastSerieIndex];
-                              speedLap = (float) (3.6) * distanceLap / (timeSerie[serieIndex] - timeSerie[lastSerieIndex]);
-                              cadenceLap = computeAverageOnInterval(cadenceSerie, lastSerieIndex, serieIndex);
-                              powerLap = computeAverageOnInterval(powerSerie, lastSerieIndex, serieIndex);
-                              //test if rest or not based on input in dialog
-                              Boolean isRest = false;
-                              if (minDistance > 0 && distanceLap < minDistance) {
-                                 isRest = true;
-                              } else if (minSpeed > 0 && speedLap < minSpeed) {
-                                 isRest = true;
-                              } else if (minPower > 0 && powerLap < minPower) {
-                                 isRest = true;
-                              } else if (minCad > 0 && cadenceLap < minCad) {
-                                 isRest = true;
-                              }
-                              final String descriptionOld = calcMarker.getValue().getDescription();
-                              final String restTrue = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                    + Boolean.toString(true) + net.tourbook.common.UI.SYMBOL_SEMICOLON;
-                              final String restFalse = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                    + Boolean.toString(false) + net.tourbook.common.UI.SYMBOL_SEMICOLON;
-                              String descriptionNew = "";
-                              if (descriptionOld.contains(restFalse)) {
-                                 descriptionNew = descriptionOld.replace(restFalse, "");
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionNew;
-                              } else if (descriptionOld.contains(restTrue)) {
-                                 descriptionNew = descriptionOld.replace(restTrue, "");
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionNew;
-                              } else {
-                                 descriptionNew = TAG_REST_LAP + net.tourbook.common.UI.SYMBOL_COLON
-                                       + Boolean.toString(isRest) + net.tourbook.common.UI.SYMBOL_SEMICOLON
-                                       + descriptionOld;
-                              }
-                              calcMarker.getValue().setDescription(descriptionNew);
-                              lastSerieIndex = serieIndex;
-                              lapCount++;
-                              if (isRest) {
-                                 tourMarkerInfo.restLap++;
-                              } else {
-                                 tourMarkerInfo.nonRestLap++;
-                              }
-
-                              if (lapCount < 10) {
-                                 logfirst10 += Boolean.toString(isRest) + ",";
-                              } else if (lapCount == 10) {
-                                 logfirst10 += Boolean.toString(isRest) + ",...]";
-                              }
+                           final String descriptionOld = calcMarker.getValue().getDescription();
+                           String descriptionNew = "";
+                           if (descriptionOld.contains("[[") && descriptionOld.contains("]]")) {
+                              descriptionNew = descriptionOld.replaceAll("\\[\\[.*?\\]\\]", "");//need to escape '\' for regex !!!
+                           } else {
+                              descriptionNew = descriptionOld;
                            }
+                           calcMarker.getValue().setDescription(descriptionNew);
+                           lapCount++;
                         }
                         tourMarkerInfo.lapCount = lapCount;
                         _textLapsSetLog.append(tour.getTourStartTime() + "laps:" + tourMarkerInfo.lapCount
-                              + ";rest:" + tourMarkerInfo.restLap + ";non-rest:" + tourMarkerInfo.nonRestLap
                               + net.tourbook.common.UI.NEW_LINE);
 
-                        _textLapsSetLog.append(logfirst10 + net.tourbook.common.UI.NEW_LINE);
                      }
+                     _textLapsSetLog.append("Removing Done");
 
                      break;
                   }
@@ -808,6 +750,14 @@ public class ActionComputeCustomLaps extends Action {
                         tourMarkerInfo.settings.minSpeedKmPerHour = minSpeed;
                         tourMarkerInfo.onlySettings = true;
 
+                        final ArrayList<TourMarker> listOriginalTourMarkers = tour.getTourMarkersSorted();
+                        final TreeMap<Integer, TourMarker> calcMarkers = new TreeMap<>();
+                        tourMarkerInfo.calcLapMarkers = calcMarkers;
+
+                        for (final TourMarker tourMarker : listOriginalTourMarkers) {
+                           calcMarkers.put(tourMarker.getSerieIndex(), tourMarker);
+                        }
+
                         final String StringInfo = tourMarkerInfo.settings.toString();
 
                         _textLapsSetLog.append("New settings->" + StringInfo + UI.NEW_LINE);
@@ -815,6 +765,82 @@ public class ActionComputeCustomLaps extends Action {
                               + "Original settings->"
                               + tour.getCustomTrackIsActiveSettings().toString()
                               + UI.NEW_LINE);
+
+                        //now compute test on Rest Lap on all Markers
+                        final float[] distanceSerie = tour.distanceSerie;
+                        //final float[] cadenceSerie = tour.getCadenceSerie();
+                        final float[] powerSerie = tour.getPowerSerie();
+                        //final float[] speedSerie = tour.getSpeedSerie();
+                        final int[] timeSerie = tour.timeSerie;
+                        String logfirst10 = "[";
+
+                        // Get a set of the entries
+                        final Set<Entry<Integer, TourMarker>> setCalcMarkers = calcMarkers.entrySet();
+
+                        // Get an iterator
+                        final Iterator<Entry<Integer, TourMarker>> itCalcMarkers = setCalcMarkers.iterator();
+                        int lapCount = 0;
+                        int lastSerieIndex = 0;
+                        while (itCalcMarkers.hasNext()) {
+                           final Entry<Integer, TourMarker> calcMarker = itCalcMarkers.next();
+                           //System.out.print("Key is: "+me.getKey() + " & ");
+                           //System.out.println("Value is: "+me.getValue());
+                           final int serieIndex = calcMarker.getKey();
+                           if (serieIndex > 0) {
+                              float distanceLap = 0;
+                              float speedLap = 0;
+                              float cadenceLap = 0;
+                              float powerLap = 0;
+
+                              distanceLap = distanceSerie[serieIndex] - distanceSerie[lastSerieIndex];
+                              speedLap = (float) (3.6) * distanceLap / (timeSerie[serieIndex] - timeSerie[lastSerieIndex]);
+                              //cadenceLap = computeAverageOnInterval(cadenceSerie, lastSerieIndex, serieIndex);
+                              cadenceLap = tour.computeAvg_CadenceSegment(lastSerieIndex, serieIndex);
+                              //powerLap = computeAverageOnInterval(powerSerie, lastSerieIndex, serieIndex);
+                              powerLap = tour.computeAvg_FromValues(powerSerie, lastSerieIndex, serieIndex);
+
+                              //test if rest or not based on input in dialog
+                              final String isActive = tourMarkerInfo.settings.getIsActive(powerLap, speedLap, cadenceLap, distanceLap);
+                              if (_buttonMarkerSaveData.getSelection()) {
+                                 //save average values in description between [[ ]]
+                                 //final String descriptionNew = "";
+                                 final String descriptionOld = calcMarker.getValue().getDescription();
+                                 String descriptionNew = "";
+                                 if (descriptionOld.contains("[[") && descriptionOld.contains("]]")) {
+                                    descriptionNew = descriptionOld.replaceAll("\\[\\[.*?\\]\\]", "");//need to escape for regex !!!
+                                 } else {
+                                    descriptionNew = descriptionOld;
+                                 }
+                                 descriptionNew += "[[";
+                                 descriptionNew += "rpm=" + Float.toString(cadenceLap) + ";";
+                                 descriptionNew += "Watt=" + Float.toString(powerLap) + ";";
+                                 descriptionNew += "k/h=" + Float.toString(speedLap) + ";";
+                                 descriptionNew += "m=" + Float.toString(distanceLap) + ";";
+                                 descriptionNew += "]]";
+                                 calcMarker.getValue().setDescription(descriptionNew);
+                              }
+
+                              lastSerieIndex = serieIndex;
+                              lapCount++;
+                              if (isActive.contains(Boolean.toString(false))) {
+                                 tourMarkerInfo.restLap++;
+                              } else {
+                                 tourMarkerInfo.nonRestLap++;
+                              }
+                              if (lapCount < 10) {
+                                 logfirst10 += isActive + ",";
+                              } else if (lapCount == 10) {
+                                 logfirst10 += isActive + ",...]";
+                              }
+                           }
+                        }
+
+                        tourMarkerInfo.lapCount = lapCount;
+                        _textLapsSetLog.append(tour.getTourStartTime() + "laps:" + tourMarkerInfo.lapCount
+                              + ";rest:" + tourMarkerInfo.restLap + ";active:" + tourMarkerInfo.nonRestLap
+                              + net.tourbook.common.UI.NEW_LINE);
+
+                        _textLapsSetLog.append(logfirst10 + net.tourbook.common.UI.NEW_LINE);
 
                      }
 
@@ -884,21 +910,6 @@ public class ActionComputeCustomLaps extends Action {
          }
       }
       lapTreeList.clear();
-   }
-
-   private float computeAverageOnInterval(final float[] dataSerie, final int startIdx, final int endIdx) {
-      float returnValue = 0;
-      int count = 0;
-      int idxStart = startIdx;
-      if (startIdx < 0) {
-         idxStart = 0;
-      }
-      for (int idx = idxStart; idx < endIdx && idx < dataSerie.length; idx++) {
-         returnValue += dataSerie[idx];
-         count++;
-      }
-      returnValue /= count;
-      return returnValue;
    }
 
    private TourMarker createTourMarker(final TourData tourData,
