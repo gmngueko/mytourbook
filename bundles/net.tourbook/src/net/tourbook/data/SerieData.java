@@ -188,6 +188,8 @@ public class SerieData implements Serializable {
 
    public HashMap<String, CustomTrackDefinition>     customTracksDefinition;
 
+   public CustomTrackIsActiveSettings                customTracksIsActiveSettings;
+
    /**
     * Containing the battery time in seconds, relative to the tour start time
     *

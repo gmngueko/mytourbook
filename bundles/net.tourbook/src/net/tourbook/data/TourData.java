@@ -1513,6 +1513,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private boolean            isMultipleTours;
 
    /**
+    * Custom Tracks
+    * Contains the CustomTrackIsActiveSettings of the tour id's
+    */
+   @Transient
+   public CustomTrackIsActiveSettings[]              multipleTourCustomTracksIsActiveSettings;
+
+
+   /**
     * Contains the tour id's
     */
    @Transient
@@ -1634,6 +1642,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    @Transient
    private HashMap<String, CustomTrackStatisticEntry> _customTracksStatistics = new HashMap<>();
+
+   @Transient
+   private CustomTrackIsActiveSettings                _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
 
    // ############################################# RUNNING DYNAMICS TRANSIENT#######################################
    /*
@@ -7690,6 +7701,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return conconiDeflection;
    }
 
+   public CustomTrackIsActiveSettings getCustomTrackIsActiveSettings() {
+      if (_customTracksIsActiveSettings == null) {
+         _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
+      }
+      return _customTracksIsActiveSettings;
+   }
+
    /**
     * @return Returns the UI values for Custom Tracks.
     */
@@ -10189,6 +10207,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       _customTracks = serieData.customTracks;
       _customTracksStatistics = serieData.customTracksStatistics;
       customTracksDefinition = serieData.customTracksDefinition;
+      _customTracksIsActiveSettings = serieData.customTracksIsActiveSettings;
 
       // running dynamics
       runDyn_StanceTime          = serieData.runDyn_StanceTime;
@@ -10264,6 +10283,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       serieData.customTracks = _customTracks;
       serieData.customTracksStatistics = _customTracksStatistics;
       serieData.customTracksDefinition = customTracksDefinition;
+      serieData.customTracksIsActiveSettings = _customTracksIsActiveSettings;
 
       // running dynamics
       serieData.runDyn_StanceTime            = runDyn_StanceTime;
@@ -10473,6 +10493,16 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public void setConconiDeflection(final int conconiDeflection) {
       this.conconiDeflection = conconiDeflection;
+   }
+
+   public void setCustomTrackIsActiveSettings(final CustomTrackIsActiveSettings newSettings) {
+      if (_customTracksIsActiveSettings == null) {
+         _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
+      }
+      if(newSettings == null) {
+         return;
+      }
+      _customTracksIsActiveSettings.copy(newSettings);
    }
 
    public void setCustomTracks(final HashMap<String, float[]> newCustTracks) {

@@ -35,6 +35,7 @@ import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
 import net.tourbook.data.AltitudeUpDown;
+import net.tourbook.data.CustomTrackIsActiveSettings;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.database.TourDatabase;
@@ -448,6 +449,35 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
       return averageSpeed;
    }
 
+   /**
+    * Computes the distance between two markers (in meter or miles/1000)
+    *
+    * @param cell
+    * @return
+    */
+   private float computeDistanceDelta(final ViewerCell cell) {
+
+      final int previousMarkerIndex = getPreviousMarkerIndex(cell);
+
+      int currentMarkerIndex = getCurrentMarkerIndex(cell);
+      if (_tourData.isMultipleTours()) {
+         currentMarkerIndex = getMultiTourSerieIndex(currentMarkerIndex);
+      }
+
+      final float[] distanceSerieMetric = _tourData.getMetricDistanceSerie();
+      final int[] timeSerie = _tourData.timeSerie;
+      if (distanceSerieMetric == null || timeSerie == null) {
+         return (float) 0.0;
+      }
+
+      //The distance in km or miles
+      final float distanceDifference = (distanceSerieMetric[currentMarkerIndex] - distanceSerieMetric[previousMarkerIndex])
+            / UI.UNIT_VALUE_DISTANCE
+      ;
+
+      return distanceDifference;
+   }
+
    private void createActions() {
 
       _actionTourMarkerOptions = new ActionTourMarkerOptions(_pageBook);
@@ -735,9 +765,32 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
+            final int previousMarkerIndex = getPreviousMarkerIndex(cell);
+
+            final int currentMarkerIndex = getCurrentMarkerIndex(cell);
 
             final TourMarker marker = (TourMarker) cell.getElement();
-            cell.setText("...");
+            final float averageCadence = _tourData.computeAvg_CadenceSegment(previousMarkerIndex, currentMarkerIndex);
+            final float[] powerSerie = _tourData.getPowerSerie();
+            final float averagePower = _tourData.computeAvg_FromValues(powerSerie, previousMarkerIndex, currentMarkerIndex);
+            final double averageSpeed = computeAverageSpeed(cell);
+            final float deltaDistance = computeDistanceDelta(cell);
+            CustomTrackIsActiveSettings settings = null;
+            try {
+               if (_tourData.isMultipleTours()) {
+                  settings = _tourData.multipleTourCustomTracksIsActiveSettings[marker.getMultiTourIndex()];
+               } else {
+                  settings = _tourData.getCustomTrackIsActiveSettings();
+               }
+            } catch (final Exception e) {
+               //e.printStackTrace(); this would be too much trace
+            }
+            if (settings != null) {
+               cell.setText(settings.getIsActive(averagePower, (float) averageSpeed, averageCadence, deltaDistance));
+            } else {
+               cell.setText("Null"); //$NON-NLS-1$
+            }
+
          }
       });
    }

@@ -55,6 +55,7 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringToArrayConverter;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.CustomTrackIsActiveSettings;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourPhoto;
@@ -868,6 +869,8 @@ public class TourManager {
       final int[] toSwim_Time = joinedTourData.swim_Time = new int[numSwimTimeSlices];
 
       final Long[] allTourIds = joinedTourData.multipleTourIds = new Long[numTours];
+      final CustomTrackIsActiveSettings[] allCustomTracksIsActiveSettings = joinedTourData.multipleTourCustomTracksIsActiveSettings =
+            new CustomTrackIsActiveSettings[numTours];
       final float[] allTours_CadenceMultiplier = joinedTourData.multipleTours_CadenceMultiplier = new float[numTours];
       final int[] allStartIndex = joinedTourData.multipleTourStartIndex = new int[numTours];
       final ZonedDateTime[] allStartTime = joinedTourData.multipleTourZonedStartTime = new ZonedDateTime[numTours];
@@ -1121,6 +1124,12 @@ public class TourManager {
          allTourMarker.addAll(fromTourMarker);
          allTourMarkerNumbers[tourIndex] = fromTourMarker.size();
 
+         //need for custom tracks
+         //CustomTrackIsActiveSettings to easily retrieve it
+         for (final TourMarker tourMarker : fromTourMarker) {//need for custom tracks
+            tourMarker.setMultiTourIndex(tourIndex);
+         }
+
          // tour pauses
          final long[] pausedTime_Start = fromTourData.getPausedTime_Start();
 
@@ -1179,6 +1188,9 @@ public class TourManager {
          final long tourStartTime = fromTourData.getTourStartTimeMS();
          allTourTitle[tourIndex] = TimeTools.getZonedDateTime(tourStartTime).format(TimeTools.Formatter_Date_S);
          allStartTime[tourIndex] = fromTourData.getTourStartTime();
+
+         //custom tracks CustomTrackIsActiveSettings
+         allCustomTracksIsActiveSettings[tourIndex] = fromTourData.getCustomTrackIsActiveSettings();
 
          // cadence multiplier
          allTours_CadenceMultiplier[tourIndex] = fromTourData.getCadenceMultiplier();

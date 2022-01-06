@@ -280,6 +280,13 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
    @Transient
    private int       _multiTourSerieIndex = -1;
 
+   /**
+    * Tour index in {@link TourData} when tour is {@link TourData#isMultipleTours}.
+    * index of the Tour to which belongs this marker when tour is {@link TourData#isMultipleTours}.
+    */
+   @Transient
+   private int       _multiTourIndex      = -1;
+
    public TourMarker() {}
 
    public TourMarker(final TourData tourData, final int markerType) {
@@ -502,6 +509,10 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
       final long markerTime = tourData.getTourStartTimeMS() + time * 1000;
 
       return markerTime;
+   }
+
+   public int getMultiTourIndex() {
+      return _multiTourIndex;
    }
 
    public int getMultiTourSerieIndex() {
@@ -826,6 +837,10 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
 
    public void setMarkerVisible(final boolean isMarkerVisible) {
       this.isMarkerVisible = isMarkerVisible ? 1 : 0;
+   }
+
+   public void setMultiTourIndex(final int multiTourIndex) {
+      _multiTourIndex = multiTourIndex;
    }
 
    public void setMultiTourSerieIndex(final int multiTourSerieIndex) {

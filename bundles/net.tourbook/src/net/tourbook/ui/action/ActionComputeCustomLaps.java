@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import net.tourbook.Messages;
+import net.tourbook.data.CustomTrackIsActiveSettings;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.tour.TourManager;
@@ -64,6 +65,8 @@ public class ActionComputeCustomLaps extends Action {
    public static final String   BUTTON_SET_LAPS_TOOLTIP     = "Set if Laps is a Rest based on above settings"; //$NON-NLS-1$
    public static final String   BUTTON_SET_OLD_LAPS         = "Set Rest Orig.Laps Tag";                        //$NON-NLS-1$
    public static final String   BUTTON_SET_OLD_LAPS_TOOLTIP = "Set if Original Laps is a Rest based on above settings"; //$NON-NLS-1$
+   public static final String   BUTTON_SET_SETTINGS         = "Set 'IsActive' Settings";                       //$NON-NLS-1$
+   public static final String   BUTTON_SET_SETTINGS_TOOLTIP = "Set 'IsActive' Settings on Tour";               //$NON-NLS-1$
    public static final String   GROUP_TAGGING               = "Laps Tagging";                                  //$NON-NLS-1$
    public static final String   LAP_LABEL_PREFIX            = "auto-";                                         //$NON-NLS-1$
    public static final String   TAG_AUTO_REST_LAP           = "Auto_Rest_Calc";                                //$NON-NLS-1$
@@ -99,7 +102,8 @@ public class ActionComputeCustomLaps extends Action {
       private Button    _buttonComputeLaps;
       private Text      _textLapsComputeLog;
       private Button    _buttonSetLaps;
-      private Button _buttonSetOrigLaps;
+      private Button    _buttonSetSettings;
+      private Button    _buttonSetOrigLaps;
       private Text      _textLapsSetLog;
       private Button    _buttonMarkerDelPrevCustom;
       private Button    _buttonMarkerDelPrevAll;
@@ -773,6 +777,52 @@ public class ActionComputeCustomLaps extends Action {
                }
             });
 
+            _buttonSetSettings = new Button(groupButtonsSet, SWT.NONE);
+            _buttonSetSettings.setText(BUTTON_SET_SETTINGS);
+            _buttonSetSettings.setToolTipText(BUTTON_SET_SETTINGS_TOOLTIP);
+            _buttonSetSettings.addListener(SWT.Selection, new Listener() {
+               @Override
+               public void handleEvent(final Event e) {
+                  switch (e.type) {
+                  case SWT.Selection:
+                     final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+                     final float minSpeed = Float.parseFloat(_textMinSpeedLap.getText());
+                     final float minCad = Float.parseFloat(_textMinCadenceLap.getText());
+                     final float minPower = Float.parseFloat(_textMinPowerLap.getText());
+                     final float minDistance = Float.parseFloat(_textMinDistanceLap.getText());
+                     if (minPower == 0 && minCad == 0 && minSpeed == 0 && minDistance == 0) {
+                        //cannot compute anything returning
+                        _textLapsSetLog.append("At least one Tagging Threshold value must be bigger then zero!!!!" + UI.NEW_LINE); //$NON-NLS-1$
+                        return;
+                     }
+
+                     _textLapsSetLog.append("Set 'IsActive' Settings on all Tours!!" + UI.NEW_LINE); //$NON-NLS-1$
+                     ClearData();
+
+                     for (final TourData tour : selectedTours) {
+                        final TourMarkerInfo tourMarkerInfo = new TourMarkerInfo();
+                        lapTreeList.put(tour.getTourId(), tourMarkerInfo);
+                        tourMarkerInfo.settings.minCadenceRpm = minCad;
+                        tourMarkerInfo.settings.minDistanceMeter = minDistance;
+                        tourMarkerInfo.settings.minPowerWatt = minPower;
+                        tourMarkerInfo.settings.minSpeedKmPerHour = minSpeed;
+                        tourMarkerInfo.onlySettings = true;
+
+                        final String StringInfo = tourMarkerInfo.settings.toString();
+
+                        _textLapsSetLog.append("New settings->" + StringInfo + UI.NEW_LINE);
+                        _textLapsSetLog.append(tour.getTourStartTime() + net.tourbook.common.UI.SYMBOL_COLON
+                              + "Original settings->"
+                              + tour.getCustomTrackIsActiveSettings().toString()
+                              + UI.NEW_LINE);
+
+                     }
+
+                     break;
+                  }
+               }
+            });
+
             _textLapsSetLog = new Text(_containerLapTagging, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
             //GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(textMinSpeed);
             //GridDataFactory.fillDefaults().grab(true, false).applyTo(_textLapsComputeLog);
@@ -806,9 +856,11 @@ public class ActionComputeCustomLaps extends Action {
    public class TourMarkerInfo {
       List<Integer> lapSerieIndex;
       TreeMap<Integer, TourMarker> calcLapMarkers;
+      CustomTrackIsActiveSettings  settings     = new CustomTrackIsActiveSettings();
       int                          lapCount   = 0;
       int                          restLap    = 0;
       int                          nonRestLap = 0;
+      Boolean                      onlySettings = false;
    }
 
    public ActionComputeCustomLaps(final ITourProvider2 tourProvider) {
@@ -918,13 +970,18 @@ public class ActionComputeCustomLaps extends Action {
 
             for (final TourData tour : selectedTours) {
                final TourMarkerInfo tourMarkerInfo = lapTreeList.get(tour.getTourId());
-               if (tourMarkerInfo != null && tourMarkerInfo.calcLapMarkers != null && !tourMarkerInfo.calcLapMarkers.isEmpty()) {
-                  final Set<TourMarker> tourMarkersNew = new HashSet<>();
-                  for (final TourMarker tourmarker : tourMarkerInfo.calcLapMarkers.values()) {
-                     tourMarkersNew.add(tourmarker);
-                  }
-                  tour.setTourMarkers(tourMarkersNew);
+               if (tourMarkerInfo != null && tourMarkerInfo.onlySettings) {
+                  tour.setCustomTrackIsActiveSettings(tourMarkerInfo.settings);
                   modifiedTours.add(tour);
+               } else {
+                  if (tourMarkerInfo != null && tourMarkerInfo.calcLapMarkers != null && !tourMarkerInfo.calcLapMarkers.isEmpty()) {
+                     final Set<TourMarker> tourMarkersNew = new HashSet<>();
+                     for (final TourMarker tourmarker : tourMarkerInfo.calcLapMarkers.values()) {
+                        tourMarkersNew.add(tourmarker);
+                     }
+                     tour.setTourMarkers(tourMarkersNew);
+                     modifiedTours.add(tour);
+                  }
                }
                /*
                 * final boolean isDataRetrieved = DeleteCustomTracksfromTour(tour, trackList);
