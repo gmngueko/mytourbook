@@ -683,6 +683,13 @@
             label       ="%View_Name_Waypoint"
             mnemonic    ="%View_Name_Waypoint_Mnemonic"/>
 
+         <!-- CustomTracks -->
+         <command
+            commandId   ="command.net.tourbook.views.TourCustomTracksView"
+            icon        ="icons/graph-custom-tracks.png"
+            label       ="%View_Name_CustomTracks"
+            mnemonic    ="%View_Name_CustomTracks_Mnemonic"/>
+
          <!-- Tour Data -->
          <command
             commandId   ="command.net.tourbook.views.TourData_View"
@@ -1301,6 +1308,11 @@
       />
 
       <command
+            defaultHandler="net.tourbook.ui.views.tourCustomTracks.ActionHandler_OpenView_CustomTracks"
+            id="command.net.tourbook.views.TourCustomTracksView"
+            name="%View_Name_CustomTracks"/>
+
+      <command
          id             ="command.net.tourbook.views.HeartRateVariabilityChart"
          name           ="%View_Name_HeartRateVariabilityChart"
          defaultHandler ="net.tourbook.ui.views.heartRateVariability.ActionHandler_OpenView_HeartRateVariability"
@@ -1675,6 +1687,13 @@
              id         ="net.tourbook.views.TourMarkerView"
              icon       ="icons/tour-marker.png"
              name       ="%view_name_Marker"/>
+
+         <view
+               category="net.tourbook.category.Tour_Properties"
+               class="net.tourbook.ui.views.tourCustomTracks.TourCustomTracksView"
+               icon="icons/graph-custom-tracks.png"
+               id="net.tourbook.views.TourCustomTracksView"
+               name="%View_Name_CustomTracks"/>
 
          <view
             category    ="net.tourbook.category.Tour_Properties"

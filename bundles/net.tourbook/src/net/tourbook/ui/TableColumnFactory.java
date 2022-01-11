@@ -73,8 +73,12 @@ public abstract class TableColumnFactory {
    public static final TableColumnFactory BODY_WEIGHT;
    public static final String             BODY_WEIGHT_ID                                     = "BODY_WEIGHT";                                     //$NON-NLS-1$
 
+   public static final TableColumnFactory CUSTOM_TRACKS_ID;
    public static final TableColumnFactory CUSTOM_TRACKS_LAP_ISACTIVE;
+   public static final TableColumnFactory CUSTOM_TRACKS_NAME;
+   public static final TableColumnFactory CUSTOM_TRACKS_SIZE;
    public static final TableColumnFactory CUSTOM_TRACKS_TIME_SLICES;
+   public static final TableColumnFactory CUSTOM_TRACKS_UNIT;
 
    public static final TableColumnFactory DATA_DP_TOLERANCE;
    public static final String             DATA_DP_TOLERANCE_ID                               = "DATA_DP_TOLERANCE";                               //$NON-NLS-1$
@@ -4527,6 +4531,29 @@ public abstract class TableColumnFactory {
          }
       };
 
+      CUSTOM_TRACKS_ID = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_ID", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Id"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Id"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Id (unique) of the custom track in the tour"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
       CUSTOM_TRACKS_LAP_ISACTIVE = new TableColumnFactory() {
 
          @Override
@@ -4544,6 +4571,52 @@ public abstract class TableColumnFactory {
             colDef.setColumnHeaderToolTipText(  "Is Lap Active according to detection settings"); //$NON-NLS-1$
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_NAME = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_NAME", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Name of the custom track in the tour"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_SIZE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_SIZE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Size"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Size"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Size/Number of entries(points) in the custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
             colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
 
             return colDef;
@@ -4584,6 +4657,30 @@ public abstract class TableColumnFactory {
             return colDef;
          }
       };
+
+      CUSTOM_TRACKS_UNIT = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_UNIT", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Unit of the custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(4));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
    }
 
 // SET_FORMATTING_ON
