@@ -66,6 +66,7 @@ public class ActionDeleteCustomTracks extends Action {
    public static final String          COL0_NAME                 = "Selected";                                  //$NON-NLS-1$
    public static final String          COL1_NAME                 = "Name";                                      //$NON-NLS-1$
    public static final String          COL2_NAME                 = "Count";                                     //$NON-NLS-1$
+   public static final String          COL3_NAME                 = "Size";                                      //$NON-NLS-1$
    public static final String          CHECKBOX_TAG              = "CHECK_BOX";                                 //$NON-NLS-1$
 
    private TreeMap<String, TrackEntry> trackList         = new TreeMap<>();
@@ -76,7 +77,7 @@ public class ActionDeleteCustomTracks extends Action {
 
       private Composite _containerTrackList;
       private Table     _tableTracks;
-      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME };
+      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME };
 
       private Button    buttonLoadTracks;
 
@@ -158,16 +159,22 @@ public class ActionDeleteCustomTracks extends Action {
 
                         return;
                      }
-                     //Build list of track name and count
+                     //Build list of track name, count and total size
                      for (final TourData tour : selectedTours) {
                         if (tour.customTracksDefinition != null && !tour.customTracksDefinition.isEmpty()) {
                            for (final Entry<String, CustomTrackDefinition> custTrackDefEntry : tour.customTracksDefinition.entrySet()) {
                               if (trackList.containsKey(custTrackDefEntry.getValue().getName())) {
                                  trackList.get(custTrackDefEntry.getValue().getName()).count += 1;
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
+                                 final int custSize = custValues == null ? 0 : custValues.length;
+                                 trackList.get(custTrackDefEntry.getValue().getName()).size += custSize;
                               } else {
                                  final TrackEntry newEntry = new TrackEntry();
                                  newEntry.name = custTrackDefEntry.getValue().getName();
                                  newEntry.count = 1;
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
+                                 final int custSize = custValues == null ? 0 : custValues.length;
+                                 newEntry.size = custSize;
                                  trackList.put(custTrackDefEntry.getValue().getName(), newEntry);
                               }
                            }
@@ -179,6 +186,7 @@ public class ActionDeleteCustomTracks extends Action {
                         final TableItem itemEvent = new TableItem(_tableTracks, SWT.NONE);
                         itemEvent.setText(1, trackListEntry.getKey());
                         itemEvent.setText(2, String.valueOf(trackListEntry.getValue().count));
+                        itemEvent.setText(3, String.valueOf(trackListEntry.getValue().size));
                         final TableEditor editor = new TableEditor(_tableTracks);
                         final Button buttonCheck = new Button(_tableTracks, SWT.CHECK);
                         buttonCheck.setData(trackListEntry.getValue());
@@ -237,6 +245,7 @@ public class ActionDeleteCustomTracks extends Action {
    public class TrackEntry {
       String name;
       int    count = 0;
+      int     size       = 0;
       Boolean isSelected = false;
    }
 
