@@ -23,6 +23,7 @@ import net.tourbook.common.CommonActivator;
 import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.util.ColumnDefinition;
 import net.tourbook.common.util.ColumnManager;
+import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
 import net.tourbook.data.CustomTrackDefinition;
@@ -38,6 +39,7 @@ import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
+import net.tourbook.ui.action.ActionDeleteCustomTracks;
 import net.tourbook.ui.views.tourCatalog.SelectionTourCatalogView;
 import net.tourbook.ui.views.tourCatalog.TVICatalogComparedTour;
 import net.tourbook.ui.views.tourCatalog.TVICatalogRefTourItem;
@@ -46,7 +48,9 @@ import net.tourbook.ui.views.tourCatalog.TVICompareResultComparedTour;
 import org.eclipse.e4.ui.di.PersistState;
 import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
@@ -72,12 +76,12 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
+import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
@@ -102,6 +106,8 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
 
    private PixelConverter          _pc;
 
+   private ActionDeleteCustomTracks _action_EditCustomTracksData;
+
    /*
     * UI controls
     */
@@ -116,6 +122,9 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
     * none UI
     */
    private ColumnManager _columnManager;
+   private MenuManager   _viewerMenuManager;
+   private Menu          _tableContextMenu;
+   private IContextMenuProvider _tableViewerContextMenuProvider = new TableContextMenuProvider();
 
    private static class CustomTracksComparator extends ViewerComparator {
 
@@ -156,6 +165,33 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
 
       @Override
       public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {}
+   }
+
+   public class TableContextMenuProvider implements IContextMenuProvider {
+
+      @Override
+      public void disposeContextMenu() {
+
+         if (_tableContextMenu != null) {
+            _tableContextMenu.dispose();
+         }
+      }
+
+      @Override
+      public Menu getContextMenu() {
+         return _tableContextMenu;
+      }
+
+      @Override
+      public Menu recreateContextMenu() {
+
+         disposeContextMenu();
+
+         _tableContextMenu = createUI_22_CreateViewerContextMenu();
+
+         return _tableContextMenu;
+      }
+
    }
 
    public TourCustomTracksView() {
@@ -303,28 +339,18 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
    }
 
    private void createActions() {
-
+      _action_EditCustomTracksData = new ActionDeleteCustomTracks(this, true);
    }
 
-   /**
-    * create the views context menu
-    */
-   private void createContextMenu() {
-
-      final MenuManager menuMgr = new MenuManager("#PopupMenu"); //$NON-NLS-1$
-      menuMgr.setRemoveAllWhenShown(true);
-      menuMgr.addMenuListener(new IMenuListener() {
+   private void createMenuManager() {
+      _viewerMenuManager = new MenuManager("#PopupMenu"); //$NON-NLS-1$
+      _viewerMenuManager.setRemoveAllWhenShown(true);
+      _viewerMenuManager.addMenuListener(new IMenuListener() {
          @Override
          public void menuAboutToShow(final IMenuManager manager) {
             fillContextMenu(manager);
          }
       });
-
-      final Control viewerControl = _wpViewer.getControl();
-      final Menu menu = menuMgr.createContextMenu(viewerControl);
-      viewerControl.setMenu(menu);
-
-      getSite().registerContextMenu(menuMgr, _wpViewer);
    }
 
    @Override
@@ -333,6 +359,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       _pc = new PixelConverter(parent);
 
       //updateInternalUnitValues();
+      createMenuManager();
 
       _columnManager = new ColumnManager(this, _state);
       _columnManager.setIsCategoryAvailable(true);
@@ -341,7 +368,6 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       createUI(parent);
 
       createActions();
-      createContextMenu();
       fillToolbar();
 
 //    _actionEditTourWaypoints = new ActionOpenMarkerDialog(this, true);
@@ -390,7 +416,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          @Override
          public void keyPressed(final KeyEvent e) {
 
-            if (isTourInDb() == false) {
+            if (isTourSavedInDb() == false) {
                return;
             }
 
@@ -424,10 +450,15 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          @Override
          public void doubleClick(final DoubleClickEvent event) {
 
-            if (isTourInDb() == false) {
+            if (isTourSavedInDb() == false) {
                return;
             }
-
+            // edit selected custom tracks
+            final IStructuredSelection selection = (IStructuredSelection) _wpViewer.getSelection();
+            if (selection.size() > 0) {
+               //TODO set selected custom track's in dialog
+               _action_EditCustomTracksData.run();
+            }
          }
       });
 
@@ -440,9 +471,19 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
     */
    private void createUI_20_ContextMenu() {
 
+      _tableContextMenu = createUI_22_CreateViewerContextMenu();
+
       final Table table = (Table) _wpViewer.getControl();
 
-      _columnManager.createHeaderContextMenu(table, null);
+      _columnManager.createHeaderContextMenu(table, _tableViewerContextMenuProvider);
+   }
+
+   private Menu createUI_22_CreateViewerContextMenu() {
+
+      final Table table = (Table) _wpViewer.getControl();
+      final Menu tableContextMenu = _viewerMenuManager.createContextMenu(table);
+
+      return tableContextMenu;
    }
 
    private void defineAllColumns(final Composite parent) {
@@ -557,27 +598,37 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       super.dispose();
    }
 
+   /**
+    * enable actions
+    */
+   private void enableActions() {
+
+      final boolean isTourInDb = isTourSavedInDb();
+      //final boolean isSingleTour = _tourData != null && _tourData.isMultipleTours() == false;
+      _action_EditCustomTracksData.setEnabled(isTourInDb);
+   }
+
    private void fillContextMenu(final IMenuManager menuMgr) {
 
-//    menuMgr.add(_actionEditTourWaypoints);
-//
-//    // add standard group which allows other plug-ins to contribute here
-//    menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+      menuMgr.add(_action_EditCustomTracksData);
+
+      // add standard group which allows other plug-ins to contribute here
+      menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 //
 //    // set the marker which should be selected in the marker dialog
 //    final IStructuredSelection selection = (IStructuredSelection) _wpViewer.getSelection();
 //    _actionEditTourWaypoints.setSelectedMarker((TourMarker) selection.getFirstElement());
 //
-//    /*
-//     * enable actions
-//     */
-//    final boolean tourInDb = isTourInDb();
-//
-//    _actionEditTourWaypoints.setEnabled(tourInDb);
+      enableActions();
    }
 
    private void fillToolbar() {
 
+      /*
+       * View toolbar
+       */
+      final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
+      toolBarManager.add(_action_EditCustomTracksData);
       /*
        * fill view menu
        */
@@ -615,7 +666,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
    /**
     * @return Returns <code>true</code> when the tour is saved in the database
     */
-   private boolean isTourInDb() {
+   private boolean isTourSavedInDb() {
 
       if ((_tourData != null) && (_tourData.getTourPerson() != null)) {
          return true;

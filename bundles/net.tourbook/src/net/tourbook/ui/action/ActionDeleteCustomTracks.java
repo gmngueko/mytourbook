@@ -21,11 +21,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import net.tourbook.Images;
 import net.tourbook.Messages;
+import net.tourbook.application.TourbookPlugin;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
+import net.tourbook.tour.TourEvent;
+import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
+import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.ITourProvider2;
+import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.IMessageProvider;
@@ -71,7 +77,10 @@ public class ActionDeleteCustomTracks extends Action {
 
    private TreeMap<String, TrackEntry> trackList         = new TreeMap<>();
 
-   private final ITourProvider2 _tourProvider;
+   private ITourProvider2              _tourProvider             = null;
+   private ITourProvider               _tourProvider1            = null;
+
+   private boolean       _isSaveTour;
 
    private class CustomTracksDeleteSettingsDialog extends TitleAreaDialog {
 
@@ -148,7 +157,8 @@ public class ActionDeleteCustomTracks extends Action {
                public void handleEvent(final Event e) {
                   switch (e.type) {
                   case SWT.Selection:
-                     final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+                     final ArrayList<TourData> selectedTours = _tourProvider != null ? _tourProvider.getSelectedTours() : _tourProvider1
+                           .getSelectedTours();
                      if (selectedTours == null || selectedTours.isEmpty()) {
 
                         // a tour is not selected
@@ -249,13 +259,45 @@ public class ActionDeleteCustomTracks extends Action {
       Boolean isSelected = false;
    }
 
+   public ActionDeleteCustomTracks(final ITourProvider tourProvider, final boolean isSaveTour) {
+
+      super(null, org.eclipse.jface.action.IAction.AS_PUSH_BUTTON);
+
+      _tourProvider1 = tourProvider;
+
+      _isSaveTour = isSaveTour;
+
+      setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.Graph_Custom_Tracks));
+      setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.Graph_Custom_Tracks_Disabled));
+
+      setEnabled(false);
+
+      setText(MENU_NAME);
+   }
+
    public ActionDeleteCustomTracks(final ITourProvider2 tourProvider) {
 
       super(null, org.eclipse.jface.action.IAction.AS_PUSH_BUTTON);
 
       _tourProvider = tourProvider;
 
+      _isSaveTour = true;
+
       setText(MENU_NAME);
+   }
+
+   /**
+    * This event must be event when the dialog is canceled because the original tour custom tracks are
+    * replaced with the backedup custom tracks.
+    * <p>
+    * Views which contain the original {@link CustomTracks}'s need to know that the list has changed
+    * otherwise custom tracks actions do fail, e.g. Set custom tracks Hidden in tour chart view.
+    *
+    * @param tourData
+    */
+   private static void fireTourChangeEvent(final TourData tourData) {
+
+      TourManager.fireEvent(TourEventId.TOUR_CHANGED, new TourEvent(tourData));
    }
 
    public boolean DeleteCustomTracksfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {
@@ -285,7 +327,7 @@ public class ActionDeleteCustomTracks extends Action {
          return;
       }
 
-      final ArrayList<TourData> selectedTours = _tourProvider.getSelectedTours();
+      final ArrayList<TourData> selectedTours = _tourProvider != null ? _tourProvider.getSelectedTours() : _tourProvider1.getSelectedTours();
 
       final Shell shell = Display.getCurrent().getActiveShell();
       if (selectedTours == null || selectedTours.isEmpty()) {
@@ -298,6 +340,23 @@ public class ActionDeleteCustomTracks extends Action {
 
          return;
       }
+
+      Boolean isManual = false;
+      for (final TourData tourData : selectedTours) {
+         if (tourData.isManualTour()) {
+            isManual = true;
+            break;
+         }
+      }
+      if (isManual) {
+         // a manual tour is selected
+         MessageDialog.openInformation(
+               shell,
+               DIALOG_OPEN_TITLE,
+               "Cannot operate on Manual Tour's !!!"); //$NON-NLS-1$
+         return;
+      }
+
       trackList.clear();
       final CustomTracksDeleteSettingsDialog dialog = new CustomTracksDeleteSettingsDialog(shell);
       dialog.create();
@@ -330,7 +389,21 @@ public class ActionDeleteCustomTracks extends Action {
             trackList.clear();
 
             if (modifiedTours.size() > 0) {
-               TourManager.saveModifiedTours(modifiedTours);
+               if (_isSaveTour) {
+                  TourManager.saveModifiedTours(modifiedTours);
+               }else {
+
+                  /*
+                   * don't save the tour's, just update the tour's in data editor
+                   */
+                  final TourDataEditorView tourDataEditor = TourManager.getTourDataEditor();
+                  if (tourDataEditor != null) {
+                     for(final TourData tourData:modifiedTours) {
+                        tourDataEditor.updateUI(tourData, true);
+                        fireTourChangeEvent(tourData);
+                     }
+                  }
+               }
             } else {
                MessageDialog.openInformation(
                      shell,
@@ -339,5 +412,9 @@ public class ActionDeleteCustomTracks extends Action {
             }
          }
       });
+   }
+
+   public void setEnabled(final Boolean isEnabled) {
+      _isSaveTour = isEnabled;
    }
 }
