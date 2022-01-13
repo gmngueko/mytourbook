@@ -794,7 +794,7 @@ public class TourManager {
       int numTimeSlices = 0;
       int numSwimTimeSlices = 0;
       final HashMap<String, CustomTrackDefinition> toCustomTracksDefinition = new HashMap<>();
-      int numCustomTrackDefinition = 0;
+      //int numCustomTrackDefinition = 0;
 
       // get tours which have data series
       for (final TourData tourData : allMultipleTours) {
@@ -814,10 +814,12 @@ public class TourManager {
             for (final String customTrackDefinitionId : customTrackDefinitionMap.keySet()) {
                final CustomTrackDefinition customTrackDefinitionEntry = customTrackDefinitionMap.get(customTrackDefinitionId);
                if (customTrackDefinitionEntry != null) {
-                  if (toCustomTracksDefinition.get(customTrackDefinitionEntry.getName()) != null) {
-                     customTrackDefinitionEntry.setId("_" + Integer.toString(numCustomTrackDefinition));// new local id
-                     toCustomTracksDefinition.put(customTrackDefinitionEntry.getName(), customTrackDefinitionEntry);
-                     numCustomTrackDefinition++;
+                  if (toCustomTracksDefinition.get(customTrackDefinitionEntry.getName()) == null) {//entry with that name not yet present so add it
+                     final CustomTrackDefinition newCustomTrackDefinition = customTrackDefinitionEntry.clone();
+                     newCustomTrackDefinition.setId(customTrackDefinitionEntry.getName());// new local id is the name itself
+                     //newCustomTrackDefinition.setId("_" + Integer.toString(numCustomTrackDefinition));// new local id
+                     toCustomTracksDefinition.put(newCustomTrackDefinition.getName(), newCustomTrackDefinition);
+                     //numCustomTrackDefinition++;
                   }
                }
             }

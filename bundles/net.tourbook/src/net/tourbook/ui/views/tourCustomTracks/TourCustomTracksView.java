@@ -296,30 +296,35 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
             if ((_tourData == null) || (part == TourCustomTracksView.this)) {
                return;
             }
+            if (eventId == TourEventId.TOUR_SELECTION && eventData instanceof ISelection) {
 
-            if (eventId == TourEventId.TOUR_CHANGED || eventId == TourEventId.UPDATE_UI) {
+               onSelectionChanged((ISelection) eventData);
 
-               // check if a tour must be updated
+            } else {
+               if (eventId == TourEventId.TOUR_CHANGED || eventId == TourEventId.UPDATE_UI) {
 
-               final long viewTourId = _tourData.getTourId();
+                  // check if a tour must be updated
 
-               if (net.tourbook.ui.UI.containsTourId(eventData, viewTourId) != null) {
+                  final long viewTourId = _tourData.getTourId();
 
-                  // reload tour data
-                  _tourData = TourManager.getInstance().getTourData(viewTourId);
+                  if (net.tourbook.ui.UI.containsTourId(eventData, viewTourId) != null) {
 
-                  _wpViewer.setInput(new Object[0]);
+                     // reload tour data
+                     _tourData = TourManager.getInstance().getTourData(viewTourId);
 
-                  // removed old tour data from the selection provider
-                  _postSelectionProvider.clearSelection();
+                     _wpViewer.setInput(new Object[0]);
 
-               } else {
+                     // removed old tour data from the selection provider
+                     _postSelectionProvider.clearSelection();
+
+                  } else {
+                     clearView();
+                  }
+
+               } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+
                   clearView();
                }
-
-            } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
-
-               clearView();
             }
          }
       };
@@ -383,7 +388,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       // show default page
       _pageBook.showPage(_pageNoData);
 
-      // show marker from last selection
+      // show custom tracks from last selection
       onSelectionChanged(getSite().getWorkbenchWindow().getSelectionService().getSelection());
 
       if (_tourData == null) {
@@ -697,10 +702,15 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       } else if (selection instanceof SelectionTourIds) {
 
          final ArrayList<Long> tourIds = ((SelectionTourIds) selection).getTourIds();
-         if ((tourIds != null) && (tourIds.size() > 0)) {
-            tourId = tourIds.get(0);
-         }
 
+         if (tourIds != null && tourIds.size() > 0) {
+
+            if (tourIds.size() == 1) {
+               tourId = tourIds.get(0);
+            } else {
+               _tourData = TourManager.createJoinedTourData(tourIds);
+            }
+         }
       } else if (selection instanceof SelectionTourCatalogView) {
 
          final SelectionTourCatalogView tourCatalogSelection = (SelectionTourCatalogView) selection;
@@ -732,11 +742,11 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          }
       }
 
-      final boolean isTour = (tourId >= 0) && (_tourData != null);
+      final boolean isTour = (_tourData != null);//(tourId >= 0) && (_tourData != null);
 
       if (isTour) {
-         _pageBook.showPage(_viewerContainer);
          _wpViewer.setInput(new Object[0]);
+         _pageBook.showPage(_viewerContainer);
       }
 
 //    _actionEditTourWaypoints.setEnabled(isTour);
