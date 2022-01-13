@@ -39,7 +39,7 @@ import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
-import net.tourbook.ui.action.ActionDeleteCustomTracks;
+import net.tourbook.ui.action.ActionEditCustomTracks;
 import net.tourbook.ui.views.tourCatalog.SelectionTourCatalogView;
 import net.tourbook.ui.views.tourCatalog.TVICatalogComparedTour;
 import net.tourbook.ui.views.tourCatalog.TVICatalogRefTourItem;
@@ -106,7 +106,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
 
    private PixelConverter          _pc;
 
-   private ActionDeleteCustomTracks _action_EditCustomTracksData;
+   private ActionEditCustomTracks _action_EditCustomTracksData;
 
    /*
     * UI controls
@@ -344,7 +344,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
    }
 
    private void createActions() {
-      _action_EditCustomTracksData = new ActionDeleteCustomTracks(this, true);
+      _action_EditCustomTracksData = new ActionEditCustomTracks(this, true);
    }
 
    private void createMenuManager() {

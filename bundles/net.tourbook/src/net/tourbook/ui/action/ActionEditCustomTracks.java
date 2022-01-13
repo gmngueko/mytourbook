@@ -45,6 +45,8 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -59,21 +61,26 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
 
-public class ActionDeleteCustomTracks extends Action {
-   public static final String          DIALOG_TITLE              = "Delete Custom Tracks from Tours";           //$NON-NLS-1$
-   public static final String          DIALOG_MSG                = "Delete Custom Tracks";                      //$NON-NLS-1$
+public class ActionEditCustomTracks extends Action {
+   public static final String          DIALOG_TITLE              = "Edit Tours Custom Tracks";                  //$NON-NLS-1$
+   public static final String          DIALOG_MSG                = "Edit Custom Tracks";                        //$NON-NLS-1$
    public static final String          TRACKLIST_TITLE           = "List of Custom Tracks";                     //$NON-NLS-1$
    public static final String          DIALOG_OPEN_TITLE         = "Custom Tracks Delete";                      //$NON-NLS-1$
    public static final String          DIALOG_OPEN_MSG           = "No Tracks to delete";                       //$NON-NLS-1$
-   public static final String          MENU_NAME                 = "&Delete Custom Tracks from tours...";       //$NON-NLS-1$
+   public static final String          MENU_NAME                 = "&Edit Tours Custom Tracks...";              //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_NAME    = "List Custom Tracks";                        //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_TOOLTIP = "List Custom Tracks from selected tours..."; //$NON-NLS-1$
-   public static final String          COL0_NAME                 = "Selected";                                  //$NON-NLS-1$
+   public static final String          COL0_NAME                 = "Delete";                                    //$NON-NLS-1$
    public static final String          COL1_NAME                 = "Name";                                      //$NON-NLS-1$
-   public static final String          COL2_NAME                 = "Count";                                     //$NON-NLS-1$
-   public static final String          COL3_NAME                 = "Size";                                      //$NON-NLS-1$
-   public static final String          CHECKBOX_TAG              = "CHECK_BOX";                                 //$NON-NLS-1$
+   public static final String          COL2_NAME                 = "Unit";                                      //$NON-NLS-1$
+   public static final String          COL3_NAME                 = "Count";                                     //$NON-NLS-1$
+   public static final String          COL4_NAME                 = "Size";                                      //$NON-NLS-1$
+   public static final String          COL5_NAME                 = "Update";                                    //$NON-NLS-1$
+   public static final String          CHECKBOX_DELETE_TAG       = "CHECK_DEL_BOX";                             //$NON-NLS-1$
+   public static final String          CHECKBOX_UPDATE_TAG       = "CHECK_UPD_BOX";                             //$NON-NLS-1$
+   public static final String          TEXTBOX_UNIT_TAG          = "TEXTBOX_UNIT";                              //$NON-NLS-1$
 
    private TreeMap<String, TrackEntry> trackList         = new TreeMap<>();
 
@@ -82,17 +89,17 @@ public class ActionDeleteCustomTracks extends Action {
 
    private boolean       _isSaveTour;
 
-   private class CustomTracksDeleteSettingsDialog extends TitleAreaDialog {
+   private class CustomTracksEditSettingsDialog extends TitleAreaDialog {
 
       private Composite _containerTrackList;
       private Table     _tableTracks;
-      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME };
+      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME, COL4_NAME, COL5_NAME };
 
       private Button    buttonLoadTracks;
 
       private Shell     shell;
 
-      public CustomTracksDeleteSettingsDialog(final Shell parentShell) {
+      public CustomTracksEditSettingsDialog(final Shell parentShell) {
          super(parentShell);
          shell = parentShell;
       }
@@ -181,6 +188,7 @@ public class ActionDeleteCustomTracks extends Action {
                               } else {
                                  final TrackEntry newEntry = new TrackEntry();
                                  newEntry.name = custTrackDefEntry.getValue().getName();
+                                 newEntry.unit = custTrackDefEntry.getValue().getUnit();
                                  newEntry.count = 1;
                                  final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
@@ -195,14 +203,36 @@ public class ActionDeleteCustomTracks extends Action {
                      for (final Entry<String, TrackEntry> trackListEntry : trackList.entrySet()) {
                         final TableItem itemEvent = new TableItem(_tableTracks, SWT.NONE);
                         itemEvent.setText(1, trackListEntry.getKey());
-                        itemEvent.setText(2, String.valueOf(trackListEntry.getValue().count));
-                        itemEvent.setText(3, String.valueOf(trackListEntry.getValue().size));
-                        final TableEditor editor = new TableEditor(_tableTracks);
-                        final Button buttonCheck = new Button(_tableTracks, SWT.CHECK);
-                        buttonCheck.setData(trackListEntry.getValue());
-                        itemEvent.setData(CHECKBOX_TAG, buttonCheck);
 
-                        buttonCheck.addSelectionListener(new SelectionAdapter() {
+                        final TableEditor editorUnit = new TableEditor(_tableTracks);
+                        final Text textUnit = new Text(_tableTracks, SWT.SINGLE);
+                        itemEvent.setData(TEXTBOX_UNIT_TAG, textUnit);
+                        textUnit.setData(trackListEntry.getValue());
+                        textUnit.setText(trackListEntry.getValue().unit);
+                        textUnit.pack();
+                        editorUnit.horizontalAlignment = SWT.LEFT;
+                        editorUnit.setEditor(textUnit, itemEvent, 2);
+                        editorUnit.grabHorizontal = true;
+                        textUnit.addVerifyListener(new VerifyListener() {
+                           @Override
+                           public void verifyText(final VerifyEvent e) {
+                              /* Notice how we combine the old and new below */
+                              final String currentText = ((Text) e.widget).getText();
+                              final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+                              final TrackEntry trackEntry = (TrackEntry) ((Text) e.widget).getData();
+                              trackEntry.unit = valueTxt;
+                           }
+                        });
+
+                        itemEvent.setText(3, String.valueOf(trackListEntry.getValue().count));
+                        itemEvent.setText(4, String.valueOf(trackListEntry.getValue().size));
+
+                        final TableEditor editor = new TableEditor(_tableTracks);
+                        final Button buttonDelete = new Button(_tableTracks, SWT.CHECK);
+                        buttonDelete.setData(trackListEntry.getValue());
+                        itemEvent.setData(CHECKBOX_DELETE_TAG, buttonDelete);
+
+                        buttonDelete.addSelectionListener(new SelectionAdapter() {
                            @Override
                            public void widgetSelected(final SelectionEvent e) {
                               final Button button = (Button) e.widget;
@@ -211,18 +241,45 @@ public class ActionDeleteCustomTracks extends Action {
                                  final TrackEntry cData = (TrackEntry) data;
                                  if (button.getSelection()) {
                                     //System.out.println(" Maintenance check for True:" + button.getData());
-                                    cData.isSelected = true;
+                                    cData.isDeleted = true;
                                  } else {
                                     //System.out.println(" Maintenance check for False:" + button.getData());
-                                    cData.isSelected = false;
+                                    cData.isDeleted = false;
                                  }
                               }
                            }
                         });
-                        buttonCheck.pack();
-                        editor.minimumWidth = buttonCheck.getSize().x;
+                        buttonDelete.pack();
+                        editor.minimumWidth = buttonDelete.getSize().x;
                         editor.horizontalAlignment = SWT.LEFT;
-                        editor.setEditor(buttonCheck, itemEvent, 0);
+                        editor.setEditor(buttonDelete, itemEvent, 0);
+
+                        final TableEditor editorUpd = new TableEditor(_tableTracks);
+                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);
+                        buttonUpdate.setData(trackListEntry.getValue());
+                        itemEvent.setData(CHECKBOX_UPDATE_TAG, buttonUpdate);
+
+                        buttonUpdate.addSelectionListener(new SelectionAdapter() {
+                           @Override
+                           public void widgetSelected(final SelectionEvent e) {
+                              final Button button = (Button) e.widget;
+                              final Object data = button.getData();
+                              if (data != null) {
+                                 final TrackEntry cData = (TrackEntry) data;
+                                 if (button.getSelection()) {
+                                    //System.out.println(" Maintenance check for True:" + button.getData());
+                                    cData.isUpdated = true;
+                                 } else {
+                                    //System.out.println(" Maintenance check for False:" + button.getData());
+                                    cData.isUpdated = false;
+                                 }
+                              }
+                           }
+                        });
+                        buttonUpdate.pack();
+                        editorUpd.minimumWidth = buttonUpdate.getSize().x;
+                        editorUpd.horizontalAlignment = SWT.LEFT;
+                        editorUpd.setEditor(buttonUpdate, itemEvent, 5);
                      }
                      break;
                   }
@@ -254,12 +311,14 @@ public class ActionDeleteCustomTracks extends Action {
 
    public class TrackEntry {
       String name;
+      String  unit;
       int    count = 0;
       int     size       = 0;
-      Boolean isSelected = false;
+      Boolean isDeleted = false;
+      Boolean isUpdated = false;
    }
 
-   public ActionDeleteCustomTracks(final ITourProvider tourProvider, final boolean isSaveTour) {
+   public ActionEditCustomTracks(final ITourProvider tourProvider, final boolean isSaveTour) {
 
       super(null, org.eclipse.jface.action.IAction.AS_PUSH_BUTTON);
 
@@ -275,7 +334,7 @@ public class ActionDeleteCustomTracks extends Action {
       setText(MENU_NAME);
    }
 
-   public ActionDeleteCustomTracks(final ITourProvider2 tourProvider) {
+   public ActionEditCustomTracks(final ITourProvider2 tourProvider) {
 
       super(null, org.eclipse.jface.action.IAction.AS_PUSH_BUTTON);
 
@@ -300,7 +359,7 @@ public class ActionDeleteCustomTracks extends Action {
       TourManager.fireEvent(TourEventId.TOUR_CHANGED, new TourEvent(tourData));
    }
 
-   public boolean DeleteCustomTracksfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {
+   public boolean editCustomTracksfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {
       boolean isModified = false;
       if (tour.customTracksDefinition != null && !tour.customTracksDefinition.isEmpty()) {
          final Iterator<Entry<String, CustomTrackDefinition>> iteratorCustTrackDef = tour.customTracksDefinition.entrySet().iterator();
@@ -308,9 +367,12 @@ public class ActionDeleteCustomTracks extends Action {
             final Map.Entry<String, CustomTrackDefinition> pairCustTrackDef = iteratorCustTrackDef.next();
             //System.out.println(pair.getKey() + " = " + pair.getValue());
             if (trackList2.containsKey(pairCustTrackDef.getValue().getName())) {
-               if (trackList2.get(pairCustTrackDef.getValue().getName()).isSelected) {
+               if (trackList2.get(pairCustTrackDef.getValue().getName()).isDeleted) {
                   tour.clear_CustomTracks(pairCustTrackDef.getValue().getId());
                   iteratorCustTrackDef.remove(); // avoids a ConcurrentModificationException
+                  isModified = true;
+               } else if (trackList2.get(pairCustTrackDef.getValue().getName()).isUpdated) {
+                  pairCustTrackDef.getValue().setUnit(trackList2.get(pairCustTrackDef.getValue().getName()).unit);
                   isModified = true;
                }
             }
@@ -358,13 +420,13 @@ public class ActionDeleteCustomTracks extends Action {
       }
 
       trackList.clear();
-      final CustomTracksDeleteSettingsDialog dialog = new CustomTracksDeleteSettingsDialog(shell);
+      final CustomTracksEditSettingsDialog dialog = new CustomTracksEditSettingsDialog(shell);
       dialog.create();
       if (dialog.open() == Window.OK) {
          //retrieve UI data before execution of custom trak loading below
          //put mapping of objet type to custom tracks
          if (trackList == null || trackList.isEmpty()) {
-            System.out.println("ActionDeleteCustomTracks: No Custom Tracks to delete!!");
+            System.out.println("ActionEditCustomTracks: No Custom Tracks to Edit!!"); //$NON-NLS-1$
             return;
          }
       } else {
@@ -379,7 +441,7 @@ public class ActionDeleteCustomTracks extends Action {
 
             for (final TourData tour : selectedTours) {
 
-               final boolean isDataRetrieved = DeleteCustomTracksfromTour(tour, trackList);
+               final boolean isDataRetrieved = editCustomTracksfromTour(tour, trackList);
 
                if (isDataRetrieved) {
                   modifiedTours.add(tour);
