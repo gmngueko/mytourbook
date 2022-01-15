@@ -1548,12 +1548,12 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                   break;
                }
             }
-            final String customTracksDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getId();
+            final String customTracksDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getRefId();
             final float[] customTrackSerie = customTracks.get(customTracksDefinitionId);
             CustomTrackDefinition customTrackDefinition = listCustomTrackDefinition.get(alphabeticOrder);
             if (customTrackDefinition == null && customTrackSerie != null) {
                customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setId(customTracksDefinitionId);
+               customTrackDefinition.setRefId(customTracksDefinitionId);
                customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + " -- " + customTracksDefinitionId);
                customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
             }
@@ -3221,7 +3221,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                }
             }
 
-            final String customTracksDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getId();
+            final String customTracksDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getRefId();
             final Boolean theState = _state_CustomTracksToolBarChart.getOrDefault(customTracksDefinitionId,
                   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_CUSTOM_TRACKS_DEFAULT);
             fillToolbar_Graphs_Graph(
@@ -4295,12 +4295,12 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                   break;
                }
             }
-            final String customTrackDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getId();
+            final String customTrackDefinitionId = listCustomTrackDefinition.get(alphabeticOrder).getRefId();
             final float[] customTracksSerie = customTracks.get(customTrackDefinitionId);
             CustomTrackDefinition customTrackDefinition = customTracksDefinitions.get(customTrackDefinitionId);
             if (customTrackDefinition == null && customTracksSerie != null) {
                customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setId(customTrackDefinitionId);
+               customTrackDefinition.setRefId(customTrackDefinitionId);
                customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + " -- " + customTrackDefinitionId);
                customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
             }

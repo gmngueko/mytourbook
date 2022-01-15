@@ -4636,7 +4636,7 @@ public abstract class TableColumnFactory {
                                                             final PixelConverter pixelConverter,
                                                             final CustomTrackDefinition customTrackDefinition) {
 
-            final String colId = ColumnManager.CUSTOM_TRACKS_TIME_SLICES_ID + "_" + customTrackDefinition.getId();
+            final String colId = ColumnManager.CUSTOM_TRACKS_TIME_SLICES_ID + "_" + customTrackDefinition.getRefId();
             final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, colId, SWT.TRAIL);
 
             colDef.setColumnCategory(Messages.ColumnFactory_Category_Custom_Tracks);
