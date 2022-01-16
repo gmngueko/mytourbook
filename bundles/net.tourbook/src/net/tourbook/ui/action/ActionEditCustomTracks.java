@@ -182,7 +182,7 @@ public class ActionEditCustomTracks extends Action {
                            for (final Entry<String, CustomTrackDefinition> custTrackDefEntry : tour.customTracksDefinition.entrySet()) {
                               if (trackList.containsKey(custTrackDefEntry.getValue().getName())) {
                                  trackList.get(custTrackDefEntry.getValue().getName()).count += 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getRefId());
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
                                  trackList.get(custTrackDefEntry.getValue().getName()).size += custSize;
                               } else {
@@ -190,7 +190,7 @@ public class ActionEditCustomTracks extends Action {
                                  newEntry.name = custTrackDefEntry.getValue().getName();
                                  newEntry.unit = custTrackDefEntry.getValue().getUnit();
                                  newEntry.count = 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getRefId());
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
                                  newEntry.size = custSize;
                                  trackList.put(custTrackDefEntry.getValue().getName(), newEntry);
@@ -368,7 +368,7 @@ public class ActionEditCustomTracks extends Action {
             //System.out.println(pair.getKey() + " = " + pair.getValue());
             if (trackList2.containsKey(pairCustTrackDef.getValue().getName())) {
                if (trackList2.get(pairCustTrackDef.getValue().getName()).isDeleted) {
-                  tour.clear_CustomTracks(pairCustTrackDef.getValue().getRefId());
+                  tour.clear_CustomTracks(pairCustTrackDef.getValue().getId());
                   iteratorCustTrackDef.remove(); // avoids a ConcurrentModificationException
                   isModified = true;
                } else if (trackList2.get(pairCustTrackDef.getValue().getName()).isUpdated) {

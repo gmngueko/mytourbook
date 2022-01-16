@@ -271,7 +271,7 @@ public class FitData {
          final String unitNew = developerFieldDefinition.getUnit();
 
          final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-         customTrackDefinition.setRefId(idNew);
+         customTrackDefinition.setId(idNew);
          customTrackDefinition.setName(nameNew);
          customTrackDefinition.setUnit(unitNew);
          _tourData.customTracksDefinition.put(idNew, customTrackDefinition);

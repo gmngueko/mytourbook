@@ -511,8 +511,8 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          public void update(final ViewerCell cell) {
 
             final CustomTrackDefinition ct = (CustomTrackDefinition) cell.getElement();
-            cell.setText(ct.getRefId());
-            final float[] ctData = _tourData.getCustomTracks(ct.getRefId());
+            cell.setText(ct.getId());
+            final float[] ctData = _tourData.getCustomTracks(ct.getId());
             final int ctSize = ctData == null ? 0 : ctData.length;
             if (ctSize == 0) {
                cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
@@ -534,7 +534,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
 
             final CustomTrackDefinition ct = (CustomTrackDefinition) cell.getElement();
             cell.setText(ct.getName());
-            final float[] ctData = _tourData.getCustomTracks(ct.getRefId());
+            final float[] ctData = _tourData.getCustomTracks(ct.getId());
             final int ctSize = ctData == null ? 0 : ctData.length;
             if (ctSize == 0) {
                cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
@@ -556,7 +556,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          public void update(final ViewerCell cell) {
 
             final CustomTrackDefinition ct = (CustomTrackDefinition) cell.getElement();
-            final float[] ctData = _tourData.getCustomTracks(ct.getRefId());
+            final float[] ctData = _tourData.getCustomTracks(ct.getId());
             final int ctSize = ctData==null ? 0:ctData.length;
             cell.setText(String.valueOf(ctSize));
             if (ctSize == 0) {
@@ -579,7 +579,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
 
             final CustomTrackDefinition ct = (CustomTrackDefinition) cell.getElement();
             cell.setText(ct.getUnit());
-            final float[] ctData = _tourData.getCustomTracks(ct.getRefId());
+            final float[] ctData = _tourData.getCustomTracks(ct.getId());
             final int ctSize = ctData == null ? 0 : ctData.length;
             if (ctSize == 0) {
                cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));

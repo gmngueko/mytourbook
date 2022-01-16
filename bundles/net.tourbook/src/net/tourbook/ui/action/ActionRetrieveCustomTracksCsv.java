@@ -493,11 +493,11 @@ public class ActionRetrieveCustomTracksCsv extends Action {
          //now add custom track value by interpolating if necessary
          //while looping on the tour timeserie entries
          final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-         customTrackDefinition.setRefId(csvEntry.getValue().trackId);
+         customTrackDefinition.setId(csvEntry.getValue().trackId);
          customTrackDefinition.setName(csvEntry.getValue().trackName);
          customTrackDefinition.setUnit(csvEntry.getValue().trackUnit);
-         if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getRefId())) {
-            tour.customTracksDefinition.put(customTrackDefinition.getRefId(), customTrackDefinition);
+         if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getId())) {
+            tour.customTracksDefinition.put(customTrackDefinition.getId(), customTrackDefinition);
          }
 
          final int[] timeSerie = tour.timeSerie;

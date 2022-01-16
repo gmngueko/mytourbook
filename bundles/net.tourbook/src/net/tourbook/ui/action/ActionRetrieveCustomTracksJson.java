@@ -445,11 +445,11 @@ public class ActionRetrieveCustomTracksJson extends Action {
       //now add custom track value by interpolating if necessary
       //while looping on the tour timeserie entries
       final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-      customTrackDefinition.setRefId(garminData.trackId);
+      customTrackDefinition.setId(garminData.trackId);
       customTrackDefinition.setName(garminData.trackName);
       customTrackDefinition.setUnit(garminData.trackUnit);
-      if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getRefId())) {
-         tour.customTracksDefinition.put(customTrackDefinition.getRefId(), customTrackDefinition);
+      if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getId())) {
+         tour.customTracksDefinition.put(customTrackDefinition.getId(), customTrackDefinition);
       }
 
       final int[] timeSerie = tour.timeSerie;

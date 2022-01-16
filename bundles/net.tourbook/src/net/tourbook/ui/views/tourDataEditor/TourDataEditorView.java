@@ -5305,7 +5305,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          java.util.Collections.sort(listCustomTrackDefinition);
 
          for (final CustomTrackDefinition customTracksDefinition : listCustomTrackDefinition) {
-            final String customTracksDefinitionId = customTracksDefinition.getRefId();
+            final String customTracksDefinitionId = customTracksDefinition.getId();
             final float[] customTracksSerie = _customTracks.get(customTracksDefinitionId);
             final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_TIME_SLICES.createColumnCustomTrack(_timeSlice_ColumnManager,
                   _pc,
@@ -8610,7 +8610,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             for (final String customTracksId : _customTrackTextControls.keySet()) {
                final CustomTrackDefinition newCustomTrackDefinition = new CustomTrackDefinition();
                final CustomTrackEditorText UIentryDefinition = _customTrackTextControls.get(customTracksId);
-               newCustomTrackDefinition.setRefId(UIentryDefinition.id.getText().trim());
+               newCustomTrackDefinition.setId(UIentryDefinition.id.getText().trim());
                newCustomTrackDefinition.setName(UIentryDefinition.name.getText().trim());
                newCustomTrackDefinition.setUnit(UIentryDefinition.unit.getText().trim());
                customTracksDefinitionMap.put(customTracksId, newCustomTrackDefinition);
@@ -9163,10 +9163,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             );
             _firstColumnControls.add(textNrEntry);
 
-            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId()) == null) {
+            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
                textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
                textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId()).length == 0) {
+            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
                textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
                textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
             }
@@ -9174,15 +9174,15 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
             final Text textIdEntry = _tk.createText(
                   container, //
-                  customTrackDefinition.getRefId(),
+                  customTrackDefinition.getId(),
                   SWT.BORDER //
             );
             _secondColumnControls.add(textIdEntry);
             customTracksTextSet.id = textIdEntry;
-            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId()) == null) {
+            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
                customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
                customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId()).length == 0) {
+            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
                customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
                customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
             }
@@ -9204,7 +9204,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             textUnitEntry.addModifyListener(_modifyListener);
             customTracksTextSet.unit = textUnitEntry;
 
-            _customTrackTextControls.put(listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId(), customTracksTextSet);
+            _customTrackTextControls.put(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId(), customTracksTextSet);
          }
       }
 

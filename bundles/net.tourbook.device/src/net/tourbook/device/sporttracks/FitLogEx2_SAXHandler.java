@@ -685,7 +685,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
                   .compareTo(NAME_VERTICALRATIO) == 0) {} else {
                final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setRefId(idS);
+               customTrackDefinition.setId(idS);
                customTrackDefinition.setName(nameS);
                customTrackDefinition.setUnit(unitS);
                tourData.customTracksDefinition.put(idS, customTrackDefinition);

@@ -844,7 +844,7 @@ public class TourManager {
                if (customTrackDefinitionEntry != null) {
                   if (toCustomTracksDefinition.get(customTrackDefinitionEntry.getName()) == null) {//entry with that name not yet present so add it
                      final CustomTrackDefinition newCustomTrackDefinition = customTrackDefinitionEntry.clone();
-                     newCustomTrackDefinition.setRefId(customTrackDefinitionEntry.getName());// new local id is the name itself
+                     newCustomTrackDefinition.setId(customTrackDefinitionEntry.getName());// new local id is the name itself
                      //newCustomTrackDefinition.setId("_" + Integer.toString(numCustomTrackDefinition));// new local id
                      toCustomTracksDefinition.put(newCustomTrackDefinition.getName(), newCustomTrackDefinition);
                      //numCustomTrackDefinition++;
@@ -4095,11 +4095,11 @@ public class TourManager {
          final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTrackDefinitionMap.values());
          java.util.Collections.sort(listCustomTrackDefinition);
          for (int indexCustomTrackDefinition = 0; indexCustomTrackDefinition < listCustomTrackDefinition.size(); indexCustomTrackDefinition++) {
-            final String customTracksId = listCustomTrackDefinition.get(indexCustomTrackDefinition).getRefId();
+            final String customTracksId = listCustomTrackDefinition.get(indexCustomTrackDefinition).getId();
             CustomTrackDefinition customTrackDefinition = listCustomTrackDefinition.get(indexCustomTrackDefinition);
             if (customTrackDefinition == null) {
                customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setRefId(customTracksId);
+               customTrackDefinition.setId(customTracksId);
                customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + UI.SYMBOL_UNDERSCORE + customTracksId);
                customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
             }
@@ -4267,11 +4267,11 @@ public class TourManager {
                java.util.Collections.sort(listCustomTrackDefinition);
 
                for (int indexCustomTracksDefinition = 0; indexCustomTracksDefinition < listCustomTrackDefinition.size(); indexCustomTracksDefinition++) {
-                  final String customTracksDefinitionId = listCustomTrackDefinition.get(indexCustomTracksDefinition).getRefId();
+                  final String customTracksDefinitionId = listCustomTrackDefinition.get(indexCustomTracksDefinition).getId();
                   CustomTrackDefinition customTrackDefinition = listCustomTrackDefinition.get(indexCustomTracksDefinition);
                   if (customTrackDefinition == null) {
                      customTrackDefinition = new CustomTrackDefinition();
-                     customTrackDefinition.setRefId(customTracksDefinitionId);
+                     customTrackDefinition.setId(customTracksDefinitionId);
                      customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + UI.SYMBOL_UNDERSCORE + customTracksDefinitionId);
                      customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
                   }

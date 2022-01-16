@@ -62,7 +62,7 @@ import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
-import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorValue;
 import net.tourbook.data.TourBike;
@@ -176,7 +176,7 @@ public class TourDatabase {
    private static final String TABLE_DB_VERSION_DESIGN                    = "DBVERSION";                                             //$NON-NLS-1$
    private static final String TABLE_DB_VERSION_DATA                      = "DB_VERSION_DATA";                                       //$NON-NLS-1$
 
-   public static final String  TABLE_CUSTOMTRACK_DEFINITION               = "CUSTOMTRACKDEFINITION";                                 //$NON-NLS-1$
+   public static final String  TABLE_DATA_SERIE                           = "DATASERIE";                                             //$NON-NLS-1$
 
    public static final String  TABLE_DEVICE_SENSOR                        = "DeviceSensor";                                          //$NON-NLS-1$
    public static final String  TABLE_DEVICE_SENSOR_VALUE                  = "DeviceSensorValue";                                     //$NON-NLS-1$
@@ -216,7 +216,7 @@ public class TourDatabase {
     */
    public static final int     ENTITY_IS_NOT_SAVED                = -1;
    //
-   public static final String  ENTITY_ID_CUSTOMTRACKDEFINITION    = "CustTrackDefID";                                       //$NON-NLS-1$
+   public static final String  ENTITY_ID_DATA_SERIE               = "SerieID";                                              //$NON-NLS-1$
 
    public static final String  ENTITY_ID_BIKE                     = "BikeID";                                               //$NON-NLS-1$
    public static final String  ENTITY_ID_COMPARED                 = "ComparedID";                                           //$NON-NLS-1$
@@ -233,7 +233,7 @@ public class TourDatabase {
    public static final String  ENTITY_ID_TYPE                     = "TypeID";                                               //$NON-NLS-1$
    public static final String  ENTITY_ID_WAY_POINT                = "WayPointID";                                           //$NON-NLS-1$
    //
-   private static final String KEY_CUSTOMTRACKDEFINITION          = TABLE_CUSTOMTRACK_DEFINITION + "_" + ENTITY_ID_CUSTOMTRACKDEFINITION; //$NON-NLS-1$
+   private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;          //$NON-NLS-1$
 
    private static final String KEY_BIKE                           = TABLE_TOUR_BIKE + "_" + ENTITY_ID_BIKE;                 //$NON-NLS-1$
    private static final String KEY_DEVICE_SENSOR                  = TABLE_DEVICE_SENSOR + "_" + ENTITY_ID_DEVICE_SENSOR;    //$NON-NLS-1$
@@ -276,17 +276,17 @@ public class TourDatabase {
 
    private static volatile ArrayList<TourType>            _allDbTourTypes;
 
-   private static volatile ArrayList<CustomTrackDefinition> _allDbCustomTrackDefinitions;
+   private static volatile ArrayList<DataSerie>           _allDbDataSeries;
 
    /**
-    * Key is CustomTrackDefinition ID
+    * Key is DataSerie ID
     */
-   private static HashMap<Long, CustomTrackDefinition>    _allCustomTrackDefinition_ById;
+   private static HashMap<Long, DataSerie>                _allDataSeries_ById;
 
    /**
-    * Key is CustomTrackDefinition RefID
+    * Key is DataSerie RefID
     */
-   private static HashMap<String, CustomTrackDefinition>  _allCustomTrackDefinition_ByRefId;
+   private static HashMap<String, DataSerie>              _allDataSeries_ByRefId;
 
    /**
     * Key is tour type ID
@@ -1631,45 +1631,45 @@ public class TourDatabase {
    }
 
    /**
-    * @return Returns the backend of all CustomTrackDefinition which are stored in the database sorted by name.
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
     */
-   public static HashMap<Long, CustomTrackDefinition> getAllCustomTrackDefinition_ById() {
+   public static HashMap<Long, DataSerie> getAllDataSeries_ById() {
 
-      if (_allCustomTrackDefinition_ById != null) {
-         return _allCustomTrackDefinition_ById;
+      if (_allDataSeries_ById != null) {
+         return _allDataSeries_ById;
       }
 
-      loadAllCustomTrackDefinitions();
+      loadAllDataSeries();
 
-      return _allCustomTrackDefinition_ById;
+      return _allDataSeries_ById;
    }
 
    /**
-    * @return Returns the backend of all CustomTrackDefinition which are stored in the database sorted by name.
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
     */
-   public static HashMap<String, CustomTrackDefinition> getAllCustomTrackDefinition_ByRefId() {
+   public static HashMap<String, DataSerie> getAllDataSeries_ByRefId() {
 
-      if (_allCustomTrackDefinition_ByRefId != null) {
-         return _allCustomTrackDefinition_ByRefId;
+      if (_allDataSeries_ByRefId != null) {
+         return _allDataSeries_ByRefId;
       }
 
-      loadAllCustomTrackDefinitions();
+      loadAllDataSeries();
 
-      return _allCustomTrackDefinition_ByRefId;
+      return _allDataSeries_ByRefId;
    }
 
    /**
-    * @return Returns the backend of all CustomTrackDefinition which are stored in the database sorted by name.
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
     */
-   public static ArrayList<CustomTrackDefinition> getAllCustomTrackDefinitions() {
+   public static ArrayList<DataSerie> getAllDataSeries() {
 
-      if (_allCustomTrackDefinition_ById != null) {
-         return _allDbCustomTrackDefinitions;
+      if (_allDataSeries_ById != null) {
+         return _allDbDataSeries;
       }
 
-      loadAllCustomTrackDefinitions();
+      loadAllDataSeries();
 
-      return _allDbCustomTrackDefinitions;
+      return _allDbDataSeries;
    }
 
    /**
@@ -2807,42 +2807,42 @@ public class TourDatabase {
    }
 
    @SuppressWarnings("unchecked")
-   private static void loadAllCustomTrackDefinitions() {
+   private static void loadAllDataSeries() {
 
       synchronized (DB_LOCK) {
 
          // check again, field must be volatile to work correctly
-         if (_allDbCustomTrackDefinitions != null) {
+         if (_allDbDataSeries != null) {
             return;
          }
 
-         ArrayList<CustomTrackDefinition> allCustomTrackDefinitions = new ArrayList<>();
-         final HashMap<Long, CustomTrackDefinition> allCustomTrackDefinition_ById = new HashMap<>();
-         final HashMap<String, CustomTrackDefinition> allCustomTrackDefinition_ByRefId = new HashMap<>();
+         ArrayList<DataSerie> allDataSeries = new ArrayList<>();
+         final HashMap<Long, DataSerie> allDataSeries_ById = new HashMap<>();
+         final HashMap<String, DataSerie> allDataSeries_ByRefId = new HashMap<>();
 
          final EntityManager em = TourDatabase.getInstance().getEntityManager();
          if (em != null) {
 
             final Query emQuery = em.createQuery(UI.EMPTY_STRING
 
-                  + "SELECT CustomTrackDefinition" //              //$NON-NLS-1$
-                  + " FROM CustomTrackDefinition AS CustomTrackDefinition" //   //$NON-NLS-1$
-                  + " ORDER  BY CustomTrackDefinition.name"); //   //$NON-NLS-1$
+                  + "SELECT DataSerie" //              //$NON-NLS-1$
+                  + " FROM DataSerie AS DataSerie" //   //$NON-NLS-1$
+                  + " ORDER  BY DataSerie.name"); //   //$NON-NLS-1$
 
-            allCustomTrackDefinitions = (ArrayList<CustomTrackDefinition>) emQuery.getResultList();
+            allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
 
-            for (final CustomTrackDefinition customTrackDefinition : allCustomTrackDefinitions) {
+            for (final DataSerie dataSerie : allDataSeries) {
 
-               allCustomTrackDefinition_ById.put(customTrackDefinition.getCustTrackDefId(), customTrackDefinition);
-               allCustomTrackDefinition_ByRefId.put(customTrackDefinition.getRefId(), customTrackDefinition);
+               allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
+               allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
             }
 
             em.close();
          }
 
-         _allDbCustomTrackDefinitions = allCustomTrackDefinitions;
-         _allCustomTrackDefinition_ById = allCustomTrackDefinition_ById;
-         _allCustomTrackDefinition_ByRefId = allCustomTrackDefinition_ByRefId;
+         _allDbDataSeries = allDataSeries;
+         _allDataSeries_ById = allDataSeries_ById;
+         _allDataSeries_ByRefId = allDataSeries_ByRefId;
       }
    }
 
@@ -3759,18 +3759,18 @@ public class TourDatabase {
     * @param stmt
     * @throws SQLException
     */
-   private void createTable_CustomTrackDefinition(final Statement stmt) throws SQLException {
+   private void createTable_DataSerie(final Statement stmt) throws SQLException {
 
       /*
-       * CREATE TABLE CustomTrackDefinition
+       * CREATE TABLE DataSerie
        */
-      exec(stmt, "CREATE TABLE " + TABLE_CUSTOMTRACK_DEFINITION + "   (                                  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      exec(stmt, "CREATE TABLE " + TABLE_DATA_SERIE + "   (                                  " + NL //$NON-NLS-1$ //$NON-NLS-2$
       //
-            + SQL.CreateField_EntityId(ENTITY_ID_CUSTOMTRACKDEFINITION, true)
+            + SQL.CreateField_EntityId(ENTITY_ID_DATA_SERIE, true)
 
-            + "   name             VARCHAR(" + CustomTrackDefinition.DB_LENGTH_NAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
-            + "   refId            VARCHAR(" + CustomTrackDefinition.DB_LENGTH_REFID + ") NOT NULL CONSTRAINT refId_uk UNIQUE,  " + NL //$NON-NLS-1$ //$NON-NLS-2$
-            + "   unit             VARCHAR(" + CustomTrackDefinition.DB_LENGTH_UNIT + ")         " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   name             VARCHAR(" + DataSerie.DB_LENGTH_NAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   refId            VARCHAR(" + DataSerie.DB_LENGTH_REFID + ") NOT NULL CONSTRAINT refId_uk UNIQUE,  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   unit             VARCHAR(" + DataSerie.DB_LENGTH_UNIT + ")         " + NL //$NON-NLS-1$ //$NON-NLS-2$
 
             + ")"); //$NON-NLS-1$
    }
@@ -5440,7 +5440,7 @@ public class TourDatabase {
 
             createTable_TourWayPoint(stmt);
 
-            createTable_CustomTrackDefinition(stmt);
+            createTable_DataSerie(stmt);
 
          } catch (final SQLException e) {
             UI.showSQLException(e);
@@ -6001,8 +6001,8 @@ public class TourDatabase {
             currentDbVersion = _dbDesignVersion_New = updateDb_045_To_046(conn, splashManager);
          }
 
-         // CustomTrackDefinition
-         updateDb_Add_CustomTrackDefinition(currentDbVersion, conn, splashManager);
+         // DataSerie
+         updateDb_Add_DataSerie(currentDbVersion, conn, splashManager);
 
          // Extra Data for Maintenance on TourTag table
          updateDb_TourTag_AddColumn_ExtraData(currentDbVersion, conn, splashManager);
@@ -9170,25 +9170,25 @@ public class TourDatabase {
    }
 
    /**
-    * Add CustomTrackDefinition on DB version xx
+    * Add DataSerie on DB version xx
     *
     * @param conn
     * @param splashManager
     * @return
     * @throws SQLException
     */
-   private void updateDb_Add_CustomTrackDefinition(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+   private void updateDb_Add_DataSerie(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
          throws SQLException {
 
-      final String message = "Adding CustomTrackDefinition Table in DB"; //$NON-NLS-1$
+      final String message = "Adding DataSerie Table in DB"; //$NON-NLS-1$
       logDbUpdate_Start_Special(currentDbVersion, message);
       updateMonitor(splashManager, currentDbVersion);
 
       final Statement stmt = conn.createStatement();
       {
          // double check if db already exists
-         if (isTableAvailable(conn, TABLE_CUSTOMTRACK_DEFINITION) == false) {
-            createTable_CustomTrackDefinition(stmt);
+         if (isTableAvailable(conn, TABLE_DATA_SERIE) == false) {
+            createTable_DataSerie(stmt);
          }
       }
       stmt.close();

@@ -237,7 +237,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
       if (customTrackDefinitions != null && customTrackDefinitions.size() > 0 && customTracks != null && customTracks.size() > 0) {
          listCustomTrackDefinition = new ArrayList<>(customTrackDefinitions.values());
          for (final CustomTrackDefinition customTrackDefinition : listCustomTrackDefinition) {
-            final String customTrackDefinitionId = customTrackDefinition.getRefId();
+            final String customTrackDefinitionId = customTrackDefinition.getId();
             if (customTracks.get(customTrackDefinitionId) == null || customTracks.get(customTrackDefinitionId).length == 0) {
                continue;
             }
@@ -543,7 +543,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                      break;
                   }
                }
-               final String customTrackDefinitionId = listCustomTrackDefinition.get(indexAlphabetical).getRefId();
+               final String customTrackDefinitionId = listCustomTrackDefinition.get(indexAlphabetical).getId();
                if (customTracks.get(customTrackDefinitionId) == null || customTracks.get(customTrackDefinitionId).length == 0) {
                   continue;
                }
@@ -905,10 +905,10 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                break;
             }
          }
-         final Button chkShowInChartToolbar_Custom_Track = _chkShowInChartToolbar_Custom_Tracks.get(customTrackDefinition.getRefId());
+         final Button chkShowInChartToolbar_Custom_Track = _chkShowInChartToolbar_Custom_Tracks.get(customTrackDefinition.getId());
 
          if (chkShowInChartToolbar_Custom_Track != null && state_CustomTracks != null) {
-            final Boolean state = state_CustomTracks.getOrDefault(customTrackDefinition.getRefId(), false);
+            final Boolean state = state_CustomTracks.getOrDefault(customTrackDefinition.getId(), false);
             chkShowInChartToolbar_Custom_Track.setSelection(state);
          }
 
@@ -1049,9 +1049,9 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                break;
             }
          }
-         final Button chkShowInChartToolbar_Custom_Track = _chkShowInChartToolbar_Custom_Tracks.get(customTrackDefinition.getRefId());
+         final Button chkShowInChartToolbar_Custom_Track = _chkShowInChartToolbar_Custom_Tracks.get(customTrackDefinition.getId());
          if (chkShowInChartToolbar_Custom_Track != null && state_CustomTracks != null) {
-            state_CustomTracks.put(customTrackDefinition.getRefId(), chkShowInChartToolbar_Custom_Track.getSelection());
+            state_CustomTracks.put(customTrackDefinition.getId(), chkShowInChartToolbar_Custom_Track.getSelection());
          }
 
          numDisplayCustomTracks++;
