@@ -15,19 +15,27 @@
  *******************************************************************************/
 package net.tourbook.data;
 
+import static javax.persistence.CascadeType.ALL;
+import static javax.persistence.FetchType.LAZY;
+
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToMany;
 import javax.persistence.Transient;
 
 import net.tourbook.common.UI;
 import net.tourbook.database.TourDatabase;
 
+@Entity
 public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    /**
     *
@@ -74,6 +82,12 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
     * Unit for this DataSerie
     */
    private String unit;
+
+   /**
+    * Contains all tours which are associated with this tag
+    */
+   @ManyToMany(mappedBy = "dataSeries", cascade = ALL, fetch = LAZY)
+   private final Set<TourData> tourData  = new HashSet<>();
 
    /**
     * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not

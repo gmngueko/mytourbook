@@ -194,6 +194,8 @@ public class TourDatabase {
    public static final String  TABLE_TOUR_TYPE                            = "TOURTYPE";                                              //$NON-NLS-1$
    public static final String  TABLE_TOUR_WAYPOINT                        = "TOURWAYPOINT";                                          //$NON-NLS-1$
 
+   public static final String  JOINTABLE__TOURDATA__DATA_SERIE            = TABLE_TOUR_DATA + "_" + TABLE_DATA_SERIE;                //$NON-NLS-1$
+
    public static final String  JOINTABLE__TOURDATA__TOURTAG               = TABLE_TOUR_DATA + "_" + TABLE_TOUR_TAG;                  //$NON-NLS-1$
    public static final String  JOINTABLE__TOURTAGCATEGORY_TOURTAG         = TABLE_TOUR_TAG_CATEGORY + "_" + TABLE_TOUR_TAG;          //$NON-NLS-1$
    public static final String  JOINTABLE__TOURTAGCATEGORY_TOURTAGCATEGORY = TABLE_TOUR_TAG_CATEGORY + "_" + TABLE_TOUR_TAG_CATEGORY; //$NON-NLS-1$
@@ -823,6 +825,106 @@ public class TourDatabase {
       checkUnsavedTransientInstances_Tags(tourData);
       checkUnsavedTransientInstances_TourType(tourData);
       checkUnsavedTransientInstances_Sensors(tourData);
+      checkUnsavedTransientInstances_DataSeries(tourData);
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void checkUnsavedTransientInstances_DataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allTourDataDataSeries = tourData.getDataSeries();
+
+      if (allTourDataDataSeries.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<DataSerie> allAppliedDataSeries = new ArrayList<>();
+      final ArrayList<DataSerie> allNewDataSeries = new ArrayList<>();
+
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = new HashMap<>(getAllDataSeries_ByRefId());
+
+      // loop: all DataSeries in the tour -> find DataSeries which are not yet saved
+      for (final DataSerie tourDataSerie : allTourDataDataSeries) {
+
+         final long serieId = tourDataSerie.getSerieId();
+
+         if (serieId != ENTITY_IS_NOT_SAVED) {
+
+            // DataSerie is saved
+
+            allAppliedDataSeries.add(tourDataSerie);
+
+            continue;
+         }
+
+         // dataSerie is not yet saved
+         // 1. dataSerie can still be new
+         // 2. dataSerie is already created but not updated in the not yet saved tour
+
+         final DataSerie dbDataSerie = allDbDataSeries_ByRefId.get(tourDataSerie.getRefId());
+
+         if (dbDataSerie == null) {
+
+            // DataSerie not available -> create a new DataSerie
+
+            allNewDataSeries.add(tourDataSerie);
+
+         } else {
+
+            // use found DataSerie
+
+            allAppliedDataSeries.add(dbDataSerie);
+         }
+      }
+
+      boolean isNewDataSerieSaved = false;
+
+      if (allNewDataSeries.size() > 0) {
+
+         // create new dataSeries
+
+         synchronized (TRANSIENT_LOCK) {
+
+            final HashMap<String, DataSerie> allDbDataSeries_ByRefID_InLock = new HashMap<>(getAllDataSeries_ByRefId());
+
+            for (final DataSerie newDataSerie : allNewDataSeries) {
+
+               // check again, tour DataSerie list could be updated in another thread
+               final DataSerie dbDataSerie = allDbDataSeries_ByRefID_InLock.get(newDataSerie.getRefId());
+
+               if (dbDataSerie == null) {
+
+                  // dataSerie is not yet in db -> create it
+
+                  final DataSerie savedDataSerie = saveEntity(
+                        newDataSerie,
+                        ENTITY_IS_NOT_SAVED,
+                        DataSerie.class);
+
+                  isNewDataSerieSaved = true;
+
+                  allAppliedDataSeries.add(savedDataSerie);
+
+               } else {
+
+                  allAppliedDataSeries.add(dbDataSerie);
+               }
+            }
+
+            if (isNewDataSerieSaved) {
+
+               // force to reload db DataSeries
+
+               clearDataSeries();
+               TourManager.getInstance().clearTourDataCache();
+            }
+         }
+      }
+
+      // replace tags in the tour, either with the old tags and/or with newly created tags
+      allTourDataDataSeries.clear();
+      allTourDataDataSeries.addAll(allAppliedDataSeries);
    }
 
    /**
@@ -1084,6 +1186,28 @@ public class TourDatabase {
 
       // replace tour type in the tour
       tourData.setTourType(appliedType);
+   }
+
+   /**
+    * Removes all dataSeries which are loaded from the database so the next time they will be
+    * reloaded.
+    */
+   public static synchronized void clearDataSeries() {
+
+      if (_allDbDataSeries != null) {
+         _allDbDataSeries.clear();
+         _allDbDataSeries = null;
+      }
+
+      if (_allDataSeries_ByRefId != null) {
+         _allDataSeries_ByRefId.clear();
+         _allDataSeries_ByRefId = null;
+      }
+
+      if (_allDataSeries_ById != null) {
+         _allDataSeries_ById.clear();
+         _allDataSeries_ById = null;
+      }
    }
 
    /**
@@ -1528,6 +1652,7 @@ public class TourDatabase {
             "DELETE FROM " + TABLE_TOUR_WAYPOINT            + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + TABLE_TOUR_REFERENCE           + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + JOINTABLE__TOURDATA__TOURTAG   + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+            "DELETE FROM " + JOINTABLE__TOURDATA__DATA_SERIE + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + TABLE_TOUR_COMPARED            + sqlWhere_TourId,            //$NON-NLS-1$
             "DELETE FROM " + TABLE_TOUR_GEO_PARTS           + sqlWhere_TourId,            //$NON-NLS-1$
          };
@@ -1633,6 +1758,20 @@ public class TourDatabase {
    /**
     * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
     */
+   public static ArrayList<DataSerie> getAllDataSeries() {
+
+      if (_allDataSeries_ById != null) {
+         return _allDbDataSeries;
+      }
+
+      loadAllDataSeries();
+
+      return _allDbDataSeries;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
    public static HashMap<Long, DataSerie> getAllDataSeries_ById() {
 
       if (_allDataSeries_ById != null) {
@@ -1656,20 +1795,6 @@ public class TourDatabase {
       loadAllDataSeries();
 
       return _allDataSeries_ByRefId;
-   }
-
-   /**
-    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
-    */
-   public static ArrayList<DataSerie> getAllDataSeries() {
-
-      if (_allDataSeries_ById != null) {
-         return _allDbDataSeries;
-      }
-
-      loadAllDataSeries();
-
-      return _allDbDataSeries;
    }
 
    /**
@@ -3773,6 +3898,31 @@ public class TourDatabase {
             + "   unit             VARCHAR(" + DataSerie.DB_LENGTH_UNIT + ")         " + NL //$NON-NLS-1$ //$NON-NLS-2$
 
             + ")"); //$NON-NLS-1$
+
+      /**
+       * Create table: TOURDATA_DATA_SERIE
+       */
+      exec(stmt,
+
+            "CREATE TABLE " + JOINTABLE__TOURDATA__DATA_SERIE + "   (                        " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + "   " + KEY_DATA_SERIE + "      BIGINT NOT NULL,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   " + KEY_TOUR + "     BIGINT NOT NULL                              " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + ")"); //$NON-NLS-1$
+
+      // Add Constraint
+      final String fkName = "fk_" + JOINTABLE__TOURDATA__DATA_SERIE + "_" + KEY_TOUR; //         //$NON-NLS-1$ //$NON-NLS-2$
+
+      exec(stmt,
+
+            "ALTER TABLE " + JOINTABLE__TOURDATA__DATA_SERIE + "                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   ADD CONSTRAINT " + fkName + "                                     " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   FOREIGN KEY (" + KEY_TOUR + ")                                    " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   REFERENCES " + TABLE_TOUR_DATA + " (" + ENTITY_ID_TOUR + ")       "); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+      // Create index DATASERIE_SerieID
+      SQL.CreateIndex(stmt, JOINTABLE__TOURDATA__DATA_SERIE, KEY_DATA_SERIE);
    }
 
    /**

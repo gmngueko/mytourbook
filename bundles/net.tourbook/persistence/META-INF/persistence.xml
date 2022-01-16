@@ -31,6 +31,8 @@
 
       <class>net.tourbook.data.TourType</class>
       <class>net.tourbook.data.TourWayPoint</class>
+      
+      <class>net.tourbook.data.DataSerie</class>
 
       <properties>
          <property name="hibernate.connection.url" value="jdbc:derby://localhost:1527/tourbook;create=true"/>

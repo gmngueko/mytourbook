@@ -893,6 +893,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
    private Set<DeviceSensorValue>     deviceSensorValues                  = new HashSet<>();
 
+   /**
+    * DataSeries
+    */
+   @ManyToMany(fetch = EAGER)
+   @JoinTable(inverseJoinColumns = @JoinColumn(name = "DATASERIE_SerieID", referencedColumnName = "SerieID"))
+   private Set<DataSerie>                dataSeries                            = new HashSet<>();
+
 //   /**
 //    * SharedMarker
 //    */
@@ -2284,6 +2291,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
       tourDataCopy.setTourTags(new HashSet<>(this.getTourTags()));
       tourDataCopy.setTourType(this.getTourType());
+
+      tourDataCopy.setDataSeries(new HashSet<>(this.getDataSeries()));
 
       return tourDataCopy;
    }
@@ -7835,6 +7844,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    }
 
    /**
+    * @return Returns the dataseries {@link #dataSeries} which are defined for this tour
+    */
+   public Set<DataSerie> getDataSeries() {
+      return dataSeries;
+   }
+
+   /**
     * @return Returns {@link ZonedDateTime} when the tour was created or <code>null</code> when
     *         date/time is not available
     */
@@ -10556,6 +10572,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          _customTracks = new HashMap<>();
       }
       _customTracks.put(key, newSerie);
+   }
+
+   public void setDataSeries(final Set<DataSerie> dataSeries) {
+      this.dataSeries = dataSeries;
    }
 
    public void setDateTimeCreated(final long dateTimeCreated) {
