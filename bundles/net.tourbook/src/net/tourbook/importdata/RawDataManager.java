@@ -59,6 +59,7 @@ import net.tourbook.common.util.ITourViewer3;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.widgets.ComboEnumEntry;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourPerson;
@@ -232,6 +233,12 @@ public class RawDataManager {
    private static final ConcurrentHashMap<String, TourTag>      _allImported_NewTourTags                 = new ConcurrentHashMap<>();
 
    /**
+    * Contains {@link DataSerie}'s which are imported and could be saved or not, key is the
+    * DataSerie RefId
+    */
+   private static final ConcurrentHashMap<String, DataSerie>    _allImported_NewDataSeries               = new ConcurrentHashMap<>();
+
+   /**
     * Contains {@link TourTag}'s which are imported and could be saved or not, key is the tour tag
     * name + contained id in notes, all is in UPPERCASE
     */
@@ -359,6 +366,62 @@ public class RawDataManager {
    }
 
    private RawDataManager() {}
+
+   /**
+    * SYNCHRONIZED: Add new tour tags and save them in the database
+    *
+    * @param allRequestedDataSeries
+    *           Contains DataSeries which should be created
+    * @param allNewDataseries
+    * @param allOldDataSeries
+    */
+   private static synchronized void createDataSeries(final HashSet<DataSerie> allRequestedDataSeries,
+                                                   final ArrayList<DataSerie> allNewDataseries,
+                                                   final ArrayList<DataSerie> allOldDataSeries) {
+
+      /*
+       * Check dataSeries again if they are still unavailable
+       */
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      final HashSet<DataSerie> allDataSeriesRefId_NotAvailable = new HashSet<>();
+
+      for (final DataSerie dataSerieRefId : allRequestedDataSeries) {
+
+         final String dataSerieRefIdKey = dataSerieRefId.getRefId();
+
+         DataSerie dataSerie = allDbDataSeries_ByRefId.get(dataSerieRefIdKey);
+
+         if (dataSerie == null) {
+
+            dataSerie = _allImported_NewDataSeries.get(dataSerieRefIdKey);
+
+            if (dataSerie == null) {
+
+               allDataSeriesRefId_NotAvailable.add(dataSerieRefId);
+
+            } else {
+
+               allOldDataSeries.add(dataSerie);
+            }
+
+         } else {
+
+            allOldDataSeries.add(dataSerie);
+         }
+      }
+
+      /*
+       * Create dataSeries
+       */
+      for (final DataSerie dataSerie : allDataSeriesRefId_NotAvailable) {
+
+         final DataSerie newdataSerie = dataSerie.cloneNoSerieId();
+
+         allNewDataseries.add(newdataSerie);
+
+         _allImported_NewDataSeries.put(dataSerie.getRefId(), newdataSerie);
+      }
+   }
 
    private static void createDeviceLists() {
 
@@ -916,6 +979,69 @@ public class RawDataManager {
       } catch (final IOException e) {
          e.printStackTrace();
       }
+   }
+
+   /**
+    * Sets {@link DataSerie} 's into {@link TourData} and create new tour DataSeries when not available by
+    * comparing the DataSerie refId
+    *
+    * @param tourData
+    * @param allRequestedDataSeries
+    * @return Returns <code>true</code> when new tour tags were created
+    */
+   public static boolean setDataSeries(final TourData tourData, final Set<DataSerie> allRequestedDataSeries) {
+
+      final HashMap<String, DataSerie> allDataSeries_Available = new HashMap<>();
+      final HashSet<DataSerie> allDataSeries_NotAvailable = new HashSet<>();
+
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = TourDatabase.getAllDataSeries_ByRefId();
+
+      for (final DataSerie dataSerie : allRequestedDataSeries) {
+
+         final String refIdKey = dataSerie.getRefId();
+
+         DataSerie existingDataSerie = allDbDataSeries_ByRefId.get(refIdKey);
+
+         if (existingDataSerie == null) {
+
+            existingDataSerie = _allImported_NewDataSeries.get(refIdKey);
+
+            if (existingDataSerie == null) {
+
+               allDataSeries_NotAvailable.add(dataSerie);
+
+            } else {
+
+               allDataSeries_Available.put(refIdKey, existingDataSerie);
+            }
+
+         } else {
+
+            allDataSeries_Available.put(refIdKey, existingDataSerie);
+         }
+      }
+
+      final ArrayList<DataSerie> allNewDataSeries = new ArrayList<>();
+      final ArrayList<DataSerie> allOldDataSeries = new ArrayList<>();
+
+      if (allDataSeries_NotAvailable.size() > 0) {
+
+         // some DataSeries are not available -> create them
+
+         createDataSeries(allDataSeries_NotAvailable, allNewDataSeries, allOldDataSeries);
+      }
+
+      /*
+       * Set tags into tour data
+       */
+      final Set<DataSerie> tourData_DataSeries = tourData.getDataSeries();
+
+      tourData_DataSeries.clear();
+      tourData_DataSeries.addAll(allDataSeries_Available.values());
+      tourData_DataSeries.addAll(allOldDataSeries);
+      tourData_DataSeries.addAll(allNewDataSeries);
+
+      return allNewDataSeries.size() > 0;
    }
 
    public static void setIsDeleteValuesActive(final boolean isDeleteValuesActive) {
@@ -3553,6 +3679,8 @@ public class RawDataManager {
       _allImported_NewTourTypes.clear();
 
       _allImported_NewDeviceSensors.clear();
+
+      _allImported_NewDataSeries.clear();
    }
 
    public void removeTours(final TourData[] removedTours) {

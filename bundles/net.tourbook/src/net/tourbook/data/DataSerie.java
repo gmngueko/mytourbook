@@ -120,6 +120,23 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
       return newDataSerie;
    }
 
+   public DataSerie cloneNoId() {
+      final DataSerie newDataSerie = new DataSerie();
+      newDataSerie.refId = refId;
+      newDataSerie.name = name;
+      newDataSerie.unit = unit;
+      return newDataSerie;
+   }
+
+   public DataSerie cloneNoSerieId() {
+      final DataSerie newDataSerie = new DataSerie();
+      newDataSerie.refId = refId;
+      newDataSerie.name = name;
+      newDataSerie.unit = unit;
+      newDataSerie._createId = _createCounter.incrementAndGet();
+      return newDataSerie;
+   }
+
    public int compareTo(final DataSerie dataSerieToCompare) {
       return this.getName().compareTo(dataSerieToCompare.getName());
    }
