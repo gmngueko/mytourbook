@@ -106,6 +106,14 @@ public class ImportState_Process {
     * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all is
     * imported.
     */
+   private AtomicBoolean                           isCreated_NewDataSerie        = new AtomicBoolean();
+
+   /**
+    * OUT state:
+    * <p>
+    * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all is
+    * imported.
+    */
    private AtomicBoolean                           isCreated_NewTourType         = new AtomicBoolean();
 
    /**
@@ -133,6 +141,18 @@ public class ImportState_Process {
 
    public long getImportId() {
       return importId;
+   }
+
+   /**
+    * OUT state:
+    * <p>
+    * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all
+    * isimported.
+    *
+    * @return
+    */
+   public AtomicBoolean isCreated_NewDataSerie() {
+      return isCreated_NewDataSerie;
    }
 
    /**
@@ -212,6 +232,11 @@ public class ImportState_Process {
       if (isCreated_NewTag.get()) {
 
          TourManager.fireEvent(TourEventId.TAG_STRUCTURE_CHANGED);
+      }
+
+      if (isCreated_NewDataSerie.get()) {
+
+         TourManager.fireEvent(TourEventId.DATA_SERIE_IS_MODIFIED);
       }
    }
 
@@ -310,6 +335,10 @@ public class ImportState_Process {
 
       if (importState_Process.isCreated_NewTag().get()) {
          isCreated_NewTag.set(true);
+      }
+
+      if (importState_Process.isCreated_NewDataSerie().get()) {
+         isCreated_NewDataSerie.set(true);
       }
 
       if (importState_Process.isCreated_NewTourType.get()) {

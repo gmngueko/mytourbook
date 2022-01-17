@@ -197,6 +197,10 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
       return serieId;
    }
 
+   public Set<TourData> getTourData() {
+      return tourData;
+   }
+
    public String getUnit() {
       if (unit == null) {
          return UI.EMPTY_STRING;

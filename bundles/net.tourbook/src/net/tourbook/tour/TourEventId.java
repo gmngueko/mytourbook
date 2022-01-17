@@ -85,6 +85,11 @@ public enum TourEventId {
    TAG_STRUCTURE_CHANGED,
 
    /**
+    * dataserie modified, this includes add/remove of dataseries
+    */
+   DATA_SERIE_IS_MODIFIED,
+
+   /**
     * Sliders in the tour chart moved. Property data contains {@link SelectionChartInfo} or
     * {@link SelectionChartXSliderPosition} with the position of the sliders.
     */

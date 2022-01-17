@@ -586,6 +586,14 @@
                label       ="%View_Name_TourMarkerAll"
                mnemonic    ="%View_Name_TourMarkerAll_Mnemonic"/>
 
+            <!-- CustomTracksAll -->
+            <command
+	           commandId   ="command.net.tourbook.views.AllCustomTracksView"
+	           icon        ="icons/graph-custom-tracks.png"
+	           label       ="%View_Name_CustomTracksAll"
+               mnemonic    ="%View_Name_CustomTracksAll_Mnemonic"/>
+
+
             <separator
                name        ="net.tourbook.separator.Sensor"
                visible     ="true"/>
@@ -1326,6 +1334,11 @@
             name="%View_Name_CustomTracks"/>
 
       <command
+            defaultHandler="net.tourbook.ui.views.tourCustomTracks.ActionHandler_OpenView_AllCustomTracks"
+            id="command.net.tourbook.views.AllCustomTracksView"
+            name="%View_Name_CustomTracksAll"/>
+
+      <command
          id             ="command.net.tourbook.views.HeartRateVariabilityChart"
          name           ="%View_Name_HeartRateVariabilityChart"
          defaultHandler ="net.tourbook.ui.views.heartRateVariability.ActionHandler_OpenView_HeartRateVariability"
@@ -1673,6 +1686,13 @@
             icon        ="icons/tour-marker-all.png"
             name        ="%View_Name_TourMarkerAll"/>
 
+         <view
+               category="net.tourbook.category.Tour_Directory"
+               id="net.tourbook.views.AllCustomTracksView"
+               class="net.tourbook.ui.views.tourCustomTracks.AllCustomTracksView"
+               icon="icons/graph-custom-tracks.png"
+               name="%View_Name_CustomTracksAll"/>
+
 
       <!-- 2. Tour Properties -->
       
@@ -1707,6 +1727,13 @@
              class      ="net.tourbook.ui.views.tourMarker.TourMarkerView"
              icon       ="icons/tour-marker.png"
              name       ="%view_name_Marker"/>
+
+         <view
+               category="net.tourbook.category.Tour_Properties"
+               class="net.tourbook.ui.views.tourCustomTracks.TourCustomTracksView"
+               icon="icons/graph-custom-tracks.png"
+               id="net.tourbook.views.TourCustomTracksView"
+               name="%View_Name_CustomTracks"/>
 
          <view
                category="net.tourbook.category.Tour_Properties"

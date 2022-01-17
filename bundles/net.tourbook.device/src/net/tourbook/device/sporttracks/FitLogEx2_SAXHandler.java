@@ -23,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +42,8 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
-import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.CustomTrackValue;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
@@ -130,6 +131,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_PT_VO                        = "vo";                                  //$NON-NLS-1$
 
    private static final String                  ATTRIB_ID                           = "Id";                                  //$NON-NLS-1$
+   private static final String                  ATTRIB_REFID                        = "RefId";                               //$NON-NLS-1$
    private static final String                  ATTRIB_AVERAGE_LP_WATTS             = "AvgLeftRightBalance";                 //$NON-NLS-1$
 
    private static final String                  ATTRIB_PATHNAME                     = "PathName";                            //$NON-NLS-1$
@@ -232,6 +234,11 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     */
    private final Map<String, TagWithNotes> _allTagsWithNotes = new HashMap<>();
 
+   /**
+    * Key is the attribute RefId (UUID) of ST3
+    */
+   private final Map<String, DataSerie>    _allDataSeries    = new HashMap<>();
+
    private class Activity {
 
       private List<TimeData>  timeSlices         = new ArrayList<>();
@@ -302,6 +309,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private class CustomST3TrackDefinition {
       private String _Name;
       private String _Id;
+      private String _RefId;
       private String _Unit;
 
       public String getId() {
@@ -310,6 +318,10 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       public String getName() {
          return _Name;
+      }
+
+      public String getRefId() {
+         return _RefId;
       }
 
       public String getUnit() {
@@ -322,6 +334,10 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       public void setName(final String name) {
          _Name = name;
+      }
+
+      public void setRefId(final String refid) {
+         _RefId = refid;
       }
 
       public void setUnit(final String unit) {
@@ -682,13 +698,22 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             final String idS = customST3TrackDefinition.getId();
             final String nameS = customST3TrackDefinition.getName();
             final String unitS = customST3TrackDefinition.getUnit();
+            final String refidS = customST3TrackDefinition.getRefId();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
                   .compareTo(NAME_VERTICALRATIO) == 0) {} else {
-               final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setId(idS);
-               customTrackDefinition.setName(nameS);
-               customTrackDefinition.setUnit(unitS);
-               tourData.customTracksDefinition.put(idS, customTrackDefinition);
+//               final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+//               customTrackDefinition.setId(idS);
+//               customTrackDefinition.setName(nameS);
+//               customTrackDefinition.setUnit(unitS);
+//               tourData.customTracksDefinition.put(idS, customTrackDefinition);
+               if (!_allDataSeries.containsKey(refidS)) {
+                  final DataSerie dataSerie = new DataSerie();
+                  dataSerie.setName(nameS);
+                  dataSerie.setRefId(refidS);
+                  dataSerie.setUnit(unitS);
+                  _allDataSeries.put(refidS, dataSerie);
+               }
+
             }
          }
          //custom tracks end
@@ -868,6 +893,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          finalizeTour_10_SetTourType(tourData);
          finalizeTour_20_SetTags(tourData);
+         finalizeTour_25_SetDataSeries(tourData);
 //         }
 
          finalizeTour_30_CreateMarkers(tourData);
@@ -913,6 +939,21 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       if (isNewTourTag) {
          _importState_Process.isCreated_NewTag().set(true);
+      }
+   }
+
+   /**
+    * Set dataSeries from all CustomTracks Definition by using it's RefId'ss
+    *
+    * @param tourData
+    */
+   private void finalizeTour_25_SetDataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allDataSeriesSet = new HashSet<>(_allDataSeries.values());
+      final boolean isNewDataSerie = RawDataManager.setDataSeries(tourData, allDataSeriesSet);
+
+      if (isNewDataSerie) {
+         _importState_Process.isCreated_NewDataSerie().set(true);
       }
    }
 
@@ -1258,6 +1299,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          final String nameT = attributes.getValue(ATTRIB_NAME);
          final String idT = attributes.getValue(ATTRIB_ID);
+         final String refidT = attributes.getValue(ATTRIB_REFID);
          final String unitT = attributes.getValue(ATTRIB_UNIT);
 
          if (!StringUtils.isNullOrEmpty(nameT) && !StringUtils.isNullOrEmpty(idT)) {
@@ -1266,6 +1308,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             custT.setId(idT);
             custT.setName(nameT);
             custT.setUnit(unitT);
+            custT.setRefId(refidT);
 
             _currentActivity.customTrackDefinitions.add(custT);
          }
@@ -1372,6 +1415,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          final ArrayList<CustomTrackValue> customTracksT = new ArrayList<>();
          for (final CustomST3TrackDefinition element : _currentActivity.customTrackDefinitions) {
             final String idS = element.getId();
+            final String refidS = element.getRefId();
             final String nameS = element.getName();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {
                final float value = Util.parseFloat(attributes, idS);
@@ -1390,7 +1434,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                }
             } else {
                final CustomTrackValue item = new CustomTrackValue();
-               item.id = idS;
+               item.id = refidS;//global refenrence id to DataSerie now !!!
                item.value = Util.parseFloat(attributes, idS);
                customTracksT.add(item);
             }
