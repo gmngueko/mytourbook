@@ -707,10 +707,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 //               customTrackDefinition.setUnit(unitS);
 //               tourData.customTracksDefinition.put(idS, customTrackDefinition);
                if (!_allDataSeries.containsKey(refidS)) {
-                  final DataSerie dataSerie = new DataSerie();
-                  dataSerie.setName(nameS);
-                  dataSerie.setRefId(refidS);
-                  dataSerie.setUnit(unitS);
+                  final DataSerie dataSerie = new DataSerie(nameS, refidS, unitS);
                   _allDataSeries.put(refidS, dataSerie);
                }
 
@@ -1011,7 +1008,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          }
 
          final TourMarker tourMarker = createTourMarker(tourData,
-               Integer.toString(lapCounter),
+               "(Lap)" + Integer.toString(lapCounter), //$NON-NLS-1$
                lapRelativeTime,
                serieIndex);
 

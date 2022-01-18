@@ -73,6 +73,7 @@ public abstract class TableColumnFactory {
    public static final TableColumnFactory BODY_WEIGHT;
    public static final String             BODY_WEIGHT_ID                                     = "BODY_WEIGHT";                                     //$NON-NLS-1$
 
+   public static final TableColumnFactory CUSTOM_TRACKS_COUNT_TOURS;
    public static final TableColumnFactory CUSTOM_TRACKS_ID;
    public static final TableColumnFactory CUSTOM_TRACKS_LAP_ISACTIVE;
    public static final TableColumnFactory CUSTOM_TRACKS_NAME;
@@ -4530,6 +4531,30 @@ public abstract class TableColumnFactory {
             return colDef;
          }
       };
+
+      CUSTOM_TRACKS_COUNT_TOURS = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_COUNT_TOURS", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Tours Count"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Tours Count"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Number of Tours containing this DataSerie/custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
 
       CUSTOM_TRACKS_ID = new TableColumnFactory() {
 

@@ -101,6 +101,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.PlatformUI;
+import org.hibernate.Hibernate;
 
 public class TourDatabase {
 
@@ -1797,6 +1798,17 @@ public class TourDatabase {
       return _allDataSeries_ByRefId;
    }
 
+   public static ArrayList<DataSerie> getAllDataSeriesWithTourData() {
+
+      if (_allDataSeries_ById != null) {
+         return _allDbDataSeries;
+      }
+
+      loadAllDataSeriesWithTourData();
+
+      return _allDbDataSeries;
+   }
+
    /**
     * @return Returns a map with all {@link DeviceSensor} which are stored in the database, key is
     *         sensor ID
@@ -2957,7 +2969,47 @@ public class TourDatabase {
             allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
 
             for (final DataSerie dataSerie : allDataSeries) {
+               //Hibernate.initialize(dataSerie.getTourData());
+               allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
+               allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
+            }
 
+            em.close();
+         }
+
+         _allDbDataSeries = allDataSeries;
+         _allDataSeries_ById = allDataSeries_ById;
+         _allDataSeries_ByRefId = allDataSeries_ByRefId;
+      }
+   }
+
+   @SuppressWarnings("unchecked")
+   private static void loadAllDataSeriesWithTourData() {
+
+      synchronized (DB_LOCK) {
+
+         // check again, field must be volatile to work correctly
+         if (_allDbDataSeries != null) {
+            return;
+         }
+
+         ArrayList<DataSerie> allDataSeries = new ArrayList<>();
+         final HashMap<Long, DataSerie> allDataSeries_ById = new HashMap<>();
+         final HashMap<String, DataSerie> allDataSeries_ByRefId = new HashMap<>();
+
+         final EntityManager em = TourDatabase.getInstance().getEntityManager();
+         if (em != null) {
+
+            final Query emQuery = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT DataSerie" //              //$NON-NLS-1$
+                  + " FROM DataSerie AS DataSerie" //   //$NON-NLS-1$
+                  + " ORDER  BY DataSerie.name"); //   //$NON-NLS-1$
+
+            allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
+
+            for (final DataSerie dataSerie : allDataSeries) {
+               Hibernate.initialize(dataSerie.getTourData());
                allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
                allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
             }

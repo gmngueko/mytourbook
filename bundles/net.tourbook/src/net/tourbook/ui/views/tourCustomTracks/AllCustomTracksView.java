@@ -15,6 +15,7 @@
  *******************************************************************************/
 package net.tourbook.ui.views.tourCustomTracks;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Set;
 
@@ -31,22 +32,14 @@ import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.tour.ITourEventListener;
-import net.tourbook.tour.SelectionDeletedTours;
-import net.tourbook.tour.SelectionTourData;
-import net.tourbook.tour.SelectionTourId;
-import net.tourbook.tour.SelectionTourIds;
+import net.tourbook.tour.TourEvent;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
 import net.tourbook.ui.action.ActionEditCustomTracks;
-import net.tourbook.ui.views.tourCatalog.SelectionTourCatalogView;
-import net.tourbook.ui.views.tourCatalog.TVICatalogComparedTour;
-import net.tourbook.ui.views.tourCatalog.TVICatalogRefTourItem;
-import net.tourbook.ui.views.tourCatalog.TVICompareResultComparedTour;
 
 import org.eclipse.e4.ui.di.PersistState;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -56,22 +49,20 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.layout.GridData;
@@ -81,51 +72,58 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbenchActionConstants;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
-import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.ViewPart;
 
 public class AllCustomTracksView extends ViewPart implements ITourProvider, ITourViewer {
    public static final String     ID                = "net.tourbook.views.AllCustomTracksView"; //$NON-NLS-1$
+   //
+   private static final String COLUMN_REFID     = "ReferenceId";                            //$NON-NLS-1$
+   private static final String COLUMN_NAME      = "Name";                                   //$NON-NLS-1$
+   private static final String COLUMN_UNIT      = "Unit";                                   //$NON-NLS-1$
+   private static final String COLUMN_SIZE      = "NumberOfTours";                          //$NON-NLS-1$
 
+   //
    private final IPreferenceStore  _prefStore        = TourbookPlugin.getPrefStore();
    private final IPreferenceStore  _prefStore_Common = CommonActivator.getPrefStore();
    private final IDialogSettings   _state            = TourbookPlugin.getState(ID);
 
-   //private TourData                _tourData;
+   //
 
    private PostSelectionProvider   _postSelectionProvider;
    private ISelectionListener      _postSelectionListener;
    private IPropertyChangeListener _prefChangeListener;
    private IPropertyChangeListener _prefChangeListener_Common;
-   private ITourEventListener      _tourPropertyListener;
+   private ITourEventListener      _tourEventListener;
    private IPartListener2          _partListener;
-
+   //
+   private MenuManager             _viewerMenuManager;
+   private IContextMenuProvider    _tableViewerContextMenuProvider = new TableContextMenuProvider();
+   private CustomTracksComparator  _ctComparator                   = new CustomTracksComparator();
+   //UI controls
    private PixelConverter          _pc;
+   private Menu                   _tableContextMenu;
+   private TableViewer             _ctViewer;
+   private ColumnManager           _columnManager;
+   private Composite               _viewerContainer;
+   private Composite               _uiParent;
 
    private ActionEditCustomTracks _action_EditCustomTracksData;
 
-   /*
-    * UI controls
-    */
-   private PageBook    _pageBook;
+   private ArrayList<DataSerie>    _allDataSeries = new ArrayList<>();
+   private boolean                 _isInUpdate;
 
-   private TableViewer _wpViewer;
+   private final NumberFormat      _nf1                            = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf3                            = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nfLatLon                       = NumberFormat.getNumberInstance();
+   {
+      _nf1.setMinimumFractionDigits(1);
+      _nf1.setMaximumFractionDigits(1);
+      _nf3.setMinimumFractionDigits(3);
+      _nf3.setMaximumFractionDigits(3);
+   }
 
-   private Composite   _pageNoData;
-   private Composite   _viewerContainer;
-
-   /*
-    * none UI
-    */
-   private ColumnManager _columnManager;
-   private MenuManager   _viewerMenuManager;
-   private Menu          _tableContextMenu;
-   private IContextMenuProvider _tableViewerContextMenuProvider = new TableContextMenuProvider();
-
-   private static class CustomTracksComparator extends ViewerComparator {
+   private class CustomTracksComparator extends ViewerComparator {
 
       @Override
       public int compare(final Viewer viewer, final Object e1, final Object e2) {
@@ -156,7 +154,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       @Override
       public Object[] getElements(final Object inputElement) {
 
-         return TourDatabase.getAllDataSeries().toArray();
+         return _allDataSeries.toArray();
 
       }
 
@@ -223,43 +221,43 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
          @Override
          public void partVisible(final IWorkbenchPartReference partRef) {}
       };
+
       getViewSite().getPage().addPartListener(_partListener);
    }
 
    private void addPrefListener() {
 
-      _prefChangeListener = new IPropertyChangeListener() {
-         @Override
-         public void propertyChange(final PropertyChangeEvent event) {
+      _prefChangeListener = propertyChangeEvent -> {
 
-            final String property = event.getProperty();
+         final String property = propertyChangeEvent.getProperty();
 
-            if (property.equals(ITourbookPreferences.VIEW_LAYOUT_CHANGED)) {
+         if (property.equals(ITourbookPreferences.VIEW_LAYOUT_CHANGED)) {
 
-               _wpViewer.getTable().setLinesVisible(_prefStore.getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
-               _wpViewer.refresh();
-            }
+            _ctViewer.getTable().setLinesVisible(_prefStore.getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
+
+            _ctViewer.refresh();
+
+            /*
+             * the tree must be redrawn because the styled text does not show with the new color
+             */
+            _ctViewer.getTable().redraw();
          }
       };
 
-      _prefChangeListener_Common = new IPropertyChangeListener() {
-         @Override
-         public void propertyChange(final PropertyChangeEvent event) {
+      _prefChangeListener_Common = propertyChangeEvent -> {
 
-            final String property = event.getProperty();
+         final String property = propertyChangeEvent.getProperty();
 
-            if (property.equals(ICommonPreferences.MEASUREMENT_SYSTEM)) {
+         if (property.equals(ICommonPreferences.MEASUREMENT_SYSTEM)) {
 
-               // measurement system has changed
+            // measurement system has changed
 
-               //updateInternalUnitValues();
+            _columnManager.saveState(_state);
+            _columnManager.clearColumns();
 
-               _columnManager.saveState(_state);
-               _columnManager.clearColumns();
-               defineAllColumns(_viewerContainer);
+            defineAllColumns();
 
-               _wpViewer = (TableViewer) recreateViewer(_wpViewer);
-            }
+            _ctViewer = (TableViewer) recreateViewer(_ctViewer);
          }
       };
 
@@ -267,59 +265,39 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       _prefStore_Common.addPropertyChangeListener(_prefChangeListener_Common);
    }
 
-   /**
-    * listen for events when a tour is selected
-    */
-   private void addSelectionListener() {
-
-      _postSelectionListener = new ISelectionListener() {
-         @Override
-         public void selectionChanged(final IWorkbenchPart part, final ISelection selection) {
-            if (part == AllCustomTracksView.this) {
-               return;
-            }
-            onSelectionChanged(selection);
-         }
-      };
-      getViewSite().getPage().addPostSelectionListener(_postSelectionListener);
-   }
-
    private void addTourEventListener() {
 
-      _tourPropertyListener = new ITourEventListener() {
-         @Override
-         public void tourChanged(final IWorkbenchPart part, final TourEventId eventId, final Object eventData) {
+      _tourEventListener = (workbenchPart, tourEventId, eventData) -> {
 
-            if ((part == AllCustomTracksView.this)) {
-               return;
+         if (workbenchPart == AllCustomTracksView.this) {
+            return;
+         }
+
+         if (_isInUpdate) {
+            return;
+         }
+
+         if ((tourEventId == TourEventId.TOUR_CHANGED) && (eventData instanceof TourEvent)) {
+
+            final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
+            if (modifiedTours != null) {
+
+               // update modified tour
+
+               reloadViewer();
             }
-            if (eventId == TourEventId.TOUR_SELECTION && eventData instanceof ISelection) {
 
-               onSelectionChanged((ISelection) eventData);
+         } else if (tourEventId == TourEventId.MARKER_SELECTION) {
+            //TODO
+            //onTourEvent_TourMarker(eventData);
 
-            } else {
-               if (eventId == TourEventId.TOUR_CHANGED || eventId == TourEventId.UPDATE_UI) {
+         } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
 
-                  // check if a tour must be updated
-
-               } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
-
-                  clearView();
-               }
-            }
+            reloadViewer();
          }
       };
 
-      TourManager.getInstance().addTourEventListener(_tourPropertyListener);
-   }
-
-   private void clearView() {
-
-      _wpViewer.setInput(new Object[0]);
-
-      _postSelectionProvider.clearSelection();
-
-      _pageBook.showPage(_pageNoData);
+      TourManager.getInstance().addTourEventListener(_tourEventListener);
    }
 
    private void createActions() {
@@ -327,58 +305,57 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    }
 
    private void createMenuManager() {
+
       _viewerMenuManager = new MenuManager("#PopupMenu"); //$NON-NLS-1$
       _viewerMenuManager.setRemoveAllWhenShown(true);
-      _viewerMenuManager.addMenuListener(new IMenuListener() {
-         @Override
-         public void menuAboutToShow(final IMenuManager manager) {
-            fillContextMenu(manager);
-         }
-      });
+      _viewerMenuManager.addMenuListener(this::fillContextMenu);
    }
 
    @Override
    public void createPartControl(final Composite parent) {
 
-      _pc = new PixelConverter(parent);
+      _uiParent = parent;
 
-      //updateInternalUnitValues();
+      initUI(parent);
       createMenuManager();
 
+      restoreState_BeforeUI();
+
+      // define all columns for the viewer
       _columnManager = new ColumnManager(this, _state);
-      _columnManager.setIsCategoryAvailable(true);
-      defineAllColumns(parent);
+      defineAllColumns();
 
       createUI(parent);
 
-      createActions();
-      fillToolbar();
-
-//    _actionEditTourWaypoints = new ActionOpenMarkerDialog(this, true);
-
-      addSelectionListener();
       addTourEventListener();
       addPrefListener();
       addPartListener();
 
-      // this part is a selection provider
+      // set selection provider
       getSite().setSelectionProvider(_postSelectionProvider = new PostSelectionProvider(ID));
 
-      // show default page
-      _pageBook.showPage(_pageNoData);
+      createActions();
+      fillToolbar();
 
-      // show custom tracks from last selection
-      onSelectionChanged(getSite().getWorkbenchWindow().getSelectionService().getSelection());
+      // load marker and display them
+//      parent.getDisplay().asyncExec(new Runnable() {
+//         public void run() {
+//
+//         }
+//      });
+      BusyIndicator.showWhile(parent.getDisplay(), () -> {
 
+         loadAllDataSeries();
+
+         updateUI_SetViewerInput();
+
+         restoreState_WithUI();
+      });
    }
 
    private void createUI(final Composite parent) {
 
-      _pageBook = new PageBook(parent, SWT.NONE);
-
-      _pageNoData = net.tourbook.common.UI.createUI_PageNoData(_pageBook, "No DataSeries Available"); //$NON-NLS-1$
-
-      _viewerContainer = new Composite(_pageBook, SWT.NONE);
+      _viewerContainer = new Composite(parent, SWT.NONE);
       GridLayoutFactory.fillDefaults().applyTo(_viewerContainer);
       {
          createUI_10_CustomTracksViewer(_viewerContainer);
@@ -397,11 +374,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
          @Override
          public void keyPressed(final KeyEvent e) {
 
-            //if (isTourSavedInDb() == false) {
-            //   return;
-            //}
-
-            final IStructuredSelection selection = (IStructuredSelection) _wpViewer.getSelection();
+            final IStructuredSelection selection = (IStructuredSelection) _ctViewer.getSelection();
             if ((selection.size() > 0) && (e.keyCode == SWT.CR)) {
 
             }
@@ -411,23 +384,14 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       /*
        * create table viewer
        */
-      _wpViewer = new TableViewer(table);
-      _columnManager.createColumns(_wpViewer);
+      _ctViewer = new TableViewer(table);
+      _columnManager.createColumns(_ctViewer);
+      _ctViewer.setUseHashlookup(true);
 
-      _wpViewer.setContentProvider(new CustomTracksViewerContentProvider());
-      _wpViewer.setComparator(new CustomTracksComparator());
+      _ctViewer.setContentProvider(new CustomTracksViewerContentProvider());
+      _ctViewer.setComparator(new CustomTracksComparator());
 
-      _wpViewer.addSelectionChangedListener(new ISelectionChangedListener() {
-         @Override
-         public void selectionChanged(final SelectionChangedEvent event) {
-            final StructuredSelection selection = (StructuredSelection) event.getSelection();
-            if (selection != null) {
-               fireWaypointPosition(selection);
-            }
-         }
-      });
-
-      _wpViewer.addDoubleClickListener(new IDoubleClickListener() {
+      _ctViewer.addDoubleClickListener(new IDoubleClickListener() {
          @Override
          public void doubleClick(final DoubleClickEvent event) {
 
@@ -435,7 +399,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             //   return;
             //}
             // edit selected custom tracks
-            final IStructuredSelection selection = (IStructuredSelection) _wpViewer.getSelection();
+            final IStructuredSelection selection = (IStructuredSelection) _ctViewer.getSelection();
             if (selection.size() > 0) {
                //TODO set selected custom track's in dialog
                _action_EditCustomTracksData.run();
@@ -454,24 +418,24 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
       _tableContextMenu = createUI_22_CreateViewerContextMenu();
 
-      final Table table = (Table) _wpViewer.getControl();
+      final Table table = (Table) _ctViewer.getControl();
 
       _columnManager.createHeaderContextMenu(table, _tableViewerContextMenuProvider);
    }
 
    private Menu createUI_22_CreateViewerContextMenu() {
 
-      final Table table = (Table) _wpViewer.getControl();
+      final Table table = (Table) _ctViewer.getControl();
       final Menu tableContextMenu = _viewerMenuManager.createContextMenu(table);
 
       return tableContextMenu;
    }
 
-   private void defineAllColumns(final Composite parent) {
+   private void defineAllColumns() {
 
       defineColumn_Name();
       defineColumn_Unit();
-      defineColumn_Size();
+      defineColumn_Tours_Count();
       defineColumn_Id();
    }
 
@@ -488,10 +452,11 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getRefId());
+            //Hibernate.initialize(ct.getTourData());
             final Set<TourData> listofTours = ct.getTourData();
             final int ctSize = (listofTours == null ? 0 : listofTours.size());
             if (ctSize == 0) {
-               cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
          }
       });
@@ -510,10 +475,11 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getName());
+            //Hibernate.initialize(ct.getTourData());
             final Set<TourData> listofTours = ct.getTourData();
             final int ctSize = (listofTours == null ? 0 : listofTours.size());
             if (ctSize == 0) {
-               cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
 
          }
@@ -523,9 +489,9 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    /**
     * column: id
     */
-   private void defineColumn_Size() {
+   private void defineColumn_Tours_Count() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_SIZE.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_COUNT_TOURS.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
@@ -533,10 +499,11 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
             final DataSerie ct = (DataSerie) cell.getElement();
             final Set<TourData> listofTours = ct.getTourData();
+            //Hibernate.initialize(ct.getTourData());
             final int ctSize = (listofTours == null ? 0 : listofTours.size());
             cell.setText(String.valueOf(ctSize));
             if (ctSize == 0) {
-               cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
          }
       });
@@ -555,10 +522,11 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getUnit());
+            //Hibernate.initialize(ct.getTourData());
             final Set<TourData> listofTours = ct.getTourData();
             final int ctSize = (listofTours == null ? 0 : listofTours.size());
             if (ctSize == 0) {
-               cell.setForeground(_wpViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
          }
       });
@@ -567,11 +535,9 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    @Override
    public void dispose() {
 
-      final IWorkbenchPage page = getViewSite().getPage();
+      TourManager.getInstance().removeTourEventListener(_tourEventListener);
 
-      TourManager.getInstance().removeTourEventListener(_tourPropertyListener);
-      page.removePostSelectionListener(_postSelectionListener);
-      page.removePartListener(_partListener);
+      getViewSite().getPage().removePartListener(_partListener);
 
       _prefStore.removePropertyChangeListener(_prefChangeListener);
       _prefStore_Common.removePropertyChangeListener(_prefChangeListener_Common);
@@ -584,9 +550,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void enableActions() {
 
-      final boolean isTourInDb = false;//isTourSavedInDb();
-      //final boolean isSingleTour = _tourData != null && _tourData.isMultipleTours() == false;
-      _action_EditCustomTracksData.setEnabled(isTourInDb);
+      _action_EditCustomTracksData.setEnabled(false);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
@@ -595,11 +559,6 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-//
-//    // set the marker which should be selected in the marker dialog
-//    final IStructuredSelection selection = (IStructuredSelection) _wpViewer.getSelection();
-//    _actionEditTourWaypoints.setSelectedMarker((TourMarker) selection.getFirstElement());
-//
       enableActions();
    }
 
@@ -610,19 +569,6 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
        */
       final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
       toolBarManager.add(_action_EditCustomTracksData);
-      /*
-       * fill view menu
-       */
-//      final IMenuManager menuMgr = getViewSite().getActionBars().getMenuManager();
-//
-//      menuMgr.add(new Separator());
-   }
-
-   /**
-    * fire waypoint position
-    */
-   private void fireWaypointPosition(final StructuredSelection selection) {
-      _postSelectionProvider.setSelection(selection);
    }
 
    @Override
@@ -630,90 +576,38 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       return _columnManager;
    }
 
+   public Object getCtViewer() {
+      return _ctViewer;
+   }
+
    @Override
    public ArrayList<TourData> getSelectedTours() {
-
-      final ArrayList<TourData> selectedTours = new ArrayList<>();
-
-      return selectedTours;
+      // TODO Auto-generated method stub
+      return null;
    }
 
    @Override
    public ColumnViewer getViewer() {
-      return _wpViewer;
+      return _ctViewer;
    }
 
+   private StructuredSelection getViewerSelection() {
 
-   private void onSelectionChanged(final ISelection selection) {
+      return (StructuredSelection) _ctViewer.getSelection();
+   }
 
-      long tourId = TourDatabase.ENTITY_IS_NOT_SAVED;
+   private void initUI(final Composite parent) {
 
-      if (selection instanceof SelectionTourData) {
+      _pc = new PixelConverter(parent);
 
-         // a tour was selected, get the chart and update the custom tracks viewer
+   }
 
-         final SelectionTourData tourDataSelection = (SelectionTourData) selection;
-         //_tourData = tourDataSelection.getTourData();
-
-         //if (_tourData != null) {
-         //   tourId = _tourData.getTourId();
-         //}
-
-      } else if (selection instanceof SelectionTourId) {
-
-         tourId = ((SelectionTourId) selection).getTourId();
-
-      } else if (selection instanceof SelectionTourIds) {
-
-         final ArrayList<Long> tourIds = ((SelectionTourIds) selection).getTourIds();
-
-         if (tourIds != null && tourIds.size() > 0) {
-
-            if (tourIds.size() == 1) {
-               tourId = tourIds.get(0);
-            } else {
-               //_tourData = TourManager.createJoinedTourData(tourIds);
-            }
-         }
-      } else if (selection instanceof SelectionTourCatalogView) {
-
-         final SelectionTourCatalogView tourCatalogSelection = (SelectionTourCatalogView) selection;
-
-         final TVICatalogRefTourItem refItem = tourCatalogSelection.getRefItem();
-         if (refItem != null) {
-            tourId = refItem.getTourId();
-         }
-
-      } else if (selection instanceof StructuredSelection) {
-
-         final Object firstElement = ((StructuredSelection) selection).getFirstElement();
-         if (firstElement instanceof TVICatalogComparedTour) {
-            tourId = ((TVICatalogComparedTour) firstElement).getTourId();
-         } else if (firstElement instanceof TVICompareResultComparedTour) {
-            tourId = ((TVICompareResultComparedTour) firstElement).getTourId();
-         }
-
-      } else if (selection instanceof SelectionDeletedTours) {
-
-         clearView();
-      }
-
-      if (tourId > TourDatabase.ENTITY_IS_NOT_SAVED) {
-
-         final TourData tourData = TourManager.getInstance().getTourData(tourId);
-         if (tourData != null) {
-            //_tourData = tourData;
-         }
-      }
-
-      final boolean isTour = false;//(_tourData != null);//(tourId >= 0) && (_tourData != null);
-
-      if (isTour) {
-         _wpViewer.setInput(new Object[0]);
-         _pageBook.showPage(_viewerContainer);
-      }
-
-//    _actionEditTourWaypoints.setEnabled(isTour);
+   private void loadAllDataSeries() {
+      //TODO rework this for performance
+      //TODO replace by a sql fetching the sum of distnace , time, etc...
+      _allDataSeries.clear();
+      TourDatabase.clearDataSeries();
+      _allDataSeries.addAll(TourDatabase.getAllDataSeriesWithTourData());
    }
 
    @Override
@@ -721,44 +615,97 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
       _viewerContainer.setRedraw(false);
       {
-         _wpViewer.getTable().dispose();
+         // keep selection
+         final ISelection selectionBackup = getViewerSelection();
+         //final Object[] checkedElements = _ctViewer.getCheckedElements();
+         {
+            _ctViewer.getTable().dispose();
 
-         createUI_10_CustomTracksViewer(_viewerContainer);
-         _viewerContainer.layout();
+            createUI_10_CustomTracksViewer(_viewerContainer);
 
-         // update the viewer
-         reloadViewer();
+            // update UI
+            _viewerContainer.layout();
+
+            // update the viewer
+            updateUI_SetViewerInput();
+         }
+         //updateUI_SelectTourMarker(selectionBackup, checkedElements);
       }
       _viewerContainer.setRedraw(true);
 
-      return _wpViewer;
+      _ctViewer.getTable().setFocus();
+
+      return _ctViewer;
    }
 
    @Override
    public void reloadViewer() {
-      _wpViewer.setInput(new Object[0]);
+
+      loadAllDataSeries();
+
+      _viewerContainer.setRedraw(false);
+      {
+         // keep selection
+         final ISelection selectionBackup = getViewerSelection();
+         //final Object[] checkedElements = _markerViewer.getCheckedElements();
+         {
+            updateUI_SetViewerInput();
+         }
+         //updateUI_SelectTourMarker(selectionBackup, checkedElements);
+      }
+      _viewerContainer.setRedraw(true);
+   }
+
+   private void restoreState_BeforeUI() {
+
+   }
+
+   private void restoreState_WithUI() {
+      enableActions();
    }
 
    @PersistState
    private void saveState() {
 
-      // check if UI is disposed
-      final Table table = _wpViewer.getTable();
-      if (table.isDisposed()) {
-         return;
-      }
-
       _columnManager.saveState(_state);
+
+//      _state.put(STATE_SORT_COLUMN_ID, _markerComparator.__sortColumnId);
+//      _state.put(STATE_SORT_COLUMN_DIRECTION, _markerComparator.__sortDirection);
+//
+//      _state.put(STATE_GPS_FILTER, _gpsMarkerFilter);
+
+      /*
+       * selected marker item
+       */
+//      long markerId = TourDatabase.ENTITY_IS_NOT_SAVED;
+//      final StructuredSelection selection = getViewerSelection();
+//      final Object firstItem = selection.getFirstElement();
+//
+//      if (firstItem instanceof TourMarkerItem) {
+//         final TourMarkerItem markerItem = (TourMarkerItem) firstItem;
+//         markerId = markerItem.markerId;
+//      }
+//      _state.put(STATE_SELECTED_MARKER_ITEM, markerId);
    }
 
    @Override
    public void setFocus() {
-      _wpViewer.getTable().setFocus();
+      _ctViewer.getTable().setFocus();
    }
 
    @Override
    public void updateColumnHeader(final ColumnDefinition colDef) {
       // TODO Auto-generated method stub
+
+   }
+
+   private void updateUI_SetViewerInput() {
+
+      _isInUpdate = true;
+      {
+         _ctViewer.setInput(new Object[0]);
+      }
+      _isInUpdate = false;
 
    }
 
