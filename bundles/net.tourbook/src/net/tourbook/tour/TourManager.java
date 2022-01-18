@@ -2078,7 +2078,7 @@ public class TourManager {
                      final long timeDiff = currentTime - lastUpdateTime;
 
                      // reduce logging
-                     if (timeDiff > 200) {
+                     if (timeDiff > 500) {
 
                         lastUpdateTime = currentTime;
 
