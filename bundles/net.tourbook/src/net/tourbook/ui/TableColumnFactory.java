@@ -75,6 +75,7 @@ public abstract class TableColumnFactory {
 
    public static final TableColumnFactory CUSTOM_TRACKS_COUNT_TOURS;
    public static final TableColumnFactory CUSTOM_TRACKS_ID;
+   public static final TableColumnFactory CUSTOM_TRACKS_INDEX;
    public static final TableColumnFactory CUSTOM_TRACKS_LAP_ISACTIVE;
    public static final TableColumnFactory CUSTOM_TRACKS_NAME;
    public static final TableColumnFactory CUSTOM_TRACKS_SIZE;
@@ -4571,6 +4572,29 @@ public abstract class TableColumnFactory {
             colDef.setColumnLabel(              "Id"); //$NON-NLS-1$
             colDef.setColumnHeaderText(         "Id"); //$NON-NLS-1$
             colDef.setColumnHeaderToolTipText(  "Id (unique) of the custom track in the tour"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_INDEX = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_INDEX", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Index"); //$NON-NLS-1$
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
             colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));

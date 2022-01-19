@@ -17,6 +17,7 @@ package net.tourbook.ui.views.tourCustomTracks;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Set;
 
 import net.tourbook.application.TourbookPlugin;
@@ -60,6 +61,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.ViewerColumn;
 import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
@@ -161,6 +163,29 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       @Override
       public void inputChanged(final Viewer viewer, final Object oldInput, final Object newInput) {}
    }
+
+   public class RowNumberLabelProvider extends CellLabelProvider {
+
+      private TableViewer viewer;
+
+      @Override
+      protected void initialize(final ColumnViewer viewer, final ViewerColumn column) {
+        super.initialize(viewer, column);
+        this.viewer = null;
+        if (viewer instanceof TableViewer) {
+          this.viewer = (TableViewer) viewer;
+        }
+      }
+
+      @Override
+      public void update(final ViewerCell cell) {
+        //super.update(cell);
+        if (viewer != null) {
+          final int index = Arrays.asList(viewer.getTable().getItems()).indexOf(cell.getItem());
+          cell.setText("" + (index + 1));
+        }
+      }
+    }
 
    public class TableContextMenuProvider implements IContextMenuProvider {
 
@@ -433,6 +458,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
    private void defineAllColumns() {
 
+      defineColumn_Index();
       defineColumn_Name();
       defineColumn_Unit();
       defineColumn_Tours_Count();
@@ -460,6 +486,17 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             }
          }
       });
+   }
+
+   /**
+    * column: index
+    */
+   private void defineColumn_Index() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_INDEX.createColumn(_columnManager, _pc);
+      colDef.setIsDefaultColumn();
+      colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new RowNumberLabelProvider());
    }
 
    /**

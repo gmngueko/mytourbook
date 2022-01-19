@@ -69,6 +69,7 @@ public class ActionEditCustomTracks extends Action {
    public static final String          MENU_NAME                 = "&Edit Tours Custom Tracks...";              //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_NAME    = "List Custom Tracks";                        //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_TOOLTIP = "List Custom Tracks from selected tours..."; //$NON-NLS-1$
+   public static final String          COLI_NAME                 = "#";                                         //$NON-NLS-1$
    public static final String          COL0_NAME                 = "Delete";                                    //$NON-NLS-1$
    public static final String          COL1_NAME                 = "Name";                                      //$NON-NLS-1$
    public static final String          COL2_NAME                 = "Unit";                                      //$NON-NLS-1$
@@ -91,7 +92,7 @@ public class ActionEditCustomTracks extends Action {
 
       private Composite _containerTrackList;
       private Table     _tableTracks;
-      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME, COL4_NAME, COL5_NAME };
+      private String[]  _titleTracks = { COLI_NAME, COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME, COL4_NAME, COL5_NAME };
 
       private Button    buttonLoadTracks;
 
@@ -201,11 +202,13 @@ public class ActionEditCustomTracks extends Action {
                      }
 
                      //now add item to table list
+                     int cnt = 1;
                      for (final Entry<String, TrackEntry> trackListEntry : _trackList.entrySet()) {
                         final TableItem itemEvent = new TableItem(_tableTracks, SWT.NONE);
-                        itemEvent.setText(1, trackListEntry.getValue().name);
+                        itemEvent.setText(0, String.valueOf(cnt++));
+                        itemEvent.setText(2, trackListEntry.getValue().name);
 
-                        itemEvent.setText(2, trackListEntry.getValue().unit);
+                        itemEvent.setText(3, trackListEntry.getValue().unit);
 //                        final TableEditor editorUnit = new TableEditor(_tableTracks);
 //                        final Text textUnit = new Text(_tableTracks, SWT.SINGLE);
 //                        itemEvent.setData(TEXTBOX_UNIT_TAG, textUnit);
@@ -226,9 +229,9 @@ public class ActionEditCustomTracks extends Action {
 //                           }
 //                        });
 
-                        itemEvent.setText(3, String.valueOf(trackListEntry.getValue().count));
-                        itemEvent.setText(4, String.valueOf(trackListEntry.getValue().size));
-                        itemEvent.setText(5, String.valueOf(trackListEntry.getKey()));
+                        itemEvent.setText(4, String.valueOf(trackListEntry.getValue().count));
+                        itemEvent.setText(5, String.valueOf(trackListEntry.getValue().size));
+                        itemEvent.setText(6, String.valueOf(trackListEntry.getKey()));
 
                         final TableEditor editor = new TableEditor(_tableTracks);
                         final Button buttonDelete = new Button(_tableTracks, SWT.CHECK);
@@ -255,7 +258,7 @@ public class ActionEditCustomTracks extends Action {
                         buttonDelete.pack();
                         editor.minimumWidth = buttonDelete.getSize().x;
                         editor.horizontalAlignment = SWT.LEFT;
-                        editor.setEditor(buttonDelete, itemEvent, 0);
+                        editor.setEditor(buttonDelete, itemEvent, 1);
 
 //                        final TableEditor editorUpd = new TableEditor(_tableTracks);
 //                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);

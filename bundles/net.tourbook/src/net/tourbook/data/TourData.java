@@ -49,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.persistence.Basic;
@@ -7822,6 +7823,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    public HashMap<String, CustomTrackDefinition> getCustomTracksDefinition() {
       if (customTracksDefinition == null) {
          return new HashMap<>();
+      }
+      final HashMap<String, DataSerie> dataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      for (final Map.Entry<String, CustomTrackDefinition> customTracksDefinitionEntry : customTracksDefinition.entrySet()) {
+         final DataSerie dataSerie = dataSeriesByRefId.get(customTracksDefinitionEntry.getKey());
+         if (dataSerie != null) {
+            customTracksDefinitionEntry.getValue().setName(dataSerie.getName());
+            customTracksDefinitionEntry.getValue().setUnit(dataSerie.getUnit());
+         }
       }
       return new HashMap<>(customTracksDefinition);
    }
