@@ -137,7 +137,6 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.IPreferenceStore;
-import org.eclipse.jface.resource.FontDescriptor;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CellLabelProvider;
@@ -172,7 +171,6 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -4545,50 +4543,50 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       }
    }
 
-   private void createUI_Section_160_CustomTracks(final Composite parent) {
-
-      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks, false, true);
-      final Composite container = (Composite) _sectionCustomTracks.getClient();
-      GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
-
-      final Label label = new Label(parent, SWT.NONE);
-      final FontDescriptor boldDescriptor = FontDescriptor.createFrom(label.getFont()).setStyle(SWT.BOLD);
-      final Font boldFont = boldDescriptor.createFont(label.getDisplay());
-      /*
-       * Nr
-       */
-      final Label labelnr = _tk.createLabel(container,
-            Messages.Tour_Editor_Label_Custom_Tracks_Column_Number);
-      labelnr.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Number_Tooltip);
-      labelnr.setFont(boldFont);
-      _firstColumnControls.add(labelnr);
-
-      /*
-       * Id
-       */
-      final Label labelId = _tk.createLabel(container,
-            Messages.Tour_Editor_Label_Custom_Tracks_Column_Id);
-      labelId.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Id_Tooltip);
-      labelId.setFont(boldFont);
-      _secondColumnControls.add(labelId);
-
-      /*
-       * Name
-       */
-      final Label labelName = _tk.createLabel(container,
-            Messages.Tour_Editor_Label_Custom_Tracks_Column_Name);
-      labelName.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Name_Tooltip);
-      labelName.setFont(boldFont);
-      //_secondColumnControls.add(labelName);
-      /*
-       * Unit
-       */
-      final Label labelUnit = _tk.createLabel(container,
-            Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit);
-      labelUnit.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit_Tooltip);
-      labelUnit.setFont(boldFont);
-
-   }
+//   private void createUI_Section_160_CustomTracks(final Composite parent) {
+//
+//      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks, false, true);
+//      final Composite container = (Composite) _sectionCustomTracks.getClient();
+//      GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
+//
+//      final Label label = new Label(parent, SWT.NONE);
+//      final FontDescriptor boldDescriptor = FontDescriptor.createFrom(label.getFont()).setStyle(SWT.BOLD);
+//      final Font boldFont = boldDescriptor.createFont(label.getDisplay());
+//      /*
+//       * Nr
+//       */
+//      final Label labelnr = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Number);
+//      labelnr.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Number_Tooltip);
+//      labelnr.setFont(boldFont);
+//      _firstColumnControls.add(labelnr);
+//
+//      /*
+//       * Id
+//       */
+//      final Label labelId = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Id);
+//      labelId.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Id_Tooltip);
+//      labelId.setFont(boldFont);
+//      _secondColumnControls.add(labelId);
+//
+//      /*
+//       * Name
+//       */
+//      final Label labelName = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Name);
+//      labelName.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Name_Tooltip);
+//      labelName.setFont(boldFont);
+//      //_secondColumnControls.add(labelName);
+//      /*
+//       * Unit
+//       */
+//      final Label labelUnit = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit);
+//      labelUnit.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit_Tooltip);
+//      labelUnit.setFont(boldFont);
+//
+//   }
 
    private void createUI_SectionSeparator(final Composite parent) {
 
@@ -4635,7 +4633,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             createUI_Section_150_Characteristics(_tourContainer);
 
             createUI_SectionSeparator(_tourContainer);
-            createUI_Section_160_CustomTracks(_tourContainer);
+//            createUI_Section_160_CustomTracks(_tourContainer);
          }
       }
 
@@ -7908,7 +7906,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _sectionTitle.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_TITLE, true));
       _sectionWeather.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_WEATHER, true));
       //Custom Tracks state are only saved in memory not on disk for now
-      _sectionCustomTracks.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_CUSTOM_TRACKS, true));
+      //_sectionCustomTracks.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_CUSTOM_TRACKS, true));
    }
 
    @PersistState
@@ -7931,7 +7929,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _state.put(STATE_SECTION_PERSONAL, _sectionPersonal.isExpanded());
       _state.put(STATE_SECTION_TITLE, _sectionTitle.isExpanded());
       _state.put(STATE_SECTION_WEATHER, _sectionWeather.isExpanded());
-      _state.put(STATE_SECTION_CUSTOM_TRACKS, _sectionCustomTracks.isExpanded());
+      // _state.put(STATE_SECTION_CUSTOM_TRACKS, _sectionCustomTracks.isExpanded());
    }
 
    /**
@@ -9128,84 +9126,84 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _comboCadence.setSelection(cadence);
 
       //Custom Tracks create edit controls
-      final Composite container = (Composite) _sectionCustomTracks.getClient();
-      //GridLayoutFactory.fillDefaults().numColumns(3).applyTo(container);
-      //clear previous Custom Tracks control of Tour
-      if (_customTrackTextControls == null) {
-         _customTrackTextControls = new HashMap<>();
-      }
-      for (final String customTracksId : _customTrackTextControls.keySet()) {
-         final CustomTrackEditorText customTrackTextSet = _customTrackTextControls.get(customTracksId);
-         _firstColumnControls.remove(customTrackTextSet.nr);
-         _secondColumnControls.remove(customTrackTextSet.id);
-         customTrackTextSet.id.dispose();
-         customTrackTextSet.nr.dispose();
-         customTrackTextSet.name.dispose();
-         customTrackTextSet.unit.dispose();
-      }
-      _customTrackTextControls.clear();
-
-      //add new Custom Tracks control for this Tour
-      final HashMap<String, CustomTrackDefinition> customTracksDefinitionMap = _tourData.getCustomTracksDefinition();
-      final HashMap<String, float[]> customTracksSeries = _tourData.getCustomTracks();
-      if (customTracksDefinitionMap != null && customTracksDefinitionMap.size() > 0) {
-         final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTracksDefinitionMap.values());
-         java.util.Collections.sort(listCustomTrackDefinition);
-
-         for (int indexCustomTrackDefinition = 0; indexCustomTrackDefinition < listCustomTrackDefinition.size(); indexCustomTrackDefinition++) {
-            final CustomTrackDefinition customTrackDefinition = listCustomTrackDefinition.get(indexCustomTrackDefinition);
-            final CustomTrackEditorText customTracksTextSet = new CustomTrackEditorText();
-            final Text textNrEntry = _tk.createText(
-                  container, //
-                  Integer.toString(indexCustomTrackDefinition),
-                  SWT.BORDER //
-            );
-            _firstColumnControls.add(textNrEntry);
-
-            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
-               textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
-               textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
-               textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
-               textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            }
-            customTracksTextSet.nr = textNrEntry;
-
-            final Text textIdEntry = _tk.createText(
-                  container, //
-                  customTrackDefinition.getId(),
-                  SWT.BORDER //
-            );
-            _secondColumnControls.add(textIdEntry);
-            customTracksTextSet.id = textIdEntry;
-            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
-               customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
-               customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
-               customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
-               customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
-            }
-
-            final Text textNameEntry = _tk.createText(
-                  container, //
-                  customTrackDefinition.getName(),
-                  SWT.BORDER //
-            );
-            //_secondColumnControls.add(textNameEntry);
-            textNameEntry.addModifyListener(_modifyListener);
-            customTracksTextSet.name = textNameEntry;
-
-            final Text textUnitEntry = _tk.createText(
-                  container, //
-                  customTrackDefinition.getUnit(),
-                  SWT.BORDER //
-            );
-            textUnitEntry.addModifyListener(_modifyListener);
-            customTracksTextSet.unit = textUnitEntry;
-
-            _customTrackTextControls.put(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId(), customTracksTextSet);
-         }
-      }
+//      final Composite container = (Composite) _sectionCustomTracks.getClient();
+//      //GridLayoutFactory.fillDefaults().numColumns(3).applyTo(container);
+//      //clear previous Custom Tracks control of Tour
+//      if (_customTrackTextControls == null) {
+//         _customTrackTextControls = new HashMap<>();
+//      }
+//      for (final String customTracksId : _customTrackTextControls.keySet()) {
+//         final CustomTrackEditorText customTrackTextSet = _customTrackTextControls.get(customTracksId);
+//         _firstColumnControls.remove(customTrackTextSet.nr);
+//         _secondColumnControls.remove(customTrackTextSet.id);
+//         customTrackTextSet.id.dispose();
+//         customTrackTextSet.nr.dispose();
+//         customTrackTextSet.name.dispose();
+//         customTrackTextSet.unit.dispose();
+//      }
+//      _customTrackTextControls.clear();
+//
+//      //add new Custom Tracks control for this Tour
+//      final HashMap<String, CustomTrackDefinition> customTracksDefinitionMap = _tourData.getCustomTracksDefinition();
+//      final HashMap<String, float[]> customTracksSeries = _tourData.getCustomTracks();
+//      if (customTracksDefinitionMap != null && customTracksDefinitionMap.size() > 0) {
+//         final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTracksDefinitionMap.values());
+//         java.util.Collections.sort(listCustomTrackDefinition);
+//
+//         for (int indexCustomTrackDefinition = 0; indexCustomTrackDefinition < listCustomTrackDefinition.size(); indexCustomTrackDefinition++) {
+//            final CustomTrackDefinition customTrackDefinition = listCustomTrackDefinition.get(indexCustomTrackDefinition);
+//            final CustomTrackEditorText customTracksTextSet = new CustomTrackEditorText();
+//            final Text textNrEntry = _tk.createText(
+//                  container, //
+//                  Integer.toString(indexCustomTrackDefinition),
+//                  SWT.BORDER //
+//            );
+//            _firstColumnControls.add(textNrEntry);
+//
+//            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
+//               textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
+//               textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
+//            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
+//               textNrEntry.setBackground(textNrEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+//               textNrEntry.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
+//            }
+//            customTracksTextSet.nr = textNrEntry;
+//
+//            final Text textIdEntry = _tk.createText(
+//                  container, //
+//                  customTrackDefinition.getId(),
+//                  SWT.BORDER //
+//            );
+//            _secondColumnControls.add(textIdEntry);
+//            customTracksTextSet.id = textIdEntry;
+//            if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()) == null) {
+//               customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_RED));
+//               customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
+//            } else if (customTracksSeries.get(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId()).length == 0) {
+//               customTracksTextSet.id.setBackground(textIdEntry.getDisplay().getSystemColor(SWT.COLOR_YELLOW));
+//               customTracksTextSet.id.setToolTipText(Messages.Tour_Editor_No_Custom_Track_Data_Tooltip);
+//            }
+//
+//            final Text textNameEntry = _tk.createText(
+//                  container, //
+//                  customTrackDefinition.getName(),
+//                  SWT.BORDER //
+//            );
+//            //_secondColumnControls.add(textNameEntry);
+//            textNameEntry.addModifyListener(_modifyListener);
+//            customTracksTextSet.name = textNameEntry;
+//
+//            final Text textUnitEntry = _tk.createText(
+//                  container, //
+//                  customTrackDefinition.getUnit(),
+//                  SWT.BORDER //
+//            );
+//            textUnitEntry.addModifyListener(_modifyListener);
+//            customTracksTextSet.unit = textUnitEntry;
+//
+//            _customTrackTextControls.put(listCustomTrackDefinition.get(indexCustomTrackDefinition).getId(), customTracksTextSet);
+//         }
+//      }
 
       /*
        * layout container to resize labels
