@@ -42,6 +42,7 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
+import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.CustomTrackValue;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.TimeData;
@@ -695,17 +696,17 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          //setting up customTracksDefinition with call to "tourData.customTracksDefinition.put(...)"
          //must be set before calling "tourData.createTimeSeries(....)"
          for (final CustomST3TrackDefinition customST3TrackDefinition : _currentActivity.customTrackDefinitions) {
-            final String idS = customST3TrackDefinition.getId();
+            //final String idS = customST3TrackDefinition.getId();
             final String nameS = customST3TrackDefinition.getName();
             final String unitS = customST3TrackDefinition.getUnit();
             final String refidS = customST3TrackDefinition.getRefId();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
                   .compareTo(NAME_VERTICALRATIO) == 0) {} else {
-//               final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-//               customTrackDefinition.setId(idS);
-//               customTrackDefinition.setName(nameS);
-//               customTrackDefinition.setUnit(unitS);
-//               tourData.customTracksDefinition.put(idS, customTrackDefinition);
+               final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
+               customTrackDefinition.setId(refidS);
+               customTrackDefinition.setName(nameS);
+               customTrackDefinition.setUnit(unitS);
+               tourData.customTracksDefinition.put(refidS, customTrackDefinition);
                if (!_allDataSeries.containsKey(refidS)) {
                   final DataSerie dataSerie = new DataSerie(nameS, refidS, unitS);
                   _allDataSeries.put(refidS, dataSerie);

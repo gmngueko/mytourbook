@@ -17,15 +17,15 @@ package net.tourbook.ui.action;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
-import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.TourData;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.tour.TourEvent;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
@@ -45,8 +45,6 @@ import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -61,7 +59,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.swt.widgets.Text;
 
 public class ActionEditCustomTracks extends Action {
    public static final String          DIALOG_TITLE              = "Edit Tours Custom Tracks";                  //$NON-NLS-1$
@@ -77,12 +74,13 @@ public class ActionEditCustomTracks extends Action {
    public static final String          COL2_NAME                 = "Unit";                                      //$NON-NLS-1$
    public static final String          COL3_NAME                 = "Count";                                     //$NON-NLS-1$
    public static final String          COL4_NAME                 = "Size";                                      //$NON-NLS-1$
-   public static final String          COL5_NAME                 = "Update";                                    //$NON-NLS-1$
+   public static final String          COL5_NAME                 = "RefId";                                     //$NON-NLS-1$
    public static final String          CHECKBOX_DELETE_TAG       = "CHECK_DEL_BOX";                             //$NON-NLS-1$
    public static final String          CHECKBOX_UPDATE_TAG       = "CHECK_UPD_BOX";                             //$NON-NLS-1$
    public static final String          TEXTBOX_UNIT_TAG          = "TEXTBOX_UNIT";                              //$NON-NLS-1$
 
-   private TreeMap<String, TrackEntry> trackList         = new TreeMap<>();
+   private TreeMap<String, TrackEntry> _trackList                = new TreeMap<>();
+   private ArrayList<DataSerie>        _allDataSeries            = null;
 
    private ITourProvider2              _tourProvider             = null;
    private ITourProvider               _tourProvider1            = null;
@@ -176,56 +174,59 @@ public class ActionEditCustomTracks extends Action {
 
                         return;
                      }
-                     //Build list of track name, count and total size
+                     //Build list of track RefId, count and total size
                      for (final TourData tour : selectedTours) {
-                        if (tour.customTracksDefinition != null && !tour.customTracksDefinition.isEmpty()) {
-                           for (final Entry<String, CustomTrackDefinition> custTrackDefEntry : tour.customTracksDefinition.entrySet()) {
-                              if (trackList.containsKey(custTrackDefEntry.getValue().getName())) {
-                                 trackList.get(custTrackDefEntry.getValue().getName()).count += 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
+                        if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
+                           for (final DataSerie custTrackDefEntry : _allDataSeries) {
+                              if (_trackList.containsKey(custTrackDefEntry.getRefId())) {
+                                 _trackList.get(custTrackDefEntry.getRefId()).count += 1;
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
-                                 trackList.get(custTrackDefEntry.getValue().getName()).size += custSize;
+                                 _trackList.get(custTrackDefEntry.getRefId()).size += custSize;
                               } else {
                                  final TrackEntry newEntry = new TrackEntry();
-                                 newEntry.name = custTrackDefEntry.getValue().getName();
-                                 newEntry.unit = custTrackDefEntry.getValue().getUnit();
+                                 newEntry.name = custTrackDefEntry.getName();
+                                 newEntry.unit = custTrackDefEntry.getUnit();
+                                 newEntry.refid = custTrackDefEntry.getRefId();
                                  newEntry.count = 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getValue().getId());
+                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
                                  newEntry.size = custSize;
-                                 trackList.put(custTrackDefEntry.getValue().getName(), newEntry);
+                                 _trackList.put(custTrackDefEntry.getRefId(), newEntry);
                               }
                            }
                         }
                      }
 
                      //now add item to table list
-                     for (final Entry<String, TrackEntry> trackListEntry : trackList.entrySet()) {
+                     for (final Entry<String, TrackEntry> trackListEntry : _trackList.entrySet()) {
                         final TableItem itemEvent = new TableItem(_tableTracks, SWT.NONE);
-                        itemEvent.setText(1, trackListEntry.getKey());
+                        itemEvent.setText(1, trackListEntry.getValue().name);
 
-                        final TableEditor editorUnit = new TableEditor(_tableTracks);
-                        final Text textUnit = new Text(_tableTracks, SWT.SINGLE);
-                        itemEvent.setData(TEXTBOX_UNIT_TAG, textUnit);
-                        textUnit.setData(trackListEntry.getValue());
-                        textUnit.setText(trackListEntry.getValue().unit);
-                        textUnit.pack();
-                        editorUnit.horizontalAlignment = SWT.LEFT;
-                        editorUnit.setEditor(textUnit, itemEvent, 2);
-                        editorUnit.grabHorizontal = true;
-                        textUnit.addVerifyListener(new VerifyListener() {
-                           @Override
-                           public void verifyText(final VerifyEvent e) {
-                              /* Notice how we combine the old and new below */
-                              final String currentText = ((Text) e.widget).getText();
-                              final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
-                              final TrackEntry trackEntry = (TrackEntry) ((Text) e.widget).getData();
-                              trackEntry.unit = valueTxt;
-                           }
-                        });
+                        itemEvent.setText(2, trackListEntry.getValue().unit);
+//                        final TableEditor editorUnit = new TableEditor(_tableTracks);
+//                        final Text textUnit = new Text(_tableTracks, SWT.SINGLE);
+//                        itemEvent.setData(TEXTBOX_UNIT_TAG, textUnit);
+//                        textUnit.setData(trackListEntry.getValue());
+//                        textUnit.setText(trackListEntry.getValue().unit);
+//                        textUnit.pack();
+//                        editorUnit.horizontalAlignment = SWT.LEFT;
+//                        editorUnit.setEditor(textUnit, itemEvent, 2);
+//                        editorUnit.grabHorizontal = true;
+//                        textUnit.addVerifyListener(new VerifyListener() {
+//                           @Override
+//                           public void verifyText(final VerifyEvent e) {
+//                              /* Notice how we combine the old and new below */
+//                              final String currentText = ((Text) e.widget).getText();
+//                              final String valueTxt = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+//                              final TrackEntry trackEntry = (TrackEntry) ((Text) e.widget).getData();
+//                              trackEntry.unit = valueTxt;
+//                           }
+//                        });
 
                         itemEvent.setText(3, String.valueOf(trackListEntry.getValue().count));
                         itemEvent.setText(4, String.valueOf(trackListEntry.getValue().size));
+                        itemEvent.setText(5, String.valueOf(trackListEntry.getKey()));
 
                         final TableEditor editor = new TableEditor(_tableTracks);
                         final Button buttonDelete = new Button(_tableTracks, SWT.CHECK);
@@ -254,32 +255,32 @@ public class ActionEditCustomTracks extends Action {
                         editor.horizontalAlignment = SWT.LEFT;
                         editor.setEditor(buttonDelete, itemEvent, 0);
 
-                        final TableEditor editorUpd = new TableEditor(_tableTracks);
-                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);
-                        buttonUpdate.setData(trackListEntry.getValue());
-                        itemEvent.setData(CHECKBOX_UPDATE_TAG, buttonUpdate);
-
-                        buttonUpdate.addSelectionListener(new SelectionAdapter() {
-                           @Override
-                           public void widgetSelected(final SelectionEvent e) {
-                              final Button button = (Button) e.widget;
-                              final Object data = button.getData();
-                              if (data != null) {
-                                 final TrackEntry cData = (TrackEntry) data;
-                                 if (button.getSelection()) {
-                                    //System.out.println(" Maintenance check for True:" + button.getData());
-                                    cData.isUpdated = true;
-                                 } else {
-                                    //System.out.println(" Maintenance check for False:" + button.getData());
-                                    cData.isUpdated = false;
-                                 }
-                              }
-                           }
-                        });
-                        buttonUpdate.pack();
-                        editorUpd.minimumWidth = buttonUpdate.getSize().x;
-                        editorUpd.horizontalAlignment = SWT.LEFT;
-                        editorUpd.setEditor(buttonUpdate, itemEvent, 5);
+//                        final TableEditor editorUpd = new TableEditor(_tableTracks);
+//                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);
+//                        buttonUpdate.setData(trackListEntry.getValue());
+//                        itemEvent.setData(CHECKBOX_UPDATE_TAG, buttonUpdate);
+//
+//                        buttonUpdate.addSelectionListener(new SelectionAdapter() {
+//                           @Override
+//                           public void widgetSelected(final SelectionEvent e) {
+//                              final Button button = (Button) e.widget;
+//                              final Object data = button.getData();
+//                              if (data != null) {
+//                                 final TrackEntry cData = (TrackEntry) data;
+//                                 if (button.getSelection()) {
+//                                    //System.out.println(" Maintenance check for True:" + button.getData());
+//                                    cData.isUpdated = true;
+//                                 } else {
+//                                    //System.out.println(" Maintenance check for False:" + button.getData());
+//                                    cData.isUpdated = false;
+//                                 }
+//                              }
+//                           }
+//                        });
+//                        buttonUpdate.pack();
+//                        editorUpd.minimumWidth = buttonUpdate.getSize().x;
+//                        editorUpd.horizontalAlignment = SWT.LEFT;
+//                        editorUpd.setEditor(buttonUpdate, itemEvent, 5);
                      }
                      break;
                   }
@@ -311,6 +312,7 @@ public class ActionEditCustomTracks extends Action {
 
    public class TrackEntry {
       String name;
+      String  refid;
       String  unit;
       int    count = 0;
       int     size       = 0;
@@ -361,20 +363,21 @@ public class ActionEditCustomTracks extends Action {
 
    public boolean editCustomTracksfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {
       boolean isModified = false;
-      if (tour.customTracksDefinition != null && !tour.customTracksDefinition.isEmpty()) {
-         final Iterator<Entry<String, CustomTrackDefinition>> iteratorCustTrackDef = tour.customTracksDefinition.entrySet().iterator();
+      if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
+         final Iterator<DataSerie> iteratorCustTrackDef = _allDataSeries.iterator();
          while (iteratorCustTrackDef.hasNext()) {
-            final Map.Entry<String, CustomTrackDefinition> pairCustTrackDef = iteratorCustTrackDef.next();
+            final DataSerie dataSerie = iteratorCustTrackDef.next();
             //System.out.println(pair.getKey() + " = " + pair.getValue());
-            if (trackList2.containsKey(pairCustTrackDef.getValue().getName())) {
-               if (trackList2.get(pairCustTrackDef.getValue().getName()).isDeleted) {
-                  tour.clear_CustomTracks(pairCustTrackDef.getValue().getId());
-                  iteratorCustTrackDef.remove(); // avoids a ConcurrentModificationException
-                  isModified = true;
-               } else if (trackList2.get(pairCustTrackDef.getValue().getName()).isUpdated) {
-                  pairCustTrackDef.getValue().setUnit(trackList2.get(pairCustTrackDef.getValue().getName()).unit);
+            if (trackList2.containsKey(dataSerie.getRefId())) {
+               if (trackList2.get(dataSerie.getRefId()).isDeleted) {
+                  tour.clear_CustomTracks(dataSerie.getRefId());
+                  //iteratorCustTrackDef.remove(); // avoids a ConcurrentModificationException
                   isModified = true;
                }
+//                  else if (trackList2.get(dataSerie.getRefId()).isUpdated) {
+//                  dataSerie.setUnit(trackList2.get(dataSerie.getRefId()).unit);
+//                  isModified = true;
+//               }
             }
          }
       }
@@ -390,7 +393,7 @@ public class ActionEditCustomTracks extends Action {
       }
 
       final ArrayList<TourData> selectedTours = _tourProvider != null ? _tourProvider.getSelectedTours() : _tourProvider1.getSelectedTours();
-
+      _allDataSeries = TourDatabase.getAllDataSeries();
       final Shell shell = Display.getCurrent().getActiveShell();
       if (selectedTours == null || selectedTours.isEmpty()) {
 
@@ -399,6 +402,17 @@ public class ActionEditCustomTracks extends Action {
                shell,
                DIALOG_OPEN_TITLE,
                Messages.UI_Label_TourIsNotSelected);
+
+         return;
+      }
+
+      if (_allDataSeries == null || _allDataSeries.isEmpty()) {
+
+         // No DataSeries
+         MessageDialog.openInformation(
+               shell,
+               DIALOG_OPEN_TITLE,
+               "No DataSerie's Available");//$NON-NLS-1$
 
          return;
       }
@@ -419,18 +433,18 @@ public class ActionEditCustomTracks extends Action {
          return;
       }
 
-      trackList.clear();
+      _trackList.clear();
       final CustomTracksEditSettingsDialog dialog = new CustomTracksEditSettingsDialog(shell);
       dialog.create();
       if (dialog.open() == Window.OK) {
          //retrieve UI data before execution of custom trak loading below
          //put mapping of objet type to custom tracks
-         if (trackList == null || trackList.isEmpty()) {
+         if (_trackList == null || _trackList.isEmpty()) {
             System.out.println("ActionEditCustomTracks: No Custom Tracks to Edit!!"); //$NON-NLS-1$
             return;
          }
       } else {
-         trackList.clear();
+         _trackList.clear();
          return;
       }
 
@@ -441,14 +455,14 @@ public class ActionEditCustomTracks extends Action {
 
             for (final TourData tour : selectedTours) {
 
-               final boolean isDataRetrieved = editCustomTracksfromTour(tour, trackList);
+               final boolean isDataRetrieved = editCustomTracksfromTour(tour, _trackList);
 
                if (isDataRetrieved) {
                   modifiedTours.add(tour);
                }
             }
 
-            trackList.clear();
+            _trackList.clear();
 
             if (modifiedTours.size() > 0) {
                if (_isSaveTour) {

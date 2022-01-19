@@ -2078,11 +2078,17 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    public void clear_CustomTracks(final String idx) {
 
       if (_customTracks == null) {
+         if (customTracksDefinition != null) {
+            customTracksDefinition.remove(idx);
+         }
          return;
       }
       _customTracks.remove(idx);
       _customTracks_UI.remove(idx);
       _customTracksStatistics.remove(idx);
+      if (customTracksDefinition != null) {
+         customTracksDefinition.remove(idx);
+      }
    }
 
    public void clear_RunDyn_StanceTime() {
