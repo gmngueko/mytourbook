@@ -19,6 +19,7 @@ import com.garmin.fit.SessionMesg;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensorValue;
 import net.tourbook.data.GearData;
 import net.tourbook.data.SwimData;
@@ -87,6 +89,10 @@ public class FitData {
    private final List<Long>              _pausedTime_End        = new ArrayList<>();
    private final List<Long>              _pausedTime_Data       = new ArrayList<>();
 
+   /**
+    * Key is the attribute RefId (UUID) of ST3
+    */
+   private final Map<String, DataSerie>            _allDataSeries          = new HashMap<>();
    private final List<CustomTracksFieldDefinition> _customTracksDefinition = new ArrayList<>();
 
    private TimeData               _current_TimeData;
@@ -275,6 +281,9 @@ public class FitData {
          customTrackDefinition.setName(nameNew);
          customTrackDefinition.setUnit(unitNew);
          _tourData.customTracksDefinition.put(idNew, customTrackDefinition);
+
+         final DataSerie dataSerie = new DataSerie(nameNew, idNew, unitNew);
+         _allDataSeries.put(idNew, dataSerie);
       }
 
       _tourData.createTimeSeries(_allTimeData, false);
@@ -331,6 +340,8 @@ public class FitData {
          _tourData.finalizeTour_SwimData(_tourData, _allSwimData);
 
          finalizeTour_Type(_tourData);
+
+         finalizeTour_DataSeries(_tourData);
       }
    }
 
@@ -362,6 +373,21 @@ public class FitData {
 
       tourData.setBattery_Percentage_Start(allBatteryPercentage[0]);
       tourData.setBattery_Percentage_End(allBatteryPercentage[numBatteryItems - 1]);
+   }
+
+   /**
+    * Set dataSeries from all CustomTracks Definition by using it's RefId'ss
+    *
+    * @param tourData
+    */
+   private void finalizeTour_DataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allDataSeriesSet = new HashSet<>(_allDataSeries.values());
+      final boolean isNewDataSerie = RawDataManager.setDataSeries(tourData, allDataSeriesSet);
+
+      if (isNewDataSerie) {
+         _importState_Process.isCreated_NewDataSerie().set(true);
+      }
    }
 
    /**

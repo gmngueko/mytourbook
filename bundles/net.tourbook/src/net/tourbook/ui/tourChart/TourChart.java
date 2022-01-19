@@ -69,9 +69,11 @@ import net.tourbook.common.tooltip.ToolbarSlideout;
 import net.tourbook.common.util.TourToolTip;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourSegment;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.photo.Photo;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.preferences.PrefPageAppearanceTourChart;
@@ -1540,6 +1542,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          final HashMap<String, float[]> customTracks = _tourData.getCustomTracks();
          final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTracksDefinitions.values());
          java.util.Collections.sort(listCustomTrackDefinition);
+         final HashMap<String, DataSerie> dataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
 
          int numDisplayCustomTracks = 0;
          for (int alphabeticOrder = 0; alphabeticOrder < listCustomTrackDefinition.size(); alphabeticOrder++) {
@@ -1558,6 +1561,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
             }
             if (customTrackSerie != null && customTrackDefinition != null) {
+               final DataSerie dataSerie = dataSeriesByRefId.get(customTracksDefinitionId);
+               if (dataSerie != null) {
+                  customTrackDefinition.setName(dataSerie.getName());
+                  customTrackDefinition.setUnit(dataSerie.getUnit());
+               }
                createActions_12_GraphAction(
                      TourManager.GRAPH_CUSTOM_TRACKS + alphabeticOrder,
                      customTrackDefinition.getName(),

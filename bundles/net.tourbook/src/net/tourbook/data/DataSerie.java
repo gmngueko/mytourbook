@@ -47,7 +47,7 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    private static final char          NL                        = UI.NEW_LINE;
 
    public static final int            DB_LENGTH_NAME            = 128;
-   public static final int            DB_LENGTH_REFID           = 40;
+   public static final int            DB_LENGTH_REFID           = 128;
    public static final int            DB_LENGTH_UNIT            = 40;
 
    /**

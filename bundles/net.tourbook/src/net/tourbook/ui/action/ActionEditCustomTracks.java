@@ -184,15 +184,17 @@ public class ActionEditCustomTracks extends Action {
                                  final int custSize = custValues == null ? 0 : custValues.length;
                                  _trackList.get(custTrackDefEntry.getRefId()).size += custSize;
                               } else {
-                                 final TrackEntry newEntry = new TrackEntry();
-                                 newEntry.name = custTrackDefEntry.getName();
-                                 newEntry.unit = custTrackDefEntry.getUnit();
-                                 newEntry.refid = custTrackDefEntry.getRefId();
-                                 newEntry.count = 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
-                                 final int custSize = custValues == null ? 0 : custValues.length;
-                                 newEntry.size = custSize;
-                                 _trackList.put(custTrackDefEntry.getRefId(), newEntry);
+                                 if (tour.customTracksDefinition.containsKey(custTrackDefEntry.getRefId())) {
+                                    final TrackEntry newEntry = new TrackEntry();
+                                    newEntry.name = custTrackDefEntry.getName();
+                                    newEntry.unit = custTrackDefEntry.getUnit();
+                                    newEntry.refid = custTrackDefEntry.getRefId();
+                                    newEntry.count = 1;
+                                    final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
+                                    final int custSize = custValues == null ? 0 : custValues.length;
+                                    newEntry.size = custSize;
+                                    _trackList.put(custTrackDefEntry.getRefId(), newEntry);
+                                 }
                               }
                            }
                         }
