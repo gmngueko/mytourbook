@@ -738,11 +738,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private int                   numberOfPhotos;
 
    /**
-    * Number of time slices in {@link #timeSerie}
-    */
-   private int                   numberOfTimeSlices;
-
-   /**
     * Time adjustment in seconds, this is an average value for all photos.
     */
    private int                   photoTimeAdjustment;
@@ -840,6 +835,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private int                      deviceWeight;
 
    // ############################################# UNUSED FIELDS - END #############################################
+
+   /**
+    * Number of time slices in {@link #timeSerie}
+    */
+   private int                         numberOfTimeSlices;
 
    /**
     * All data series for time, altitude,... A BLOB CANNOT BE MULTIPLE !
@@ -4627,16 +4627,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private void computePhotoTimeAdjustment() {
 
       long allPhotoTimeAdjustment = 0;
-      int photoCounter = 0;
+      int numPhotos = 0;
 
       for (final TourPhoto tourPhoto : tourPhotos) {
 
          allPhotoTimeAdjustment += (tourPhoto.getAdjustedTime() - tourPhoto.getImageExifTime()) / 1000;
 
-         photoCounter++;
+         numPhotos++;
       }
 
-      photoTimeAdjustment = photoCounter == 0 ? 0 : (int) (allPhotoTimeAdjustment / photoCounter);
+      photoTimeAdjustment = numPhotos == 0
+            ? 0
+            : (int) (allPhotoTimeAdjustment / numPhotos);
    }
 
    private void computePulseSmoothed() {
@@ -5712,7 +5714,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          // ensure this tour is set in the photo
          galleryPhoto.addTour(tourPhoto.getTourId(), tourPhoto.getPhotoId());
 
-         galleryPhoto.adjustedTimeTour = tourPhoto.getAdjustedTime();
+         galleryPhoto.adjustedTime_Tour = tourPhoto.getAdjustedTime();
          galleryPhoto.imageExifTime = tourPhoto.getImageExifTime();
 
          final double tourLatitude = tourPhoto.getLatitude();
@@ -8464,6 +8466,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return pausedTime_Start;
    }
 
+   /**
+    * @return Returns time adjustment in seconds, this is an average value for all photos.
+    */
    public int getPhotoTimeAdjustment() {
       return photoTimeAdjustment;
    }
