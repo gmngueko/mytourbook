@@ -1234,7 +1234,7 @@ public class TourManager {
          tourDeviceTime_Paused += fromTourData.getTourDeviceTime_Paused();
       }
 
-      joinedTourData.customTracksDefinition = toCustomTracksDefinition;
+      joinedTourData.setCustomTracksDefinition(toCustomTracksDefinition);// = toCustomTracksDefinition;
       joinedTourData.setCustomTracks(toCustomTracks);
 
       /*

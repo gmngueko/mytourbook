@@ -479,10 +479,10 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
                newTargetCustomTrack.put(customTracksId, _backupTargetCustomTracks.get(customTracksId));
             }
          }
-         _targetTour.customTracksDefinition = newTargetCustomTrackDefinition;
+         _targetTour.setCustomTracksDefinition(newTargetCustomTrackDefinition);// = newTargetCustomTrackDefinition;
          _targetTour.setCustomTracks(newTargetCustomTrack);
       } else {
-         _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+         _targetTour.setCustomTracksDefinition(_backupTargetCustomTracksDefinition);// = _backupTargetCustomTracksDefinition;
          _targetTour.setCustomTracks(_backupTargetCustomTracks);
       }
 
@@ -1547,7 +1547,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _targetTour.temperatureSerie = Util.createFloatCopy(_backupTargetTemperatureSerie);
       _targetTour.setCadenceSerie(Util.createFloatCopy(_backupTargetCadenceSerie));
 
-      _targetTour.customTracksDefinition = new HashMap<>(_backupTargetCustomTracksDefinition);
+      _targetTour.setCustomTracksDefinition(new HashMap<>(_backupTargetCustomTracksDefinition));
       _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
       _targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
@@ -1577,7 +1577,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
       _targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
 
-      _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+      _targetTour.setCustomTracksDefinition(_backupTargetCustomTracksDefinition);// = _backupTargetCustomTracksDefinition;
       _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
    }
@@ -1700,7 +1700,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
          isMerged = true;
       } else {
          // restore original custom tracks values because these values should not be saved
-         _targetTour.customTracksDefinition = _backupTargetCustomTracksDefinition;
+         _targetTour.setCustomTracksDefinition(_backupTargetCustomTracksDefinition);// = _backupTargetCustomTracksDefinition;
          _targetTour.setCustomTracks(_backupTargetCustomTracks);
       }
       if (_chkMergeCadence.getSelection()) {

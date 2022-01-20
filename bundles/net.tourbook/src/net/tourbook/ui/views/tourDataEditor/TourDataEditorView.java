@@ -8612,7 +8612,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                newCustomTrackDefinition.setUnit(UIentryDefinition.unit.getText().trim());
                customTracksDefinitionMap.put(customTracksId, newCustomTrackDefinition);
             }
-            _tourData.customTracksDefinition = customTracksDefinitionMap;
+            _tourData.setCustomTracksDefinition(customTracksDefinitionMap);// = customTracksDefinitionMap;
          }
 
       } catch (final IllegalArgumentException e) {

@@ -10649,6 +10649,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       _customTracks = newCustTracks;
    }
 
+   public void setCustomTracksDefinition(final HashMap<String, CustomTrackDefinition> customTracksDefinition ) {
+      this.customTracksDefinition = customTracksDefinition;
+   }
+
    public void setCustomTracksSerie(final String key, final float[] newSerie) {
       if (_customTracks == null) {
          _customTracks = new HashMap<>();

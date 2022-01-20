@@ -620,7 +620,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    @Override
    public ArrayList<TourData> getSelectedTours() {
       // TODO Auto-generated method stub
-      return null;
+      return (new ArrayList<>());
    }
 
    @Override
