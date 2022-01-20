@@ -83,6 +83,8 @@ public class OWMResults {
 
       public Float                 dew_point  = null;
 
+      public Float                 uvi        = null;
+
       public Integer               clouds     = null;
 
       public Integer               visibility = null;
