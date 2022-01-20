@@ -329,14 +329,14 @@ public class OWMWeatherData {
       if (tourData.customTracksDefinition == null) {
          tourData.customTracksDefinition = new HashMap<>();
       }
-
+      final HashMap<String, CustomTrackDefinition> newCustomTracksDefinition = new HashMap<>();
       if (OWM_Temperature_Present) {
          customTrackId = OWMUtils.OWM_Temperature_Name + UI.SYMBOL_COLON + OWMUtils.OWM_Temperature_UUID;
          final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Temperature_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Temperature_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Temperature_Serie);
       }
       if (OWM_Temperature_Feel_Present) {
@@ -345,7 +345,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Temperature_Feel_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Temperature_Feel_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Temperature_Feel_Serie);
       }
       if (OWM_Clouds_Present) {
@@ -354,7 +354,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Clouds_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Clouds_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Clouds_Serie);
       }
       if (OWM_Dew_Points_Present) {
@@ -363,7 +363,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Dew_Point_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Dew_Point_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Dew_Points_Serie);
       }
       if (OWM_Humidity_Present) {
@@ -372,7 +372,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Humidity_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Humidity_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Humidity_Serie);
       }
       if (OWM_Precipitation_Present) {
@@ -381,7 +381,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Precipitation_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Precipitation_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Precipitation_Serie);
       }
       if (OWM_Snow_Present) {
@@ -390,7 +390,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Snow_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Snow_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Snow_Serie);
       }
       if (OWM_Pressure_Present) {
@@ -399,7 +399,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Pressure_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Pressure_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Pressure_Serie);
       }
       if (OWM_UV_Index_Present) {
@@ -408,7 +408,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_UV_Index_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_UV_Index_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_UV_Index_Serie);
       }
       if (OWM_Visibility_Present) {
@@ -417,7 +417,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Visibility_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Visibility_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Visibility_Serie);
       }
       if (OWM_Wind_Direction_Present) {
@@ -426,7 +426,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Wind_Direction_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Direction_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Direction_Serie);
       }
       if (OWM_Wind_Gust_Present) {
@@ -435,7 +435,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Wind_Gust_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Gust_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Gust_Serie);
       }
       if (OWM_Wind_Speed_Present) {
@@ -444,7 +444,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Wind_Speed_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Speed_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Speed_Serie);
       }
 
@@ -454,7 +454,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Wind_Tail_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Tail_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Tail_Serie);
       }
       if (OWM_Wind_Cross_Present) {
@@ -463,7 +463,7 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_Wind_Cross_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_Wind_Cross_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_Wind_Cross_Serie);
       }
       if (OWM_GPS_Direction_Present) {
@@ -472,17 +472,17 @@ public class OWMWeatherData {
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.OWM_GPS_Direction_Name);
          customTrackDefinition.setUnit(OWMUtils.OWM_GPS_Direction_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          newCustTracks.put(customTrackId, OWM_GPS_Direction_Serie);
       }
 
       customTrackId = OWMUtils.Sensor_Temperature_Name + UI.SYMBOL_COLON + OWMUtils.Sensor_Temperature_UUID;
-      if (OWM_Temperature_Present && !tourData.customTracksDefinition.containsKey(customTrackId) && tourData.temperatureSerie != null) {
+      if (OWM_Temperature_Present && !newCustomTracksDefinition.containsKey(customTrackId) && tourData.temperatureSerie != null) {
          final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
          customTrackDefinition.setId(customTrackId);
          customTrackDefinition.setName(OWMUtils.Sensor_Temperature_Name);
          customTrackDefinition.setUnit(OWMUtils.Sensor_Temperature_Unit);
-         tourData.customTracksDefinition.put(customTrackId, customTrackDefinition);
+         newCustomTracksDefinition.put(customTrackId, customTrackDefinition);
          final float[] newTemperature = new float[tourData.temperatureSerie.length];
          System.arraycopy(tourData.temperatureSerie, 0, newTemperature, 0, tourData.temperatureSerie.length);
          newCustTracks.put(customTrackId, newTemperature);
@@ -492,6 +492,9 @@ public class OWMWeatherData {
          tourData.temperatureSerie = new float[OWM_Temperature_Serie.length];
          System.arraycopy(OWM_Temperature_Serie, 0, tourData.temperatureSerie, 0, OWM_Temperature_Serie.length);
       }
+
+      tourData.customTracksDefinition.putAll(newCustomTracksDefinition);
+      tourData.setDataSeriesAppendDefinitions(newCustomTracksDefinition);
 
       //tourData.setCustomTracks(newCustTracks);
    }

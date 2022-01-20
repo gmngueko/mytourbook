@@ -499,6 +499,7 @@ public class ActionRetrieveCustomTracksCsv extends Action {
          if (!tour.customTracksDefinition.containsKey(customTrackDefinition.getId())) {
             tour.customTracksDefinition.put(customTrackDefinition.getId(), customTrackDefinition);
          }
+         tour.setDataSeriesAppendDefinitions(customTrackDefinition);
 
          final int[] timeSerie = tour.timeSerie;
          final float[] newCustomTrackSerie = new float[timeSerie.length];

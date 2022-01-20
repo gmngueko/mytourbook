@@ -48,6 +48,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -2078,17 +2079,29 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public void clear_CustomTracks(final String idx) {
 
-      if (_customTracks == null) {
-         if (customTracksDefinition != null) {
-            customTracksDefinition.remove(idx);
+      if (dataSeries != null) {
+         final Iterator<DataSerie> itDataSeries = dataSeries.iterator();
+         while (itDataSeries.hasNext()) {
+            final DataSerie dataSerie = itDataSeries.next();
+            if (dataSerie.getRefId().compareTo(idx) == 0) {
+               itDataSeries.remove();
+            }
          }
-         return;
       }
-      _customTracks.remove(idx);
-      _customTracks_UI.remove(idx);
-      _customTracksStatistics.remove(idx);
+
       if (customTracksDefinition != null) {
          customTracksDefinition.remove(idx);
+      }
+
+      if (_customTracks != null) {
+         _customTracks.remove(idx);
+      }
+
+      if (_customTracks_UI != null) {
+         _customTracks_UI.remove(idx);
+      }
+      if (_customTracksStatistics != null) {
+         _customTracksStatistics.remove(idx);
       }
    }
 
@@ -7835,6 +7848,24 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return new HashMap<>(customTracksDefinition);
    }
 
+   /**
+    * @return Returns the UI values for dataSeries as CUSTOM TRACKS CustomTrackDefinition.
+    */
+   public HashMap<String, CustomTrackDefinition> getCustomTracksDefinitionFromDataSerie() {
+      if (dataSeries == null) {
+         return new HashMap<>();
+      }
+      final HashMap<String, CustomTrackDefinition> newcustomTracksDefinitionMap = new HashMap<>();
+      for (final DataSerie dataSerie : dataSeries) {
+         final CustomTrackDefinition customTracksDefinitionEntry = new CustomTrackDefinition();
+         customTracksDefinitionEntry.setId(dataSerie.getRefId());
+         customTracksDefinitionEntry.setName(dataSerie.getName());
+         customTracksDefinitionEntry.setUnit(dataSerie.getUnit());
+         newcustomTracksDefinitionMap.put(customTracksDefinitionEntry.getId(), customTracksDefinitionEntry);
+      }
+      return newcustomTracksDefinitionMap;
+   }
+
    public HashMap<String, float[]> getCustomTracksInit() {
       if (_customTracks == null) {
          _customTracks = new HashMap<>();
@@ -10622,6 +10653,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public void setDataSeries(final Set<DataSerie> dataSeries) {
       this.dataSeries = dataSeries;
+   }
+
+   public void setDataSeriesAppendDefinitions( final CustomTrackDefinition dataDefinition) {
+         final DataSerie dataSerie = new DataSerie(dataDefinition.getName(), dataDefinition.getId(), dataDefinition.getUnit());
+         dataSeries.add(dataSerie);
+   }
+
+   public void setDataSeriesAppendDefinitions(final HashMap<String, CustomTrackDefinition> dataDefinition) {
+      for (final CustomTrackDefinition entryDefinition : dataDefinition.values()) {
+         final DataSerie dataSerie = new DataSerie(entryDefinition.getName(), entryDefinition.getId(), entryDefinition.getUnit());
+         dataSeries.add(dataSerie);
+      }
    }
 
    public void setDateTimeCreated(final long dateTimeCreated) {

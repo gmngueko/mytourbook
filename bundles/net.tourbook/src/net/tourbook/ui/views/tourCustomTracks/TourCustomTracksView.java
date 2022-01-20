@@ -161,7 +161,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
          if (_tourData == null) {
             return new Object[0];
          } else {
-            return _tourData.getCustomTracksDefinition().values().toArray();
+            return _tourData.getCustomTracksDefinitionFromDataSerie().values().toArray();
          }
       }
 

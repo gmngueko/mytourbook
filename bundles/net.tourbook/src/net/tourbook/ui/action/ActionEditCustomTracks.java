@@ -18,6 +18,7 @@ package net.tourbook.ui.action;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.tourbook.Images;
@@ -177,15 +178,18 @@ public class ActionEditCustomTracks extends Action {
                      }
                      //Build list of track RefId, count and total size
                      for (final TourData tour : selectedTours) {
-                        if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
-                           for (final DataSerie custTrackDefEntry : _allDataSeries) {
+                        final Set<DataSerie> allTourDataSerie = tour.getDataSeries();
+                        if (allTourDataSerie != null && !allTourDataSerie.isEmpty()) {
+                           //if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
+                           //for (final DataSerie custTrackDefEntry : _allDataSeries) {
+                           for (final DataSerie custTrackDefEntry : allTourDataSerie) {
                               if (_trackList.containsKey(custTrackDefEntry.getRefId())) {
                                  _trackList.get(custTrackDefEntry.getRefId()).count += 1;
                                  final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
                                  _trackList.get(custTrackDefEntry.getRefId()).size += custSize;
                               } else {
-                                 if (tour.customTracksDefinition.containsKey(custTrackDefEntry.getRefId())) {
+                                 //if (tour.customTracksDefinition.containsKey(custTrackDefEntry.getRefId())) {
                                     final TrackEntry newEntry = new TrackEntry();
                                     newEntry.name = custTrackDefEntry.getName();
                                     newEntry.unit = custTrackDefEntry.getUnit();
@@ -195,7 +199,7 @@ public class ActionEditCustomTracks extends Action {
                                     final int custSize = custValues == null ? 0 : custValues.length;
                                     newEntry.size = custSize;
                                     _trackList.put(custTrackDefEntry.getRefId(), newEntry);
-                                 }
+                                 //}
                               }
                            }
                         }
