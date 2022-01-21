@@ -138,6 +138,12 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    }
 
    public int compareTo(final DataSerie dataSerieToCompare) {
+      if (this.getName() == null) {
+         this.setName(UI.EMPTY_STRING);
+      }
+      if (dataSerieToCompare.getName() == null) {
+         dataSerieToCompare.setName(UI.EMPTY_STRING);
+      }
       return this.getName().compareTo(dataSerieToCompare.getName());
    }
 
@@ -145,6 +151,12 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    public int compareTo(final Object o) {
       if (o instanceof DataSerie) {
          final DataSerie dataSerieToCompare = (DataSerie) o;
+         if (this.getName() == null) {
+            this.setName(UI.EMPTY_STRING);
+         }
+         if (dataSerieToCompare.getName() == null) {
+            dataSerieToCompare.setName(UI.EMPTY_STRING);
+         }
          return this.getName().compareTo(dataSerieToCompare.getName());
       }
       return 0;

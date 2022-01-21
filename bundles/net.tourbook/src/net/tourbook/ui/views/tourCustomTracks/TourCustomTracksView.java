@@ -47,7 +47,6 @@ import net.tourbook.ui.views.tourCatalog.TVICatalogRefTourItem;
 import net.tourbook.ui.views.tourCatalog.TVICompareResultComparedTour;
 
 import org.eclipse.e4.ui.di.PersistState;
-import org.eclipse.jface.action.IMenuListener;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -338,7 +337,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
                      _tourData = TourManager.getInstance().getTourData(viewTourId);
 
                      _wpViewer.setInput(new Object[0]);
-
+                     enableActions();
                      // removed old tour data from the selection provider
                      _postSelectionProvider.clearSelection();
 
@@ -364,6 +363,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
       _wpViewer.setInput(new Object[0]);
 
       _postSelectionProvider.clearSelection();
+      enableActions();
 
       _pageBook.showPage(_pageNoData);
    }
@@ -375,12 +375,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
    private void createMenuManager() {
       _viewerMenuManager = new MenuManager("#PopupMenu"); //$NON-NLS-1$
       _viewerMenuManager.setRemoveAllWhenShown(true);
-      _viewerMenuManager.addMenuListener(new IMenuListener() {
-         @Override
-         public void menuAboutToShow(final IMenuManager manager) {
-            fillContextMenu(manager);
-         }
-      });
+      _viewerMenuManager.addMenuListener(this::fillContextMenu);
    }
 
    @Override
@@ -809,6 +804,7 @@ public class TourCustomTracksView extends ViewPart implements ITourProvider, ITo
    @Override
    public void reloadViewer() {
       _wpViewer.setInput(new Object[0]);
+      enableActions();
    }
 
    @PersistState

@@ -2980,6 +2980,7 @@ public class TourDatabase {
          _allDbDataSeries = allDataSeries;
          _allDataSeries_ById = allDataSeries_ById;
          _allDataSeries_ByRefId = allDataSeries_ByRefId;
+         _allDbDataSeries.sort(Comparator.naturalOrder());
       }
    }
 
@@ -3659,6 +3660,74 @@ public class TourDatabase {
 
       // set default empty list
       _activeTourTypes = new ArrayList<>();
+   }
+
+   /**
+    * UpdateandDelete DataSerie.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param dataSeriesUpdated
+    * @param dataSeriesDeleted
+    */
+   public static void updateAndDeleteDataSerie(final ArrayList<DataSerie> dataSeriesUpdated, final ArrayList<DataSerie> dataSeriesDeleted) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for(final DataSerie dataSerie:dataSeriesUpdated)
+         {
+            final DataSerie entityInDB = em.find(DataSerie.class, dataSerie.getSerieId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(dataSerie);
+               savedEntity = dataSerie;
+
+            } else {
+
+               savedEntity = em.merge(dataSerie);
+            }
+         }
+         for (final DataSerie dataSerie : dataSeriesDeleted) {
+            final DataSerie dataSerieInDB = em.find(DataSerie.class, dataSerie.getSerieId());
+
+            if (dataSerieInDB != null) {
+
+               em.remove(dataSerieInDB);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when update/Delete a DataSerie"); //$NON-NLS-1$
+      }
+
    }
 
    private static void updateCachedFields(final TourData tourData) {

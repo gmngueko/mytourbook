@@ -38,7 +38,7 @@ import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
-import net.tourbook.ui.action.ActionEditCustomTracks;
+import net.tourbook.ui.action.ActionEditCustomTracksAll;
 
 import org.eclipse.e4.ui.di.PersistState;
 import org.eclipse.jface.action.IMenuManager;
@@ -110,7 +110,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    private Composite               _viewerContainer;
    private Composite               _uiParent;
 
-   private ActionEditCustomTracks _action_EditCustomTracksData;
+   private ActionEditCustomTracksAll _action_EditCustomTracksData;
 
    private ArrayList<DataSerie>    _allDataSeries = new ArrayList<>();
    private boolean                 _isInUpdate;
@@ -312,9 +312,8 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
                reloadViewer();
             }
 
-         } else if (tourEventId == TourEventId.MARKER_SELECTION) {
-            //TODO
-            //onTourEvent_TourMarker(eventData);
+         } else if (tourEventId == TourEventId.DATA_SERIE_IS_MODIFIED) {
+            reloadViewer();
 
          } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
 
@@ -326,7 +325,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    }
 
    private void createActions() {
-      _action_EditCustomTracksData = new ActionEditCustomTracks(this, true);
+      _action_EditCustomTracksData = new ActionEditCustomTracksAll(this, true);
    }
 
    private void createMenuManager() {
@@ -587,7 +586,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void enableActions() {
 
-      _action_EditCustomTracksData.setEnabled(false);
+      _action_EditCustomTracksData.setEnabled(true);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
@@ -691,6 +690,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
          //updateUI_SelectTourMarker(selectionBackup, checkedElements);
       }
       _viewerContainer.setRedraw(true);
+
    }
 
    private void restoreState_BeforeUI() {
@@ -741,6 +741,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       _isInUpdate = true;
       {
          _ctViewer.setInput(new Object[0]);
+         enableActions();
       }
       _isInUpdate = false;
 
