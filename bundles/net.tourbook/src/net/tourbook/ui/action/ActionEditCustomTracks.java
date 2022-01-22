@@ -416,7 +416,8 @@ public class ActionEditCustomTracks extends Action {
             public void widgetSelected(final SelectionEvent event) {
                final MenuItem selected = (MenuItem) event.widget;
                final DataSerie dataSerie = (DataSerie) selected.getData();
-               dropdown.setText(dataSerie.toStringShortRefId());
+               dropdown.setText(dataSerie.getName());
+               dropdown.setToolTipText(dataSerie.toStringShortRefId());
                dropdown.setData(dataSerie);
             }
          });
