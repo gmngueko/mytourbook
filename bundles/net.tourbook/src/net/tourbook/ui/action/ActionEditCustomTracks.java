@@ -17,6 +17,7 @@ package net.tourbook.ui.action;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeMap;
@@ -48,6 +49,8 @@ import org.eclipse.swt.custom.TableEditor;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -57,33 +60,45 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.widgets.ToolItem;
 
 public class ActionEditCustomTracks extends Action {
    public static final String          DIALOG_TITLE              = "Edit Tours Custom Tracks";                  //$NON-NLS-1$
    public static final String          DIALOG_MSG                = "Edit Custom Tracks";                        //$NON-NLS-1$
    public static final String          TRACKLIST_TITLE           = "List of Custom Tracks";                     //$NON-NLS-1$
-   public static final String          DIALOG_OPEN_TITLE         = "Custom Tracks Delete";                      //$NON-NLS-1$
-   public static final String          DIALOG_OPEN_MSG           = "No Tracks to delete";                       //$NON-NLS-1$
+   public static final String          DIALOG_OPEN_TITLE         = "Custom Tracks Edit";                        //$NON-NLS-1$
+   public static final String          DIALOG_OPEN_MSG           = "No Tracks to edit";                         //$NON-NLS-1$
    public static final String          MENU_NAME                 = "&Edit Tours Custom Tracks...";              //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_NAME    = "List Custom Tracks";                        //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_TOOLTIP = "List Custom Tracks from selected tours..."; //$NON-NLS-1$
-   public static final String          COLI_NAME                 = "#";                                         //$NON-NLS-1$
-   public static final String          COL0_NAME                 = "Delete";                                    //$NON-NLS-1$
-   public static final String          COL1_NAME                 = "Name";                                      //$NON-NLS-1$
-   public static final String          COL2_NAME                 = "Unit";                                      //$NON-NLS-1$
-   public static final String          COL3_NAME                 = "Count";                                     //$NON-NLS-1$
-   public static final String          COL4_NAME                 = "Size";                                      //$NON-NLS-1$
-   public static final String          COL5_NAME                 = "RefId";                                     //$NON-NLS-1$
+   public static final String          COL0_NAME                 = "#";                                         //$NON-NLS-1$
+   public static final String          COL1_NAME                 = "Delete";                                    //$NON-NLS-1$
+   public static final String          COL2_NAME                 = "Name";                                      //$NON-NLS-1$
+   public static final String          COL3_NAME                 = "Unit";                                      //$NON-NLS-1$
+   public static final String          COL4_NAME                 = "Count";                                     //$NON-NLS-1$
+   public static final String          COL5_NAME                 = "Size";                                      //$NON-NLS-1$
+   public static final String          COL6_NAME                 = "RefId";                                     //$NON-NLS-1$
+   public static final String          COL7_NAME                 = "Update";                                    //$NON-NLS-1$
+   public static final String          COL8_NAME                 = "New RefId";                                 //$NON-NLS-1$
    public static final String          CHECKBOX_DELETE_TAG       = "CHECK_DEL_BOX";                             //$NON-NLS-1$
    public static final String          CHECKBOX_UPDATE_TAG       = "CHECK_UPD_BOX";                             //$NON-NLS-1$
    public static final String          TEXTBOX_UNIT_TAG          = "TEXTBOX_UNIT";                              //$NON-NLS-1$
+   public static final String          DROPDOWN_REFID_TAG        = "DROPDOWN_REFID";                            //$NON-NLS-1$
+   public static final String          DROPDOWN_ITEM_REFID_TAG   = "DROPDOWN_REFID";                            //$NON-NLS-1$
+   public static final String          NO_SELECTION_STRING       = "No Selection";                              //$NON-NLS-1$
 
-   private TreeMap<String, TrackEntry> _trackList                = new TreeMap<>();
-   private ArrayList<DataSerie>        _allDataSeries            = null;
+   private TreeMap<String, TrackEntry> _trackList                 = new TreeMap<>();
+   private ArrayList<DataSerie>        _allDataSeries             = null;
+   private ArrayList<DataSerie>        _selectedTourDataSeries    = new ArrayList<>();
+   private HashMap<String, DataSerie>  _selectedTourDataSeriesMap = new HashMap<>();
+   private ArrayList<String>           _updatedTourDataSeriesId   = new ArrayList<>();
 
    private ITourProvider2              _tourProvider             = null;
    private ITourProvider               _tourProvider1            = null;
@@ -94,7 +109,7 @@ public class ActionEditCustomTracks extends Action {
 
       private Composite _containerTrackList;
       private Table     _tableTracks;
-      private String[]  _titleTracks = { COLI_NAME, COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME, COL4_NAME, COL5_NAME };
+      private String[]  _titleTracks = { COL0_NAME, COL1_NAME, COL2_NAME, COL3_NAME, COL4_NAME, COL5_NAME, COL6_NAME, COL7_NAME, COL8_NAME };
 
       private Button    buttonLoadTracks;
 
@@ -177,30 +192,32 @@ public class ActionEditCustomTracks extends Action {
 
                         return;
                      }
+                     _selectedTourDataSeries.clear();
+                     _selectedTourDataSeriesMap.clear();
+                     _updatedTourDataSeriesId.clear();
                      //Build list of track RefId, count and total size
                      for (final TourData tour : selectedTours) {
                         final Set<DataSerie> allTourDataSerie = tour.getDataSeries();
                         if (allTourDataSerie != null && !allTourDataSerie.isEmpty()) {
-                           //if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
-                           //for (final DataSerie custTrackDefEntry : _allDataSeries) {
-                           for (final DataSerie custTrackDefEntry : allTourDataSerie) {
-                              if (_trackList.containsKey(custTrackDefEntry.getRefId())) {
-                                 _trackList.get(custTrackDefEntry.getRefId()).count += 1;
-                                 final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
+
+                           for (final DataSerie tourDataSerie : allTourDataSerie) {
+                              if (_trackList.containsKey(tourDataSerie.getRefId())) {
+                                 _trackList.get(tourDataSerie.getRefId()).count += 1;
+                                 final float[] custValues = tour.getCustomTracks(tourDataSerie.getRefId());
                                  final int custSize = custValues == null ? 0 : custValues.length;
-                                 _trackList.get(custTrackDefEntry.getRefId()).size += custSize;
+                                 _trackList.get(tourDataSerie.getRefId()).size += custSize;
                               } else {
-                                 //if (tour.customTracksDefinition.containsKey(custTrackDefEntry.getRefId())) {
-                                    final TrackEntry newEntry = new TrackEntry();
-                                    newEntry.name = custTrackDefEntry.getName();
-                                    newEntry.unit = custTrackDefEntry.getUnit();
-                                    newEntry.refid = custTrackDefEntry.getRefId();
-                                    newEntry.count = 1;
-                                    final float[] custValues = tour.getCustomTracks(custTrackDefEntry.getRefId());
-                                    final int custSize = custValues == null ? 0 : custValues.length;
-                                    newEntry.size = custSize;
-                                    _trackList.put(custTrackDefEntry.getRefId(), newEntry);
-                                 //}
+                                 _selectedTourDataSeries.add(tourDataSerie);
+                                 _selectedTourDataSeriesMap.put(tourDataSerie.getRefId(), tourDataSerie);
+                                 final TrackEntry newEntry = new TrackEntry();
+                                 newEntry.name = tourDataSerie.getName();
+                                 newEntry.unit = tourDataSerie.getUnit();
+                                 newEntry.refid = tourDataSerie.getRefId();
+                                 newEntry.count = 1;
+                                 final float[] custValues = tour.getCustomTracks(tourDataSerie.getRefId());
+                                 final int custSize = custValues == null ? 0 : custValues.length;
+                                 newEntry.size = custSize;
+                                 _trackList.put(tourDataSerie.getRefId(), newEntry);
                               }
                            }
                         }
@@ -268,32 +285,87 @@ public class ActionEditCustomTracks extends Action {
                         editor.horizontalAlignment = SWT.LEFT;
                         editor.setEditor(buttonDelete, itemEvent, 1);
 
-//                        final TableEditor editorUpd = new TableEditor(_tableTracks);
-//                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);
-//                        buttonUpdate.setData(trackListEntry.getValue());
-//                        itemEvent.setData(CHECKBOX_UPDATE_TAG, buttonUpdate);
-//
-//                        buttonUpdate.addSelectionListener(new SelectionAdapter() {
-//                           @Override
-//                           public void widgetSelected(final SelectionEvent e) {
-//                              final Button button = (Button) e.widget;
-//                              final Object data = button.getData();
-//                              if (data != null) {
-//                                 final TrackEntry cData = (TrackEntry) data;
-//                                 if (button.getSelection()) {
-//                                    //System.out.println(" Maintenance check for True:" + button.getData());
-//                                    cData.isUpdated = true;
-//                                 } else {
-//                                    //System.out.println(" Maintenance check for False:" + button.getData());
-//                                    cData.isUpdated = false;
-//                                 }
-//                              }
-//                           }
-//                        });
-//                        buttonUpdate.pack();
-//                        editorUpd.minimumWidth = buttonUpdate.getSize().x;
-//                        editorUpd.horizontalAlignment = SWT.LEFT;
-//                        editorUpd.setEditor(buttonUpdate, itemEvent, 5);
+                        final TableEditor editorUpd = new TableEditor(_tableTracks);
+                        final Button buttonUpdate = new Button(_tableTracks, SWT.CHECK);
+                        buttonUpdate.setData(trackListEntry);
+                        itemEvent.setData(CHECKBOX_UPDATE_TAG, buttonUpdate);
+
+                        buttonUpdate.addSelectionListener(new SelectionAdapter() {
+                           @Override
+                           public void widgetSelected(final SelectionEvent e) {
+                              final Button button = (Button) e.widget;
+                              final Object data = button.getData();
+                              if (data != null) {
+                                 final TrackEntry cData = (TrackEntry) data;
+                                 final ToolItem itemNew = (ToolItem) button.getData(DROPDOWN_ITEM_REFID_TAG);
+                                 final DataSerie selectedSerie = (DataSerie) itemNew.getData();
+                                 if (button.getSelection()) {
+                                    //System.out.println(" Maintenance check for True:" + button.getData());
+                                    if (itemNew.getText().compareTo(NO_SELECTION_STRING) == 0) {
+                                       button.setSelection(false);
+                                       cData.isUpdated = false;
+                                       MessageDialog.openInformation(
+                                             shell,
+                                             DIALOG_OPEN_TITLE,
+                                             "Cannot Update an Empty Selection, please Select a DataSerie");//$NON-NLS-1$
+                                       return;
+                                    }
+                                    if (_updatedTourDataSeriesId.contains(selectedSerie.getRefId())) {
+                                       button.setSelection(false);
+                                       cData.isUpdated = false;
+                                       MessageDialog.openInformation(
+                                             shell,
+                                             DIALOG_OPEN_TITLE,
+                                             "Cannot Update because Selected DataSerie is already used in another Update!!");//$NON-NLS-1$
+                                       return;
+                                    }
+                                    if (_selectedTourDataSeriesMap.containsKey(selectedSerie.getRefId())) {
+                                       button.setSelection(false);
+                                       cData.isUpdated = false;
+                                       MessageDialog.openInformation(
+                                             shell,
+                                             DIALOG_OPEN_TITLE,
+                                             "Cannot Update because Selected DataSerie is already present in the current Tour's!!");//$NON-NLS-1$
+                                       return;
+                                    }
+                                    _updatedTourDataSeriesId.add(selectedSerie.getRefId());
+                                    cData.isUpdated = true;
+                                 } else {
+                                    //System.out.println(" Maintenance check for False:" + button.getData());
+                                    cData.isUpdated = false;
+                                    _updatedTourDataSeriesId.remove(selectedSerie.getRefId());
+                                 }
+                              }
+                           }
+                        });
+                        buttonUpdate.pack();
+                        editorUpd.minimumWidth = buttonUpdate.getSize().x;
+                        editorUpd.horizontalAlignment = SWT.LEFT;
+                        editorUpd.setEditor(buttonUpdate, itemEvent, 7);
+
+                        final TableEditor editorNew = new TableEditor(_tableTracks);
+                        final ToolBar toolBarNew = new ToolBar(_tableTracks, SWT.BORDER | SWT.VERTICAL);
+                        toolBarNew.setData(trackListEntry);
+                        final ToolItem itemNew = new ToolItem(toolBarNew, SWT.DROP_DOWN);
+                        itemEvent.setData(DROPDOWN_REFID_TAG, toolBarNew);
+                        itemEvent.setData(DROPDOWN_ITEM_REFID_TAG, itemNew);
+                        buttonUpdate.setData(DROPDOWN_ITEM_REFID_TAG, itemNew);
+
+                        itemNew.setText(NO_SELECTION_STRING);
+                        final DropdownSelectionListener listenerNew = new DropdownSelectionListener(itemNew);
+                        for (final DataSerie dataSerie : _allDataSeries) {
+                           if (dataSerie.getRefId().compareTo(trackListEntry.refid) != 0) {
+                              listenerNew.add(dataSerie);
+                           }
+                        }
+                        itemNew.addSelectionListener(listenerNew);
+                        toolBarNew.pack();
+                        editorNew.minimumWidth = toolBarNew.getSize().x;
+                        editorNew.minimumHeight = toolBarNew.getSize().y;
+                        editorNew.horizontalAlignment = SWT.LEFT;
+                        editorNew.grabHorizontal = true;
+                        editorNew.setEditor(toolBarNew, itemEvent, 8);
+
                      }
                      break;
                   }
@@ -321,6 +393,57 @@ public class ActionEditCustomTracks extends Action {
 
       }
 
+   }
+
+   class DropdownSelectionListener extends SelectionAdapter {
+      private ToolItem dropdown;
+
+      private Menu     menu;
+
+      public DropdownSelectionListener(final ToolItem dropdown) {
+         this.dropdown = dropdown;
+         menu = new Menu(dropdown.getParent().getShell());
+      }
+
+      public void add(final DataSerie item) {
+         final MenuItem menuItem = new MenuItem(menu, SWT.NONE);
+         menuItem.setText(item.toStringShort());
+         menuItem.setData(item);
+         menuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(final SelectionEvent event) {
+               final MenuItem selected = (MenuItem) event.widget;
+               final DataSerie dataSerie = (DataSerie) selected.getData();
+               dropdown.setText(dataSerie.toStringShortRefId());
+               dropdown.setData(dataSerie);
+            }
+         });
+      }
+
+      public void add(final String item) {
+         final MenuItem menuItem = new MenuItem(menu, SWT.NONE);
+         menuItem.setText(item);
+         menuItem.addSelectionListener(new SelectionAdapter() {
+            @Override
+            public void widgetSelected(final SelectionEvent event) {
+               final MenuItem selected = (MenuItem) event.widget;
+               dropdown.setText(selected.getText());
+            }
+         });
+      }
+
+      @Override
+      public void widgetSelected(final SelectionEvent event) {
+         if (event.detail == SWT.ARROW) {
+            final ToolItem item = (ToolItem) event.widget;
+            final Rectangle rect = item.getBounds();
+            final Point pt = item.getParent().toDisplay(new Point(rect.x, rect.y));
+            menu.setLocation(pt.x, pt.y + rect.height);
+            menu.setVisible(true);
+         } else {
+            System.out.println(dropdown.getText() + " Pressed");
+         }
+      }
    }
 
    public class TrackEntry implements Comparable<Object> {

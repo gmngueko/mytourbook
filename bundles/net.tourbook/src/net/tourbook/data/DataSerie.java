@@ -248,7 +248,17 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
 
    @Override
    public String toString() {
-      return "DataSerie [dbId=" + serieId + ", name=" + name + ", refId=" + refId + ", unit=" + unit + ", _createId=" + _createId //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$//$NON-NLS-5$
+      return "DataSerie [name=" + name + ", unit=" + unit + ",dbId=" + serieId + ", refId=" + refId + ", _createId=" + _createId //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$//$NON-NLS-4$//$NON-NLS-5$
+            + "]";//$NON-NLS-1$
+   }
+
+   public String toStringShort() {
+      return "[name=" + name + "; unit=" + unit + "; refId=" + refId //$NON-NLS-1$//$NON-NLS-2$//$NON-NLS-3$
+            + "]";//$NON-NLS-1$
+   }
+
+   public String toStringShortRefId() {
+      return "[name=" + name + "; refId=" + refId //$NON-NLS-1$//$NON-NLS-2$
             + "]";//$NON-NLS-1$
    }
 
