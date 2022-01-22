@@ -12186,6 +12186,52 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return null;
    }
 
+   public void update_CustomTracks_DataSerie(final String oldIdx, final String newIdx) {
+
+      final HashMap<String, DataSerie> allDbDataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      final DataSerie newSerie = allDbDataSeriesByRefId.get(newIdx);
+      if (dataSeries != null && newSerie!=null) {
+         final Iterator<DataSerie> itDataSeries = dataSeries.iterator();
+         while (itDataSeries.hasNext()) {
+            final DataSerie dataSerie = itDataSeries.next();
+            if (dataSerie.getRefId().compareTo(oldIdx) == 0) {
+               itDataSeries.remove();
+            }
+         }
+
+         dataSeries.add(newSerie);
+      }else {
+         //TODO: add error in this case
+         return;//should not happen !!!
+      }
+
+      if (customTracksDefinition != null) {
+         customTracksDefinition.remove(oldIdx);
+         final CustomTrackDefinition newCustTrackDef = new CustomTrackDefinition();
+         newCustTrackDef.setId(newIdx);
+         newCustTrackDef.setName(newSerie.getName());
+         newCustTrackDef.setUnit(newSerie.getUnit());
+         customTracksDefinition.put(newIdx, newCustTrackDef);
+      }
+
+      if (_customTracks != null) {
+         final float[] data = _customTracks.get(oldIdx);
+         _customTracks.remove(oldIdx);
+         _customTracks.put(newIdx, data);
+      }
+
+      if (_customTracks_UI != null) {
+         final float[] data = _customTracks_UI.get(oldIdx);
+         _customTracks_UI.remove(oldIdx);
+         _customTracks_UI.put(newIdx, data);
+      }
+      if (_customTracksStatistics != null) {
+         final CustomTrackStatisticEntry data = _customTracksStatistics.get(oldIdx);
+         _customTracksStatistics.remove(oldIdx);
+         _customTracksStatistics.put(newIdx, data);
+      }
+   }
+
    /**
     * Converts data series from db version 42 to 43
     */

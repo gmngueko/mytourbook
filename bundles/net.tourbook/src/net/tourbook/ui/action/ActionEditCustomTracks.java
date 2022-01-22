@@ -330,9 +330,11 @@ public class ActionEditCustomTracks extends Action {
                                     }
                                     _updatedTourDataSeriesId.add(selectedSerie.getRefId());
                                     cData.isUpdated = true;
+                                    cData.refidNew = selectedSerie.getRefId();
                                  } else {
                                     //System.out.println(" Maintenance check for False:" + button.getData());
                                     cData.isUpdated = false;
+                                    cData.refidNew = null;
                                     _updatedTourDataSeriesId.remove(selectedSerie.getRefId());
                                  }
                               }
@@ -454,6 +456,7 @@ public class ActionEditCustomTracks extends Action {
       int     size       = 0;
       Boolean isDeleted = false;
       Boolean isUpdated = false;
+      String  refidNew  = null;
 
       @Override
       public int compareTo(final Object o) {
@@ -514,21 +517,19 @@ public class ActionEditCustomTracks extends Action {
 
    public boolean editCustomTracksfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {
       boolean isModified = false;
-      if (_allDataSeries != null && !_allDataSeries.isEmpty()) {
-         final Iterator<DataSerie> iteratorCustTrackDef = _allDataSeries.iterator();
+      if (_selectedTourDataSeries != null && !_selectedTourDataSeries.isEmpty()) {
+         final Iterator<DataSerie> iteratorCustTrackDef = _selectedTourDataSeries.iterator();
          while (iteratorCustTrackDef.hasNext()) {
             final DataSerie dataSerie = iteratorCustTrackDef.next();
             //System.out.println(pair.getKey() + " = " + pair.getValue());
             if (trackList2.containsKey(dataSerie.getRefId())) {
                if (trackList2.get(dataSerie.getRefId()).isDeleted) {
                   tour.clear_CustomTracks(dataSerie.getRefId());
-                  //iteratorCustTrackDef.remove(); // avoids a ConcurrentModificationException
+                  isModified = true;
+               } else if (trackList2.get(dataSerie.getRefId()).isUpdated && trackList2.get(dataSerie.getRefId()).refidNew != null) {
+                  tour.update_CustomTracks_DataSerie(trackList2.get(dataSerie.getRefId()).refid, trackList2.get(dataSerie.getRefId()).refidNew);
                   isModified = true;
                }
-//                  else if (trackList2.get(dataSerie.getRefId()).isUpdated) {
-//                  dataSerie.setUnit(trackList2.get(dataSerie.getRefId()).unit);
-//                  isModified = true;
-//               }
             }
          }
       }
