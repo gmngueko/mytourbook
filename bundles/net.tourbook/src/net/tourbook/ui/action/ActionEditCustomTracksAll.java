@@ -17,6 +17,7 @@ package net.tourbook.ui.action;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -29,6 +30,7 @@ import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.ITourProvider2;
+import net.tourbook.ui.views.tourCustomTracks.DataSerieViewItem;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.IMessageProvider;
@@ -84,6 +86,7 @@ public class ActionEditCustomTracksAll extends Action {
 
    private TreeMap<String, TrackEntry> _trackList                = new TreeMap<>();
    private ArrayList<DataSerie>        _allDataSeries            = null;
+   private HashMap<String, DataSerieViewItem> _allDataSeriesView_ByRefId = null;
 
    private ITourProvider2              _tourProvider             = null;
    private ITourProvider               _tourProvider1            = null;
@@ -180,19 +183,19 @@ public class ActionEditCustomTracksAll extends Action {
                      //Build list of track RefId, count and total size
                      TourDatabase.clearDataSeries();
                      final ArrayList<DataSerie> allTourDataSerie = _allDataSeries = TourDatabase.getAllDataSeriesWithTourData();
+                     _allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
                         if (allTourDataSerie != null && !allTourDataSerie.isEmpty()) {
                         for (final DataSerie dataSerieEntry : allTourDataSerie) {
                            if (!_trackList.containsKey(dataSerieEntry.getRefId())) {
-                                 //if (tour.customTracksDefinition.containsKey(custTrackDefEntry.getRefId())) {
-                                    final TrackEntry newEntry = new TrackEntry();
+                              final TrackEntry newEntry = new TrackEntry();
                               newEntry.name = dataSerieEntry.getName();
                               newEntry.unit = dataSerieEntry.getUnit();
                               newEntry.refid = dataSerieEntry.getRefId();
                               newEntry.count = dataSerieEntry.getTourData() == null ? 0 : dataSerieEntry.getTourData().size();
-                                    final int custSize = -1;//custValues == null ? 0 : custValues.length;
-                                    newEntry.size = custSize;
+                              newEntry.count = _allDataSeriesView_ByRefId.get(dataSerieEntry.getRefId()).getColTourCounter();
+                              final int custSize = -1;//custValues == null ? 0 : custValues.length;
+                              newEntry.size = custSize;
                               _trackList.put(dataSerieEntry.getRefId(), newEntry);
-                                 //}
                               }
                            }
                         }
@@ -345,7 +348,7 @@ public class ActionEditCustomTracksAll extends Action {
       String name;
       String  refid;
       String  unit;
-      int    count = 0;
+      long    count     = 0;
       int     size       = 0;
       Boolean isDeleted = false;
       Boolean isUpdated = false;
@@ -444,6 +447,8 @@ public class ActionEditCustomTracksAll extends Action {
       //final ArrayList<TourData> selectedTours = _tourProvider != null ? _tourProvider.getSelectedTours() : _tourProvider1.getSelectedTours();
       TourDatabase.clearDataSeries();
       _allDataSeries = TourDatabase.getAllDataSeries();
+      _allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
+
       final Shell shell = Display.getCurrent().getActiveShell();
 //      if (selectedTours == null || selectedTours.isEmpty()) {
 //

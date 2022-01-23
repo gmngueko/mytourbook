@@ -84,6 +84,7 @@ import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.SQLFilter;
 import net.tourbook.ui.TourTypeFilter;
 import net.tourbook.ui.UI;
+import net.tourbook.ui.views.tourCustomTracks.DataSerieViewItem;
 
 import org.apache.derby.drda.NetworkServerControl;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -290,6 +291,11 @@ public class TourDatabase {
     * Key is DataSerie RefID
     */
    private static HashMap<String, DataSerie>              _allDataSeries_ByRefId;
+
+   /**
+    * Key is DataSerie RefID
+    */
+   private static HashMap<String, DataSerieViewItem>      _allDataSeriesView_ByRefId;
 
    /**
     * Key is tour type ID
@@ -1209,6 +1215,11 @@ public class TourDatabase {
          _allDataSeries_ById.clear();
          _allDataSeries_ById = null;
       }
+
+      if (_allDataSeriesView_ByRefId != null) {
+         _allDataSeriesView_ByRefId.clear();
+         _allDataSeriesView_ByRefId = null;
+      }
    }
 
    /**
@@ -1796,6 +1807,24 @@ public class TourDatabase {
       loadAllDataSeries();
 
       return _allDataSeries_ByRefId;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
+   public static HashMap<String, DataSerieViewItem> getAllDataSeriesView_ByRefId() {
+
+      if (_allDataSeriesView_ByRefId != null) {
+         return _allDataSeriesView_ByRefId;
+      }
+
+      if (_allDataSeries_ByRefId == null) {
+         loadAllDataSeries();
+      }
+
+      loadAllDataSeriesView();
+
+      return _allDataSeriesView_ByRefId;
    }
 
    public static ArrayList<DataSerie> getAllDataSeriesWithTourData() {
@@ -2981,6 +3010,17 @@ public class TourDatabase {
          _allDataSeries_ById = allDataSeries_ById;
          _allDataSeries_ByRefId = allDataSeries_ByRefId;
          _allDbDataSeries.sort(Comparator.naturalOrder());
+      }
+   }
+
+   @SuppressWarnings("unchecked")
+   private static void loadAllDataSeriesView() {
+      _allDataSeriesView_ByRefId = new HashMap<>();
+
+      for (final DataSerie serieItem : _allDbDataSeries) {
+         final DataSerieViewItem dataSerieViewItem = new DataSerieViewItem();
+         dataSerieViewItem.readDataSerieTotals(serieItem);
+         _allDataSeriesView_ByRefId.put(serieItem.getRefId(), dataSerieViewItem);
       }
    }
 

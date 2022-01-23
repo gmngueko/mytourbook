@@ -18,7 +18,7 @@ package net.tourbook.ui.views.tourCustomTracks;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.HashMap;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.CommonActivator;
@@ -113,6 +113,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    private ActionEditCustomTracksAll _action_EditCustomTracksData;
 
    private ArrayList<DataSerie>    _allDataSeries = new ArrayList<>();
+   private HashMap<String, DataSerieViewItem> _allDataSeriesView_ByRefId      = null;
    private boolean                 _isInUpdate;
 
    private final NumberFormat      _nf1                            = NumberFormat.getNumberInstance();
@@ -478,8 +479,8 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getRefId());
             //Hibernate.initialize(ct.getTourData());
-            final Set<TourData> listofTours = ct.getTourData();
-            final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            //final Set<TourData> listofTours = ct.getTourData();
+            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();//(listofTours == null ? 0 : listofTours.size());
             if (ctSize == 0) {
                cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
@@ -512,8 +513,9 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getName());
             //Hibernate.initialize(ct.getTourData());
-            final Set<TourData> listofTours = ct.getTourData();
-            final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            //final Set<TourData> listofTours = ct.getTourData();
+            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
             if (ctSize == 0) {
                cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
@@ -534,9 +536,10 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
          public void update(final ViewerCell cell) {
 
             final DataSerie ct = (DataSerie) cell.getElement();
-            final Set<TourData> listofTours = ct.getTourData();
+            //final Set<TourData> listofTours = ct.getTourData();
             //Hibernate.initialize(ct.getTourData());
-            final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
             cell.setText(String.valueOf(ctSize));
             if (ctSize == 0) {
                cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
@@ -559,8 +562,9 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             final DataSerie ct = (DataSerie) cell.getElement();
             cell.setText(ct.getUnit());
             //Hibernate.initialize(ct.getTourData());
-            final Set<TourData> listofTours = ct.getTourData();
-            final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            //final Set<TourData> listofTours = ct.getTourData();
+            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
+            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
             if (ctSize == 0) {
                cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
             }
@@ -644,6 +648,9 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       _allDataSeries.clear();
       TourDatabase.clearDataSeries();
       _allDataSeries.addAll(TourDatabase.getAllDataSeriesWithTourData());
+      //_allDataSeriesView_ByRefId.clear();
+      //_allDataSeriesView_ByRefId.putAll(TourDatabase.getAllDataSeriesView_ByRefId());
+      _allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
    }
 
    @Override
