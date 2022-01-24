@@ -33,6 +33,7 @@ import javax.persistence.ManyToMany;
 import javax.persistence.Transient;
 
 import net.tourbook.common.UI;
+import net.tourbook.database.FIELD_VALIDATION;
 import net.tourbook.database.TourDatabase;
 
 @Entity
@@ -49,6 +50,10 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    public static final int            DB_LENGTH_NAME            = 128;
    public static final int            DB_LENGTH_REFID           = 128;
    public static final int            DB_LENGTH_UNIT            = 40;
+
+   public static final String         UIFIELD_NAME              = "DataSerie Name";
+   public static final String         UIFIELD_REFID             = "DataSerie ReferenceId";
+   public static final String         UIFIELD_UNIT              = "DataSerie Unit";
 
    /**
     * Manually created marker or imported marker create a unique id to identify them, saved marker
@@ -227,6 +232,59 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
       result = prime * result + (int) (_createId ^ (_createId >>> 32));
       result = prime * result + (int) (serieId ^ (serieId >>> 32));
       return result;
+   }
+
+   /**
+    * Checks if VARCHAR fields have the correct length
+    *
+    * @return Returns <code>true</code> when the data are valid and can be saved
+    */
+   public boolean isValidForSave() {
+
+      FIELD_VALIDATION fieldValidation;
+
+      /*
+       * Check: name
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            name,
+            DB_LENGTH_NAME,
+            UIFIELD_NAME);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         name = name.substring(0, DB_LENGTH_NAME);
+      }
+
+      /*
+       * Check: refId
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            refId,
+            DB_LENGTH_REFID,
+            UIFIELD_REFID);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         refId = refId.substring(0, DB_LENGTH_REFID);
+      }
+
+      /*
+       * Check: unit
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            unit,
+            DB_LENGTH_UNIT,
+            UIFIELD_UNIT);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         unit = unit.substring(0, DB_LENGTH_UNIT);
+      }
+      return true;
    }
 
    public void setName(final String newname) {
