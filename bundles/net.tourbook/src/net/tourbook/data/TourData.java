@@ -8535,6 +8535,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return pausedTime_Start;
    }
 
+   @JsonIgnore
    public boolean[] getPausedTimeSerie() {
 
       if (pausedTimeSerie == null) {
