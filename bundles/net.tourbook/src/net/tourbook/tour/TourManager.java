@@ -2089,10 +2089,6 @@ public class TourManager {
                         numLastWorked = numWorked;
                      }
 
-//                     monitor.subTask(NLS.bind(Messages.Tour_Data_LoadTourData_Monitor_SubTask,
-//                           ++loadCounter[0],
-//                           numTourIds));
-
                      final Long tourId = allTourIds.get(tourIndex[0]);
 
                      loadTourData_Concurrent(
