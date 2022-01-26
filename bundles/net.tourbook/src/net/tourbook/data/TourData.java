@@ -887,6 +887,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private Set<TourTag>                tourTags                            = new HashSet<>();
 
    /**
+    * CustomFields
+    */
+   @OneToMany(fetch = FetchType.EAGER, cascade = ALL, mappedBy = "tourData")
+   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+   private Set<CustomFieldValue>     customFieldValues                  = new HashSet<>();
+
+   /**
     * Sensors
     */
    @OneToMany(fetch = FetchType.EAGER, cascade = ALL, mappedBy = "tourData")
@@ -7827,6 +7834,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
    public int getConconiDeflection() {
       return conconiDeflection;
+   }
+
+   public Set<CustomFieldValue> getCustomFieldValues() {
+      return customFieldValues;
    }
 
    public CustomTrackIsActiveSettings getCustomTrackIsActiveSettings() {

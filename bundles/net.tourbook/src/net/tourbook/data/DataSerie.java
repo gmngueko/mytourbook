@@ -164,7 +164,7 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
          }
          return this.getName().compareTo(dataSerieToCompare.getName());
       }
-      return 0;
+      return 1;
    }
 
    @Override

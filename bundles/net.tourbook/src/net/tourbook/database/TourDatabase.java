@@ -62,6 +62,8 @@ import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorValue;
@@ -178,6 +180,8 @@ public class TourDatabase {
    private static final String TABLE_DB_VERSION_DESIGN                    = "DBVERSION";                                             //$NON-NLS-1$
    private static final String TABLE_DB_VERSION_DATA                      = "DB_VERSION_DATA";                                       //$NON-NLS-1$
 
+   public static final String  TABLE_CUSTOM_FIELD                         = "CUSTOMFIELD";                                           //$NON-NLS-1$
+   public static final String  TABLE_CUSTOM_FIELD_VALUE                   = "CUSTOMFIELDVALUE";                                      //$NON-NLS-1$
    public static final String  TABLE_DATA_SERIE                           = "DATASERIE";                                             //$NON-NLS-1$
 
    public static final String  TABLE_DEVICE_SENSOR                        = "DeviceSensor";                                          //$NON-NLS-1$
@@ -220,6 +224,8 @@ public class TourDatabase {
     */
    public static final int     ENTITY_IS_NOT_SAVED                = -1;
    //
+   public static final String  ENTITY_ID_CUSTOM_FIELD             = "FieldID";                                                     //$NON-NLS-1$
+   public static final String  ENTITY_ID_CUSTOM_FIELD_VALUE       = "FieldValueID";                                                //$NON-NLS-1$
    public static final String  ENTITY_ID_DATA_SERIE               = "SerieID";                                              //$NON-NLS-1$
 
    public static final String  ENTITY_ID_BIKE                     = "BikeID";                                               //$NON-NLS-1$
@@ -237,6 +243,8 @@ public class TourDatabase {
    public static final String  ENTITY_ID_TYPE                     = "TypeID";                                               //$NON-NLS-1$
    public static final String  ENTITY_ID_WAY_POINT                = "WayPointID";                                           //$NON-NLS-1$
    //
+   private static final String KEY_CUSTOM_FIELD                   = TABLE_CUSTOM_FIELD + "_" + ENTITY_ID_CUSTOM_FIELD;             //$NON-NLS-1$
+   private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
    private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;          //$NON-NLS-1$
 
    private static final String KEY_BIKE                           = TABLE_TOUR_BIKE + "_" + ENTITY_ID_BIKE;                 //$NON-NLS-1$
@@ -282,6 +290,8 @@ public class TourDatabase {
 
    private static volatile ArrayList<DataSerie>           _allDbDataSeries;
 
+   private static volatile ArrayList<CustomField>         _allDbCustomFields;
+
    /**
     * Key is DataSerie ID
     */
@@ -296,6 +306,16 @@ public class TourDatabase {
     * Key is DataSerie RefID
     */
    private static HashMap<String, DataSerieViewItem>      _allDataSeriesView_ByRefId;
+
+   /**
+    * Key is CustomField ID
+    */
+   private static HashMap<Long, CustomField>              _allCustomFields_ById;
+
+   /**
+    * Key is CustomField RefID
+    */
+   private static HashMap<String, CustomField>            _allCustomFields_ByRefId;
 
    /**
     * Key is tour type ID
@@ -833,6 +853,107 @@ public class TourDatabase {
       checkUnsavedTransientInstances_TourType(tourData);
       checkUnsavedTransientInstances_Sensors(tourData);
       checkUnsavedTransientInstances_DataSeries(tourData);
+      checkUnsavedTransientInstances_CustomFields(tourData);
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void checkUnsavedTransientInstances_CustomFields(final TourData tourData) {
+
+      final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+      if (allTourData_CustomFieldValues.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<CustomField> allNotSavedCustomFields = new ArrayList<>();
+
+      final HashMap<String, CustomField> allDbCustomFields = new HashMap<>(getAllCustomFields_ByRefId());
+
+      // loop: all sensor values in the tour -> find sensors which are not yet saved
+      for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+         final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
+
+         final long fieldId = tourData_CustomField.getFieldId();
+
+         if (fieldId != ENTITY_IS_NOT_SAVED) {
+
+            // sensor is saved
+
+            continue;
+         }
+
+         // sensor is not yet saved
+         // 1. sensor can still be new
+         // 2. sensor is already created but not updated in the not yet saved tour
+
+         final CustomField dbCustomField = allDbCustomFields.get(tourData_CustomField.getRefId());
+
+         if (dbCustomField == null) {
+
+            // sensor not available -> create a new sensor
+
+            allNotSavedCustomFields.add(tourData_CustomField);
+         }
+      }
+
+      boolean isNewCustomFieldSaved = false;
+
+      if (allNotSavedCustomFields.size() > 0) {
+
+         // create new sensors
+
+         synchronized (TRANSIENT_LOCK) {
+
+            HashMap<String, CustomField> allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+            for (final CustomField newCustomField : allNotSavedCustomFields) {
+
+               // check again, sensor list could be updated in another thread
+               final CustomField dbSensor = allDbCustomFields_InLock.get(newCustomField.getRefId());
+
+               if (dbSensor == null) {
+
+                  // sensor is not yet in db -> create it
+
+                  saveEntity(
+                        newCustomField,
+                        ENTITY_IS_NOT_SAVED,
+                        CustomField.class);
+
+                  isNewCustomFieldSaved = true;
+               }
+            }
+
+            if (isNewCustomFieldSaved) {
+
+               /*
+                * Replace sensor in sensor values
+                */
+
+               // force to reload db sensors
+               clearCustomFields();
+               TourManager.getInstance().clearTourDataCache();
+
+               allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+               // loop: all sensor values in the tour -> find sensors which are not yet saved
+               for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+                  final CustomField tourData_Sensor = tourData_CustomFieldValue.getCustomField();
+
+                  final String referenceId = tourData_Sensor.getRefId();
+
+                  final CustomField customField = allDbCustomFields_InLock.get(referenceId);
+
+                  tourData_CustomFieldValue.setCustomField(customField);
+               }
+            }
+         }
+      }
+
    }
 
    /**
@@ -1193,6 +1314,28 @@ public class TourDatabase {
 
       // replace tour type in the tour
       tourData.setTourType(appliedType);
+   }
+
+   /**
+    * Removes all CustomFields which are loaded from the database so the next time they will be
+    * reloaded.
+    */
+   public static synchronized void clearCustomFields() {
+
+      if (_allDbCustomFields != null) {
+         _allDbCustomFields.clear();
+         _allDbCustomFields = null;
+      }
+
+      if (_allCustomFields_ByRefId != null) {
+         _allCustomFields_ByRefId.clear();
+         _allCustomFields_ByRefId = null;
+      }
+
+      if (_allCustomFields_ById != null) {
+         _allCustomFields_ById.clear();
+         _allCustomFields_ById = null;
+      }
    }
 
    /**
@@ -1768,6 +1911,51 @@ public class TourDatabase {
    }
 
    /**
+    * @return Returns the backend of all CustomField which are stored in the database sorted by
+    *         fieldName.
+    */
+   public static ArrayList<CustomField> getAllCustomFields() {
+
+      if (_allDbCustomFields != null) {
+         return _allDbCustomFields;
+      }
+
+      loadAllCustomFields();
+
+      return _allDbCustomFields;
+   }
+
+   /**
+    * @return Returns the backend of all CustomField which are stored in the database mapped by
+    *         fieldId.
+    */
+   public static HashMap<Long, CustomField> getAllCustomFields_ById() {
+
+      if (_allCustomFields_ById != null) {
+         return _allCustomFields_ById;
+      }
+
+      loadAllCustomFields();
+
+      return _allCustomFields_ById;
+   }
+
+   /**
+    * @return Returns the backend of all CustomField which are stored in the database mapped by
+    *         refId.
+    */
+   public static HashMap<String, CustomField> getAllCustomFields_ByRefId() {
+
+      if (_allCustomFields_ByRefId != null) {
+         return _allCustomFields_ByRefId;
+      }
+
+      loadAllCustomFields();
+
+      return _allCustomFields_ByRefId;
+   }
+
+   /**
     * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
     */
    public static ArrayList<DataSerie> getAllDataSeries() {
@@ -1782,7 +1970,8 @@ public class TourDatabase {
    }
 
    /**
-    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    * @return Returns the backend of all DataSerie which are stored in the database mapped by
+    *         serieId.
     */
    public static HashMap<Long, DataSerie> getAllDataSeries_ById() {
 
@@ -1796,7 +1985,7 @@ public class TourDatabase {
    }
 
    /**
-    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    * @return Returns the backend of all DataSerie which are stored in the database mapped by refId.
     */
    public static HashMap<String, DataSerie> getAllDataSeries_ByRefId() {
 
@@ -2973,6 +3162,47 @@ public class TourDatabase {
    }
 
    @SuppressWarnings("unchecked")
+   private static void loadAllCustomFields() {
+
+      synchronized (DB_LOCK) {
+
+         // check again, field must be volatile to work correctly
+         if (_allCustomFields_ById != null) {
+            return;
+         }
+
+         ArrayList<CustomField> allCustomFields = new ArrayList<>();
+         final HashMap<Long, CustomField> allCustomFields_ById = new HashMap<>();
+         final HashMap<String, CustomField> allCustomFields_ByRefId = new HashMap<>();
+
+         final EntityManager em = TourDatabase.getInstance().getEntityManager();
+         if (em != null) {
+
+            final Query emQuery = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT CustomField" //              //$NON-NLS-1$
+                  + " FROM CustomField AS CustomField" //   //$NON-NLS-1$
+                  + " ORDER  BY CustomField.fieldName"); //   //$NON-NLS-1$
+
+            allCustomFields = (ArrayList<CustomField>) emQuery.getResultList();
+
+            for (final CustomField customField : allCustomFields) {
+               //Hibernate.initialize(dataSerie.getTourData());
+               allCustomFields_ById.put(customField.getFieldId(), customField);
+               allCustomFields_ByRefId.put(customField.getRefId(), customField);
+            }
+
+            em.close();
+         }
+
+         _allDbCustomFields = allCustomFields;
+         _allCustomFields_ById = allCustomFields_ById;
+         _allCustomFields_ByRefId = allCustomFields_ByRefId;
+         _allDbCustomFields.sort(Comparator.naturalOrder());
+      }
+   }
+
+   @SuppressWarnings("unchecked")
    private static void loadAllDataSeries() {
 
       synchronized (DB_LOCK) {
@@ -4035,6 +4265,60 @@ public class TourDatabase {
             toVersion - 1,
             toVersion,
             net.tourbook.common.UI.format_mm_ss(timeDiff / 1000));
+   }
+
+   /**
+    * Create table {@link #TABLE_CUSTOM_FIELD}
+    *
+    * @param stmt
+    * @throws SQLException
+    */
+   private void createTable_CustomField(final Statement stmt) throws SQLException {
+
+      exec(stmt, "CREATE TABLE " + TABLE_CUSTOM_FIELD + "   (                                  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.CreateField_EntityId(ENTITY_ID_CUSTOM_FIELD, true)
+
+            // version xxxgmn start
+
+            + "   fieldType           VARCHAR(" + CustomField.DB_LENGTH_FIELDNAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   fieldName           VARCHAR(" + CustomField.DB_LENGTH_FIELDNAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   description         VARCHAR(" + CustomField.DB_LENGTH_DESCRIPTION + "),     " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   refId               VARCHAR(" + CustomField.DB_LENGTH_REFID + ") NOT NULL CONSTRAINT refIdCustomField_uk UNIQUE,  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   unit                VARCHAR(" + CustomField.DB_LENGTH_UNIT + ")            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version xxxgmn end
+
+            + ")" //                                                                          //$NON-NLS-1$
+      );
+
+   }
+
+   /**
+    * Create table {@link #TABLE_CUSTOM_FIELD_VALUE}
+    *
+    * @param stmt
+    * @throws SQLException
+    */
+   private void createTable_CustomFieldValues(final Statement stmt) throws SQLException {
+
+      exec(stmt, "CREATE TABLE " + TABLE_CUSTOM_FIELD_VALUE + "   (                   " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.CreateField_EntityId(ENTITY_ID_CUSTOM_FIELD_VALUE, true)
+
+            + "   " + KEY_TOUR + "                 BIGINT,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   " + KEY_CUSTOM_FIELD + "        BIGINT,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version xxxgmn start
+
+            + "   valueFloat                       FLOAT DEFAULT NULL,                   " + NL //$NON-NLS-1$
+            + "   valueString                VARCHAR(" + CustomFieldValue.DB_LENGTH_VALUESTRING + ")            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version xxxgmn end
+
+            + ")" //                                                                          //$NON-NLS-1$
+      );
+
    }
 
    /**
@@ -6314,6 +6598,9 @@ public class TourDatabase {
 
          // DataSerie
          updateDb_Add_DataSerie(currentDbVersion, conn, splashManager);
+
+         // CustomField and CustomFieldValue
+         updateDb_Add_CustomField(currentDbVersion, conn, splashManager);
 
          // Extra Data for Maintenance on TourTag table
          updateDb_TourTag_AddColumn_ExtraData(currentDbVersion, conn, splashManager);
@@ -9478,6 +9765,39 @@ public class TourDatabase {
       logDbUpdate_End(newDbVersion);
 
       return newDbVersion;
+   }
+
+   /**
+    * Add CustomField on DB version xxxgmn
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
+      logDbUpdate_Start_Special(currentDbVersion, message);
+      updateMonitor(splashManager, currentDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // double check if db already exists
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
+            createTable_CustomField(stmt);
+         }
+
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
+            createTable_CustomFieldValues(stmt);
+         }
+
+      }
+      stmt.close();
+
+      logDbUpdate_End_Special(currentDbVersion, message);
+
    }
 
    /**

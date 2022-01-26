@@ -59,6 +59,8 @@ import net.tourbook.common.util.ITourViewer3;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.widgets.ComboEnumEntry;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.TourData;
@@ -250,6 +252,12 @@ public class RawDataManager {
     */
    private static final ConcurrentHashMap<String, DeviceSensor> _allImported_NewDeviceSensors            = new ConcurrentHashMap<>();
 
+   /**
+    * Contains {@link CustomField}'s which are imported and could be saved or not, key is the
+    * serial number name in UPPERCASE
+    */
+   private static final ConcurrentHashMap<String, CustomField>  _allImported_NewCustomfields             = new ConcurrentHashMap<>();
+
    //
    /**
     * Contains the device data imported from the device/file
@@ -366,6 +374,57 @@ public class RawDataManager {
    }
 
    private RawDataManager() {}
+
+   /**
+    * SYNCHRONIZED: Create new device sensor and keep it in {@link #_allImported_NewDeviceSensors}
+    * or uses an already created sensor
+    *
+    * @param sensorType
+    * @param serialNumber
+    * @param sensorSerialNumberKey
+    * @return Returns the new device sensor
+    */
+   public static synchronized CustomField createCustomField(final String fieldName,
+                                                              final String referenceID,
+                                                              final String unit,
+                                                            final CustomFieldType fieldType,
+                                                              final String description) {
+
+      final String refID = referenceID;
+
+      /*
+       * Check imported CustomField
+       */
+      final CustomField importedCustomField = _allImported_NewCustomfields.get(refID);
+      if (importedCustomField != null) {
+         return importedCustomField;
+      }
+
+      /*
+       * Check if CustomField is still unavailable in the database
+       */
+      final CustomField customField = TourDatabase.getAllCustomFields_ByRefId().get(refID);
+      if (customField != null) {
+         return customField;
+      }
+
+      /*
+       * CustomField is for sure not available -> create it now
+       */
+      final CustomField newCustomField = new CustomField(
+
+            fieldName,
+
+            unit,
+            referenceID,
+
+            fieldType,
+            description);
+
+      _allImported_NewCustomfields.put(refID, newCustomField);
+
+      return newCustomField;
+   }
 
    /**
     * SYNCHRONIZED: Add new tour tags and save them in the database
