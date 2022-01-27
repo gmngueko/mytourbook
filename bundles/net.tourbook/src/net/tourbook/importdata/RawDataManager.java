@@ -254,7 +254,7 @@ public class RawDataManager {
 
    /**
     * Contains {@link CustomField}'s which are imported and could be saved or not, key is the
-    * serial number name in UPPERCASE
+    * referenceId
     */
    private static final ConcurrentHashMap<String, CustomField>  _allImported_NewCustomfields             = new ConcurrentHashMap<>();
 
@@ -376,13 +376,15 @@ public class RawDataManager {
    private RawDataManager() {}
 
    /**
-    * SYNCHRONIZED: Create new device sensor and keep it in {@link #_allImported_NewDeviceSensors}
-    * or uses an already created sensor
+    * SYNCHRONIZED: Create new CustomField and keep it in {@link #_allImported_NewCustomfields}
+    * or uses an already created CustomField
     *
-    * @param sensorType
-    * @param serialNumber
-    * @param sensorSerialNumberKey
-    * @return Returns the new device sensor
+    * @param fieldName
+    * @param referenceID
+    * @param unit
+    * @param fieldType
+    * @param description
+    * @return Returns the new CustomField
     */
    public static synchronized CustomField createCustomField(final String fieldName,
                                                               final String referenceID,
@@ -1041,12 +1043,13 @@ public class RawDataManager {
    }
 
    /**
-    * Sets {@link DataSerie} 's into {@link TourData} and create new tour DataSeries when not available by
+    * Sets {@link DataSerie} 's into {@link TourData} and create new tour DataSeries when not
+    * available by
     * comparing the DataSerie refId
     *
     * @param tourData
     * @param allRequestedDataSeries
-    * @return Returns <code>true</code> when new tour tags were created
+    * @return Returns <code>true</code> when new tour DataSeries were created
     */
    public static boolean setDataSeries(final TourData tourData, final Set<DataSerie> allRequestedDataSeries) {
 
@@ -3759,6 +3762,7 @@ public class RawDataManager {
       _allImported_NewDeviceSensors.clear();
 
       _allImported_NewDataSeries.clear();
+      _allImported_NewCustomfields.clear();
    }
 
    public void removeTours(final TourData[] removedTours) {

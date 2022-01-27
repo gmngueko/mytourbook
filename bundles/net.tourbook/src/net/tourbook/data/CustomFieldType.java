@@ -21,8 +21,8 @@ public enum CustomFieldType {
     */
    NONE,
 
-   FIELD_NUMBER, //
-   FIELD_DURATION, //
-   FIELD_DATE, //
-   FIELD_STRING, //
+   FIELD_NUMBER, //a float number
+   FIELD_DURATION, //duration in seconds
+   FIELD_DATE, //timestamp in seconds since epoch in a string
+   FIELD_STRING, //a random text
 }

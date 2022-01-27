@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
@@ -42,14 +43,19 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.CustomTrackValue;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.device.InvalidDeviceSAXException;
 import net.tourbook.device.Messages;
+import net.tourbook.device.sporttracks.FitLogEx1_SAXHandler.CustomDataFieldDefinition;
 import net.tourbook.device.sporttracks.FitLog_SAXHandler.Equipment;
 import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
@@ -81,7 +87,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private static final String                  TAG_ACTIVITY_WEATHER        = "Weather";         //$NON-NLS-1$
 
    private static final String                  ATTRIB_DURATION_SECONDS     = "DurationSeconds"; //$NON-NLS-1$
-   static final String                          ATTRIB_EQUIPMENT_ID         = "Id";              //$NON-NLS-1$
+   static final         String                  ATTRIB_EQUIPMENT_ID         = "Id";              //$NON-NLS-1$
    private static final String                  ATTRIB_NAME                 = "Name";            //$NON-NLS-1$
    private static final String                  ATTRIB_START_TIME           = "StartTime";       //$NON-NLS-1$
    private static final String                  ATTRIB_END_TIME             = "EndTime";         //$NON-NLS-1$
@@ -226,7 +232,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private boolean                         _isInLapNotes;
    private boolean                         _isInLap;
    //custom tracks end
-   private Map<String, Integer>            _customDataFieldDefinitions;
+   private Map<String, CustomDataFieldDefinition> _customDataFieldDefinitions;
 
    private StringBuilder                   _characters       = new StringBuilder(100);
 
@@ -287,6 +293,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       private int                           weatherWindSpeed   = Integer.MIN_VALUE;
 
       private LinkedHashMap<String, String> customDataFields   = new LinkedHashMap<>();
+      private LinkedHashMap<String, String> customDataFields_ByRefId = new LinkedHashMap<>();
       //custom tracks start
       private String                        weatherConditionsNotes;
       private float                         weatherTemperatureFeel   = Float.MIN_VALUE;
@@ -390,7 +397,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          // We parse the custom field definitions and equipments
          // separately as they can be anywhere in the file
 
-         final FitLogEx_SAXHandler fitLogEx_SaxHandler = new FitLogEx_SAXHandler();
+         final FitLogEx1_SAXHandler fitLogEx1_SaxHandler = new FitLogEx1_SAXHandler();
 
          try {
 
@@ -398,7 +405,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, UI.EMPTY_STRING);
             parser.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, UI.EMPTY_STRING);
 
-            parser.parse("file:" + importFilePath, fitLogEx_SaxHandler);//$NON-NLS-1$
+            parser.parse("file:" + importFilePath, fitLogEx1_SaxHandler);//$NON-NLS-1$
 
          } catch (final InvalidDeviceSAXException e) {
             StatusUtil.log(e);
@@ -406,7 +413,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             StatusUtil.log("Error parsing file: " + importFilePath, e); //$NON-NLS-1$
          }
 
-         _customDataFieldDefinitions = fitLogEx_SaxHandler.getCustomDataFieldDefinitions();
+         _customDataFieldDefinitions = fitLogEx1_SaxHandler.getCustomDataFieldDefinitions();
 
 //         if (!_isReimport) {
 
@@ -414,7 +421,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          // create a list with all equipments which can be used to create TourTag's
 
-         final List<Equipment> allEquipments_FromFitLogEx = fitLogEx_SaxHandler.getEquipments();
+         final List<Equipment> allEquipments_FromFitLogEx = fitLogEx1_SaxHandler.getEquipments();
 
          for (final Equipment equipment : allEquipments_FromFitLogEx) {
 
@@ -892,6 +899,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          finalizeTour_10_SetTourType(tourData);
          finalizeTour_20_SetTags(tourData);
          finalizeTour_25_SetDataSeries(tourData);
+         finalizeTour_28_SetCustomFields(tourData);
 //         }
 
          finalizeTour_30_CreateMarkers(tourData);
@@ -902,6 +910,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       _currentActivity.laps.clear();
       _currentActivity.equipments.clear();
       _currentActivity.customTrackDefinitions.clear();//custom tracks
+      _currentActivity.customDataFields.clear();
+      _currentActivity.customDataFields_ByRefId.clear();
 
       _importState_File.isFileImportedWithValidData = true;
    }
@@ -952,6 +962,88 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       if (isNewDataSerie) {
          _importState_Process.isCreated_NewDataSerie().set(true);
+      }
+   }
+
+   /**
+    * Set CustomFields and Value from all CustomField in the current activity with their definition by using it's RefId'ss
+    *
+    * @param tourData
+    */
+   private void finalizeTour_28_SetCustomFields(final TourData tourData) {
+      if(_currentActivity.customDataFields_ByRefId.size()>0) {
+
+         /*
+          * Get CustomFieldValue from tour data
+          */
+         final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+         allTourData_CustomFieldValues.clear();
+
+         for (final String customFieldId : _currentActivity.customDataFields_ByRefId.keySet()) {
+            final String customFieldMapValue = _currentActivity.customDataFields_ByRefId.get(customFieldId);
+            //first create CustomField's
+            final CustomDataFieldDefinition customDataFieldDefinition = _customDataFieldDefinitions.get(customFieldId);
+            final CustomField customField;
+            if (customDataFieldDefinition != null) {
+               customField = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                     customFieldId,
+                     customDataFieldDefinition.unit,
+                     customDataFieldDefinition.type,
+                     customDataFieldDefinition.name);
+            } else {
+               customField = RawDataManager.createCustomField("???UnnownName???",
+                     customFieldId,
+                     "",
+                     CustomFieldType.NONE,
+                     "???CustomDataFieldDefinition not present in FitlogEx file???");
+            }
+            final CustomField customFieldToCompare = new CustomField();
+            customFieldToCompare.setFieldName(customDataFieldDefinition.shortName);
+            customFieldToCompare.setFieldType(customDataFieldDefinition.type);
+            customFieldToCompare.setRefId(customDataFieldDefinition.id);
+            if (customField.equals2(customFieldToCompare) == false) {
+               //TODO might not be necessary to update CustomFields
+               //existing CustomFields must sray the way they are
+               //User might have modified on purpose !!!
+               if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+                  /*
+                   * Nothing to do, customField will be saved when a tour is saved which contains
+                   * this customField
+                   * in
+                   * net.tourbook.database.TourDatabase.checkUnsavedTransientInstances_CustomFields(
+                   * )
+                   */
+
+               } else {
+
+                  /*
+                   * Notify post process to update the customField in the db
+                   */
+
+                  final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = _importState_Process.getAllCustomFieldsToBeUpdated();
+
+                  allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+               }
+            }
+
+            //second create CustomFieldValue's
+            final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+            if (customField.getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0 ||
+                  customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+               customFieldValue.setValueFloat(Float.parseFloat(customFieldMapValue));
+            } else {
+               customFieldValue.setValueString(customFieldMapValue);
+            }
+
+            /*
+             * Set CustomFieldValue into tour data
+             */
+            customFieldValue.setTourData(tourData);
+            allTourData_CustomFieldValues.add(customFieldValue);
+         }
+
       }
    }
 
@@ -1041,30 +1133,48 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     * @param customDataFieldValue
     *           The custom field value to be formatted
     */
-   private void formatCustomDataFieldValue(final Activity activity, final String customDataFieldName, final String customDataFieldValue) {
+   private void formatCustomDataFieldValue(final Activity activity,
+                                           final String customDataFieldId,
+                                           final String customDataFieldName,
+                                           final String customDataFieldValue) {
 
       // If there is no custom data field definition for the current field, we add its value as-is.
-      if (!_customDataFieldDefinitions.containsKey(customDataFieldName)) {
+      if (!_customDataFieldDefinitions.containsKey(customDataFieldId)) {
          activity.customDataFields.put(customDataFieldName, customDataFieldValue);
+         //TODO generate a CustomField for this bogus
+         //activity.customDataFields_ByRefId.put(customDataFieldId, customDataFieldValue);
          return;
       }
 
       //Otherwise, we round the value to the number of specified decimals
-      final int numberOfDecimals = _customDataFieldDefinitions.get(customDataFieldName);
-      try {
-         final String format = "%." + numberOfDecimals + "f"; //$NON-NLS-1$ //$NON-NLS-2$
-         final String formattedNumber = String.format(format, (double) Math.round(Double.valueOf(customDataFieldValue)));
+      if (_customDataFieldDefinitions.get(customDataFieldId).nbrDecimal != null) {
+         final int numberOfDecimals = _customDataFieldDefinitions.get(customDataFieldId).nbrDecimal;
+         try {
+            final String format = "%." + numberOfDecimals + "f"; //$NON-NLS-1$ //$NON-NLS-2$
+            final String formattedNumber = String.format(format, (double) Math.round(Double.valueOf(customDataFieldValue)));
 
-         if (activity.customDataFields.containsKey(customDataFieldName)) {
-            activity.customDataFields.replace(customDataFieldName, formattedNumber);
-         } else {
-            activity.customDataFields.put(customDataFieldName, formattedNumber);
+            if (activity.customDataFields.containsKey(customDataFieldName)) {
+               activity.customDataFields.replace(customDataFieldName, formattedNumber);
+            } else {
+               activity.customDataFields.put(customDataFieldName, formattedNumber);
+            }
+
+            if (activity.customDataFields_ByRefId.containsKey(customDataFieldId)) {
+               activity.customDataFields_ByRefId.replace(customDataFieldId, formattedNumber);
+            } else {
+               activity.customDataFields_ByRefId.put(customDataFieldId, formattedNumber);
+            }
+
+         } catch (final NumberFormatException e) {
+            //The value parsed was not a number
          }
-
-      } catch (final NumberFormatException e) {
-         //The value parsed was not a number
+      } else {//Text type of CustomDataFieldDefinition
+         if (activity.customDataFields_ByRefId.containsKey(customDataFieldId)) {
+            activity.customDataFields_ByRefId.replace(customDataFieldId, customDataFieldValue);
+         } else {
+            activity.customDataFields_ByRefId.put(customDataFieldId, customDataFieldValue);
+         }
       }
-
    }
 
    private void initTour(final Attributes attributes) {
@@ -1276,16 +1386,18 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
    private void parseCustomDataFields(final String name, final Attributes attributes) {
 
-      if (name.equals(FitLogEx_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELD)) {
+      if (name.equals(FitLogEx1_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELD)) {
 
-         final String customFieldName = attributes.getValue(FitLogEx_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_NAME);
-         final String customFieldValue = attributes.getValue(FitLogEx_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_VALUE);
+         final String customFieldName = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_NAME);
+         final String customFieldValue = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_VALUE);
+         final String customFieldId = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_ID);
 
          final boolean isCustomDataFieldValid = StringUtils.hasContent(customFieldName) &&
-               StringUtils.hasContent(customFieldValue);
+               StringUtils.hasContent(customFieldValue) &&
+               StringUtils.hasContent(customFieldId);
 
          if (isCustomDataFieldValid) {
-            formatCustomDataFieldValue(_currentActivity, customFieldName, customFieldValue);
+            formatCustomDataFieldValue(_currentActivity, customFieldId, customFieldName, customFieldValue);
          }
       }
    }

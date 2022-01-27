@@ -24,6 +24,7 @@ import javax.persistence.EntityTransaction;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.data.CustomField;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
@@ -124,6 +125,13 @@ public class ImportState_Process {
    private ConcurrentHashMap<String, DeviceSensor> _allDeviceSensorToBeUpdated   = new ConcurrentHashMap<>();
 
    /**
+    * OUT state:
+    * <p>
+    * CustomFields which must be updated in the db, key is the referenceId
+    */
+   private ConcurrentHashMap<String, CustomField>  _allCustomFieldToBeUpdated    = new ConcurrentHashMap<>();
+
+   /**
     * IN and OUT states for the whole import/re-import process.
     * <p>
     * This constructor set's all logging to <code>true</code>.
@@ -133,6 +141,10 @@ public class ImportState_Process {
       setIsLog_DEFAULT(true);
       setIsLog_INFO(true);
       setIsLog_OK(true);
+   }
+
+   public ConcurrentHashMap<String, CustomField> getAllCustomFieldsToBeUpdated() {
+      return _allCustomFieldToBeUpdated;
    }
 
    public ConcurrentHashMap<String, DeviceSensor> getAllDeviceSensorsToBeUpdated() {
@@ -237,6 +249,10 @@ public class ImportState_Process {
       if (isCreated_NewDataSerie.get()) {
 
          TourManager.fireEvent(TourEventId.DATA_SERIE_IS_MODIFIED);
+      }
+
+      if (_allCustomFieldToBeUpdated.size() > 0) {
+         updateCustomFields();
       }
    }
 
@@ -343,6 +359,34 @@ public class ImportState_Process {
 
       if (importState_Process.isCreated_NewTourType.get()) {
          isCreated_NewTourType.set(true);
+      }
+   }
+
+   private void updateCustomFields() {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      try {
+
+         for (final Entry<String, CustomField> entrySet : _allCustomFieldToBeUpdated.entrySet()) {
+
+            final CustomField customField = entrySet.getValue();
+
+            ts.begin();
+            {
+               em.merge(customField);
+            }
+            ts.commit();
+         }
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         }
+         em.close();
       }
    }
 

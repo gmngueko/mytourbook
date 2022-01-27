@@ -196,6 +196,37 @@ public class CustomField implements Cloneable, Serializable, Comparable<Object> 
       return fieldId == other.fieldId;
    }
 
+   public boolean equals2(final Object obj) {
+
+      if (this == obj) {
+         return true;
+      }
+
+      if (obj == null) {
+         return false;
+      }
+
+      if (getClass() != obj.getClass()) {
+         return false;
+      }
+
+      final CustomField other = (CustomField) obj;
+
+      if (refId.compareTo(other.refId) != 0) {
+         return false;
+      } else if (fieldName == null && other.fieldName != null) {
+         return false;
+      } else if (fieldName != null && other.fieldName == null) {
+         return false;
+      } else if (fieldName.compareTo(other.fieldName) != 0) {
+         return false;
+      } else if (fieldType.compareTo(other.fieldType) != 0) {
+         return false;
+      } else {
+         return true;
+      }
+   }
+
    public String getDescription() {
       if (description == null) {
          return UI.EMPTY_STRING;
