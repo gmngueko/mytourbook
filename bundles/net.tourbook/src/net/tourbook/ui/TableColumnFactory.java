@@ -73,6 +73,12 @@ public abstract class TableColumnFactory {
    public static final TableColumnFactory BODY_WEIGHT;
    public static final String             BODY_WEIGHT_ID                                     = "BODY_WEIGHT";                                     //$NON-NLS-1$
 
+   public static final TableColumnFactory CUSTOM_FIELDS_ID;
+   public static final TableColumnFactory CUSTOM_FIELDS_INDEX;
+   public static final TableColumnFactory CUSTOM_FIELDS_NAME;
+   public static final TableColumnFactory CUSTOM_FIELDS_TYPE;
+   public static final TableColumnFactory CUSTOM_FIELDS_UNIT;
+   public static final TableColumnFactory CUSTOM_FIELDS_VALUE;
    public static final TableColumnFactory CUSTOM_TRACKS_COUNT_TOURS;
    public static final TableColumnFactory CUSTOM_TRACKS_ID;
    public static final TableColumnFactory CUSTOM_TRACKS_INDEX;
@@ -4713,6 +4719,146 @@ public abstract class TableColumnFactory {
             return colDef;
          }
       };
+
+      CUSTOM_FIELDS_VALUE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_VALUE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Value"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Value"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Value of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_TYPE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_TYPE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Type"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Type"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Type of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_NAME = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_NAME", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Name of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_UNIT = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_UNIT", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Unit of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_ID = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_ID", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "RefId"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "RefId"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "ReferenceId of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_INDEX = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_INDEX", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Row number in the table"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+
 
       CUSTOM_TRACKS_TIME_SLICES = new TableColumnFactory() {
          @Override

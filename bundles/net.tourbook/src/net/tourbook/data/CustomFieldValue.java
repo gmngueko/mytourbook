@@ -56,6 +56,12 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    private long fieldValueId = TourDatabase.ENTITY_IS_NOT_SAVED;
 
    /**
+    * Tour start time
+    */
+   private long     tourStartTime;
+   private long     tourEndTime;
+
+   /**
     * Contains a CustomField String value
     */
    private String valueString;
@@ -165,6 +171,14 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return tourData;
    }
 
+   public long getTourEndTime() {
+      return tourEndTime;
+   }
+
+   public long getTourStartTime() {
+      return tourStartTime;
+   }
+
    public Float getValueFloat() {
       return valueFloat;
    }
@@ -184,6 +198,14 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    public void setTourData(final TourData tourData) {
       this.tourData = tourData;
+   }
+
+   public void setTourEndTime(final long tourEndTime) {
+      this.tourEndTime = tourEndTime;
+   }
+
+   public void setTourStartTime(final long tourStartTime) {
+      this.tourStartTime = tourStartTime;
    }
 
    public void setValueFloat(final Float valueFloat) {

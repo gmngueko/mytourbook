@@ -4310,6 +4310,8 @@ public class TourDatabase {
             + "   " + KEY_CUSTOM_FIELD + "        BIGINT,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
 
             // version xxxgmn start
+            + "   TourStartTime                    BIGINT DEFAULT 0,                   " + NL //$NON-NLS-1$
+            + "   TourEndTime                      BIGINT DEFAULT 0,                   " + NL //$NON-NLS-1$
 
             + "   valueFloat                       FLOAT DEFAULT NULL,                   " + NL //$NON-NLS-1$
             + "   valueString                VARCHAR(" + CustomFieldValue.DB_LENGTH_VALUESTRING + ")            " + NL //$NON-NLS-1$ //$NON-NLS-2$
@@ -4319,6 +4321,7 @@ public class TourDatabase {
             + ")" //                                                                          //$NON-NLS-1$
       );
 
+      SQL.CreateIndex_Combined(stmt, TABLE_CUSTOM_FIELD_VALUE, "TourStartTime"); //$NON-NLS-1$
    }
 
    /**

@@ -705,6 +705,13 @@
             label       ="%View_Name_CustomTracks"
             mnemonic    ="%View_Name_CustomTracks_Mnemonic"/>
 
+         <!-- CustomFields -->
+         <command
+            commandId   ="command.net.tourbook.views.TourCustomFieldsView"
+            icon        ="icons/custom-field-16.png"
+            label       ="%View_Name_CustomFields"
+            mnemonic    ="%View_Name_CustomFields_Mnemonic"/>
+
          <!-- Tour Data -->
          <command
             commandId   ="command.net.tourbook.views.TourData_View"
@@ -1334,6 +1341,11 @@
             name="%View_Name_CustomTracks"/>
 
       <command
+            defaultHandler="net.tourbook.ui.views.tourCustomFields.ActionHandler_OpenView_CustomFields"
+            id="command.net.tourbook.views.TourCustomFieldsView"
+            name="%View_Name_CustomFields"/>
+
+      <command
             defaultHandler="net.tourbook.ui.views.tourCustomTracks.ActionHandler_OpenView_AllCustomTracks"
             id="command.net.tourbook.views.AllCustomTracksView"
             name="%View_Name_CustomTracksAll"/>
@@ -1737,10 +1749,10 @@
 
          <view
                category="net.tourbook.category.Tour_Properties"
-               class="net.tourbook.ui.views.tourCustomTracks.TourCustomTracksView"
-               icon="icons/graph-custom-tracks.png"
-               id="net.tourbook.views.TourCustomTracksView"
-               name="%View_Name_CustomTracks"/>
+               class="net.tourbook.ui.views.tourCustomFields.TourCustomFieldsView"
+               icon="icons/custom-field-16.png"
+               id="net.tourbook.views.TourCustomFieldsView"
+               name="%View_Name_CustomFields"/>
 
          <view
             category    ="net.tourbook.category.Tour_Properties"

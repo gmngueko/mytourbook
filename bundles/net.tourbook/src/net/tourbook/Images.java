@@ -106,6 +106,8 @@ public class Images {
    public static final String Graph_Background_Disabled                  = "graph-background-disabled.png";                       //$NON-NLS-1$
    public static final String Graph_Cadence                              = "graph-cadence.png";                                   //$NON-NLS-1$
    public static final String Graph_Cadence_Disabled                     = "graph-cadence-disabled.png";                          //$NON-NLS-1$
+   public static final String Custom_Field_16                            = "custom-field-16.png";                                 //$NON-NLS-1$
+   public static final String Custom_Field_16_Disabled                   = "custom-field-16-disabled.png";                        //$NON-NLS-1$
    public static final String Graph_Custom_Tracks                        = "graph-custom-tracks.png";                             //$NON-NLS-1$
    public static final String Graph_Custom_Tracks_Disabled               = "graph-custom-tracks-disabled.png";                    //$NON-NLS-1$
    public static final String Graph_Disabled                             = "graph-disabled.png";                                  //$NON-NLS-1$

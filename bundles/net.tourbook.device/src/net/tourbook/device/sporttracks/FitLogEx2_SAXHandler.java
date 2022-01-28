@@ -1040,6 +1040,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             /*
              * Set CustomFieldValue into tour data
              */
+            customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+            customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
             customFieldValue.setTourData(tourData);
             allTourData_CustomFieldValues.add(customFieldValue);
          }
