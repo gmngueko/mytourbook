@@ -13,12 +13,11 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.ui.views.tourCustomTracks;
+package net.tourbook.ui.views.tourCustomFields;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.CommonActivator;
@@ -28,7 +27,7 @@ import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
-import net.tourbook.data.DataSerie;
+import net.tourbook.data.CustomField;
 import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
@@ -38,7 +37,6 @@ import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
-import net.tourbook.ui.action.ActionEditCustomTracksAll;
 
 import org.eclipse.e4.ui.di.PersistState;
 import org.eclipse.jface.action.IMenuManager;
@@ -77,8 +75,8 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.part.ViewPart;
 
-public class AllCustomTracksView extends ViewPart implements ITourProvider, ITourViewer {
-   public static final String     ID                = "net.tourbook.views.AllCustomTracksView"; //$NON-NLS-1$
+public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITourViewer {
+   public static final String  ID           = "net.tourbook.views.AllCustomFieldsView"; //$NON-NLS-1$
    //
    private static final String COLUMN_REFID     = "ReferenceId";                            //$NON-NLS-1$
    private static final String COLUMN_NAME      = "Name";                                   //$NON-NLS-1$
@@ -110,10 +108,10 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    private Composite               _viewerContainer;
    private Composite               _uiParent;
 
-   private ActionEditCustomTracksAll _action_EditCustomTracksData;
+   //private ActionEditCustomTracksAll _action_EditCustomTracksData;
 
-   private ArrayList<DataSerie>    _allDataSeries = new ArrayList<>();
-   private HashMap<String, DataSerieViewItem> _allDataSeriesView_ByRefId      = null;
+   private ArrayList<CustomField> _allCustomFields = new ArrayList<>();
+   //private HashMap<String, DataSerieViewItem> _allDataSeriesView_ByRefId      = null;
    private boolean                 _isInUpdate;
 
    private final NumberFormat      _nf1                            = NumberFormat.getNumberInstance();
@@ -131,14 +129,14 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       @Override
       public int compare(final Viewer viewer, final Object e1, final Object e2) {
 
-         final DataSerie ct1 = (DataSerie) e1;
-         final DataSerie ct2 = (DataSerie) e2;
+         final CustomField ct1 = (CustomField) e1;
+         final CustomField ct2 = (CustomField) e2;
 
          /*
           * sort by name
           */
-         final String ct1Name = ct1.getName();
-         final String ct2Name = ct2.getName();
+         final String ct1Name = ct1.getFieldName();
+         final String ct2Name = ct2.getFieldName();
 
          if (ct1Name != null && ct2Name != null) {
             return ct1Name.compareTo(ct2Name);
@@ -157,7 +155,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
       @Override
       public Object[] getElements(final Object inputElement) {
 
-         return _allDataSeries.toArray();
+         return _allCustomFields.toArray();
 
       }
 
@@ -215,7 +213,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
    }
 
-   public AllCustomTracksView() {
+   public AllCustomFieldsView() {
       super();
    }
 
@@ -295,7 +293,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
       _tourEventListener = (workbenchPart, tourEventId, eventData) -> {
 
-         if (workbenchPart == AllCustomTracksView.this) {
+         if (workbenchPart == AllCustomFieldsView.this) {
             return;
          }
 
@@ -326,7 +324,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    }
 
    private void createActions() {
-      _action_EditCustomTracksData = new ActionEditCustomTracksAll(this, true);
+      //_action_EditCustomTracksData = new ActionEditCustomTracksAll(this, true);
    }
 
    private void createMenuManager() {
@@ -370,7 +368,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 //      });
       BusyIndicator.showWhile(parent.getDisplay(), () -> {
 
-         loadAllDataSeries();
+         loadAllCustomFields();
 
          updateUI_SetViewerInput();
 
@@ -427,7 +425,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
             final IStructuredSelection selection = (IStructuredSelection) _ctViewer.getSelection();
             if (selection.size() > 0) {
                //TODO set selected custom track's in dialog
-               _action_EditCustomTracksData.run();
+               //_action_EditCustomTracksData.run();
             }
          }
       });
@@ -470,20 +468,20 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void defineColumn_Id() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_ID.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_ID.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
 
-            final DataSerie ct = (DataSerie) cell.getElement();
+            final CustomField ct = (CustomField) cell.getElement();
             cell.setText(ct.getRefId());
             //Hibernate.initialize(ct.getTourData());
             //final Set<TourData> listofTours = ct.getTourData();
-            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();//(listofTours == null ? 0 : listofTours.size());
-            if (ctSize == 0) {
-               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-            }
+            //final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();//(listofTours == null ? 0 : listofTours.size());
+            //if (ctSize == 0) {
+            //   cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+            //}
          }
       });
    }
@@ -493,7 +491,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void defineColumn_Index() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_INDEX.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_INDEX.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new RowNumberLabelProvider());
@@ -504,21 +502,21 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void defineColumn_Name() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_NAME.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_NAME.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
 
-            final DataSerie ct = (DataSerie) cell.getElement();
-            cell.setText(ct.getName());
+            final CustomField ct = (CustomField) cell.getElement();
+            cell.setText(ct.getFieldName());
             //Hibernate.initialize(ct.getTourData());
             //final Set<TourData> listofTours = ct.getTourData();
             //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-            if (ctSize == 0) {
-               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-            }
+//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
+//            if (ctSize == 0) {
+//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+//            }
 
          }
       });
@@ -529,21 +527,21 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void defineColumn_Tours_Count() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_COUNT_TOURS.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_TOURS_COUNT.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
 
-            final DataSerie ct = (DataSerie) cell.getElement();
+            final CustomField ct = (CustomField) cell.getElement();
             //final Set<TourData> listofTours = ct.getTourData();
             //Hibernate.initialize(ct.getTourData());
             //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-            cell.setText(String.valueOf(ctSize));
-            if (ctSize == 0) {
-               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-            }
+//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
+//            cell.setText(String.valueOf(ctSize));
+//            if (ctSize == 0) {
+//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+//            }
          }
       });
    }
@@ -553,21 +551,21 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void defineColumn_Unit() {
 
-      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_TRACKS_UNIT.createColumn(_columnManager, _pc);
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_UNIT.createColumn(_columnManager, _pc);
       colDef.setIsDefaultColumn();
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
 
-            final DataSerie ct = (DataSerie) cell.getElement();
+            final CustomField ct = (CustomField) cell.getElement();
             cell.setText(ct.getUnit());
             //Hibernate.initialize(ct.getTourData());
             //final Set<TourData> listofTours = ct.getTourData();
             //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-            if (ctSize == 0) {
-               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-            }
+//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
+//            if (ctSize == 0) {
+//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+//            }
          }
       });
    }
@@ -590,12 +588,12 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
     */
    private void enableActions() {
 
-      _action_EditCustomTracksData.setEnabled(true);
+      //_action_EditCustomTracksData.setEnabled(true);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
-      menuMgr.add(_action_EditCustomTracksData);
+      //menuMgr.add(_action_EditCustomTracksData);
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
@@ -608,7 +606,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
        * View toolbar
        */
       final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
-      toolBarManager.add(_action_EditCustomTracksData);
+      //toolBarManager.add(_action_EditCustomTracksData);
    }
 
    @Override
@@ -642,15 +640,15 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
 
    }
 
-   private void loadAllDataSeries() {
+   private void loadAllCustomFields() {
       //TODO rework this for performance
       //TODO replace by a sql fetching the sum of distnace , time, etc...
-      _allDataSeries.clear();
-      TourDatabase.clearDataSeries();
-      _allDataSeries.addAll(TourDatabase.getAllDataSeries());
+      _allCustomFields.clear();
+      TourDatabase.clearCustomFields();
+      _allCustomFields.addAll(TourDatabase.getAllCustomFields());
       //_allDataSeriesView_ByRefId.clear();
       //_allDataSeriesView_ByRefId.putAll(TourDatabase.getAllDataSeriesView_ByRefId());
-      _allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
+      //_allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
    }
 
    @Override
@@ -684,7 +682,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
    @Override
    public void reloadViewer() {
 
-      loadAllDataSeries();
+      loadAllCustomFields();
 
       _viewerContainer.setRedraw(false);
       {

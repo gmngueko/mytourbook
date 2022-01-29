@@ -593,6 +593,13 @@
 	           label       ="%View_Name_CustomTracksAll"
                mnemonic    ="%View_Name_CustomTracksAll_Mnemonic"/>
 
+            <!-- CustomFieldsAll -->
+            <command
+	           commandId   ="command.net.tourbook.views.AllCustomFieldsView"
+	           icon        ="icons/custom-field-16.png"
+	           label       ="%View_Name_CustomFieldsAll"
+               mnemonic    ="%View_Name_CustomFieldsAll_Mnemonic"/>
+
 
             <separator
                name        ="net.tourbook.separator.Sensor"
@@ -1351,6 +1358,11 @@
             name="%View_Name_CustomTracksAll"/>
 
       <command
+            defaultHandler="net.tourbook.ui.views.tourCustomFields.ActionHandler_OpenView_AllCustomFields"
+            id="command.net.tourbook.views.AllCustomFieldsView"
+            name="%View_Name_CustomFieldsAll"/>
+
+      <command
          id             ="command.net.tourbook.views.HeartRateVariabilityChart"
          name           ="%View_Name_HeartRateVariabilityChart"
          defaultHandler ="net.tourbook.ui.views.heartRateVariability.ActionHandler_OpenView_HeartRateVariability"
@@ -1704,6 +1716,13 @@
                class="net.tourbook.ui.views.tourCustomTracks.AllCustomTracksView"
                icon="icons/graph-custom-tracks.png"
                name="%View_Name_CustomTracksAll"/>
+
+         <view
+               category="net.tourbook.category.Tour_Directory"
+               id="net.tourbook.views.AllCustomFieldsView"
+               class="net.tourbook.ui.views.tourCustomFields.AllCustomFieldsView"
+               icon="icons/custom-field-16.png"
+               name="%View_Name_CustomFieldsAll"/>
 
 
       <!-- 2. Tour Properties -->
