@@ -889,7 +889,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private Set<TourTag>                tourTags                            = new HashSet<>();
 
    /**
-    * CustomFields
+    * CustomFields: only one CustomFieldValue for a given CustomField in one tour, see contraint in {@link #TourDatabase}
     */
    @OneToMany(fetch = FetchType.EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)

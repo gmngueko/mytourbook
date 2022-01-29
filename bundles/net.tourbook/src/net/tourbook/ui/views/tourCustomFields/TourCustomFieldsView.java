@@ -27,7 +27,6 @@ import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
-import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
@@ -519,6 +518,74 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       defineColumn_Unit();
       defineColumn_Type();
       defineColumn_Id();
+
+      defineColumn_Avg();
+      defineColumn_Min();
+      defineColumn_Max();
+      defineColumn_Sum();
+      defineColumn_CountNull();
+      defineColumn_CountNotNull();
+   }
+
+   /**
+    * column: average
+    */
+   private void defineColumn_Avg() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_AVERAGE.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            cell.setText(ct.getAverageAsString());
+
+         }
+      });
+   }
+
+   /**
+    * column: count number of not null entries
+    */
+   private void defineColumn_CountNotNull() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_TOURS_COUNT.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            String value = "";
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            if(ct.getCountNotNull() != null ) {
+               final float val = ct.getCountNotNull();
+               value = String.valueOf(val);
+            }
+            cell.setText(value);
+
+         }
+      });
+   }
+
+   /**
+    * column: count number of null entries
+    */
+   private void defineColumn_CountNull() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_TOURS_COUNT_NULL.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            String value = "";
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            if(ct.getCountNull() != null ) {
+               final float val = ct.getCountNull();
+               value = String.valueOf(val);
+            }
+            cell.setText(value);
+
+         }
+      });
    }
 
    /**
@@ -549,6 +616,42 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
    }
 
    /**
+    * column: maximum
+    */
+   private void defineColumn_Max() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_MAX.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final String value = "";
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            cell.setText(ct.getMaximumAsString());
+
+         }
+      });
+   }
+
+   /**
+    * column: minimum
+    */
+   private void defineColumn_Min() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_MIN.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final String value = "";
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            cell.setText(ct.getMinimumAsString());
+
+         }
+      });
+   }
+
+   /**
     * column: name
     */
    private void defineColumn_Name() {
@@ -561,6 +664,24 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
 
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
             cell.setText(ct.getCustomField().getFieldName());
+
+         }
+      });
+   }
+
+   /**
+    * column: Sum
+    */
+   private void defineColumn_Sum() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_SUM.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final String value = "";
+            final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
+            cell.setText(ct.getSumAsString());
 
          }
       });
@@ -612,27 +733,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
          public void update(final ViewerCell cell) {
 
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            String value = "";
-            if (ct.getValueString() != null) {
-               value = ct.getValueString();
-            } else if (ct.getValueFloat() != null) {
-               if (ct.getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
-                  final Long sec = ct.getValueFloat().longValue();
-                  final long second = sec % 60;
-                  long minute = sec / 60;
-                  if (minute >= 60) {
-                     final long hour = minute / 60;
-                     minute %= 60;
-                     value = String.format("%02d:%02d:%02d", hour, minute, second);
-                  } else {
-                     final long hour = 0;
-                     value = String.format("%02d:%02d:%02d", hour, minute, second);
-                  }
-               } else {
-                  value = String.valueOf(ct.getValueFloat());
-               }
-            }
-            cell.setText(value);
+            cell.setText(ct.getValue());
          }
       });
    }

@@ -80,6 +80,22 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    @Transient
    private long     _createId    = 0;
 
+   //below variable are only used for a merged tourData
+   @Transient
+   private Float   minimum      = null;
+
+   @Transient
+   private Float   maximum      = null;
+
+   @Transient
+   private Float   sum          = null;
+
+   @Transient
+   private Integer countNotNull = null;
+
+   @Transient
+   private Integer countNull    = null;
+
    /**
     * Default constructor used in EJB
     */
@@ -163,8 +179,49 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return true;
    }
 
+   public String getAverageAsString() {
+      String value = "";
+      if (getSum() != null && getCountNotNull() != null && getCountNotNull() != 0) {
+         final float val = getSum() / getCountNotNull();
+         value = getValueAsString(val, null);
+      }
+      return value;
+   }
+
+   public Integer getCountNotNull() {
+      return countNotNull;
+   }
+
+   public Integer getCountNull() {
+      return countNull;
+   }
+
    public CustomField getCustomField() {
       return customField;
+   }
+
+   public Float getMaximum() {
+      return maximum;
+   }
+
+   public String getMaximumAsString() {
+      return getValueAsString(maximum, null);
+   }
+
+   public Float getMinimum() {
+      return minimum;
+   }
+
+   public String getMinimumAsString() {
+      return getValueAsString(minimum, null);
+   }
+
+   public Float getSum() {
+      return sum;
+   }
+
+   public String getSumAsString() {
+      return getValueAsString(sum, null);
    }
 
    public TourData getTourData() {
@@ -177,6 +234,34 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    public long getTourStartTime() {
       return tourStartTime;
+   }
+
+   public String getValue() {
+      return getValueAsString(valueFloat, valueString);
+   }
+
+   private String getValueAsString(final Float inputValue, final String inputString) {
+      String value = "";
+      if (inputString != null) {
+         value = inputString;
+      } else if (inputValue != null) {
+         if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+            final Long sec = inputValue.longValue();
+            final long second = sec % 60;
+            long minute = sec / 60;
+            if (minute >= 60) {
+               final long hour = minute / 60;
+               minute %= 60;
+               value = String.format("%02d:%02d:%02d", hour, minute, second);
+            } else {
+               final long hour = 0;
+               value = String.format("%02d:%02d:%02d", hour, minute, second);
+            }
+         } else {
+            value = String.valueOf(inputValue);
+         }
+      }
+      return value;
    }
 
    public Float getValueFloat() {
@@ -192,8 +277,44 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return Objects.hash(fieldValueId);
    }
 
+   public void setCountNotNull(final Integer countNotNull) {
+      this.countNotNull = countNotNull;
+   }
+
+   public void setCountNotNullPlusIndex(final int index) {
+      if (this.countNotNull != null) {
+         this.countNotNull += index;
+      } else {
+         this.countNotNull = index;
+      }
+   }
+
+   public void setCountNull(final Integer countNull) {
+      this.countNull = countNull;
+   }
+
+   public void setCountNullPlusIndex(final int index) {
+      if (this.countNull != null) {
+         this.countNull += index;
+      } else {
+         this.countNull = index;
+      }
+   }
+
    public void setCustomField(final CustomField customField) {
       this.customField = customField;
+   }
+
+   public void setMaximum(final Float maximum) {
+      this.maximum = maximum;
+   }
+
+   public void setMinimum(final Float minimum) {
+      this.minimum = minimum;
+   }
+
+   public void setSum(final Float sum) {
+      this.sum = sum;
    }
 
    public void setTourData(final TourData tourData) {
@@ -231,5 +352,44 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 //          + "   tourData          = " + tourData + NL //                       //$NON-NLS-1$
 
       ;
+   }
+
+   public void updateStatistic(final Float newFloat, final String newString) {
+      Float newValue = newFloat;
+      if (newString != null && newFloat == null) {
+         newValue = (float) newString.length();
+      }
+
+      if(newFloat == null && newString == null) {
+         return;
+      } else if (newValue != null) {
+         if (this.countNotNull == null) {
+            this.countNotNull = 0;
+         }
+         if (this.countNull == null) {
+            this.countNull = 0;
+         }
+         this.countNotNull += 1;
+         this.countNull -= 1;
+
+         if(this.maximum==null) {
+            this.maximum = newValue;
+         }
+         if(this.minimum==null) {
+            this.minimum = newValue;
+         }
+         if (newValue > this.maximum) {
+            this.maximum = newValue;
+         }
+         if (newValue < this.minimum) {
+            this.minimum = newValue;
+         }
+
+         if (this.sum == null) {
+            this.sum = newValue;
+         } else {
+            this.sum += newValue;
+         }
+      }
    }
 }

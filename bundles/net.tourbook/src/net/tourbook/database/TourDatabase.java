@@ -4314,7 +4314,9 @@ public class TourDatabase {
             + "   TourEndTime                      BIGINT DEFAULT 0,                   " + NL //$NON-NLS-1$
 
             + "   valueFloat                       FLOAT DEFAULT NULL,                   " + NL //$NON-NLS-1$
-            + "   valueString                VARCHAR(" + CustomFieldValue.DB_LENGTH_VALUESTRING + ")            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   valueString                VARCHAR(" + CustomFieldValue.DB_LENGTH_VALUESTRING + ") DEFAULT NULL,            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            + "   CONSTRAINT     UK_" + KEY_TOUR + "_" + KEY_CUSTOM_FIELD + " UNIQUE (" + KEY_TOUR + "," + KEY_CUSTOM_FIELD + ")          " + NL //$NON-NLS-1$
 
             // version xxxgmn end
 

@@ -63,6 +63,7 @@ import net.tourbook.common.util.SQL;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringToArrayConverter;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.CustomTrackIsActiveSettings;
 import net.tourbook.data.DataSerie;
@@ -823,11 +824,12 @@ public class TourManager {
       int numTimeSlices = 0;
       int numSwimTimeSlices = 0;
       final HashMap<String, CustomTrackDefinition> toCustomTracksDefinition = new HashMap<>();
+      final HashMap<String, CustomFieldValue> toCustomFieldValue = new HashMap<>();
       //int numCustomTrackDefinition = 0;
 
       // get tours which have data series
       for (final TourData tourData : allMultipleTours) {
-
+         //DataSerie treatment
          final int[] timeSerie = tourData.timeSerie;
 
          // ignore tours which have no data series
@@ -856,6 +858,16 @@ public class TourManager {
 
          if (swimTimeSerie != null && swimTimeSerie.length > 0) {
             numSwimTimeSlices += swimTimeSerie.length;
+         }
+
+         //CustomFieldValue treatment: add one newCustomFieldValue for all existing CustomField's
+         for (final CustomFieldValue customFieldValue : tourData.getCustomFieldValues()) {
+            if (!toCustomFieldValue.containsKey(customFieldValue.getCustomField().getRefId())) {
+               final CustomFieldValue newCustomFieldValue = new CustomFieldValue(customFieldValue.getCustomField(), null, null);
+               newCustomFieldValue.setCountNull(allMultipleTours.size());
+               newCustomFieldValue.setCountNotNull(0);
+               toCustomFieldValue.put(newCustomFieldValue.getCustomField().getRefId(), newCustomFieldValue);
+            }
          }
       }
 
@@ -1126,6 +1138,16 @@ public class TourManager {
                }
             }
          }
+
+         /*
+          * CustomFields
+          */
+         for (final CustomFieldValue customFieldValue : fromTourData.getCustomFieldValues()) {
+            final CustomFieldValue sCustomFieldValue = toCustomFieldValue.get(customFieldValue.getCustomField().getRefId());
+
+            sCustomFieldValue.updateStatistic(customFieldValue.getValueFloat(), customFieldValue.getValueString());
+         }
+
          /*
           * Swimming
           */
@@ -1236,6 +1258,9 @@ public class TourManager {
 
       joinedTourData.setCustomTracksDefinition(toCustomTracksDefinition);// = toCustomTracksDefinition;
       joinedTourData.setCustomTracks(toCustomTracks);
+
+      joinedTourData.getCustomFieldValues().clear();
+      joinedTourData.getCustomFieldValues().addAll(toCustomFieldValue.values());
 
       /*
        * Remove data series when not available
