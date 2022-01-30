@@ -13,7 +13,7 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.ui.views.tourCustomTracks;
+package net.tourbook.ui.views.tourCustomFields;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,13 +22,14 @@ import java.sql.SQLException;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
-import net.tourbook.data.DataSerie;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 
-public class DataSerieViewItem {
+public class CustomFieldViewItem {
 
    static final String SQL_SUM_COLUMNS;
 
@@ -56,8 +57,13 @@ public class DataSerieViewItem {
             + "AVG( CASE WHEN POWER_AVG = 0         THEN NULL ELSE POWER_AVG END)," //                                    13   //$NON-NLS-1$
             + "AVG( CASE WHEN POWER_NORMALIZED = 0         THEN NULL ELSE POWER_NORMALIZED END)," //                                    14   //$NON-NLS-1$
 
+            + "AVG(valueFloat)," //                  15   //$NON-NLS-1$
+            + "MIN(valueFloat)," //               16   //$NON-NLS-1$
+            + "MAX(valueFloat)," //                  17   //$NON-NLS-1$
+            + "SUM(valueFloat)," //                  18   //$NON-NLS-1$
+
             // tour counter
-            + "SUM(1)" //                          15   //$NON-NLS-1$
+            + "SUM(1)" //                          19   //$NON-NLS-1$
       ;
 
    }
@@ -90,12 +96,17 @@ public class DataSerieViewItem {
 
    float                            colAvgPower;
    float                            colAvgPowerNormalized;
+
+   float                            colAvgValueFloat;
+   float                            colMinValueFloat;
+   float                            colMaxValueFloat;
+   float                            colSumValueFloat;
+
    long                             colTourCounter;
 
-   public DataSerieViewItem() {
+   public CustomFieldViewItem() {
       super();
    }
-
 
    public long getColAltitudeDown() {
       return colAltitudeDown;
@@ -112,11 +123,9 @@ public class DataSerieViewItem {
    public float getColAvgPace() {
       return colAvgPace;
    }
-
    public float getColAvgPower() {
       return colAvgPower;
    }
-
    public float getColAvgPowerNormalized() {
       return colAvgPowerNormalized;
    }
@@ -129,8 +138,13 @@ public class DataSerieViewItem {
       return colAvgSpeed;
    }
 
+
    public float getColAvgTemperature() {
       return colAvgTemperature;
+   }
+
+   public float getColAvgValueFloat() {
+      return colAvgValueFloat;
    }
 
    public long getColDistance() {
@@ -157,6 +171,14 @@ public class DataSerieViewItem {
       return colMaxSpeed;
    }
 
+   public float getColMaxValueFloat() {
+      return colMaxValueFloat;
+   }
+
+   public float getColMinValueFloat() {
+      return colMinValueFloat;
+   }
+
    public long getColMovingTime() {
       return colMovingTime;
    }
@@ -169,6 +191,10 @@ public class DataSerieViewItem {
       return colRecordedTime;
    }
 
+   public float getColSumValueFloat() {
+      return colSumValueFloat;
+   }
+
    public long getColTourCounter() {
       return colTourCounter;
    }
@@ -177,12 +203,38 @@ public class DataSerieViewItem {
       return refId;
    }
 
+   public String getValueAsString(final CustomField customField, final Float inputValue, final String inputString) {
+      String value = "";
+      if (inputString != null) {
+         value = inputString;
+      } else if (inputValue != null) {
+         if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+            final Long sec = inputValue.longValue();
+            final long second = sec % 60;
+            long minute = sec / 60;
+            if (minute >= 60) {
+               final long hour = minute / 60;
+               minute %= 60;
+               value = String.format("%02d:%02d:%02d", hour, minute, second);
+            } else {
+               final long hour = 0;
+               value = String.format("%02d:%02d:%02d", hour, minute, second);
+            }
+         } else if (customField.getFieldType().compareTo(CustomFieldType.FIELD_STRING) == 0) {
+            value = "N/A";
+         } else {
+            value = String.valueOf(inputValue);
+         }
+      }
+      return value;
+   }
+
    /**
     * Read sum totals from the database for the dataSerieItem
     *
-    * @param dataSerieItem
+    * @param customFieldItem
     */
-   public void readDataSerieTotals(final DataSerie dataSerieItem) {
+   public void readDataSerieTotals(final CustomField customFieldItem) {
 
       try (Connection conn = TourDatabase.getInstance().getConnection()) {
 
@@ -194,20 +246,20 @@ public class DataSerieViewItem {
          final String sql = UI.EMPTY_STRING
                //
                + ("SELECT " + SQL_SUM_COLUMNS) //$NON-NLS-1$
-               + (" FROM " + TourDatabase.JOINTABLE__TOURDATA__DATA_SERIE + " jtblSerieData") //$NON-NLS-1$ //$NON-NLS-2$
+               + (" FROM " + TourDatabase.TABLE_CUSTOM_FIELD_VALUE + " jtblFieldValue") //$NON-NLS-1$ //$NON-NLS-2$
 
                // get data for a tour
                + (" LEFT OUTER JOIN " + TourDatabase.TABLE_TOUR_DATA + " TourData ON ") //$NON-NLS-1$ //$NON-NLS-2$
-               + (" jtblSerieData.TourData_tourId = TourData.tourId") //$NON-NLS-1$
+               + (" jtblFieldValue.TourData_tourId = TourData.tourId") //$NON-NLS-1$
 
-               + " WHERE jtblSerieData.DataSerie_SerieId = ?" //$NON-NLS-1$
+               + " WHERE jtblFieldValue.CUSTOMFIELD_FieldID = ?" //$NON-NLS-1$
          ;//+ sqlFilter.getWhereClause();
 
          final PreparedStatement statement = conn.prepareStatement(sql);
-         statement.setLong(1, dataSerieItem.getSerieId());
+         statement.setLong(1, customFieldItem.getFieldId());
          //sqlFilter.setParameters(statement, 2);
 
-         refId = dataSerieItem.getRefId();
+         refId = customFieldItem.getRefId();
 
          final ResultSet result = statement.executeQuery();
          while (result.next()) {
@@ -250,6 +302,11 @@ public class DataSerieViewItem {
       colAvgSpeed = (time == 0 ? 0 : 3.6f * colDistance / time);
       colAvgPace = colDistance == 0 ? 0 : time * 1000f / colDistance;
 
+      colAvgValueFloat = result.getFloat(startIndex + 15);
+      colMinValueFloat = result.getFloat(startIndex + 16);
+      colMaxValueFloat = result.getFloat(startIndex + 17);
+      colSumValueFloat = result.getFloat(startIndex + 18);
+
       if (UI.IS_SCRAMBLE_DATA) {
 
          colDistance = UI.scrambleNumbers(colDistance);
@@ -272,6 +329,12 @@ public class DataSerieViewItem {
 
          colAvgSpeed = UI.scrambleNumbers(colAvgSpeed);
          colAvgPace = UI.scrambleNumbers(colAvgPace);
+
+         colAvgValueFloat = UI.scrambleNumbers(colAvgValueFloat);
+         colMinValueFloat = UI.scrambleNumbers(colMinValueFloat);
+         colMaxValueFloat = UI.scrambleNumbers(colMaxValueFloat);
+         colSumValueFloat = UI.scrambleNumbers(colSumValueFloat);
+
       }
    }
 
@@ -279,7 +342,7 @@ public class DataSerieViewItem {
 
       readDefaultColumnData(result, startIndex);
 
-      colTourCounter = result.getLong(startIndex + 15);
+      colTourCounter = result.getLong(startIndex + 19);
    }
 
    public void setColAltitudeDown(final long colAltitudeDown) {
@@ -318,6 +381,10 @@ public class DataSerieViewItem {
       this.colAvgTemperature = colAvgTemperature;
    }
 
+   public void setColAvgValueFloat(final float colAvgValueFloat) {
+      this.colAvgValueFloat = colAvgValueFloat;
+   }
+
    public void setColDistance(final long colDistance) {
       this.colDistance = colDistance;
    }
@@ -342,6 +409,14 @@ public class DataSerieViewItem {
       this.colMaxSpeed = colMaxSpeed;
    }
 
+   public void setColMaxValueFloat(final float colMaxValueFloat) {
+      this.colMaxValueFloat = colMaxValueFloat;
+   }
+
+   public void setColMinValueFloat(final float colMinValueFloat) {
+      this.colMinValueFloat = colMinValueFloat;
+   }
+
    public void setColMovingTime(final long colMovingTime) {
       this.colMovingTime = colMovingTime;
    }
@@ -352,6 +427,10 @@ public class DataSerieViewItem {
 
    public void setColRecordedTime(final long colRecordedTime) {
       this.colRecordedTime = colRecordedTime;
+   }
+
+   public void setColSumValueFloat(final float colSumValueFloat) {
+      this.colSumValueFloat = colSumValueFloat;
    }
 
    public void setColTourCounter(final long colTourCounter) {

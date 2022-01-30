@@ -86,6 +86,7 @@ import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.SQLFilter;
 import net.tourbook.ui.TourTypeFilter;
 import net.tourbook.ui.UI;
+import net.tourbook.ui.views.tourCustomFields.CustomFieldViewItem;
 import net.tourbook.ui.views.tourCustomTracks.DataSerieViewItem;
 
 import org.apache.derby.drda.NetworkServerControl;
@@ -244,7 +245,7 @@ public class TourDatabase {
    public static final String  ENTITY_ID_WAY_POINT                = "WayPointID";                                           //$NON-NLS-1$
    //
    private static final String KEY_CUSTOM_FIELD                   = TABLE_CUSTOM_FIELD + "_" + ENTITY_ID_CUSTOM_FIELD;             //$NON-NLS-1$
-   private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
+//   private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
    private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;          //$NON-NLS-1$
 
    private static final String KEY_BIKE                           = TABLE_TOUR_BIKE + "_" + ENTITY_ID_BIKE;                 //$NON-NLS-1$
@@ -303,7 +304,7 @@ public class TourDatabase {
    private static HashMap<String, DataSerie>              _allDataSeries_ByRefId;
 
    /**
-    * Key is DataSerie RefID
+    * Key is DataSerieView RefID
     */
    private static HashMap<String, DataSerieViewItem>      _allDataSeriesView_ByRefId;
 
@@ -316,6 +317,11 @@ public class TourDatabase {
     * Key is CustomField RefID
     */
    private static HashMap<String, CustomField>            _allCustomFields_ByRefId;
+
+   /**
+    * Key is CustomFieldView RefID
+    */
+   private static HashMap<String, CustomFieldViewItem>    _allCustomFieldsView_ByRefId;
 
    /**
     * Key is tour type ID
@@ -1336,6 +1342,11 @@ public class TourDatabase {
          _allCustomFields_ById.clear();
          _allCustomFields_ById = null;
       }
+
+      if (_allCustomFieldsView_ByRefId != null) {
+         _allCustomFieldsView_ByRefId.clear();
+         _allCustomFieldsView_ByRefId = null;
+      }
    }
 
    /**
@@ -1953,6 +1964,24 @@ public class TourDatabase {
       loadAllCustomFields();
 
       return _allCustomFields_ByRefId;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
+   public static HashMap<String, CustomFieldViewItem> getAllCustomFieldsView_ByRefId() {
+
+      if (_allCustomFieldsView_ByRefId != null) {
+         return _allCustomFieldsView_ByRefId;
+      }
+
+      if (_allCustomFields_ByRefId == null) {
+         loadAllCustomFields();
+      }
+
+      loadAllCustomFieldsView();
+
+      return _allCustomFieldsView_ByRefId;
    }
 
    /**
@@ -3202,6 +3231,16 @@ public class TourDatabase {
       }
    }
 
+   private static void loadAllCustomFieldsView() {
+      _allCustomFieldsView_ByRefId = new HashMap<>();
+
+      for (final CustomField customFieldItem : _allDbCustomFields) {
+         final CustomFieldViewItem customFieldViewItem = new CustomFieldViewItem();
+         customFieldViewItem.readDataSerieTotals(customFieldItem);
+         _allCustomFieldsView_ByRefId.put(customFieldItem.getRefId(), customFieldViewItem);
+      }
+   }
+
    @SuppressWarnings("unchecked")
    private static void loadAllDataSeries() {
 
@@ -3243,7 +3282,6 @@ public class TourDatabase {
       }
    }
 
-   @SuppressWarnings("unchecked")
    private static void loadAllDataSeriesView() {
       _allDataSeriesView_ByRefId = new HashMap<>();
 
@@ -3947,7 +3985,7 @@ public class TourDatabase {
       final EntityManager em = TourDatabase.getInstance().getEntityManager();
       final EntityTransaction ts = em.getTransaction();
 
-      DataSerie savedEntity = null;
+      //DataSerie savedEntity = null;
       boolean isSaved = false;
 
       try {
@@ -3962,11 +4000,12 @@ public class TourDatabase {
                // entity is not persisted
 
                em.persist(dataSerie);
-               savedEntity = dataSerie;
+               //savedEntity = dataSerie;
 
             } else {
 
-               savedEntity = em.merge(dataSerie);
+               //savedEntity = em.merge(dataSerie);
+               em.merge(dataSerie);
             }
          }
          for (final DataSerie dataSerie : dataSeriesDeleted) {
@@ -4324,6 +4363,8 @@ public class TourDatabase {
       );
 
       SQL.CreateIndex_Combined(stmt, TABLE_CUSTOM_FIELD_VALUE, "TourStartTime"); //$NON-NLS-1$
+      // Create index
+      SQL.CreateIndex(stmt, TABLE_CUSTOM_FIELD_VALUE, KEY_CUSTOM_FIELD);
    }
 
    /**

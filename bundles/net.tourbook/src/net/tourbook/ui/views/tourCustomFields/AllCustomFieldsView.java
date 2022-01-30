@@ -18,6 +18,7 @@ package net.tourbook.ui.views.tourCustomFields;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.CommonActivator;
@@ -78,10 +79,10 @@ import org.eclipse.ui.part.ViewPart;
 public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITourViewer {
    public static final String  ID           = "net.tourbook.views.AllCustomFieldsView"; //$NON-NLS-1$
    //
-   private static final String COLUMN_REFID     = "ReferenceId";                            //$NON-NLS-1$
-   private static final String COLUMN_NAME      = "Name";                                   //$NON-NLS-1$
-   private static final String COLUMN_UNIT      = "Unit";                                   //$NON-NLS-1$
-   private static final String COLUMN_SIZE      = "NumberOfTours";                          //$NON-NLS-1$
+//   private static final String COLUMN_REFID     = "ReferenceId";                            //$NON-NLS-1$
+//   private static final String COLUMN_NAME      = "Name";                                   //$NON-NLS-1$
+//   private static final String COLUMN_UNIT      = "Unit";                                   //$NON-NLS-1$
+//   private static final String COLUMN_SIZE      = "NumberOfTours";                          //$NON-NLS-1$
 
    //
    private final IPreferenceStore  _prefStore        = TourbookPlugin.getPrefStore();
@@ -111,7 +112,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    //private ActionEditCustomTracksAll _action_EditCustomTracksData;
 
    private ArrayList<CustomField> _allCustomFields = new ArrayList<>();
-   //private HashMap<String, DataSerieViewItem> _allDataSeriesView_ByRefId      = null;
+   private HashMap<String, CustomFieldViewItem> _allCustomFieldsView_ByRefId = null;
    private boolean                 _isInUpdate;
 
    private final NumberFormat      _nf1                            = NumberFormat.getNumberInstance();
@@ -461,6 +462,30 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
       defineColumn_Unit();
       defineColumn_Tours_Count();
       defineColumn_Id();
+
+      defineColumn_Avg();
+      defineColumn_Min();
+      defineColumn_Max();
+      defineColumn_Sum();
+
+   }
+
+   /**
+    * column: average
+    */
+   private void defineColumn_Avg() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_AVERAGE.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final CustomField ct = (CustomField) cell.getElement();
+            final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
+            cell.setText(ctView.getValueAsString(ct, ctView.getColAvgValueFloat(), null));
+
+         }
+      });
    }
 
    /**
@@ -476,12 +501,10 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
 
             final CustomField ct = (CustomField) cell.getElement();
             cell.setText(ct.getRefId());
-            //Hibernate.initialize(ct.getTourData());
-            //final Set<TourData> listofTours = ct.getTourData();
-            //final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();//(listofTours == null ? 0 : listofTours.size());
-            //if (ctSize == 0) {
-            //   cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-            //}
+            final long ctSize = _allCustomFieldsView_ByRefId.get(ct.getRefId()).getColTourCounter();//(listofTours == null ? 0 : listofTours.size());
+            if (ctSize == 0) {
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+            }
          }
       });
    }
@@ -498,6 +521,42 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    }
 
    /**
+    * column: maximum
+    */
+   private void defineColumn_Max() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_MAX.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final CustomField ct = (CustomField) cell.getElement();
+            final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
+            cell.setText(ctView.getValueAsString(ct, ctView.getColMaxValueFloat(), null));
+
+         }
+      });
+   }
+
+   /**
+    * column: minimum
+    */
+   private void defineColumn_Min() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_MIN.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final CustomField ct = (CustomField) cell.getElement();
+            final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
+            cell.setText(ctView.getValueAsString(ct, ctView.getColMinValueFloat(), null));
+
+         }
+      });
+   }
+
+   /**
     * column: name
     */
    private void defineColumn_Name() {
@@ -510,13 +569,28 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
 
             final CustomField ct = (CustomField) cell.getElement();
             cell.setText(ct.getFieldName());
-            //Hibernate.initialize(ct.getTourData());
-            //final Set<TourData> listofTours = ct.getTourData();
-            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-//            if (ctSize == 0) {
-//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-//            }
+            final long ctSize = _allCustomFieldsView_ByRefId.get(ct.getRefId()).getColTourCounter();
+            if (ctSize == 0) {
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+            }
+
+         }
+      });
+   }
+
+   /**
+    * column: sum
+    */
+   private void defineColumn_Sum() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_SUM.createColumn(_columnManager, _pc);
+      //colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+            final CustomField ct = (CustomField) cell.getElement();
+            final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
+            cell.setText(ctView.getValueAsString(ct, ctView.getColSumValueFloat(), null));
 
          }
       });
@@ -534,14 +608,11 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
          public void update(final ViewerCell cell) {
 
             final CustomField ct = (CustomField) cell.getElement();
-            //final Set<TourData> listofTours = ct.getTourData();
-            //Hibernate.initialize(ct.getTourData());
-            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-//            cell.setText(String.valueOf(ctSize));
-//            if (ctSize == 0) {
-//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-//            }
+            final long ctSize = _allCustomFieldsView_ByRefId.get(ct.getRefId()).getColTourCounter();
+            cell.setText(String.valueOf(ctSize));
+            if (ctSize == 0) {
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+            }
          }
       });
    }
@@ -559,13 +630,10 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
 
             final CustomField ct = (CustomField) cell.getElement();
             cell.setText(ct.getUnit());
-            //Hibernate.initialize(ct.getTourData());
-            //final Set<TourData> listofTours = ct.getTourData();
-            //final int ctSize = (listofTours == null ? 0 : listofTours.size());
-//            final long ctSize = _allDataSeriesView_ByRefId.get(ct.getRefId()).getColTourCounter();
-//            if (ctSize == 0) {
-//               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
-//            }
+            final long ctSize = _allCustomFieldsView_ByRefId.get(ct.getRefId()).getColTourCounter();
+            if (ctSize == 0) {
+               cell.setForeground(_ctViewer.getControl().getDisplay().getSystemColor(SWT.COLOR_RED));
+            }
          }
       });
    }
@@ -641,14 +709,10 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    }
 
    private void loadAllCustomFields() {
-      //TODO rework this for performance
-      //TODO replace by a sql fetching the sum of distnace , time, etc...
       _allCustomFields.clear();
       TourDatabase.clearCustomFields();
       _allCustomFields.addAll(TourDatabase.getAllCustomFields());
-      //_allDataSeriesView_ByRefId.clear();
-      //_allDataSeriesView_ByRefId.putAll(TourDatabase.getAllDataSeriesView_ByRefId());
-      //_allDataSeriesView_ByRefId = TourDatabase.getAllDataSeriesView_ByRefId();
+      _allCustomFieldsView_ByRefId = TourDatabase.getAllCustomFieldsView_ByRefId();
    }
 
    @Override
