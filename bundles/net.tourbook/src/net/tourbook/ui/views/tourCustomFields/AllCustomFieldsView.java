@@ -110,6 +110,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    private Composite               _uiParent;
 
    private ActionAddCustomFields                _action_AddCustomFieldsData;
+   private ActionEditCustomFields               _action_EditCustomFieldsData;
 
    private ArrayList<CustomField> _allCustomFields = new ArrayList<>();
    private HashMap<String, CustomFieldViewItem> _allCustomFieldsView_ByRefId = null;
@@ -326,6 +327,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
 
    private void createActions() {
       _action_AddCustomFieldsData = new ActionAddCustomFields(this, true);
+      _action_EditCustomFieldsData = new ActionEditCustomFields(this, true);
    }
 
    private void createMenuManager() {
@@ -675,11 +677,13 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    private void enableActions() {
 
       _action_AddCustomFieldsData.setEnabled(true);
+      _action_EditCustomFieldsData.setEnabled(true);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
       menuMgr.add(_action_AddCustomFieldsData);
+      menuMgr.add(_action_EditCustomFieldsData);
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));

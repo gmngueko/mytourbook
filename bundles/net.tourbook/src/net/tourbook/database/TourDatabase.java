@@ -4031,6 +4031,74 @@ public class TourDatabase {
    }
 
    /**
+    * UpdateandDelete CustomField.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param customFieldsUpdated
+    * @param customFieldsDeleted
+    */
+   public static void updateAndDeleteCustomField(final ArrayList<CustomField> customFieldsUpdated, final ArrayList<CustomField> customFieldsDeleted) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      //DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for (final CustomField customField : customFieldsUpdated) {
+            final CustomField entityInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(customField);
+               //savedEntity = dataSerie;
+
+            } else {
+
+               //savedEntity = em.merge(dataSerie);
+               em.merge(customField);
+            }
+         }
+         for (final CustomField customField : customFieldsDeleted) {
+            final CustomField customFieldInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (customFieldInDB != null) {
+
+               em.remove(customFieldInDB);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when update/Delete a CustomField"); //$NON-NLS-1$
+      }
+
+   }
+
+   /**
     * UpdateandDelete DataSerie.
     * <p>
     * This method is <b>much faster</b> than using this

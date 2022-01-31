@@ -67,7 +67,7 @@ public class ActionEditCustomTracksAll extends Action {
    public static final String          DIALOG_MSG                = "Edit All Custom DataSerie's";    //$NON-NLS-1$
    public static final String          TRACKLIST_TITLE           = "List of All Custom DataSerie's"; //$NON-NLS-1$
    public static final String          DIALOG_OPEN_TITLE         = "DataSeries Edit";              //$NON-NLS-1$
-   public static final String          DIALOG_OPEN_MSG           = "No Tracks to Edit";                       //$NON-NLS-1$
+   public static final String          DIALOG_OPEN_MSG           = "No DataSerie's to Edit";                       //$NON-NLS-1$
    public static final String          MENU_NAME                 = "&Edit Tours Custom DataSerie's"; //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_NAME    = "List Custom DataSerie's";        //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_TOOLTIP = "List All Custom DataSerie's";    //$NON-NLS-1$
@@ -168,18 +168,6 @@ public class ActionEditCustomTracksAll extends Action {
                public void handleEvent(final Event e) {
                   switch (e.type) {
                   case SWT.Selection:
-//                     final ArrayList<TourData> selectedTours = _tourProvider != null ? _tourProvider.getSelectedTours() : _tourProvider1
-//                           .getSelectedTours();
-//                     if (selectedTours == null || selectedTours.isEmpty()) {
-//
-//                        // a tour is not selected
-//                        MessageDialog.openInformation(
-//                              shell,
-//                              DIALOG_OPEN_TITLE,
-//                              Messages.UI_Label_TourIsNotSelected);
-//
-//                        return;
-//                     }
                      //Build list of track RefId, count and total size
                      TourDatabase.clearDataSeries();
                      final ArrayList<DataSerie> allTourDataSerie = _allDataSeries = TourDatabase.getAllDataSeriesWithTourData();
@@ -191,7 +179,7 @@ public class ActionEditCustomTracksAll extends Action {
                               newEntry.name = dataSerieEntry.getName();
                               newEntry.unit = dataSerieEntry.getUnit();
                               newEntry.refid = dataSerieEntry.getRefId();
-                              newEntry.count = dataSerieEntry.getTourData() == null ? 0 : dataSerieEntry.getTourData().size();
+                              //newEntry.count = dataSerieEntry.getTourData() == null ? 0 : dataSerieEntry.getTourData().size();
                               newEntry.count = _allDataSeriesView_ByRefId.get(dataSerieEntry.getRefId()).getColTourCounter();
                               final int custSize = -1;//custValues == null ? 0 : custValues.length;
                               newEntry.size = custSize;
