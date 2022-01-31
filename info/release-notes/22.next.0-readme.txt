@@ -45,14 +45,15 @@ Improvements
   - Loading multiple tours is much faster because they are loaded concurrently
   - Painting multiple tours in tour chart and 2D map are further optimized 
 
-
 * Tour Import
   - Sort imported tours by number of markers/waypoints
+  - Customize simple import tiles in the easy import page 
+                                          https://github.com/mytourbook/mytourbook/issues/460
   
 * Tour Segmenter
   - Show power value for each segment
                                           https://sourceforge.net/p/mytourbook/feature-requests/204/
-                        
+
 * Photos + Tours        
   - Show tours with these photo times: 
     - Exif time
@@ -72,20 +73,23 @@ Improvements
 Changes
 =======
 
-* 
-
+* Tour Editor
+  - Time difference column shows now the time difference to the next time slice, until now the time difference to the previous time slice was displayed
+  - A "wrong" time slice is deleted
+                                          https://github.com/mytourbook/mytourbook/issues/456
 
 Bugfix
 ======
 
-* Suunto App Integration: (Frederic)   
+* Suunto App Integration (Frederic)   
   - When determining if a Suunto activity already exists in the database, only the tours for the selected user are compared with the activities available on the Suunto App
+
+* Map25 (Thomas)
+  - The old hillshading provider(wmflabs.org) is not avaible anymore, the new provider for hillshading is now "Mapilion"
   
 * Tour Editor
-  - Fixed "Using DELETE in the Tour Editor is not consecutive "      https://sourceforge.net/p/mytourbook/bugs/127/  
-
-* Map25; (Thomas)
-  - The old hillshading provider(wmflabs.org) is not avaible anymore, the new provider for hillshading is now "Mapilion"
+  - Fixed "Using DELETE in the Tour Editor is not consecutive "      
+                                          https://sourceforge.net/p/mytourbook/bugs/127/
 
 
 Translation    
