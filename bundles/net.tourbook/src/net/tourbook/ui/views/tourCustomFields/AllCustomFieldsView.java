@@ -109,7 +109,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    private Composite               _viewerContainer;
    private Composite               _uiParent;
 
-   //private ActionEditCustomTracksAll _action_EditCustomTracksData;
+   private ActionAddCustomFields                _action_AddCustomFieldsData;
 
    private ArrayList<CustomField> _allCustomFields = new ArrayList<>();
    private HashMap<String, CustomFieldViewItem> _allCustomFieldsView_ByRefId = null;
@@ -312,7 +312,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
                reloadViewer();
             }
 
-         } else if (tourEventId == TourEventId.DATA_SERIE_IS_MODIFIED) {
+         } else if (tourEventId == TourEventId.CUSTOMFIELDS_IS_MODIFIED) {
             reloadViewer();
 
          } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
@@ -325,7 +325,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    }
 
    private void createActions() {
-      //_action_EditCustomTracksData = new ActionEditCustomTracksAll(this, true);
+      _action_AddCustomFieldsData = new ActionAddCustomFields(this, true);
    }
 
    private void createMenuManager() {
@@ -426,7 +426,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
             final IStructuredSelection selection = (IStructuredSelection) _ctViewer.getSelection();
             if (selection.size() > 0) {
                //TODO set selected custom track's in dialog
-               //_action_EditCustomTracksData.run();
+               _action_AddCustomFieldsData.run();
             }
          }
       });
@@ -467,6 +467,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
       defineColumn_Min();
       defineColumn_Max();
       defineColumn_Sum();
+      defineColumn_Type();
 
    }
 
@@ -618,6 +619,23 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
    }
 
    /**
+    * column: Type
+    */
+   private void defineColumn_Type() {
+
+      final ColumnDefinition colDef = TableColumnFactory.CUSTOM_FIELDS_TYPE.createColumn(_columnManager, _pc);
+      colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final CustomField ct = (CustomField) cell.getElement();
+            cell.setText(String.valueOf(ct.getFieldType().name()));
+         }
+      });
+   }
+
+   /**
     * column: unit
     */
    private void defineColumn_Unit() {
@@ -656,12 +674,12 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
     */
    private void enableActions() {
 
-      //_action_EditCustomTracksData.setEnabled(true);
+      _action_AddCustomFieldsData.setEnabled(true);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
-      //menuMgr.add(_action_EditCustomTracksData);
+      menuMgr.add(_action_AddCustomFieldsData);
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
@@ -674,7 +692,7 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
        * View toolbar
        */
       final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
-      //toolBarManager.add(_action_EditCustomTracksData);
+      toolBarManager.add(_action_AddCustomFieldsData);
    }
 
    @Override

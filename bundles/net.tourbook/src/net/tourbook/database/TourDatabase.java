@@ -830,6 +830,66 @@ public class TourDatabase {
    }
 
    /**
+    * Add CustomFields.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param customFieldListToAdd
+    */
+   public static void addCustomFields(final ArrayList<CustomField> customFieldListToAdd) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      //DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for(final CustomField customField:customFieldListToAdd)
+         {
+            final CustomField entityInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(customField);
+               //savedEntity = dataSerie;
+
+            } else {
+
+               //savedEntity = em.merge(dataSerie);
+               em.merge(customField);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when adding a CustomField"); //$NON-NLS-1$
+      }
+
+   }
+
+   /**
     * This error can occur when transient instances are not saved.
     *
     * <pre>
@@ -3991,8 +4051,7 @@ public class TourDatabase {
       try {
 
          ts.begin();
-         for(final DataSerie dataSerie:dataSeriesUpdated)
-         {
+         for (final DataSerie dataSerie : dataSeriesUpdated) {
             final DataSerie entityInDB = em.find(DataSerie.class, dataSerie.getSerieId());
 
             if (entityInDB == null) {

@@ -66,8 +66,8 @@ public class ActionEditCustomTracksAll extends Action {
    public static final String          DIALOG_TITLE              = "Edit All Custom DataSerie's";    //$NON-NLS-1$
    public static final String          DIALOG_MSG                = "Edit All Custom DataSerie's";    //$NON-NLS-1$
    public static final String          TRACKLIST_TITLE           = "List of All Custom DataSerie's"; //$NON-NLS-1$
-   public static final String          DIALOG_OPEN_TITLE         = "DataSeries Delete";              //$NON-NLS-1$
-   public static final String          DIALOG_OPEN_MSG           = "No Tracks to delete";                       //$NON-NLS-1$
+   public static final String          DIALOG_OPEN_TITLE         = "DataSeries Edit";              //$NON-NLS-1$
+   public static final String          DIALOG_OPEN_MSG           = "No Tracks to Edit";                       //$NON-NLS-1$
    public static final String          MENU_NAME                 = "&Edit Tours Custom DataSerie's"; //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_NAME    = "List Custom DataSerie's";        //$NON-NLS-1$
    public static final String          BUTTON_LOADTRACKS_TOOLTIP = "List All Custom DataSerie's";    //$NON-NLS-1$
@@ -407,7 +407,7 @@ public class ActionEditCustomTracksAll extends Action {
     */
    private static void fireDataSerieChangeEvent() {
 
-      TourManager.fireEvent(TourEventId.DATA_SERIE_IS_MODIFIED);
+      TourManager.fireEvent(TourEventId.DATASERIE_IS_MODIFIED);
    }
 
    public boolean editCustomTracksfromTour(final ArrayList<DataSerie> modifiedDataSerie,

@@ -313,7 +313,7 @@ public class AllCustomTracksView extends ViewPart implements ITourProvider, ITou
                reloadViewer();
             }
 
-         } else if (tourEventId == TourEventId.DATA_SERIE_IS_MODIFIED) {
+         } else if (tourEventId == TourEventId.DATASERIE_IS_MODIFIED) {
             reloadViewer();
 
          } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {

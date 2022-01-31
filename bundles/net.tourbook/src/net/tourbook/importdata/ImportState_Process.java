@@ -248,7 +248,7 @@ public class ImportState_Process {
 
       if (isCreated_NewDataSerie.get()) {
 
-         TourManager.fireEvent(TourEventId.DATA_SERIE_IS_MODIFIED);
+         TourManager.fireEvent(TourEventId.DATASERIE_IS_MODIFIED);
       }
 
       if (_allCustomFieldToBeUpdated.size() > 0) {

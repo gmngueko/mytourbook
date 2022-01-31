@@ -87,7 +87,12 @@ public enum TourEventId {
    /**
     * dataserie modified, this includes add/remove of dataseries
     */
-   DATA_SERIE_IS_MODIFIED,
+   DATASERIE_IS_MODIFIED,
+
+   /**
+    * customFields modified, this includes add/remove of customFields
+    */
+   CUSTOMFIELDS_IS_MODIFIED,
 
    /**
     * Sliders in the tour chart moved. Property data contains {@link SelectionChartInfo} or
