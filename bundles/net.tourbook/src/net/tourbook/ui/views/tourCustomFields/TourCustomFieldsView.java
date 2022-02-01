@@ -106,7 +106,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
 
    private PixelConverter          _pc;
 
-   //private ActionEditCustomTracks _action_EditCustomTracksData;
+   private ActionEditCustomFieldsValues _action_EditCustomFieldsData;
 
    /*
     * UI controls
@@ -368,7 +368,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
    }
 
    private void createActions() {
-      //_action_EditCustomTracksData = new ActionEditCustomTracks(this, true);
+      _action_EditCustomFieldsData = new ActionEditCustomFieldsValues(this, true);
    }
 
    private void createMenuManager() {
@@ -481,7 +481,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
             final IStructuredSelection selection = (IStructuredSelection) _customFieldsViewer.getSelection();
             if (selection.size() > 0) {
                //TODO set selected custom track's in dialog
-               //_action_EditCustomTracksData.run();
+               _action_EditCustomFieldsData.run();
             }
          }
       });
@@ -760,12 +760,12 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
 
       final boolean isTourInDb = isTourSavedInDb();
       //final boolean isSingleTour = _tourData != null && _tourData.isMultipleTours() == false;
-      //_action_EditCustomTracksData.setEnabled(isTourInDb);
+      _action_EditCustomFieldsData.setEnabled(isTourInDb);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
-      //menuMgr.add(_action_EditCustomTracksData);
+      menuMgr.add(_action_EditCustomFieldsData);
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
@@ -783,7 +783,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
        * View toolbar
        */
       final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
-      //toolBarManager.add(_action_EditCustomTracksData);
+      toolBarManager.add(_action_EditCustomFieldsData);
       /*
        * fill view menu
        */
