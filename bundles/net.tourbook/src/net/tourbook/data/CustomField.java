@@ -385,6 +385,10 @@ public class CustomField implements Cloneable, Serializable, Comparable<Object> 
       ;
    }
 
+   public String toStringShort() {
+      return "[" + fieldName + ";" + refId + "]";
+   }
+
    /**
     * Updates values from a modified {@link CustomField}
     *

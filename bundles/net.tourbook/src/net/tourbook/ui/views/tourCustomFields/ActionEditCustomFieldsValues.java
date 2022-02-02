@@ -450,8 +450,14 @@ public class ActionEditCustomFieldsValues extends Action {
       }
 
       public boolean setValue(final String value) {
-         //TODO depending of customFieldType
-
+         if (customFieldValue != null) {
+            final Boolean retValue = customFieldValue.setValueTemp(value);
+            if (retValue) {
+               this.valueFloat = customFieldValue.getValueFloatTemp();
+               this.valueString = customFieldValue.getValueStringTemp();
+            }
+            return retValue;
+         }
          return false;//if not OK
       }
    }

@@ -410,6 +410,7 @@ public class ActionEditCustomTracks extends Action {
       public void add(final DataSerie item) {
          final MenuItem menuItem = new MenuItem(menu, SWT.NONE);
          menuItem.setText(item.toStringShort());
+         menuItem.setToolTipText(item.toStringShortRefId());
          menuItem.setData(item);
          menuItem.addSelectionListener(new SelectionAdapter() {
             @Override

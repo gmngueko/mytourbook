@@ -107,6 +107,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
    private PixelConverter          _pc;
 
    private ActionEditCustomFieldsValues _action_EditCustomFieldsData;
+   private ActionAddCustomFieldsValues  _action_AddCustomFieldsData;
 
    /*
     * UI controls
@@ -369,6 +370,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
 
    private void createActions() {
       _action_EditCustomFieldsData = new ActionEditCustomFieldsValues(this, true);
+      _action_AddCustomFieldsData = new ActionAddCustomFieldsValues(this, true);
    }
 
    private void createMenuManager() {
@@ -761,11 +763,13 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       final boolean isTourInDb = isTourSavedInDb();
       //final boolean isSingleTour = _tourData != null && _tourData.isMultipleTours() == false;
       _action_EditCustomFieldsData.setEnabled(isTourInDb);
+      _action_AddCustomFieldsData.setEnabled(isTourInDb);
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
       menuMgr.add(_action_EditCustomFieldsData);
+      menuMgr.add(_action_AddCustomFieldsData);
 
       // add standard group which allows other plug-ins to contribute here
       menuMgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
@@ -784,6 +788,7 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
        */
       final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
       toolBarManager.add(_action_EditCustomFieldsData);
+      toolBarManager.add(_action_AddCustomFieldsData);
       /*
        * fill view menu
        */

@@ -86,7 +86,7 @@ public class ActionAddCustomFields extends Action {
    public static final String           TEXTBOX_DESC_TAG          = "TEXTBOX_DESC";                        //$NON-NLS-1$
    public static final String           TEXTBOX_TYPE_TAG          = "TEXTBOX_TYPE";                        //$NON-NLS-1$
    public static final String           DROPDOWN_REFID_TAG        = "DROPDOWN_REFID";                      //$NON-NLS-1$
-   public static final String           DROPDOWN_ITEM_REFID_TAG   = "DROPDOWN_REFID";                      //$NON-NLS-1$
+   public static final String           DROPDOWN_ITEM_REFID_TAG   = "DROPDOWN_REFID_ITEM";                 //$NON-NLS-1$
 
    private HashMap<String, CustomField> _addCustomField_ByRefId   = new HashMap<>();
 
@@ -404,14 +404,14 @@ public class ActionAddCustomFields extends Action {
       public void add(final CustomFieldType item, final CustomField data) {
          final MenuItem menuItem = new MenuItem(menu, SWT.NONE);
          menuItem.setText(item.name());
-         menuItem.setData("Data", data);
-         menuItem.setData("Type", item);
+         menuItem.setData("Data", data); //$NON-NLS-1$
+         menuItem.setData("Type", item); //$NON-NLS-1$
          menuItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent event) {
                final MenuItem selected = (MenuItem) event.widget;
-               final CustomField custField = (CustomField) selected.getData("Data");
-               final CustomFieldType custFieldType = (CustomFieldType) selected.getData("Type");
+               final CustomField custField = (CustomField) selected.getData("Data"); //$NON-NLS-1$
+               final CustomFieldType custFieldType = (CustomFieldType) selected.getData("Type"); //$NON-NLS-1$
                dropdown.setText(selected.getText());
                dropdown.setToolTipText(custField.toString());
                custField.setFieldType(custFieldType);

@@ -16,6 +16,8 @@
 package net.tourbook.data;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,7 +71,7 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    /**
     * Contains a CustomField Float value
     */
-   private Float  valueFloat;
+   private Float    valueFloat;
 
    @ManyToOne(optional = false)
    CustomField      customField;
@@ -79,6 +81,12 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    @Transient
    private long     _createId    = 0;
+
+   @Transient
+   private String   valueStringTemp;
+
+   @Transient
+   private Float    valueFloatTemp;
 
    //below variable are only used for a merged tourData
    @Transient
@@ -268,8 +276,16 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return valueFloat;
    }
 
+   public Float getValueFloatTemp() {
+      return valueFloatTemp;
+   }
+
    public String getValueString() {
       return valueString;
+   }
+
+   public String getValueStringTemp() {
+      return valueStringTemp;
    }
 
    @Override
@@ -329,12 +345,118 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       this.tourStartTime = tourStartTime;
    }
 
+   public boolean setValue(final String value) {
+      if (customField == null) {
+         return false;
+      }else {
+         if(customField.getFieldType() == CustomFieldType.NONE) {
+            return false;
+         }else if(customField.getFieldType() == CustomFieldType.FIELD_STRING) {
+            this.valueString = value;
+            this.valueFloat = null;
+            return true;
+         }else if(customField.getFieldType() == CustomFieldType.FIELD_NUMBER) {
+            this.valueString = null;
+            try {
+               this.valueFloat = Float.parseFloat(value);
+            }catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_DATE) {
+            this.valueFloat = null;
+            try {
+               final LocalDateTime dateTime = LocalDateTime.parse(value);
+               final ZoneId zoneId = ZoneId.systemDefault(); // or: ZoneId.of("Europe/Oslo");
+               final long epoch = dateTime.atZone(zoneId).toEpochSecond();
+               this.valueString = String.valueOf(epoch);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_DURATION) {
+            this.valueString = null;
+            try {
+               final String[] tokens = value.split(":");
+               final int hours = Integer.parseInt(tokens[0]);
+               final int minutes = Integer.parseInt(tokens[1]);
+               final int seconds = Integer.parseInt(tokens[2]);
+               this.valueFloat = (float) (3600 * hours + 60 * minutes + seconds);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         }
+      }
+      return false;
+   }
+
    public void setValueFloat(final Float valueFloat) {
       this.valueFloat = valueFloat;
    }
 
+   public void setValueFloatTemp(final Float valueFloatTemp) {
+      this.valueFloatTemp = valueFloatTemp;
+   }
+
    public void setValueString(final String valueString) {
       this.valueString = valueString;
+   }
+
+   public void setValueStringTemp(final String valueStringTemp) {
+      this.valueStringTemp = valueStringTemp;
+   }
+
+   public boolean setValueTemp(final String value) {
+      if (customField == null) {
+         return false;
+      }else {
+         if(customField.getFieldType() == CustomFieldType.NONE) {
+            return false;
+         }else if(customField.getFieldType() == CustomFieldType.FIELD_STRING) {
+            this.valueStringTemp = value;
+            this.valueFloatTemp = null;
+            return true;
+         }else if(customField.getFieldType() == CustomFieldType.FIELD_NUMBER) {
+            this.valueStringTemp = null;
+            try {
+               this.valueFloatTemp = Float.parseFloat(value);
+            }catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_DATE) {
+            this.valueFloatTemp = null;
+            try {
+               final LocalDateTime dateTime = LocalDateTime.parse(value);
+               final ZoneId zoneId = ZoneId.systemDefault(); // or: ZoneId.of("Europe/Oslo");
+               final long epoch = dateTime.atZone(zoneId).toEpochSecond();
+               this.valueStringTemp = String.valueOf(epoch);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_DURATION) {
+            this.valueStringTemp = null;
+            try {
+               final String[] tokens = value.split(":");
+               final int hours = Integer.parseInt(tokens[0]);
+               final int minutes = Integer.parseInt(tokens[1]);
+               final int seconds = Integer.parseInt(tokens[2]);
+               this.valueFloatTemp = (float) (3600 * hours + 60 * minutes + seconds);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               return false;
+            }
+            return true;
+         }
+      }
+      return false;
    }
 
    /**

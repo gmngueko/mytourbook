@@ -7877,8 +7877,24 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return conconiDeflection;
    }
 
+   public HashMap<String, CustomField> getCustomFields_ByRefID() {
+      final HashMap<String, CustomField> customFields = new HashMap<>();
+      for(final CustomFieldValue value:customFieldValues ) {
+         customFields.put(value.getCustomField().getRefId(), value.getCustomField());
+      }
+      return customFields;
+   }
+
    public Set<CustomFieldValue> getCustomFieldValues() {
       return customFieldValues;
+   }
+
+   public HashMap<String, CustomFieldValue> getCustomFieldValues_ByRefID() {
+      final HashMap<String, CustomFieldValue> customFields = new HashMap<>();
+      for (final CustomFieldValue value : customFieldValues) {
+         customFields.put(value.getCustomField().getRefId(), value);
+      }
+      return customFields;
    }
 
    public CustomTrackIsActiveSettings getCustomTrackIsActiveSettings() {
