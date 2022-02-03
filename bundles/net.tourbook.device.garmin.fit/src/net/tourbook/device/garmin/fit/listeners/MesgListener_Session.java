@@ -16,18 +16,28 @@
 package net.tourbook.device.garmin.fit.listeners;
 
 import com.garmin.fit.DateTime;
+import com.garmin.fit.DeveloperField;
 import com.garmin.fit.SessionMesg;
 import com.garmin.fit.SessionMesgListener;
 import com.garmin.fit.Sport;
 
+import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.device.garmin.fit.FitData;
 import net.tourbook.device.garmin.fit.FitDataReaderException;
+import net.tourbook.importdata.RawDataManager;
 
 public class MesgListener_Session extends AbstractMesgListener implements SessionMesgListener {
 
@@ -213,6 +223,147 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
       final Float totalAnaerobicTrainingEffect = mesg.getTotalAnaerobicTrainingEffect();
       if (totalAnaerobicTrainingEffect != null) {
          tourData.setTraining_TrainingEffect_Anaerob(totalAnaerobicTrainingEffect);
+      }
+
+      // -----------------------Developper field-----------------
+      //will be pout into Custom Fields
+
+      final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+      allTourData_CustomFieldValues.clear();
+
+      String developperFieldString = "";
+      for (final DeveloperField devField : mesg.getDeveloperFields()) {
+
+         final String fieldName = devField.getName();
+         if (!devField.isDefined() || !devField.isValid() || fieldName == null) {
+            continue;
+         }
+
+         final String customFieldName = fieldName;// + UI.SYMBOL_UNDERSCORE + devField.getAppUUID().toString();
+         final String customFieldId = fieldName + UI.SYMBOL_SEMICOLON + devField.getAppUUID().toString();
+         String customFieldUnit = UI.EMPTY_STRING;
+
+         if (devField.getUnits() != null) {
+            customFieldUnit = devField.getUnits();
+         }
+
+         final String description = "Garmin developper field";
+         final CustomField customField;
+         customField = RawDataManager.createCustomField(customFieldName,
+               customFieldId,
+               customFieldUnit,
+               CustomFieldType.NONE,
+               description);
+
+         final CustomField customFieldToCompare = new CustomField();
+         customFieldToCompare.setFieldName(customFieldName);
+         customFieldToCompare.setFieldType(customField.getFieldType());
+         customFieldToCompare.setRefId(customFieldId);
+         if (customField.equals2(customFieldToCompare) == false) {
+            //TODO might not be necessary to update CustomFields
+            //existing CustomFields must sray the way they are
+            //User might have modified on purpose !!!
+            if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+               /*
+                * Nothing to do, customField will be saved when a tour is saved which contains
+                * this customField
+                * in
+                * net.tourbook.database.TourDatabase.checkUnsavedTransientInstances_CustomFields(
+                * )
+                */
+
+            } else {
+
+               /*
+                * Notify post process to update the customField in the db
+                */
+
+               final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
+                     .getAllCustomFieldsToBeUpdated();
+
+               allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+            }
+         }
+
+         //second create CustomFieldValue's
+         final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+
+         /*
+          * Set CustomFieldValue into tour data
+          */
+         customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+         customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
+         customFieldValue.setTourData(tourData);
+
+         final Object fieldValue = devField.getValue();
+         developperFieldString += customFieldName + "[" + customFieldUnit + "] " + UI.SYMBOL_EQUAL;
+         developperFieldString += " " + "\"" + fieldValue + "\"";
+         if (fieldValue instanceof Float) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Float) fieldValue).floatValue());
+         } else if (fieldValue instanceof Integer) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Integer) fieldValue).floatValue());
+
+         } else if (fieldValue instanceof Long) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Long) fieldValue).floatValue());
+
+         } else if (fieldValue instanceof String) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_STRING);
+            customFieldValue.setValueFloat(null);
+            customFieldValue.setValueString(((String) fieldValue));
+
+         } else if (fieldValue instanceof Short) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Short) fieldValue).floatValue());
+
+         } else if (fieldValue instanceof Byte) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Byte) fieldValue).floatValue());
+
+         } else if (fieldValue instanceof Double) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((Double) fieldValue).floatValue());
+
+         } else if (fieldValue instanceof BigInteger) {
+            developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            customFieldValue.setValueString(null);
+            customFieldValue.setValueFloat(((BigInteger) fieldValue).floatValue());
+
+         } else {
+            developperFieldString += " {Unknown}";
+            customField.setFieldType(CustomFieldType.FIELD_STRING);
+            customFieldValue.setValueFloat(null);
+            customFieldValue.setValueString(((String) fieldValue));
+
+         }
+         developperFieldString += UI.NEW_LINE1;
+
+         allTourData_CustomFieldValues.add(customFieldValue);
+
+      }
+      if (!developperFieldString.isBlank()) {
+         //add it to description
+         developperFieldString = "Developper Field(s)\n====================\n" + developperFieldString; //$NON-NLS-1$
+         final String note = tourData.getTourDescription();
+         tourData.setTourDescription(note + UI.NEW_LINE2 + developperFieldString);
       }
 
       fitData.onSetup_Session_20_Finalize();
