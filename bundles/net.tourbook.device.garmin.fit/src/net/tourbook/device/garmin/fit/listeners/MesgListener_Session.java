@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.tourbook.common.UI;
+import net.tourbook.common.time.DateUtil;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.data.CustomField;
 import net.tourbook.data.CustomFieldType;
@@ -38,6 +39,8 @@ import net.tourbook.database.TourDatabase;
 import net.tourbook.device.garmin.fit.FitData;
 import net.tourbook.device.garmin.fit.FitDataReaderException;
 import net.tourbook.importdata.RawDataManager;
+
+import org.joda.time.Duration;
 
 public class MesgListener_Session extends AbstractMesgListener implements SessionMesgListener {
 
@@ -319,9 +322,26 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
          } else if (fieldValue instanceof String) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_STRING);
-            customFieldValue.setValueFloat(null);
-            customFieldValue.setValueString(((String) fieldValue));
+            //TODO check if string contains a duration(hhh:mm:sec) or a datetime(YYYY-MM-DDThh:mm:ss)
+            if (DateUtil.isValideDuration((String) fieldValue)) {
+               try {
+                  final Duration duration = DateUtil.parseDuration((String) fieldValue);
+                  customField.setFieldType(CustomFieldType.FIELD_DURATION);
+                  customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+                  customFieldValue.setValueString(null);
+               } catch (final Exception e) {
+                  System.out.println(e.getMessage());
+                  customField.setFieldType(CustomFieldType.FIELD_STRING);
+                  customFieldValue.setValueFloat(null);
+                  customFieldValue.setValueString(((String) fieldValue));
+               }
+
+            } else {
+               customField.setFieldType(CustomFieldType.FIELD_STRING);
+               customFieldValue.setValueFloat(null);
+               customFieldValue.setValueString(((String) fieldValue));
+
+            }
 
          } else if (fieldValue instanceof Short) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
