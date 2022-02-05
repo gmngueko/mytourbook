@@ -19,6 +19,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
@@ -57,13 +61,17 @@ public class CustomFieldViewItem {
             + "AVG( CASE WHEN POWER_AVG = 0         THEN NULL ELSE POWER_AVG END)," //                                    13   //$NON-NLS-1$
             + "AVG( CASE WHEN POWER_NORMALIZED = 0         THEN NULL ELSE POWER_NORMALIZED END)," //                                    14   //$NON-NLS-1$
 
-            + "AVG(valueFloat)," //                  15   //$NON-NLS-1$
-            + "MIN(valueFloat)," //               16   //$NON-NLS-1$
-            + "MAX(valueFloat)," //                  17   //$NON-NLS-1$
-            + "SUM(valueFloat)," //                  18   //$NON-NLS-1$
+            + "AVG(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN NULL ELSE valueFloat END)," //                  15   //$NON-NLS-1$
+            + "MIN(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN NULL ELSE valueFloat END)," //               16   //$NON-NLS-1$
+            + "MAX(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN NULL ELSE valueFloat END)," //                  17   //$NON-NLS-1$
+            + "SUM(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN NULL ELSE valueFloat END)," //                  18   //$NON-NLS-1$
+
+            + "AVG(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN INTEGER(valueString) ELSE NULL END)," //                  19   //$NON-NLS-1$
+            + "MIN(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN INTEGER(valueString) ELSE NULL END)," //               20   //$NON-NLS-1$
+            + "MAX(CASE WHEN FIELDTYPE = 'FIELD_DATE'  THEN INTEGER(valueString) ELSE NULL END)," //                  21   //$NON-NLS-1$
 
             // tour counter
-            + "SUM(1)" //                          19   //$NON-NLS-1$
+            + "SUM(1)" //                          22   //$NON-NLS-1$
       ;
 
    }
@@ -102,6 +110,11 @@ public class CustomFieldViewItem {
    float                            colMaxValueFloat;
    float                            colSumValueFloat;
 
+   long                             colAvgValueDate;
+   long                             colMinValueDate;
+
+   long                             colMaxValueDate;
+
    long                             colTourCounter;
 
    public CustomFieldViewItem() {
@@ -119,13 +132,14 @@ public class CustomFieldViewItem {
    public float getColAvgCadence() {
       return colAvgCadence;
    }
-
    public float getColAvgPace() {
       return colAvgPace;
    }
+
    public float getColAvgPower() {
       return colAvgPower;
    }
+
    public float getColAvgPowerNormalized() {
       return colAvgPowerNormalized;
    }
@@ -138,15 +152,16 @@ public class CustomFieldViewItem {
       return colAvgSpeed;
    }
 
-
    public float getColAvgTemperature() {
       return colAvgTemperature;
    }
 
+   public long getColAvgValueDate() {
+      return colAvgValueDate;
+   }
    public float getColAvgValueFloat() {
       return colAvgValueFloat;
    }
-
    public long getColDistance() {
       return colDistance;
    }
@@ -158,6 +173,7 @@ public class CustomFieldViewItem {
    public long getColMaxAltitude() {
       return colMaxAltitude;
    }
+
 
    public long getColMaxPower() {
       return colMaxPower;
@@ -171,8 +187,16 @@ public class CustomFieldViewItem {
       return colMaxSpeed;
    }
 
+   public long getColMaxValueDate() {
+      return colMaxValueDate;
+   }
+
    public float getColMaxValueFloat() {
       return colMaxValueFloat;
+   }
+
+   public long getColMinValueDate() {
+      return colMinValueDate;
    }
 
    public float getColMinValueFloat() {
@@ -197,6 +221,32 @@ public class CustomFieldViewItem {
 
    public long getColTourCounter() {
       return colTourCounter;
+   }
+
+   public String getDateValue(final CustomField customField, final Long inputValue) {
+      String value ="";
+
+      if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+         try {
+            final Long epochMilli = Long.valueOf(inputValue) * 1000;
+            final ZoneId zoneId = ZoneId.systemDefault();
+
+            ZonedDateTime zonedDateTime;
+            final Instant startInstant = Instant.ofEpochMilli(epochMilli);
+            zonedDateTime = ZonedDateTime.ofInstant(startInstant, zoneId);
+
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss XXX");
+            value = zonedDateTime.format(formatter);
+         } catch (final Exception e) {
+            //fallback
+            System.out.println(e.getMessage());
+            value = "Error";
+         }
+
+      } else {
+         value = "Error";
+      }
+      return value;
    }
 
    public String getRefId() {
@@ -251,6 +301,10 @@ public class CustomFieldViewItem {
                // get data for a tour
                + (" LEFT OUTER JOIN " + TourDatabase.TABLE_TOUR_DATA + " TourData ON ") //$NON-NLS-1$ //$NON-NLS-2$
                + (" jtblFieldValue.TourData_tourId = TourData.tourId") //$NON-NLS-1$
+
+               // get data for a customField
+               + (" LEFT OUTER JOIN " + TourDatabase.TABLE_CUSTOM_FIELD + " CustomField ON ") //$NON-NLS-1$ //$NON-NLS-2$
+               + (" jtblFieldValue.CUSTOMFIELD_FieldID = CustomField.FieldID") //$NON-NLS-1$
 
                + " WHERE jtblFieldValue.CUSTOMFIELD_FieldID = ?" //$NON-NLS-1$
          ;//+ sqlFilter.getWhereClause();
@@ -307,6 +361,10 @@ public class CustomFieldViewItem {
       colMaxValueFloat = result.getFloat(startIndex + 17);
       colSumValueFloat = result.getFloat(startIndex + 18);
 
+      colAvgValueDate = result.getLong(startIndex + 19);
+      colMinValueDate = result.getLong(startIndex + 20);
+      colMaxValueDate = result.getLong(startIndex + 21);
+
       if (UI.IS_SCRAMBLE_DATA) {
 
          colDistance = UI.scrambleNumbers(colDistance);
@@ -335,6 +393,10 @@ public class CustomFieldViewItem {
          colMaxValueFloat = UI.scrambleNumbers(colMaxValueFloat);
          colSumValueFloat = UI.scrambleNumbers(colSumValueFloat);
 
+         colAvgValueDate = UI.scrambleNumbers(colAvgValueDate);
+         colMinValueDate = UI.scrambleNumbers(colMinValueDate);
+         colMaxValueDate = UI.scrambleNumbers(colMaxValueDate);
+
       }
    }
 
@@ -342,7 +404,7 @@ public class CustomFieldViewItem {
 
       readDefaultColumnData(result, startIndex);
 
-      colTourCounter = result.getLong(startIndex + 19);
+      colTourCounter = result.getLong(startIndex + 22);
    }
 
    public void setColAltitudeDown(final long colAltitudeDown) {
@@ -381,6 +443,10 @@ public class CustomFieldViewItem {
       this.colAvgTemperature = colAvgTemperature;
    }
 
+   public void setColAvgValueDate(final long colAvgValueDate) {
+      this.colAvgValueDate = colAvgValueDate;
+   }
+
    public void setColAvgValueFloat(final float colAvgValueFloat) {
       this.colAvgValueFloat = colAvgValueFloat;
    }
@@ -409,8 +475,16 @@ public class CustomFieldViewItem {
       this.colMaxSpeed = colMaxSpeed;
    }
 
+   public void setColMaxValueDate(final long colMaxValueDate) {
+      this.colMaxValueDate = colMaxValueDate;
+   }
+
    public void setColMaxValueFloat(final float colMaxValueFloat) {
       this.colMaxValueFloat = colMaxValueFloat;
+   }
+
+   public void setColMinValueDate(final long colMinValueDate) {
+      this.colMinValueDate = colMinValueDate;
    }
 
    public void setColMinValueFloat(final float colMinValueFloat) {

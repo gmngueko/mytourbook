@@ -29,6 +29,7 @@ import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
 import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
@@ -485,7 +486,12 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
          public void update(final ViewerCell cell) {
             final CustomField ct = (CustomField) cell.getElement();
             final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
-            cell.setText(ctView.getValueAsString(ct, ctView.getColAvgValueFloat(), null));
+
+            if (ct.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+               cell.setText(ctView.getDateValue(ct, ctView.getColAvgValueDate()));
+            } else {
+               cell.setText(ctView.getValueAsString(ct, ctView.getColAvgValueFloat(), null));
+            }
 
          }
       });
@@ -535,7 +541,12 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
          public void update(final ViewerCell cell) {
             final CustomField ct = (CustomField) cell.getElement();
             final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
-            cell.setText(ctView.getValueAsString(ct, ctView.getColMaxValueFloat(), null));
+
+            if (ct.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+               cell.setText(ctView.getDateValue(ct, ctView.getColMaxValueDate()));
+            } else {
+               cell.setText(ctView.getValueAsString(ct, ctView.getColMaxValueFloat(), null));
+            }
 
          }
       });
@@ -553,7 +564,13 @@ public class AllCustomFieldsView extends ViewPart implements ITourProvider, ITou
          public void update(final ViewerCell cell) {
             final CustomField ct = (CustomField) cell.getElement();
             final CustomFieldViewItem ctView = _allCustomFieldsView_ByRefId.get(ct.getRefId());
-            cell.setText(ctView.getValueAsString(ct, ctView.getColMinValueFloat(), null));
+
+            if (ct.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+               cell.setText(ctView.getDateValue(ct, ctView.getColMinValueDate()));
+            } else {
+               cell.setText(ctView.getValueAsString(ct, ctView.getColMinValueFloat(), null));
+
+            }
 
          }
       });
