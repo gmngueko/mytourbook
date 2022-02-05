@@ -292,7 +292,7 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
          //second create CustomFieldValue's
          final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
-
+         CustomFieldType newCustomFieldType;
          /*
           * Set CustomFieldValue into tour data
           */
@@ -305,18 +305,21 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          developperFieldString += " " + "\"" + fieldValue + "\"";
          if (fieldValue instanceof Float) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Float) fieldValue).floatValue());
          } else if (fieldValue instanceof Integer) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Integer) fieldValue).floatValue());
 
          } else if (fieldValue instanceof Long) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Long) fieldValue).floatValue());
 
@@ -326,18 +329,21 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
             if (DateUtil.isValideDuration((String) fieldValue)) {
                try {
                   final Duration duration = DateUtil.parseDuration((String) fieldValue);
-                  customField.setFieldType(CustomFieldType.FIELD_DURATION);
+                  //customField.setFieldType(CustomFieldType.FIELD_DURATION);
+                  newCustomFieldType = CustomFieldType.FIELD_DURATION;
                   customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
                   customFieldValue.setValueString(null);
                } catch (final Exception e) {
                   System.out.println(e.getMessage());
-                  customField.setFieldType(CustomFieldType.FIELD_STRING);
+                  //customField.setFieldType(CustomFieldType.FIELD_STRING);
+                  newCustomFieldType = CustomFieldType.FIELD_STRING;
                   customFieldValue.setValueFloat(null);
                   customFieldValue.setValueString(((String) fieldValue));
                }
 
             } else {
-               customField.setFieldType(CustomFieldType.FIELD_STRING);
+               //customField.setFieldType(CustomFieldType.FIELD_STRING);
+               newCustomFieldType = CustomFieldType.FIELD_STRING;
                customFieldValue.setValueFloat(null);
                customFieldValue.setValueString(((String) fieldValue));
 
@@ -345,34 +351,54 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
          } else if (fieldValue instanceof Short) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Short) fieldValue).floatValue());
 
          } else if (fieldValue instanceof Byte) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Byte) fieldValue).floatValue());
 
          } else if (fieldValue instanceof Double) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((Double) fieldValue).floatValue());
 
          } else if (fieldValue instanceof BigInteger) {
             developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
-            customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+            newCustomFieldType = CustomFieldType.FIELD_NUMBER;
             customFieldValue.setValueString(null);
             customFieldValue.setValueFloat(((BigInteger) fieldValue).floatValue());
 
          } else {
             developperFieldString += " {Unknown}";
-            customField.setFieldType(CustomFieldType.FIELD_STRING);
+            //customField.setFieldType(CustomFieldType.FIELD_STRING);
+            newCustomFieldType = CustomFieldType.FIELD_STRING;
             customFieldValue.setValueFloat(null);
             customFieldValue.setValueString(((String) fieldValue));
 
+         }
+         if (customField.getFieldType().compareTo(CustomFieldType.NONE) == 0) {
+            //this is a completly new customField
+            customField.setFieldType(newCustomFieldType);
+         } else {
+            if (customField.getFieldType().compareTo(newCustomFieldType) != 0) {
+               //create a new version with a new referenceid because the user already updated
+               //the existing one with a different fieldType for good reason
+               final CustomField customFieldCopy = RawDataManager.createCustomField(customFieldName,
+                     "v2;" + customFieldId, //$NON-NLS-1$
+                     customFieldUnit,
+                     newCustomFieldType,
+                     description);
+               customFieldValue.setCustomField(customFieldCopy);
+            }
          }
          developperFieldString += UI.NEW_LINE1;
 

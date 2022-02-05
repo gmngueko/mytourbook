@@ -22,6 +22,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import net.tourbook.common.UI;
+import net.tourbook.common.time.DateUtil;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.StatusUtil;
@@ -1034,7 +1036,23 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                   customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
                customFieldValue.setValueFloat(Float.parseFloat(customFieldMapValue));
             } else {
-               customFieldValue.setValueString(customFieldMapValue);
+               try {
+                  final Date theDate = DateUtil.parse(customFieldMapValue);
+                  customFieldValue.setValueString(String.valueOf(theDate.getTime() / 1000));
+                  if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) != 0) {
+                     //create a v2 version
+                     final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                           "v2;" + customFieldId, //$NON-NLS-1$
+                           customDataFieldDefinition.unit,
+                           CustomFieldType.FIELD_DATE,
+                           customDataFieldDefinition.name);
+                     customFieldValue.setCustomField(customFieldv2);
+                  }
+               } catch (final Exception e) {
+                  System.out.println(e.getMessage());
+                  customFieldValue.setValueString(customFieldMapValue);
+               }
+
             }
 
             /*

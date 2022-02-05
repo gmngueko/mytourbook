@@ -284,10 +284,10 @@ public class FitLogEx1_SAXHandler extends DefaultHandler {
                   } else if (dataTypeName.trim().compareTo(NAME_DATATYPE_TEXT) == 0) {
                      _currentCustomDataFieldDefinition.type = CustomFieldType.FIELD_STRING;
                   } else {
-                     _currentCustomDataFieldDefinition.type = CustomFieldType.NONE;
+                     _currentCustomDataFieldDefinition.type = CustomFieldType.FIELD_STRING;//default type is String !!!
                   }
                }else {
-                  _currentCustomDataFieldDefinition.type = CustomFieldType.NONE;
+                  _currentCustomDataFieldDefinition.type = CustomFieldType.FIELD_STRING;//default type is String !!!
                }
             }
          }

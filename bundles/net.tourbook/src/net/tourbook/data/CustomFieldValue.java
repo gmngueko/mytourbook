@@ -16,8 +16,11 @@
 package net.tourbook.data;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -251,22 +254,45 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    private String getValueAsString(final Float inputValue, final String inputString) {
       String value = "";
       if (inputString != null) {
-         value = inputString;
-      } else if (inputValue != null) {
+         if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+            try {
+               final Long epochMilli = Long.valueOf(inputString) * 1000;
+               final ZoneId zoneId = ZoneId.systemDefault();
+
+               ZonedDateTime zonedDateTime;
+               final Instant startInstant = Instant.ofEpochMilli(epochMilli);
+               zonedDateTime = ZonedDateTime.ofInstant(startInstant, zoneId);
+
+               final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss XXX");
+               value = zonedDateTime.format(formatter);
+            } catch (final Exception e) {
+               //fallback
+               System.out.println(e.getMessage());
+               value = inputString;
+            }
+
+         } else {
+            value = inputString;
+         }
+
+      }
+      if (inputValue != null) {
          if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+            String value2 = "";
             final Long sec = inputValue.longValue();
             final long second = sec % 60;
             long minute = sec / 60;
             if (minute >= 60) {
                final long hour = minute / 60;
                minute %= 60;
-               value = String.format("%02d:%02d:%02d", hour, minute, second);
+               value2 = String.format("%02d:%02d:%02d", hour, minute, second);
             } else {
                final long hour = 0;
-               value = String.format("%02d:%02d:%02d", hour, minute, second);
+               value2 = String.format("%02d:%02d:%02d", hour, minute, second);
             }
+            value = !value.isEmpty() ? value + UI.SLASH + value2 : value2;
          } else {
-            value = String.valueOf(inputValue);
+            value = !value.isEmpty() ? value + UI.SLASH + String.valueOf(inputValue) : String.valueOf(inputValue);
          }
       }
       return value;
