@@ -538,6 +538,7 @@ public class ActionEditCustomFields extends Action {
    private static void fireCustomFieldChangeEvent() {
 
       TourManager.fireEvent(TourEventId.CUSTOMFIELDS_IS_MODIFIED);
+      TourManager.fireEvent(TourEventId.TOUR_CHANGED);
    }
 
    public boolean editCustomTracksfromTour(final ArrayList<CustomField> modifiedCustomField,

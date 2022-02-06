@@ -241,7 +241,7 @@ public class ActionEditCustomFieldsValues extends Action {
                         final Text textValue = new Text(_tableFields, SWT.SINGLE);
                         itemEvent.setData(TEXTBOX_UNIT_TAG, textValue);
                         textValue.setData(trackListEntry);
-                        textValue.setText(trackListEntry.customFieldValue.getValue());
+                        textValue.setText(trackListEntry.customFieldValue.getValueValidated());
                         textValue.pack();
                         editorValue.horizontalAlignment = SWT.LEFT;
                         editorValue.setEditor(textValue, itemEvent, 3);
@@ -501,6 +501,7 @@ public class ActionEditCustomFieldsValues extends Action {
    private static void fireTourChangeEvent(final TourData tourData) {
 
       TourManager.fireEvent(TourEventId.TOUR_CHANGED, new TourEvent(tourData));
+      TourManager.fireEvent(TourEventId.CUSTOMFIELDS_IS_MODIFIED, new TourEvent(tourData));
    }
 
    public boolean editCustomFieldsfromTour(final TourData tour, final TreeMap<String, TrackEntry> trackList2) {

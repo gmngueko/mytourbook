@@ -36,6 +36,11 @@ import org.eclipse.jface.preference.IPreferenceStore;
 public class CustomFieldViewItem {
 
    static final String SQL_SUM_COLUMNS;
+   private static final String DATE_FORMATTING = "dd/MM/yyyy HH:mm:ss XXX";//$NON-NLS-1$
+   private static final String NOT_APPLICABLE  = "N/A";                    //$NON-NLS-1$
+   private static final String ERROR           = "Error";                  //$NON-NLS-1$
+   private static final String TIME_FORMATTING = "%02d:%02d:%02d";         //$NON-NLS-1$
+
 
    static {
 
@@ -224,7 +229,7 @@ public class CustomFieldViewItem {
    }
 
    public String getDateValue(final CustomField customField, final Long inputValue) {
-      String value ="";
+      String value = UI.EMPTY_STRING;
 
       if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
          try {
@@ -235,16 +240,16 @@ public class CustomFieldViewItem {
             final Instant startInstant = Instant.ofEpochMilli(epochMilli);
             zonedDateTime = ZonedDateTime.ofInstant(startInstant, zoneId);
 
-            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss XXX");
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMATTING);
             value = zonedDateTime.format(formatter);
          } catch (final Exception e) {
             //fallback
             System.out.println(e.getMessage());
-            value = "Error";
+            value = ERROR;
          }
 
       } else {
-         value = "Error";
+         value = ERROR;
       }
       return value;
    }
@@ -254,7 +259,7 @@ public class CustomFieldViewItem {
    }
 
    public String getValueAsString(final CustomField customField, final Float inputValue, final String inputString) {
-      String value = "";
+      String value = UI.EMPTY_STRING;
       if (inputString != null) {
          value = inputString;
       } else if (inputValue != null) {
@@ -265,13 +270,13 @@ public class CustomFieldViewItem {
             if (minute >= 60) {
                final long hour = minute / 60;
                minute %= 60;
-               value = String.format("%02d:%02d:%02d", hour, minute, second);
+               value = String.format(TIME_FORMATTING, hour, minute, second);
             } else {
                final long hour = 0;
-               value = String.format("%02d:%02d:%02d", hour, minute, second);
+               value = String.format(TIME_FORMATTING, hour, minute, second);
             }
          } else if (customField.getFieldType().compareTo(CustomFieldType.FIELD_STRING) == 0) {
-            value = "N/A";
+            value = NOT_APPLICABLE;
          } else {
             value = String.valueOf(inputValue);
          }

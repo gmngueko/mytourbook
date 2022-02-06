@@ -21,12 +21,14 @@ import java.util.Arrays;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.CommonActivator;
+import net.tourbook.common.UI;
 import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.util.ColumnDefinition;
 import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.IContextMenuProvider;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.PostSelectionProvider;
+import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
@@ -345,6 +347,14 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
                      clearView();
                   }
 
+               } else if (eventId == TourEventId.CUSTOMFIELDS_IS_MODIFIED) {//customField modified in all view typically
+                  // reload tour data
+                  _tourData = TourManager.getInstance().getTourDataFromDb(_tourData.getTourId());
+
+                  _customFieldsViewer.setInput(new Object[0]);
+                  enableActions();
+                  // removed old tour data from the selection provider
+                  _postSelectionProvider.clearSelection();
                } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
 
                   clearView();
@@ -540,8 +550,16 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
          @Override
          public void update(final ViewerCell cell) {
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            cell.setText(ct.getAverageAsString());
-
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               if (ct.getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+                  cell.setText(ct.getAverageDateAsString());
+               } else {
+                  cell.setText(ct.getAverageAsString());
+               }
+            } else {
+               cell.setText(UI.EMPTY_STRING);
+            }
          }
       });
    }
@@ -556,11 +574,14 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
-            String value = "";
+            String value = UI.EMPTY_STRING;
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            if(ct.getCountNotNull() != null ) {
-               final float val = ct.getCountNotNull();
-               value = String.valueOf(val);
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               if (ct.getCountNotNull() != null) {
+                  final float val = ct.getCountNotNull();
+                  value = String.valueOf(val);
+               }
             }
             cell.setText(value);
 
@@ -578,11 +599,14 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
-            String value = "";
+            String value = UI.EMPTY_STRING;
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            if(ct.getCountNull() != null ) {
-               final float val = ct.getCountNull();
-               value = String.valueOf(val);
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               if (ct.getCountNull() != null) {
+                  final float val = ct.getCountNull();
+                  value = String.valueOf(val);
+               }
             }
             cell.setText(value);
 
@@ -627,10 +651,18 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
-            final String value = "";
+            final String value = UI.EMPTY_STRING;
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            cell.setText(ct.getMaximumAsString());
-
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               if (ct.getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+                  cell.setText(ct.getMaximumDateAsString());
+               } else {
+                  cell.setText(ct.getMaximumAsString());
+               }
+            } else {
+               cell.setText(value);
+            }
          }
       });
    }
@@ -645,10 +677,18 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
-            final String value = "";
+            final String value = UI.EMPTY_STRING;
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            cell.setText(ct.getMinimumAsString());
-
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               if (ct.getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+                  cell.setText(ct.getMinimumDateAsString());
+               } else {
+                  cell.setText(ct.getMinimumAsString());
+               }
+            } else {
+               cell.setText(value);
+            }
          }
       });
    }
@@ -681,10 +721,14 @@ public class TourCustomFieldsView extends ViewPart implements ITourProvider, ITo
       colDef.setLabelProvider(new CellLabelProvider() {
          @Override
          public void update(final ViewerCell cell) {
-            final String value = "";
+            final String value = UI.EMPTY_STRING;
             final CustomFieldValue ct = (CustomFieldValue) cell.getElement();
-            cell.setText(ct.getSumAsString());
-
+            //if (ct.getTourData().isMultipleTours()) {
+            if (_tourData.isMultipleTours()) {
+               cell.setText(ct.getSumAsString());
+            } else {
+               cell.setText(value);
+            }
          }
       });
    }

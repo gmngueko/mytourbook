@@ -46,6 +46,12 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    public static final int            DB_LENGTH_VALUESTRING = 128;
 
+   private static final String        NOT_APPLICABLE        = "N/A";                    //$NON-NLS-1$
+   private static final String        ERROR                 = "Error";                  //$NON-NLS-1$
+   private static final String        DATE_FORMATTING       = "dd/MM/yyyy HH:mm:ss XXX";//$NON-NLS-1$
+   private static final String        TIME_FORMATTING       = "%02d:%02d:%02d";         //$NON-NLS-1$
+   private static final DateTimeFormatter dateTimeFormatterEdit = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
    /**
     * Manually created CustomField or imported CustomField create a unique id to identify them,
     * saved CustomField
@@ -100,6 +106,15 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    @Transient
    private Float   sum          = null;
+
+   @Transient
+   private Long    minimumDate  = null;
+
+   @Transient
+   private Long    maximumDate  = null;
+
+   @Transient
+   private Long    sumDate      = null;
 
    @Transient
    private Integer countNotNull = null;
@@ -191,10 +206,27 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    }
 
    public String getAverageAsString() {
-      String value = "";
+      String value = UI.EMPTY_STRING;
+      if (this.sum == null) {
+         return NOT_APPLICABLE;
+      }
       if (getSum() != null && getCountNotNull() != null && getCountNotNull() != 0) {
          final float val = getSum() / getCountNotNull();
          value = getValueAsString(val, null);
+      }
+      return value;
+   }
+
+   public String getAverageDateAsString() {
+      String value = UI.EMPTY_STRING;
+      if (this.sumDate == null) {
+         return NOT_APPLICABLE;
+      }
+      if (getSumDate() != null && getCountNotNull() != null && getCountNotNull() != 0) {
+         final long val = getSumDate() / getCountNotNull();
+         value = getDateValue(val);
+      } else {
+         value = NOT_APPLICABLE;
       }
       return value;
    }
@@ -211,12 +243,49 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return customField;
    }
 
+   public String getDateValue( final Long inputValue) {
+      String value = UI.EMPTY_STRING;
+
+      if (this.customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+         try {
+            final Long epochMilli = Long.valueOf(inputValue) * 1000;
+            final ZoneId zoneId = ZoneId.systemDefault();
+
+            ZonedDateTime zonedDateTime;
+            final Instant startInstant = Instant.ofEpochMilli(epochMilli);
+            zonedDateTime = ZonedDateTime.ofInstant(startInstant, zoneId);
+
+            final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMATTING);
+            value = zonedDateTime.format(formatter);
+         } catch (final Exception e) {
+            //fallback
+            System.out.println(e.getMessage());
+            value = ERROR;
+         }
+
+      } else {
+         value = NOT_APPLICABLE;
+      }
+      return value;
+   }
+
    public Float getMaximum() {
       return maximum;
    }
 
    public String getMaximumAsString() {
+      if (this.maximum == null) {
+         return NOT_APPLICABLE;
+      }
       return getValueAsString(maximum, null);
+   }
+
+   public Long getMaximumDate() {
+      return maximumDate;
+   }
+
+   public String getMaximumDateAsString() {
+      return getDateValue(this.maximumDate);
    }
 
    public Float getMinimum() {
@@ -224,7 +293,18 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    }
 
    public String getMinimumAsString() {
+      if (this.minimum == null) {
+         return NOT_APPLICABLE;
+      }
       return getValueAsString(minimum, null);
+   }
+
+   public Long getMinimumDate() {
+      return minimumDate;
+   }
+
+   public String getMinimumDateAsString() {
+      return getDateValue(this.minimumDate);
    }
 
    public Float getSum() {
@@ -232,7 +312,14 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    }
 
    public String getSumAsString() {
+      if (this.sum == null) {
+         return NOT_APPLICABLE;
+      }
       return getValueAsString(sum, null);
+   }
+
+   public Long getSumDate() {
+      return sumDate;
    }
 
    public TourData getTourData() {
@@ -252,7 +339,7 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    }
 
    private String getValueAsString(final Float inputValue, final String inputString) {
-      String value = "";
+      String value = UI.EMPTY_STRING;
       if (inputString != null) {
          if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
             try {
@@ -263,7 +350,7 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
                final Instant startInstant = Instant.ofEpochMilli(epochMilli);
                zonedDateTime = ZonedDateTime.ofInstant(startInstant, zoneId);
 
-               final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss XXX");
+               final DateTimeFormatter formatter = DateTimeFormatter.ofPattern(DATE_FORMATTING);
                value = zonedDateTime.format(formatter);
             } catch (final Exception e) {
                //fallback
@@ -278,17 +365,17 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       }
       if (inputValue != null) {
          if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
-            String value2 = "";
+            String value2 = UI.EMPTY_STRING;
             final Long sec = inputValue.longValue();
             final long second = sec % 60;
             long minute = sec / 60;
             if (minute >= 60) {
                final long hour = minute / 60;
                minute %= 60;
-               value2 = String.format("%02d:%02d:%02d", hour, minute, second);
+               value2 = String.format(TIME_FORMATTING, hour, minute, second);
             } else {
                final long hour = 0;
-               value2 = String.format("%02d:%02d:%02d", hour, minute, second);
+               value2 = String.format(TIME_FORMATTING, hour, minute, second);
             }
             value = !value.isEmpty() ? value + UI.SLASH + value2 : value2;
          } else {
@@ -312,6 +399,58 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    public String getValueStringTemp() {
       return valueStringTemp;
+   }
+
+   public String getValueValidated() {
+      if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_STRING) == 0) {
+         if(this.valueString == null) {
+            return UI.EMPTY_STRING;
+         }else {
+            return this.valueString;
+         }
+      }else if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0) {
+         if(this.valueFloat == null) {
+            return String.valueOf(0.0f);
+         }else {
+            return String.valueOf(this.valueFloat);
+         }
+      }else if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+         long finalValue = 0;
+         if(this.valueFloat != null) {
+            finalValue = this.valueFloat.longValue();
+         }
+         String value2 = UI.EMPTY_STRING;
+         final Long sec = finalValue;
+         final long second = sec % 60;
+         long minute = sec / 60;
+         if (minute >= 60) {
+            final long hour = minute / 60;
+            minute %= 60;
+            value2 = String.format(TIME_FORMATTING, hour, minute, second);
+         } else {
+            final long hour = 0;
+            value2 = String.format(TIME_FORMATTING, hour, minute, second);
+         }
+         return value2;
+      }else if (getCustomField().getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+         if(this.valueString == null) {
+            return LocalDateTime.now().format(dateTimeFormatterEdit);
+         } else {
+            try {
+               final long epochMilli = Long.parseLong(this.valueString);
+               final Instant tourStartInstant = Instant.ofEpochMilli(epochMilli);
+               final ZoneId zoneId = ZoneId.systemDefault(); // or: ZoneId.of("Europe/Oslo");
+               final LocalDateTime dateTime = LocalDateTime.ofInstant(tourStartInstant, zoneId);
+               return dateTime.format(dateTimeFormatterEdit);
+            } catch (final Exception e) {
+               System.out.println(e.toString());
+               return LocalDateTime.of(1970, 1, 1, 0, 0).format(dateTimeFormatterEdit);
+            }
+         }
+      }
+      else {
+         return UI.EMPTY_STRING;
+      }
    }
 
    @Override
@@ -351,12 +490,24 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       this.maximum = maximum;
    }
 
+   public void setMaximumDate(final Long maximumDate) {
+      this.maximumDate = maximumDate;
+   }
+
    public void setMinimum(final Float minimum) {
       this.minimum = minimum;
    }
 
+   public void setMinimumDate(final Long minimumDate) {
+      this.minimumDate = minimumDate;
+   }
+
    public void setSum(final Float sum) {
       this.sum = sum;
+   }
+
+   public void setSumDate(final Long sumDate) {
+      this.sumDate = sumDate;
    }
 
    public void setTourData(final TourData tourData) {
@@ -393,7 +544,7 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
          } else if (customField.getFieldType() == CustomFieldType.FIELD_DATE) {
             this.valueFloat = null;
             try {
-               final LocalDateTime dateTime = LocalDateTime.parse(value);
+               final LocalDateTime dateTime = LocalDateTime.parse(value, dateTimeFormatterEdit);
                final ZoneId zoneId = ZoneId.systemDefault(); // or: ZoneId.of("Europe/Oslo");
                final long epoch = dateTime.atZone(zoneId).toEpochSecond();
                this.valueString = String.valueOf(epoch);
@@ -470,7 +621,7 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
          } else if (customField.getFieldType() == CustomFieldType.FIELD_DURATION) {
             this.valueStringTemp = null;
             try {
-               final String[] tokens = value.split(":");
+               final String[] tokens = value.split(UI.SYMBOL_COLON);
                final int hours = Integer.parseInt(tokens[0]);
                final int minutes = Integer.parseInt(tokens[1]);
                final int seconds = Integer.parseInt(tokens[2]);
@@ -503,14 +654,76 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    }
 
    public void updateStatistic(final Float newFloat, final String newString) {
-      Float newValue = newFloat;
-      if (newString != null && newFloat == null) {
-         newValue = (float) newString.length();
+      Float newValue = null;
+      if (this.customField.getFieldType().compareTo(CustomFieldType.NONE) == 0) {
+         if (this.countNotNull == null) {
+            this.countNotNull = 0;
+         }
+         if (this.countNull == null) {
+            this.countNull = 0;
+         }
+      } else if (this.customField.getFieldType().compareTo(CustomFieldType.FIELD_STRING) == 0) {
+         if (newString != null) {
+            newValue = (float) newString.length();
+         }
+      } else if (this.customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+         if (newFloat != null) {
+            newValue = newFloat;
+         }
+      } else if (this.customField.getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0) {
+         if (newFloat != null) {
+            newValue = newFloat;
+         }
+      } else if (this.customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) == 0) {
+         if (newString != null) {
+            try {
+               final long newDate = Long.parseLong(newString);
+               if (this.countNotNull == null) {
+                  this.countNotNull = 0;
+               }
+               if (this.countNull == null) {
+                  this.countNull = 0;
+               }
+               this.countNotNull += 1;
+               this.countNull -= 1;
+
+               if (this.maximumDate == null) {
+                  this.maximumDate = newDate;
+               }
+               if (this.minimumDate == null) {
+                  this.minimumDate = newDate;
+               }
+               if (newDate > this.maximumDate) {
+                  this.maximumDate = newDate;
+               }
+               if (newDate < this.minimumDate) {
+                  this.minimumDate = newDate;
+               }
+
+               if (this.sumDate == null) {
+                  this.sumDate = newDate;
+               } else {
+                  this.sumDate += newDate;
+               }
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+            }
+         }
+         return;
+      } else {
+         //FIELD_NONE
+         if (this.countNotNull == null) {
+            this.countNotNull = 0;
+         }
+         if (this.countNull == null) {
+            this.countNull = 0;
+         }
       }
 
-      if(newFloat == null && newString == null) {
-         return;
-      } else if (newValue != null) {
+//      if(newFloat == null && newString == null) {
+//         return;
+//      } else
+      if (newValue != null) {
          if (this.countNotNull == null) {
             this.countNotNull = 0;
          }
