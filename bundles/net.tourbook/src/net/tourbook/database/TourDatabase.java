@@ -937,7 +937,7 @@ public class TourDatabase {
 
       final HashMap<String, CustomField> allDbCustomFields = new HashMap<>(getAllCustomFields_ByRefId());
 
-      // loop: all sensor values in the tour -> find sensors which are not yet saved
+      // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
       for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
 
          final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
@@ -946,20 +946,20 @@ public class TourDatabase {
 
          if (fieldId != ENTITY_IS_NOT_SAVED) {
 
-            // sensor is saved
+            // CustomField is saved
 
             continue;
          }
 
-         // sensor is not yet saved
-         // 1. sensor can still be new
-         // 2. sensor is already created but not updated in the not yet saved tour
+         // CustomField is not yet saved
+         // 1. CustomField can still be new
+         // 2. CustomField is already created but not updated in the not yet saved tour
 
          final CustomField dbCustomField = allDbCustomFields.get(tourData_CustomField.getRefId());
 
          if (dbCustomField == null) {
 
-            // sensor not available -> create a new sensor
+            // CustomField not available -> create a new CustomField
 
             allNotSavedCustomFields.add(tourData_CustomField);
          }
@@ -969,7 +969,7 @@ public class TourDatabase {
 
       if (allNotSavedCustomFields.size() > 0) {
 
-         // create new sensors
+         // create new CustomFields
 
          synchronized (TRANSIENT_LOCK) {
 
@@ -977,12 +977,12 @@ public class TourDatabase {
 
             for (final CustomField newCustomField : allNotSavedCustomFields) {
 
-               // check again, sensor list could be updated in another thread
+               // check again, CustomField list could be updated in another thread
                final CustomField dbSensor = allDbCustomFields_InLock.get(newCustomField.getRefId());
 
                if (dbSensor == null) {
 
-                  // sensor is not yet in db -> create it
+                  // CustomField is not yet in db -> create it
 
                   saveEntity(
                         newCustomField,
@@ -996,21 +996,21 @@ public class TourDatabase {
             if (isNewCustomFieldSaved) {
 
                /*
-                * Replace sensor in sensor values
+                * Replace CustomField in CustomField values
                 */
 
-               // force to reload db sensors
+               // force to reload db CustomFields
                clearCustomFields();
                TourManager.getInstance().clearTourDataCache();
 
                allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
 
-               // loop: all sensor values in the tour -> find sensors which are not yet saved
+               // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
                for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
 
-                  final CustomField tourData_Sensor = tourData_CustomFieldValue.getCustomField();
+                  final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
 
-                  final String referenceId = tourData_Sensor.getRefId();
+                  final String referenceId = tourData_CustomField.getRefId();
 
                   final CustomField customField = allDbCustomFields_InLock.get(referenceId);
 

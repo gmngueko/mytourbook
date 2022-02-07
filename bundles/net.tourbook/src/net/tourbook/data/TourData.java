@@ -889,7 +889,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private Set<TourTag>                tourTags                            = new HashSet<>();
 
    /**
-    * CustomFields: only one CustomFieldValue for a given CustomField in one tour, see contraint in {@link #TourDatabase}
+    * CustomFieldValues: only one CustomFieldValue for a given CustomField in one tour, see contraint in {@link #TourDatabase}
     */
    @OneToMany(fetch = FetchType.EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -2341,7 +2341,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       tourDataCopy.setTourTags(new HashSet<>(this.getTourTags()));
       tourDataCopy.setTourType(this.getTourType());
 
-      tourDataCopy.setDataSeries(new HashSet<>(this.getDataSeries()));
+      //tourDataCopy.setDataSeries(new HashSet<>(this.getDataSeries()));//serieData should not be cloned as per method comment!!
+      tourDataCopy.setCustomFieldValues(new HashSet<>(this.getCustomFieldValues()));
 
       return tourDataCopy;
    }
@@ -10790,6 +10791,15 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       this.conconiDeflection = conconiDeflection;
    }
 
+   public void setCustomFieldValues(final Set<CustomFieldValue> customFieldValues) {
+
+      if (this.customFieldValues != null) {
+         this.customFieldValues.clear();
+      }
+
+      this.customFieldValues = customFieldValues;
+   }
+
    public void setCustomTrackIsActiveSettings(final CustomTrackIsActiveSettings newSettings) {
       if (_customTracksIsActiveSettings == null) {
          _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
@@ -10801,6 +10811,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    }
 
    public void setCustomTracks(final HashMap<String, float[]> newCustTracks) {
+      if (_customTracks != null) {
+         _customTracks.clear();
+      }
       _customTracks = newCustTracks;
    }
 

@@ -768,6 +768,8 @@ public class Messages extends NLS {
    public static String        Dialog_ModifyTours_Button_UnlockMultipleToursSelection_Text;
    public static String        Dialog_ModifyTours_Checkbox_BatteryValues;
    public static String        Dialog_ModifyTours_Checkbox_CadenceValues;
+   public static String        Dialog_ModifyTours_Checkbox_CustomFieldsValues;
+   public static String        Dialog_ModifyTours_Checkbox_CustomTracksValues;
    public static String        Dialog_ModifyTours_Checkbox_Calories;
    public static String        Dialog_ModifyTours_Checkbox_ElevationValues;
    public static String        Dialog_ModifyTours_Checkbox_GearValues;
@@ -2718,6 +2720,8 @@ public class Messages extends NLS {
    public static String        Tour_Data_Text_BatteryValues;
    public static String        Tour_Data_Text_CadenceValues;
    public static String        Tour_Data_Text_Calories;
+   public static String Tour_Data_Text_CustomFields;
+   public static String Tour_Data_Text_CustomTracks;
    public static String        Tour_Data_Text_EntireTour;
    public static String        Tour_Data_Text_GearValues;
    public static String        Tour_Data_Text_ImportFileLocation;

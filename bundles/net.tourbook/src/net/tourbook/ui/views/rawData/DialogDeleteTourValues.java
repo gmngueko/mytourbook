@@ -67,6 +67,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
 
    private static final String          STATE_IS_DELETE_CADENCE                     = "STATE_IS_DELETE_CADENCE";                         //$NON-NLS-1$
    private static final String          STATE_IS_DELETE_CALORIES                    = "STATE_IS_DELETE_CALORIES";                        //$NON-NLS-1$
+   private static final String          STATE_IS_DELETE_CUSTOM_FIELDS               = "STATE_IS_DELETE_CUSTOM_FIELDS";                   //$NON-NLS-1$
+   private static final String          STATE_IS_DELETE_CUSTOM_TRACKS               = "STATE_IS_DELETE_CUSTOM_TRACKS";                   //$NON-NLS-1$
    private static final String          STATE_IS_DELETE_ELEVATION                   = "STATE_IS_DELETE_ELEVATION";                       //$NON-NLS-1$
    private static final String          STATE_IS_DELETE_GEAR                        = "STATE_IS_DELETE_GEAR";                            //$NON-NLS-1$
    private static final String          STATE_IS_DELETE_POWER_AND_PULSE             = "STATE_IS_DELETE_POWER_AND_PULSE";                 //$NON-NLS-1$
@@ -101,6 +103,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
    private Button    _chkData_Time;
    private Button    _chkData_Cadence;
    private Button    _chkData_Calories;
+   private Button    _chkData_CustomFields;
+   private Button    _chkData_CustomTracks;
    private Button    _chkData_Elevation;
    private Button    _chkData_Gear;
    private Button    _chkData_PowerAndPulse;
@@ -461,6 +465,26 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
             gridDataItem.applyTo(_chkData_Training);
          }
 
+         // row 7
+         {
+            /*
+             * Checkbox: Custom Fields
+             */
+            _chkData_CustomFields = new Button(group, SWT.CHECK);
+            _chkData_CustomFields.setText(Messages.Dialog_ModifyTours_Checkbox_CustomFieldsValues);
+            _chkData_CustomFields.addSelectionListener(_defaultListener);
+            gridDataItem_FirstColumn.applyTo(_chkData_CustomFields);
+         }
+         {
+            /*
+             * Checkbox: Custom Traks
+             */
+            _chkData_CustomTracks = new Button(group, SWT.CHECK);
+            _chkData_CustomTracks.setText(Messages.Dialog_ModifyTours_Checkbox_CustomTracksValues);
+            _chkData_CustomTracks.addSelectionListener(_defaultListener);
+            gridDataItem.applyTo(_chkData_CustomTracks);
+         }
+
          {
             /*
              * Button: Deselect all
@@ -484,6 +508,7 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
             // column 1
             _chkData_Cadence,
             _chkData_Calories,
+            _chkData_CustomFields,
             _chkData_Elevation,
             _chkData_Gear,
             _chkData_PowerAndPulse,
@@ -491,6 +516,7 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
 
             // column 2
             _chkData_RunningDynamics,
+            _chkData_CustomTracks,
             _chkData_Swimming,
             _chkData_Temperature,
             _chkData_TourMarkers,
@@ -637,7 +663,9 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
             _chkData_Temperature.getSelection() ||
             _chkData_Training.getSelection() ||
             _chkData_TourMarkers.getSelection() ||
-            _chkData_TourTimerPauses.getSelection();
+            _chkData_TourTimerPauses.getSelection() ||
+            _chkData_CustomTracks.getSelection() ||
+            _chkData_CustomFields.getSelection();
 
       // OK button
       getButton(IDialogConstants.OK_ID).setEnabled(isDataSelected && isDataValid());
@@ -727,6 +755,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
          DialogUtils.addTourValueTypeFromCheckbox(_chkData_TourTimerPauses, TourValueType.TIME_SLICES__TIMER_PAUSES, tourValueTypes);
          DialogUtils.addTourValueTypeFromCheckbox(_chkData_Training, TourValueType.TIME_SLICES__TRAINING, tourValueTypes);
          DialogUtils.addTourValueTypeFromCheckbox(_chkData_TourMarkers, TourValueType.TOUR__MARKER, tourValueTypes);
+         DialogUtils.addTourValueTypeFromCheckbox(_chkData_CustomFields, TourValueType.TOUR__CUSTOM_FIELDS, tourValueTypes);
+         DialogUtils.addTourValueTypeFromCheckbox(_chkData_CustomTracks, TourValueType.TIME_SLICES__CUSTOM_TRACKS, tourValueTypes);
 
          doDeleteValues(tourValueTypes);
       });
@@ -740,6 +770,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
       _chkData_Elevation.setSelection(false);
       _chkData_Cadence.setSelection(false);
       _chkData_Calories.setSelection(false);
+      _chkData_CustomFields.setSelection(false);
+      _chkData_CustomTracks.setSelection(false);
       _chkData_Gear.setSelection(false);
       _chkData_PowerAndPulse.setSelection(false);
       _chkData_PowerAndSpeed.setSelection(false);
@@ -821,7 +853,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
       _chkData_Training.setSelection(_state.getBoolean(STATE_IS_DELETE_TRAINING));
       _chkData_TourMarkers.setSelection(_state.getBoolean(STATE_IS_DELETE_TOUR_MARKERS));
       _chkData_TourTimerPauses.setSelection(_state.getBoolean(STATE_IS_DELETE_TIMER_PAUSES));
-
+      _chkData_CustomFields.setSelection(_state.getBoolean(STATE_IS_DELETE_CUSTOM_FIELDS));
+      _chkData_CustomTracks.setSelection(_state.getBoolean(STATE_IS_DELETE_CUSTOM_TRACKS));
       enableControls();
    }
 
@@ -844,6 +877,8 @@ public class DialogDeleteTourValues extends TitleAreaDialog {
       _state.put(STATE_IS_DELETE_TIME, _chkData_Time.getSelection());
       _state.put(STATE_IS_DELETE_TOUR_MARKERS, _chkData_TourMarkers.getSelection());
       _state.put(STATE_IS_DELETE_TIMER_PAUSES, _chkData_TourTimerPauses.getSelection());
+      _state.put(STATE_IS_DELETE_CUSTOM_FIELDS, _chkData_CustomFields.getSelection());
+      _state.put(STATE_IS_DELETE_CUSTOM_TRACKS, _chkData_CustomTracks.getSelection());
    }
 
    /**

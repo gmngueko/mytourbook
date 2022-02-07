@@ -108,6 +108,8 @@ public class RawDataManager {
 // SET_FORMATTING_OFF
 
    private static final String   COLUMN_FACTORY_CATEGORY_MARKER              = net.tourbook.ui.Messages.ColumnFactory_Category_Marker;
+   private static final String   COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS       = net.tourbook.ui.Messages.ColumnFactory_Category_Custom_Fields;
+   private static final String   COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS       = net.tourbook.ui.Messages.ColumnFactory_Category_Custom_Tracks;
    private static final String   COLUMN_FACTORY_GEAR_REAR_SHIFT_COUNT_LABEL  = net.tourbook.ui.Messages.ColumnFactory_GearRearShiftCount_Label;
    private static final String   COLUMN_FACTORY_GEAR_FRONT_SHIFT_COUNT_LABEL = net.tourbook.ui.Messages.ColumnFactory_GearFrontShiftCount_Label;
    private static final String   VALUE_UNIT_CADENCE                          = net.tourbook.ui.Messages.Value_Unit_Cadence;
@@ -358,6 +360,7 @@ public class RawDataManager {
       TOUR__CALORIES, //
       TOUR__IMPORT_FILE_LOCATION, //
       TOUR__MARKER, //
+      TOUR__CUSTOM_FIELDS, //
 
       TIME_SLICES__BATTERY, //
       TIME_SLICES__CADENCE, //
@@ -370,7 +373,8 @@ public class RawDataManager {
       TIME_SLICES__TEMPERATURE, //
       TIME_SLICES__TRAINING, //
       TIME_SLICES__TIME, //
-      TIME_SLICES__TIMER_PAUSES //
+      TIME_SLICES__TIMER_PAUSES, //
+      TIME_SLICES__CUSTOM_TRACKS //
    }
 
    private RawDataManager() {}
@@ -842,6 +846,22 @@ public class RawDataManager {
                oldTourData.getTourMarkers().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_MARKER);
          newData.add(
                newTourData.getTourMarkers().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_MARKER);
+      }
+
+      if (isEntireTour || tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+
+         previousData.add(
+               oldTourData.getCustomFieldValues().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS);
+         newData.add(
+               newTourData.getCustomFieldValues().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS);
+      }
+
+      if (isEntireTour || tourValueType == TourValueType.TIME_SLICES__CUSTOM_TRACKS) {
+
+         previousData.add(
+               oldTourData.getDataSeries().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS);
+         newData.add(
+               newTourData.getDataSeries().size() + UI.SPACE1 + COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS);
       }
 
       if (isEntireTour || tourValueType == TourValueType.TOUR__IMPORT_FILE_LOCATION) {
@@ -1588,6 +1608,11 @@ public class RawDataManager {
                tourDataDummyClone.setTourMarkers(new HashSet<>(oldTourData.getTourMarkers()));
             }
 
+            if (isEntireTour || tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+
+               tourDataDummyClone.setCustomFieldValues(new HashSet<>(oldTourData.getCustomFieldValues()));
+            }
+
             if (isEntireTour || tourValueType == TourValueType.TOUR__CALORIES) {
 
                tourDataDummyClone.setCalories(oldTourData.getCalories());
@@ -1714,6 +1739,16 @@ public class RawDataManager {
          // Running Dynamics
          if (isAllTimeSlices || tourValueType == TourValueType.TIME_SLICES__RUNNING_DYNAMICS) {
             dataToModifyDetails.add(Messages.Tour_Data_Text_RunningDynamicsValues);
+         }
+
+         // Custom Tracks
+         if (isAllTimeSlices || tourValueType == TourValueType.TIME_SLICES__CUSTOM_TRACKS) {
+            dataToModifyDetails.add(Messages.Tour_Data_Text_CustomTracks);
+         }
+
+         // Tour Custom Fields
+         if (tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+            dataToModifyDetails.add(Messages.Tour_Data_Text_CustomFields);
          }
 
          // Swimming
@@ -1995,6 +2030,13 @@ public class RawDataManager {
                clonedTourData.setTourMarkers(new HashSet<>(tourData.getTourMarkers()));
 
                tourData.setTourMarkers(new HashSet<>());
+               break;
+
+            case TOUR__CUSTOM_FIELDS:
+
+               clonedTourData.setCustomFieldValues(new HashSet<>(tourData.getCustomFieldValues()));
+
+               tourData.setCustomFieldValues(new HashSet<>());
                break;
 
             case ALL_TIME_SLICES:
@@ -3462,6 +3504,7 @@ public class RawDataManager {
          } else {
 
             if (tourValueTypes.contains(TourValueType.ALL_TIME_SLICES)
+                  || tourValueTypes.contains(TourValueType.TIME_SLICES__CUSTOM_TRACKS)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__BATTERY)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__CADENCE)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__ELEVATION)
@@ -3487,6 +3530,11 @@ public class RawDataManager {
             if (tourValueTypes.contains(TourValueType.TOUR__MARKER)) {
 
                oldTourData.setTourMarkers(reimportedTourData.getTourMarkers());
+            }
+
+            if (tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
+
+               oldTourData.setCustomFieldValues(reimportedTourData.getCustomFieldValues());
             }
 
             if (tourValueTypes.contains(TourValueType.TOUR__IMPORT_FILE_LOCATION)) {
@@ -3649,6 +3697,14 @@ public class RawDataManager {
                oldTourData.setSpeedSerie(speedSerie);
             }
          }
+      }
+
+      // Custom Tracks
+      if (isAllTimeSlices || allTourValueTypes.contains(TourValueType.TIME_SLICES__CUSTOM_TRACKS)) {
+         // re-import only custom tracks
+         oldTourData.customTracksDefinition = reimportedTourData.customTracksDefinition;
+         oldTourData.setCustomTracks(reimportedTourData.getCustomTracks());
+         oldTourData.setDataSeries(reimportedTourData.getDataSeries());
       }
 
       // Running Dynamics
