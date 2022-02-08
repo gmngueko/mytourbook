@@ -248,7 +248,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    private static final String           STATE_SECTION_PERSONAL                    = "STATE_SECTION_PERSONAL";                               //$NON-NLS-1$
    private static final String           STATE_SECTION_TITLE                       = "STATE_SECTION_TITLE";                                  //$NON-NLS-1$
    private static final String           STATE_SECTION_WEATHER                     = "STATE_SECTION_WEATHER";                                //$NON-NLS-1$
-   private static final String           STATE_SECTION_CUSTOM_TRACKS               = "STATE_SECTION_CUSTOM_TRACKS";                          //$NON-NLS-1$
+   private static final String           STATE_SECTION_OTHER_INFOS                 = "STATE_SECTION_OTHER_INFOS";                            //$NON-NLS-1$
+// private static final String           STATE_SECTION_CUSTOM_TRACKS               = "STATE_SECTION_CUSTOM_TRACKS";                          //$NON-NLS-1$
    //
    static final String                   STATE_DESCRIPTION_NUMBER_OF_LINES         = "STATE_DESCRIPTION_NUMBER_OF_LINES";                    //$NON-NLS-1$
    static final int                      STATE_DESCRIPTION_NUMBER_OF_LINES_DEFAULT = 3;
@@ -580,7 +581,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    private Section                  _sectionWeather;
    private Section                  _sectionCharacteristics;
    //
-   private Section                  _sectionCustomTracks;
+   private Section                  _sectionOtherInfos;
    //
    private Label                    _timeSlice_Label;
    private TableViewer              _timeSlice_Viewer;
@@ -661,9 +662,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    private Text                                   _txtAltitudeUp;
    private Text                                   _txtDescription;
    private Text                                   _txtDistance;
+   private Text                                   _txtImportFile;
    private Text                                   _txtWeather;
    //
-   private HashMap<String, CustomTrackEditorText> _customTrackTextControls;
+   //private HashMap<String, CustomTrackEditorText> _customTrackTextControls;
    //
    private TimeDuration                           _deviceTime_Elapsed;                  // Total time of the activity
    private TimeDuration                           _deviceTime_Recorded;                 // Time recorded by the device = Total time - paused times
@@ -4547,6 +4549,41 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                setTourDirty();
             });
          }
+
+      }
+   }
+
+   private void createUI_Section_170_OtherInfos(final Composite parent) {
+
+      _sectionOtherInfos = createSection(parent, _tk, "Other Infos", false, true);
+      final Composite container = (Composite) _sectionOtherInfos.getClient();
+      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
+
+      {
+         /*
+          * Import File location
+          */
+         // label
+         final Label labelImportFile = _tk.createLabel(container,
+               "Import File");
+         GridDataFactory.swtDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(labelImportFile);
+         labelImportFile.setToolTipText("File used for Importing this Tour");
+         _firstColumnControls.add(labelImportFile);
+
+         _txtImportFile = _tk.createText(
+               container, //
+               UI.EMPTY_STRING,
+               SWT.BORDER | SWT.WRAP | SWT.H_SCROLL//
+         );
+         _txtImportFile.addModifyListener(_modifyListener);
+
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               //
+               // SWT.DEFAULT causes lots of problems with the layout therefore the hint is set
+               //
+               .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(2))
+               .applyTo(_txtImportFile);
       }
    }
 
@@ -4640,6 +4677,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             createUI_Section_150_Characteristics(_tourContainer);
 
             createUI_SectionSeparator(_tourContainer);
+            createUI_Section_170_OtherInfos(_tourContainer);
 //            createUI_Section_160_CustomTracks(_tourContainer);
          }
       }
@@ -6561,19 +6599,22 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _linkTag.setEnabled(canEdit);
       _linkTourType.setEnabled(canEdit);
 
+      //Import File
+      _txtImportFile.setEnabled(canEdit);
+
       /*
        * for Custom Tracks enable only the edition of name and unit, id and number are not to be
        * editable
        */
-      if (_customTrackTextControls != null && _customTrackTextControls.size() > 0) {
-         for (final String customTracksId : _customTrackTextControls.keySet()) {
-            final CustomTrackEditorText UIentryDefinition = _customTrackTextControls.get(customTracksId);
-            UIentryDefinition.name.setEnabled(canEdit);
-            UIentryDefinition.unit.setEnabled(canEdit);
-            UIentryDefinition.id.setEnabled(false);
-            UIentryDefinition.nr.setEnabled(false);
-         }
-      }
+//      if (_customTrackTextControls != null && _customTrackTextControls.size() > 0) {
+//         for (final String customTracksId : _customTrackTextControls.keySet()) {
+//            final CustomTrackEditorText UIentryDefinition = _customTrackTextControls.get(customTracksId);
+//            UIentryDefinition.name.setEnabled(canEdit);
+//            UIentryDefinition.unit.setEnabled(canEdit);
+//            UIentryDefinition.id.setEnabled(false);
+//            UIentryDefinition.nr.setEnabled(false);
+//         }
+//      }
       timeSliceTable.setEnabled(isDeviceTour);
    }
 
@@ -7969,6 +8010,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _sectionPersonal.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_PERSONAL, true));
       _sectionTitle.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_TITLE, true));
       _sectionWeather.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_WEATHER, true));
+
+      _sectionOtherInfos.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_OTHER_INFOS, true));
       //Custom Tracks state are only saved in memory not on disk for now
       //_sectionCustomTracks.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_CUSTOM_TRACKS, true));
    }
@@ -7993,6 +8036,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _state.put(STATE_SECTION_PERSONAL, _sectionPersonal.isExpanded());
       _state.put(STATE_SECTION_TITLE, _sectionTitle.isExpanded());
       _state.put(STATE_SECTION_WEATHER, _sectionWeather.isExpanded());
+      _state.put(STATE_SECTION_OTHER_INFOS, _sectionOtherInfos.isExpanded());
       // _state.put(STATE_SECTION_CUSTOM_TRACKS, _sectionCustomTracks.isExpanded());
    }
 
@@ -8670,20 +8714,26 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          }
 
          /*
+          * Other Infos
+          */
+         //Import FilePath
+         _tourData.setImportFilePath(_txtImportFile.getText().trim());
+
+         /*
           * Custom Tracks
           */
-         if (_customTrackTextControls != null && _customTrackTextControls.size() > 0) {
-            final HashMap<String, CustomTrackDefinition> customTracksDefinitionMap = new HashMap<>();
-            for (final String customTracksId : _customTrackTextControls.keySet()) {
-               final CustomTrackDefinition newCustomTrackDefinition = new CustomTrackDefinition();
-               final CustomTrackEditorText UIentryDefinition = _customTrackTextControls.get(customTracksId);
-               newCustomTrackDefinition.setId(UIentryDefinition.id.getText().trim());
-               newCustomTrackDefinition.setName(UIentryDefinition.name.getText().trim());
-               newCustomTrackDefinition.setUnit(UIentryDefinition.unit.getText().trim());
-               customTracksDefinitionMap.put(customTracksId, newCustomTrackDefinition);
-            }
-            _tourData.setCustomTracksDefinition(customTracksDefinitionMap);// = customTracksDefinitionMap;
-         }
+//         if (_customTrackTextControls != null && _customTrackTextControls.size() > 0) {
+//            final HashMap<String, CustomTrackDefinition> customTracksDefinitionMap = new HashMap<>();
+//            for (final String customTracksId : _customTrackTextControls.keySet()) {
+//               final CustomTrackDefinition newCustomTrackDefinition = new CustomTrackDefinition();
+//               final CustomTrackEditorText UIentryDefinition = _customTrackTextControls.get(customTracksId);
+//               newCustomTrackDefinition.setId(UIentryDefinition.id.getText().trim());
+//               newCustomTrackDefinition.setName(UIentryDefinition.name.getText().trim());
+//               newCustomTrackDefinition.setUnit(UIentryDefinition.unit.getText().trim());
+//               customTracksDefinitionMap.put(customTracksId, newCustomTrackDefinition);
+//            }
+//            _tourData.setCustomTracksDefinition(customTracksDefinitionMap);// = customTracksDefinitionMap;
+//         }
 
       } catch (final IllegalArgumentException e) {
 
@@ -9194,6 +9244,9 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       // cadence rpm/spm
       final CadenceMultiplier cadence = CadenceMultiplier.getByValue((int) _tourData.getCadenceMultiplier());
       _comboCadence.setSelection(cadence);
+
+      //Import File
+      _txtImportFile.setText(_tourData.getImportFilePathName());
 
       //Custom Tracks create edit controls
 //      final Composite container = (Composite) _sectionCustomTracks.getClient();
