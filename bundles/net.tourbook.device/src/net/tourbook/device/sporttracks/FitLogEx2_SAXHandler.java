@@ -876,6 +876,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       tourData.setDeviceName(_device.visibleName);
 
       // after all data are added, the tour id can be created because it depends on the tour distance
+      _device.setCreateTourIdWithTime(true);
       final String uniqueId = _device.createUniqueId(tourData, Util.UNIQUE_ID_SUFFIX_SPORT_TRACKS_FITLOG);
       final Long tourId = tourData.createTourId(uniqueId);
 

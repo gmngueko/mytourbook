@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1872,15 +1873,15 @@ public class TourDatabase {
 
          final String[] allSql = {
 
-            "DELETE FROM " + TABLE_TOUR_DATA                + sqlWhere_TourId,            //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_MARKER              + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_PHOTO               + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_WAYPOINT            + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_REFERENCE           + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + JOINTABLE__TOURDATA__TOURTAG   + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + JOINTABLE__TOURDATA__DATA_SERIE + sqlWhere_TourData_TourId,   //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_COMPARED            + sqlWhere_TourId,            //$NON-NLS-1$
-            "DELETE FROM " + TABLE_TOUR_GEO_PARTS           + sqlWhere_TourId,            //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_DATA                + sqlWhere_TourId,            //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_MARKER              + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_PHOTO               + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_WAYPOINT            + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_REFERENCE           + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + JOINTABLE__TOURDATA__TOURTAG   + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + JOINTABLE__TOURDATA__DATA_SERIE + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_COMPARED            + sqlWhere_TourId,            //$NON-NLS-1$
+               "DELETE FROM " + TABLE_TOUR_GEO_PARTS           + sqlWhere_TourId,            //$NON-NLS-1$
          };
 // SET_FORMATTING_ON
 
@@ -3770,6 +3771,98 @@ public class TourDatabase {
                      tourData.setDateTimeModified(dtSaved);
                   }
 
+                  persistedEntity = em.merge(tourData);
+               }
+            }
+            ts.commit();
+
+         } catch (final Exception e) {
+
+            StatusUtil.logError("Exception in tour " + TourManager.getTourDateTimeShort(tourData));//$NON-NLS-1$
+            StatusUtil.showStatus(e);
+
+         } finally {
+
+            if (ts.isActive()) {
+               ts.rollback();
+            }
+
+            em.close();
+         }
+
+         // do post save actions for only ONE tour
+         saveTour_PostSaveActions_Concurrent_1_ForOneTour(persistedEntity);
+
+         // !!! This method MUST be called AFTER all tours are saved !!!
+         // !!! This method MUST be called AFTER all tours are saved !!!
+         // !!! This method MUST be called AFTER all tours are saved !!!
+
+//       saveTour_PostSaveActions_Concurrent_2_ForAllTours(allTourIds);
+      }
+
+      return persistedEntity;
+   }
+
+   /**
+    * This method {@link #saveTour_PostSaveActions_Concurrent_2_ForAllTours(long[])} <b>MUST</b> be
+    * called <b>AFTER</b> all tours are saved
+    * but also cleanup previous CustomFields for merge after re-import, to avoid 2 CustomField of
+    * the same type in the
+    * tourData
+    *
+    * @param tourData
+    * @return
+    */
+   public static TourData saveTour_Concurrent_CleanOld(final TourData tourData,
+                                                       final Set<CustomFieldValue> oldCustomFields,
+                                                       final boolean isUpdateModifiedDate) {
+
+      if (saveTour_PreSaveActions(tourData) == false) {
+         return null;
+      }
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+
+      TourData persistedEntity = null;
+
+      if (em != null) {
+
+         final EntityTransaction ts = em.getTransaction();
+
+         try {
+
+            tourData.onPrePersist();
+
+            ts.begin();
+            {
+               final long dtSaved = TimeTools.createdNowAsYMDhms();
+
+               // get tour data by tour id
+               final TourData dbTourData = em.find(TourData.class, tourData.getTourId());
+               if (dbTourData == null) {
+
+                  // tour is not yet persisted
+
+                  tourData.setDateTimeCreated(dtSaved);
+
+                  em.persist(tourData);
+
+                  persistedEntity = tourData;
+
+               } else {
+
+                  if (isUpdateModifiedDate) {
+                     tourData.setDateTimeModified(dtSaved);
+                  }
+                  if (oldCustomFields != null && !oldCustomFields.isEmpty()) {
+                     //due to unique constraint on customField we need to remove the
+                     //old customFieldVlaue from DB before re-inserting the new re-imported one's
+                     final Set<CustomFieldValue> newCustomFieldValues = new HashSet<>(tourData.getCustomFieldValues());
+                     tourData.getCustomFieldValues().clear();
+                     persistedEntity = em.merge(tourData);
+                     em.flush();
+                     tourData.setCustomFieldValues(newCustomFieldValues);
+                  }
                   persistedEntity = em.merge(tourData);
                }
             }
@@ -9534,16 +9627,16 @@ public class TourDatabase {
 
 // SET_FORMATTING_OFF
 
-            // Add new columns
-            SQL.AddColumn_BigInt(stmt, TABLE_TOUR_DATA,     "tourDeviceTime_Recorded", DEFAULT_0);                   //$NON-NLS-1$
-            SQL.AddColumn_BigInt(stmt, TABLE_TOUR_DATA,     "tourDeviceTime_Paused",   DEFAULT_0);                   //$NON-NLS-1$
-            SQL.AddColumn_Float(stmt,  TABLE_TOUR_DATA,     "bodyFat",                 DEFAULT_0);                   //$NON-NLS-1$
+         // Add new columns
+         SQL.AddColumn_BigInt(stmt, TABLE_TOUR_DATA,     "tourDeviceTime_Recorded", DEFAULT_0);                   //$NON-NLS-1$
+         SQL.AddColumn_BigInt(stmt, TABLE_TOUR_DATA,     "tourDeviceTime_Paused",   DEFAULT_0);                   //$NON-NLS-1$
+         SQL.AddColumn_Float(stmt,  TABLE_TOUR_DATA,     "bodyFat",                 DEFAULT_0);                   //$NON-NLS-1$
 
-            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_RECORDING_TIME__FROM,    RENAMED__TOUR_RECORDING_TIME__INTO);
-            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_DRIVING_TIME__FROM,      RENAMED__TOUR_DRIVING_TIME__INTO);
-            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__BIKER_WEIGHT__FROM,           RENAMED__BIKER_WEIGHT__INTO);
+         SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_RECORDING_TIME__FROM,    RENAMED__TOUR_RECORDING_TIME__INTO);
+         SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_DRIVING_TIME__FROM,      RENAMED__TOUR_DRIVING_TIME__INTO);
+         SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__BIKER_WEIGHT__FROM,           RENAMED__BIKER_WEIGHT__INTO);
 
-            SQL.RenameCol(stmt,     TABLE_TOUR_COMPARED, RENAMED__TOUR_RECORDING_TIME__FROM,    RENAMED__TOUR_RECORDING_TIME__INTO);
+         SQL.RenameCol(stmt,     TABLE_TOUR_COMPARED, RENAMED__TOUR_RECORDING_TIME__FROM,    RENAMED__TOUR_RECORDING_TIME__INTO);
 
 // SET_FORMATTING_ON
       }
@@ -9828,21 +9921,21 @@ public class TourDatabase {
          // update new fields with old values
          execUpdate(stmt,
 
-            "UPDATE " + TABLE_TOUR_TYPE + NL //$NON-NLS-1$
+               "UPDATE " + TABLE_TOUR_TYPE + NL //$NON-NLS-1$
 
-            + "SET" + NL //$NON-NLS-1$
+               + "SET" + NL //$NON-NLS-1$
 
-            + " COLOR_GRADIENT_BRIGHT  = (COLORBRIGHTRED * 65536) + (COLORBRIGHTGREEN * 256) + COLORBRIGHTBLUE,"  + NL  //$NON-NLS-1$
-            + " COLOR_GRADIENT_DARK    = (COLORDARKRED   * 65536) + (COLORDARKGREEN   * 256) + COLORDARKBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_GRADIENT_BRIGHT  = (COLORBRIGHTRED * 65536) + (COLORBRIGHTGREEN * 256) + COLORBRIGHTBLUE,"  + NL  //$NON-NLS-1$
+               + " COLOR_GRADIENT_DARK    = (COLORDARKRED   * 65536) + (COLORDARKGREEN   * 256) + COLORDARKBLUE,"    + NL  //$NON-NLS-1$
 
-            + " COLOR_LINE_LIGHTTHEME  = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
-            + " COLOR_TEXT_LIGHTTHEME  = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_LINE_LIGHTTHEME  = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_TEXT_LIGHTTHEME  = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE,"    + NL  //$NON-NLS-1$
 
-            // set defaults for the dark theme that it is not displayed with black color
-            + " COLOR_LINE_DARKTHEME   = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
-            + " COLOR_TEXT_DARKTHEME   = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE"     + NL  //$NON-NLS-1$
+               // set defaults for the dark theme that it is not displayed with black color
+               + " COLOR_LINE_DARKTHEME   = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_TEXT_DARKTHEME   = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE"     + NL  //$NON-NLS-1$
 
-         );
+               );
 
          // drop old fields
          SQL.Cleanup_DropColumn(stmt, TABLE_TOUR_TYPE, "colorBrightRed");                    //$NON-NLS-1$

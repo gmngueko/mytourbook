@@ -61,6 +61,7 @@ import net.tourbook.common.util.Util;
 import net.tourbook.common.widgets.ComboEnumEntry;
 import net.tourbook.data.CustomField;
 import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.TourData;
@@ -3314,6 +3315,11 @@ public class RawDataManager {
 
       if (importState_File.isFileImportedWithValidData) {
 
+         Set<CustomFieldValue> oldCustomFieldValues = null;
+         if (tourValueTypes.get(0) == TourValueType.ENTIRE_TOUR || tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
+            oldCustomFieldValues = new HashSet<>(oldTourData.getCustomFieldValues());
+         }
+
          /*
           * Tour(s) could be re-imported from the file, check if it contains a valid tour
           */
@@ -3356,7 +3362,7 @@ public class RawDataManager {
                 * Save tour but don't fire a change event because the tour editor would set the tour
                 * to dirty
                 */
-               final TourData savedTourData = TourDatabase.saveTour_Concurrent(updatedTourData, true);
+               final TourData savedTourData = TourDatabase.saveTour_Concurrent_CleanOld(updatedTourData, oldCustomFieldValues, true);
 
                updatedTourData = savedTourData;
             }
@@ -3533,7 +3539,6 @@ public class RawDataManager {
             }
 
             if (tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
-
                oldTourData.setCustomFieldValues(reimportedTourData.getCustomFieldValues());
             }
 

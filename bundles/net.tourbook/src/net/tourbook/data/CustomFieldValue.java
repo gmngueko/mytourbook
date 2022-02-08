@@ -70,13 +70,13 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
     * Tour start time
     */
    private long     tourStartTime;
+
    private long     tourEndTime;
 
    /**
     * Contains a CustomField String value
     */
    private String valueString;
-
    /**
     * Contains a CustomField Float value
     */
@@ -267,6 +267,10 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
          value = NOT_APPLICABLE;
       }
       return value;
+   }
+
+   public long getFieldValueId() {
+      return fieldValueId;
    }
 
    public Float getMaximum() {
@@ -484,6 +488,10 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
 
    public void setCustomField(final CustomField customField) {
       this.customField = customField;
+   }
+
+   public void setFieldValueId(final long fieldValueId) {
+      this.fieldValueId = fieldValueId;
    }
 
    public void setMaximum(final Float maximum) {
