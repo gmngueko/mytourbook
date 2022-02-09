@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, 2021 Frédéric Bard
+ * Copyright (C) 2019, 2022 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@ import java.time.Duration;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.common.util.StringUtils;
 import net.tourbook.tour.TourLogManager;
 import net.tourbook.tour.TourLogState;
 import net.tourbook.weather.HistoricalWeatherOwmRetriever;
@@ -125,6 +126,7 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
             // text
             _textApiKey = new Text(container, SWT.BORDER);
             _textApiKey.setToolTipText(Messages.Pref_Weather_Label_ApiKey_Tooltip);
+            _textApiKey.addModifyListener(event -> onModifyApiKey());
             GridDataFactory.fillDefaults()
                   .grab(true, false)
                   .applyTo(_textApiKey);
@@ -138,7 +140,9 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
             final Link linkApiSignup = new Link(container, SWT.PUSH);
             linkApiSignup.setText(Messages.Pref_Weather_Link_ApiSignup);
             linkApiSignup.setEnabled(true);
-            linkApiSignup.addListener(SWT.Selection, event -> WEB.openUrl(Messages.External_Link_Weather_ApiSignup));
+            linkApiSignup.addListener(
+                  SWT.Selection,
+                  event -> WEB.openUrl(Messages.External_Link_Weather_ApiSignup));
             GridDataFactory.fillDefaults()
                   .span(2, 1)
                   .indent(defaultHIndent, 0)
@@ -213,6 +217,9 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
       _textApiOwmKey.setEnabled(useWeatherRetrieval);
       _btnTestConnectionOwm.setEnabled(useWeatherRetrieval);
 
+      if (useWeatherRetrieval) {
+         onModifyApiKey();
+      }
    }
 
    @Override
@@ -229,7 +236,10 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
 
          try {
 
-            final HttpRequest request = HttpRequest.newBuilder(URI.create(HistoricalWeatherRetriever.getApiUrl() + _textApiKey.getText())).GET()
+            final HttpRequest request = HttpRequest
+                  .newBuilder(URI.create(HistoricalWeatherRetriever.getApiUrl() +
+                        _textApiKey.getText()))
+                  .GET()
                   .build();
 
             final HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
@@ -304,6 +314,11 @@ public class PrefPageWeather extends PreferencePage implements IWorkbenchPrefere
             }
          }
       });
+   }
+
+   private void onModifyApiKey() {
+      _btnTestConnection.setEnabled(StringUtils.hasContent(_textApiKey.getText()));
+      _btnTestConnectionOwm.setEnabled(StringUtils.hasContent(_textApiOwmKey.getText()));
    }
 
    private void onSelectCheckWeatherRetrieval() {
