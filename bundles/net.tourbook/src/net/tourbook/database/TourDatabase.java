@@ -1880,6 +1880,7 @@ public class TourDatabase {
                "DELETE FROM " + TABLE_TOUR_REFERENCE           + sqlWhere_TourData_TourId,   //$NON-NLS-1$
                "DELETE FROM " + JOINTABLE__TOURDATA__TOURTAG   + sqlWhere_TourData_TourId,   //$NON-NLS-1$
                "DELETE FROM " + JOINTABLE__TOURDATA__DATA_SERIE + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+               "DELETE FROM " + TABLE_CUSTOM_FIELD_VALUE        + sqlWhere_TourData_TourId,   //$NON-NLS-1$
                "DELETE FROM " + TABLE_TOUR_COMPARED            + sqlWhere_TourId,            //$NON-NLS-1$
                "DELETE FROM " + TABLE_TOUR_GEO_PARTS           + sqlWhere_TourId,            //$NON-NLS-1$
          };
@@ -6302,6 +6303,8 @@ public class TourDatabase {
             createTable_TourWayPoint(stmt);
 
             createTable_DataSerie(stmt);
+            createTable_CustomField(stmt);
+            createTable_CustomFieldValues(stmt);
 
          } catch (final SQLException e) {
             UI.showSQLException(e);
