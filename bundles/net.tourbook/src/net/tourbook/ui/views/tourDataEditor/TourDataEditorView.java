@@ -82,6 +82,7 @@ import net.tourbook.database.TourDatabase;
 import net.tourbook.extension.export.ActionExport;
 import net.tourbook.importdata.RawDataManager;
 import net.tourbook.map2.view.SelectionMapPosition;
+import net.tourbook.map2.view.SelectionMapSelection;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.tag.TagMenuManager;
 import net.tourbook.tour.ActionOpenAdjustAltitudeDialog;
@@ -2709,6 +2710,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                // ensure that the tour is displayed
                onSelectionChanged((ISelection) eventData);
                onSelectionChanged_TourPause((SelectionTourPause) eventData);
+
+            } else if (tourEventId == TourEventId.MAP_SELECTION && eventData instanceof SelectionMapSelection) {
+
+               onSelectionChanged_MapSelection((SelectionMapSelection) eventData);
 
             } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
 
@@ -7887,6 +7892,11 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       }
 
       return isCurrentTourSelected;
+   }
+
+   private void onSelectionChanged_MapSelection(final SelectionMapSelection mapSelection) {
+
+      selectTimeSlice_InViewer(mapSelection.getValueIndex1(), mapSelection.getValueIndex2());
    }
 
    private void onSelectionChanged_TourMarker(final SelectionTourMarker markerSelection) {
