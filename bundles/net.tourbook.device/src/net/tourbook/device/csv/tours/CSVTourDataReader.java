@@ -91,6 +91,20 @@ public class CSVTourDataReader extends TourbookDevice {
                + "\"#temperature_day_Condition\";\"#SleepHour_during_day\";\"#SleepScore(%)\";"                                                                            //$NON-NLS-1$
                + "\"#SleepRespRythm [cpm]\";\"#SleepMovement\";\"#SleepDelay\"";                                                                                           //$NON-NLS-1$
 
+   private static final String TOUR_CSV_ID_4C           =
+         "\"Date\";\"Weight [kg]\";\"BMI\";\"RestingHeartRatePerMinute\";\"MaximumHeartRatePerMinute\";\"SystolicBloodPressure\";\"DiastolicBloodPressure\";"              //$NON-NLS-1$
+               + "\"CaloriesConsumed\";\"BodyFatPercentage\";\"Skinfold\";\"SleepHours\";\"SleepQuality\";"                                                                //$NON-NLS-1$
+               + "\"Mood\";\"Sick\";\"SickText\";\"Injured\";\"InjuredText\";\"MissedWorkout\";\"MissedWorkoutText\";"                                                     //$NON-NLS-1$
+               + "\"DiaryText\";\"#Sleep Resting 1\";\"#Sleep Resting 2\";\"#activity\";\"#Source1\";\"#Source2\";"                                                        //$NON-NLS-1$
+               + "\"#Sleep Total 1\";\"#Sleep Deep 1\";\"#Sleep Paradoxal 1\";\"#Sleep Light 1\";\"#Awake 1\";"                                                            //$NON-NLS-1$
+               + "\"#Sleep Unknown 1\";\"#Steps1\";\"#Pts1\";\"#Calories1\";\"#Distance1(m)\";\"#Calories2\";"                                                             //$NON-NLS-1$
+               + "\"#Steps2\";\"#Sleep Total 2\";\"#Sleep Paradoxal 2\";\"#Sleep Deep 2\";\"#Sleep Light 2\";"                                                             //$NON-NLS-1$
+               + "\"#Sleep Unknown 2\";\"#Awake 2\";\"#Distance2(m)\";\"#pompages\";\"#CalorieMotoACTV\";"                                                                 //$NON-NLS-1$
+               + "\"#StepCountMotoACTV\";\"#Recovery time\";\"#HR Recovery Decrease [bpm]\";"                                                                              //$NON-NLS-1$
+               + "\"#V02max Cycling\";\"#V02max Running\";\"#temperature_day\";"                                                                                           //$NON-NLS-1$
+               + "\"#temperature_day_Condition\";\"#SleepHour_during_day\";\"#SleepScore(%)\";"                                                                            //$NON-NLS-1$
+               + "\"#SleepRespRythm [cpm]\";\"#SleepMovement\";\"#SleepDelay\"";                                                                                           //$NON-NLS-1$
+
    private static final String TOUR_CSV_ID_4            =
          "\"Date\";\"Weight [kg]\";\"BMI\";\"RestingHeartRatePerMinute\";\"MaximumHeartRatePerMinute\";\"SystolicBloodPressure\";\"DiastolicBloodPressure\";"              //$NON-NLS-1$
                + "\"CaloriesConsumed\";\"BodyFatPercentage\";\"Skinfold\";\"SleepHours\";\"SleepQuality\";"                                                                //$NON-NLS-1$
