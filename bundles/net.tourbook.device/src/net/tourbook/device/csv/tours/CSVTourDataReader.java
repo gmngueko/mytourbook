@@ -20,6 +20,8 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
+import de.byteholder.geoclipse.map.UI;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -37,6 +39,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourType;
 import net.tourbook.importdata.DeviceData;
@@ -139,10 +144,33 @@ public class CSVTourDataReader extends TourbookDevice {
    private static final String ST3_TAG_SLEEP_UNKNOW2    = "\"#Sleep Unknown 2\"";
    private static final String ST3_TAG_SLEEP_REST1      = "\"#Sleep Resting 1\"";
    private static final String ST3_TAG_SLEEP_REST2      = "\"#Sleep Resting 2\"";
+
+   private static final String ST3_TAG_CDFD             = "\"##CDFD\"";
+   private static final String ST3_TAG_CDFDT            = "\"##CDFDT\"";
+   private static final String ST3_TAG_NDFD             = "\"##NDFD\"";
+   private static final String ST3_TAG_FD_NAME          = "\"Name\"";
+   private static final String ST3_TAG_FD_TYPE          = "\"Type\"";
+   private static final String ST3_TAG_FD_REFID         = "\"ReferenceId\"";
+   private static final String ST3_TAG_FD_DESCR         = "\"Description\"";
+
    private static final String CSV_TOKEN_SEPARATOR      = ";";                                                                                                             //$NON-NLS-1$
    private static final String CSV_TAG_SEPARATOR        = ",";                                                                                                             //$NON-NLS-1$
 
    private static final char   CSV_TOKEN_SEPARATOR_CHAR = ';';
+
+   private static final String[] ST3_TAG_FD             = { ST3_TAG_FD_NAME, ST3_TAG_FD_TYPE,
+                                                            ST3_TAG_FD_REFID, ST3_TAG_FD_DESCR };
+
+   static final String           NAME_DATATYPE_TEXT       = "Text";                                                                                                        //$NON-NLS-1$
+   static final String           NAME_DATATYPE_NUMBER     = "Number";                                                                                                      //$NON-NLS-1$
+   static final String           NAME_DATATYPE_ELAPSED    = "Elapsed Time";                                                                                                //$NON-NLS-1$
+
+   private static final Map<String, CustomFieldType> MAP_CUSTOMFIELDTYPE      = new HashMap<>();
+   static {
+      MAP_CUSTOMFIELDTYPE.put(NAME_DATATYPE_ELAPSED, CustomFieldType.FIELD_DURATION);
+      MAP_CUSTOMFIELDTYPE.put(NAME_DATATYPE_NUMBER, CustomFieldType.FIELD_NUMBER);
+      MAP_CUSTOMFIELDTYPE.put(NAME_DATATYPE_TEXT, CustomFieldType.FIELD_STRING);
+   }
 
    private boolean             _isId1;
 
@@ -151,6 +179,15 @@ public class CSVTourDataReader extends TourbookDevice {
    private boolean             _isId3;
 
    private boolean             _isId4;
+
+   private class CustomFieldCsv {
+      public boolean isCustom = false;//##CDFD = true---##NDFD = false
+      public String name;
+      public String refId;
+      public String type;
+      public String description;
+      public Integer index    = null;
+   }
 
    private class DateTimeData {
       public int year;
@@ -183,6 +220,24 @@ public class CSVTourDataReader extends TourbookDevice {
    @Override
    public String buildFileNameFromRawData(final String rawDataFileName) {
       return null;
+   }
+
+   public Map<String, Integer> buildST3Custom(final String[] allTokenH) {
+      final Map<String, Integer> st3MapTag = new HashMap<>();
+
+      for (int i = 1; i < allTokenH.length; i++) {
+         String entryName = allTokenH[i].trim();
+         if (!entryName.isBlank()) {
+            if (!allTokenH[i].trim().startsWith("\"")) {
+               entryName = "\"" + entryName;
+            }
+            if (!allTokenH[i].trim().endsWith("\"")) {
+               entryName += "\"";
+            }
+            st3MapTag.put(entryName, i);
+         }
+      }
+      return st3MapTag;
    }
 
    public ArrayList<Integer> buildST3DescFieldIdx(final String header) {
@@ -231,9 +286,16 @@ public class CSVTourDataReader extends TourbookDevice {
 
       final String[] allTokenH = header.split(CSV_TOKEN_SEPARATOR);
       for (int i = 0; i < allTokenH.length; i++) {
-         st3MapTag.put(allTokenH[i], i);
-      }
+         String entryName = allTokenH[i].trim();
+         if (!allTokenH[i].trim().startsWith("\"")) {
+            entryName = "\"" + entryName;
+         }
+         if (!allTokenH[i].trim().endsWith("\"")) {
+            entryName += "\"";
+         }
 
+         st3MapTag.put(entryName, i);
+      }
       return st3MapTag;
    }
 
@@ -242,7 +304,14 @@ public class CSVTourDataReader extends TourbookDevice {
 
       final String[] allTokenH = header.split(CSV_TOKEN_SEPARATOR);
       for (int i = 0; i < allTokenH.length; i++) {
-         st3MapTag.put(i, allTokenH[i]);
+         String entryName = allTokenH[i].trim();
+         if (!allTokenH[i].trim().startsWith("\"")) {
+            entryName = "\"" + entryName;
+         }
+         if (!allTokenH[i].trim().endsWith("\"")) {
+            entryName += "\"";
+         }
+         st3MapTag.put(i, entryName);
       }
 
       return st3MapTag;
@@ -321,6 +390,19 @@ public class CSVTourDataReader extends TourbookDevice {
          return Float.parseFloat(string.substring(1 - offset, string.length() - 1 + offset).replace(',', '.'));
       } catch (final Exception e) {
          return (float) 0.0;
+      }
+   }
+
+   private Float parseFloatST3Nullable(final String string) {//string assume to be starting with "\""
+
+      try {
+         int offset = 1;
+         if (string.startsWith("\"")) {
+            offset = 0;
+         }
+         return Float.parseFloat(string.substring(1 - offset, string.length() - 1 + offset).replace(',', '.'));
+      } catch (final Exception e) {
+         return null;
       }
    }
 
@@ -504,6 +586,8 @@ public class CSVTourDataReader extends TourbookDevice {
 //       StringTokenizer tokenizer;
          final String tokenLine;
          Map<String, Integer> St3TagMap = null;
+         Map<String, Integer> St3CustomMapId = null;
+         final Map<String, CustomFieldCsv> St3CustomMapDefByRefId = new HashMap<>();
          Map<Integer, String> St3TagMapRev = null;
          ArrayList<Integer> St3ListDesc = null;
          ArrayList<Integer> St3ListSleepDesc = null;
@@ -573,7 +657,61 @@ public class CSVTourDataReader extends TourbookDevice {
                   }
                } else {
                   if (allToken[0].startsWith("##") || allToken[0].startsWith("\"##")) {
-                     continue;//skip line starting with ##
+                     String normalizedToken = allToken[0].trim();
+                     if(!allToken[0].trim().startsWith("\"")) {
+                        normalizedToken = "\"" + allToken[0].trim();
+                     }
+                     if(!allToken[0].trim().endsWith("\"")) {
+                        normalizedToken += "\"";
+                     }
+                     if (normalizedToken.compareTo(ST3_TAG_CDFDT) == 0) {
+                        St3CustomMapId = buildST3Custom(allToken);
+                     } else if (St3CustomMapId != null && !St3CustomMapId.isEmpty() &&
+                           (normalizedToken.compareTo(ST3_TAG_CDFD) == 0 ||
+                                 normalizedToken.compareTo(ST3_TAG_NDFD) == 0)) {
+                        //build custmField definition
+                        final Map<String, String> defintionMapResult = new HashMap<>();
+                        for (final String entryName : ST3_TAG_FD) {
+                           final Integer idxEntry = St3CustomMapId.get(entryName);
+                           if (idxEntry != null) {
+                              final String entry = allToken[idxEntry].trim();
+                              int startIdx = 0;
+                              int endIdx = entry.length();
+                              if (entry.startsWith("\"")) {
+                                 startIdx += 1;
+                              }
+                              if (entry.endsWith("\"")) {
+                                 endIdx -= 1;
+                              }
+                              if (endIdx > 0 && endIdx > startIdx) {
+                                 defintionMapResult.put(entryName, entry.substring(startIdx, endIdx));
+                              } else {
+                                 defintionMapResult.put(entryName, UI.EMPTY_STRING);
+                              }
+                           }
+                        }
+                        final CustomFieldCsv customField = new CustomFieldCsv();
+                        customField.name = defintionMapResult.get(ST3_TAG_FD_NAME);
+                        customField.description = defintionMapResult.get(ST3_TAG_FD_DESCR);
+                        customField.type = defintionMapResult.get(ST3_TAG_FD_TYPE);
+                        customField.refId = defintionMapResult.get(ST3_TAG_FD_REFID);
+                        if (customField.refId != null && !customField.refId.isBlank()
+                              && customField.name != null && !customField.name.isBlank()) {
+                           if (normalizedToken.compareTo(ST3_TAG_CDFD) == 0) {
+                              final String headerEntry = "\"#" + customField.name + "\"";
+                              customField.isCustom = true;
+                              customField.index = St3TagMap.get(headerEntry);
+                           } else {//NFDFD case
+                              final String headerEntry = "\"" + customField.name + "\"";
+                              customField.isCustom = false;
+                              customField.index = St3TagMap.get(headerEntry);
+                           }
+                           if (customField.index != null) {//the customFieldDefintion is actually in the main data
+                              St3CustomMapDefByRefId.put(customField.refId, customField);
+                           }
+                        }
+                     }
+                     continue;//skip below processing for line starting with ##
                   }
                   Integer idx = St3TagMap.get(ST3_TAG_DATE);
                   if (idx == null) {
@@ -689,6 +827,62 @@ public class CSVTourDataReader extends TourbookDevice {
                         tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
                      }
                   }
+
+                  if (St3CustomMapDefByRefId != null && !St3CustomMapDefByRefId.isEmpty()) {
+                     final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+                     allTourData_CustomFieldValues.clear();
+
+                     for (final CustomFieldCsv customFieldCsv : St3CustomMapDefByRefId.values()) {
+                        final CustomField customField;
+                        CustomFieldType fieldType = CustomFieldType.FIELD_STRING;
+                        if (MAP_CUSTOMFIELDTYPE.containsKey(customFieldCsv.type)) {
+                           fieldType = MAP_CUSTOMFIELDTYPE.get(customFieldCsv.type);
+                        }
+                        //create customField first
+                        customField = RawDataManager.createCustomField(customFieldCsv.name,
+                              customFieldCsv.refId,
+                              UI.EMPTY_STRING,
+                              fieldType,
+                              customFieldCsv.description);
+
+                        //second create CustomFieldValue's
+                        final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+                        if (customField.getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0 ||
+                              customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+                           final Float val = parseFloatST3Nullable(allToken[customFieldCsv.index]);
+                           customFieldValue.setValueFloat(val);
+                        } else {
+                           int startIdx = 0;
+                           int endIdx = allToken[customFieldCsv.index].trim().length();
+                           if (allToken[customFieldCsv.index].trim().startsWith("\"")) {
+                              startIdx += 1;
+                           }
+                           if (allToken[customFieldCsv.index].trim().endsWith("\"")) {
+                              endIdx -= 1;
+                           }
+                           if (endIdx > 0 && endIdx > startIdx) {
+                              final String normalizedValue = allToken[customFieldCsv.index].trim().substring(startIdx, endIdx);
+
+                              customFieldValue.setValueString(normalizedValue);
+                           }
+                        }
+
+                        if (customFieldValue.getValueFloat() != null &&
+                              customFieldValue.getValueString() != null) {
+                           /*
+                            * Set CustomFieldValue into tour data
+                            */
+                           customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+                           customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
+                           customFieldValue.setTourData(tourData);
+                           allTourData_CustomFieldValues.add(customFieldValue);
+                        }
+                     }
+
+
+                  }
+
                   tourData.setTourDescription(tourDescr);
                   tourData.setTourTitle("Daily History");
 
