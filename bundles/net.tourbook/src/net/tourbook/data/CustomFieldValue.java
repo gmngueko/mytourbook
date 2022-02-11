@@ -32,6 +32,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
 import net.tourbook.common.UI;
+import net.tourbook.database.FIELD_VALIDATION;
 import net.tourbook.database.TourDatabase;
 
 @Entity
@@ -45,6 +46,8 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    private static final char          NL                    = UI.NEW_LINE;
 
    public static final int            DB_LENGTH_VALUESTRING = 128;
+
+   public static final String             UIFIELD_VALUESTRING   = "CustomFieldValue ValueString";
 
    private static final String        NOT_APPLICABLE        = "N/A";                    //$NON-NLS-1$
    private static final String        ERROR                 = "Error";                  //$NON-NLS-1$
@@ -462,6 +465,32 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       return Objects.hash(fieldValueId);
    }
 
+   /**
+    * Checks if VARCHAR fields have the correct length
+    *
+    * @return Returns <code>true</code> when the data are valid and can be saved
+    */
+   public boolean isValidForSave() {
+
+      FIELD_VALIDATION fieldValidation;
+
+      /*
+       * Check: name
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            valueString,
+            DB_LENGTH_VALUESTRING,
+            UIFIELD_VALUESTRING);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         valueString = valueString.substring(0, DB_LENGTH_VALUESTRING);
+      }
+
+      return true;
+   }
+
    public void setCountNotNull(final Integer countNotNull) {
       this.countNotNull = countNotNull;
    }
@@ -741,10 +770,10 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
          this.countNotNull += 1;
          this.countNull -= 1;
 
-         if(this.maximum==null) {
+         if (this.maximum == null) {
             this.maximum = newValue;
          }
-         if(this.minimum==null) {
+         if (this.minimum == null) {
             this.minimum = newValue;
          }
          if (newValue > this.maximum) {
@@ -761,4 +790,5 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
          }
       }
    }
+
 }

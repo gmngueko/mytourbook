@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.data.CustomField;
@@ -44,6 +45,7 @@ import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourType;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.importdata.DeviceData;
 import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
@@ -120,6 +122,7 @@ public class CSVTourDataReader extends TourbookDevice {
 
    private static final String ST3_TAG_WEIGHT           = "\"Weight [kg]\"";
 
+   private static final String ST3_TAG_DIARYTEXT        = "\"DiaryText\"";
    private static final String ST3_TAG_BODYFAT          = "\"BodyFatPercentage\"";
    private static final String ST3_TAG_RESTHR           = "\"RestingHeartRatePerMinute\"";
    private static final String ST3_TAG_WEATHER          = "\"#temperature_day\"";
@@ -812,8 +815,23 @@ public class CSVTourDataReader extends TourbookDevice {
                      }
                   }
 
+                  idx = St3TagMap.get(ST3_TAG_WEATHER_DAY_COND);
+                  if (idx != null) {
+                     tourData.setWeather(allToken[idx]);
+                  }
+
+                  idx = St3TagMap.get(ST3_TAG_DIARYTEXT);
+                  if (idx != null) {
+                     final String oldNotes = tourData.getTourDescription();
+                     if (oldNotes.isBlank()) {
+                        tourData.setTourDescription(allToken[idx]);
+                     } else {
+                        tourData.setTourDescription(allToken[idx] + UI.NEW_LINE + UI.NEW_LINE + oldNotes);
+                     }
+                  }
+
                   //custom data fields parsing
-                  String tourDescr = "";
+                  String tourDescr = "CUSTOM FIELDs" + UI.NEW_LINE + "=============" + UI.NEW_LINE;
                   for (final Integer element : St3ListDesc) {
                      if (St3ListSleepDesc.contains(element)) {
                         final int valSleep = parseIntegerST3(allToken[element]);
@@ -824,7 +842,10 @@ public class CSVTourDataReader extends TourbookDevice {
                            tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
                         }
                      } else {
-                        tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
+                        final String value = allToken[element].replace("\"", UI.SPACE).trim();
+                        if (!value.isBlank()) {
+                           tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
+                        }
                      }
                   }
 
@@ -845,6 +866,40 @@ public class CSVTourDataReader extends TourbookDevice {
                               UI.EMPTY_STRING,
                               fieldType,
                               customFieldCsv.description);
+
+                        final CustomField customFieldToCompare = new CustomField();
+                        customFieldToCompare.setFieldName(customFieldCsv.name);
+                        customFieldToCompare.setFieldType(customField.getFieldType());
+                        customFieldToCompare.setRefId(customFieldCsv.refId);
+
+                        if (customField.equals2(customFieldToCompare) == false) {
+                           //TODO might not be necessary to update CustomFields
+                           //existing CustomFields must sray the way they are
+                           //User might have modified on purpose !!!
+                           if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+                              /*
+                               * Nothing to do, customField will be saved when a tour is saved which
+                               * contains
+                               * this customField
+                               * in
+                               * net.tourbook.database.TourDatabase.
+                               * checkUnsavedTransientInstances_CustomFields(
+                               * )
+                               */
+
+                           } else {
+
+                              /*
+                               * Notify post process to update the customField in the db
+                               */
+
+                              final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = importState_Process
+                                    .getAllCustomFieldsToBeUpdated();
+
+                              allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+                           }
+                        }
 
                         //second create CustomFieldValue's
                         final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
@@ -868,7 +923,7 @@ public class CSVTourDataReader extends TourbookDevice {
                            }
                         }
 
-                        if (customFieldValue.getValueFloat() != null &&
+                        if (customFieldValue.getValueFloat() != null ||
                               customFieldValue.getValueString() != null) {
                            /*
                             * Set CustomFieldValue into tour data
@@ -878,12 +933,19 @@ public class CSVTourDataReader extends TourbookDevice {
                            customFieldValue.setTourData(tourData);
                            allTourData_CustomFieldValues.add(customFieldValue);
                         }
+
                      }
 
 
                   }
 
-                  tourData.setTourDescription(tourDescr);
+                  final String oldNotes = tourData.getTourDescription();
+                  if (oldNotes.isBlank()) {
+                     tourData.setTourDescription(tourDescr);
+                  } else {
+                     tourData.setTourDescription(oldNotes + UI.NEW_LINE + UI.NEW_LINE + tourDescr);
+                  }
+
                   tourData.setTourTitle("Daily History");
 
                   final String tourTypeLabel = "Daily-History";
@@ -900,7 +962,8 @@ public class CSVTourDataReader extends TourbookDevice {
                   tourData.setDeviceName(visibleName);
 
                   // after all data are added, the tour id can be created
-                  final String uniqueId = createUniqueId_Legacy(tourData, distance);
+                  setCreateTourIdWithTime(true);
+                  final String uniqueId = createUniqueId_Legacy(tourData, distance + 86400);
                   final Long tourId = tourData.createTourId(uniqueId);
 
                   // check if the tour is in the tour map
