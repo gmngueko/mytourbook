@@ -1003,7 +1003,11 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          allTourData_CustomFieldValues.clear();
 
          for (final String customFieldId : _currentActivity.customDataFields_ByRefId.keySet()) {
-            final String customFieldMapValue = _currentActivity.customDataFields_ByRefId.get(customFieldId);
+            String customFieldMapValue = _currentActivity.customDataFields_ByRefId.get(customFieldId);
+            if (customFieldMapValue != null) {
+               final String sValue = customFieldMapValue.trim().replaceAll("^\"|\"$", "").replaceAll("^'|'$", "");
+               customFieldMapValue = sValue;
+            }
             //first create CustomField's
             final CustomDataFieldDefinition customDataFieldDefinition = _customDataFieldDefinitions.get(customFieldId);
             final CustomField customField;
@@ -1054,10 +1058,47 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
             if (customField.getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0 ||
                   customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
-               customFieldValue.setValueFloat(Float.parseFloat(customFieldMapValue));
+               if (customDataFieldDefinition.type.compareTo(CustomFieldType.FIELD_STRING) == 0) {
+                  //it was originally a String in ST3 !!
+                  if (DateUtil.isValideDuration(customFieldMapValue)) {
+                     try {
+                        final org.joda.time.Duration duration = DateUtil.parseDuration(customFieldMapValue);
+                        customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+                        customFieldValue.setValueString(null);
+                     } catch (final Exception e) {
+                        System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Duration String::\n" + e
+                              .getMessage());
+                        //create a v2 version
+                        final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                              "v1;" + customFieldId, //$NON-NLS-1$
+                              customDataFieldDefinition.unit,
+                              CustomFieldType.FIELD_STRING,
+                              customDataFieldDefinition.name);
+                        customFieldValue.setCustomField(customFieldv2);
+
+                        customFieldValue.setValueFloat(null);
+                        customFieldValue.setValueString(customFieldMapValue);
+                     }
+                  } else {
+                     final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                           "v1;" + customFieldId, //$NON-NLS-1$
+                           customDataFieldDefinition.unit,
+                           CustomFieldType.FIELD_STRING,
+                           customDataFieldDefinition.name);
+                     customFieldValue.setCustomField(customFieldv2);
+
+                     customFieldValue.setValueFloat(null);
+                     customFieldValue.setValueString(customFieldMapValue);
+
+                  }
+               } else {
+                  customFieldValue.setValueFloat(Float.parseFloat(customFieldMapValue));
+               }
             } else {
+               boolean isDate = false;
                try {
                   final Date theDate = DateUtil.parse(customFieldMapValue);
+                  isDate = true;//if there is no exception thrown during parsing above we reach this code
                   customFieldValue.setValueString(String.valueOf(theDate.getTime() / 1000));
                   if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) != 0) {
                      //create a v2 version
@@ -1069,8 +1110,33 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                      customFieldValue.setCustomField(customFieldv2);
                   }
                } catch (final Exception e) {
-                  System.out.println(e.getMessage());
+                  System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Date String::\n" + e.getMessage());
                   customFieldValue.setValueString(customFieldMapValue);
+               }
+               if (!isDate) {
+                  if (DateUtil.isValideDuration(customFieldMapValue)) {
+                     try {
+                        final org.joda.time.Duration duration = DateUtil.parseDuration(customFieldMapValue);
+                        //customField.setFieldType(CustomFieldType.FIELD_DURATION);
+                        if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) != 0) {
+                           //create a v2 version
+                           final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                                 "v2;" + customFieldId, //$NON-NLS-1$
+                                 customDataFieldDefinition.unit,
+                                 CustomFieldType.FIELD_DURATION,
+                                 customDataFieldDefinition.name);
+                           customFieldValue.setCustomField(customFieldv2);
+                        }
+                        customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+                        customFieldValue.setValueString(null);
+                     } catch (final Exception e) {
+                        System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Duration String::\n" + e
+                              .getMessage());
+                        //customField.setFieldType(CustomFieldType.FIELD_STRING);
+                        customFieldValue.setValueFloat(null);
+                        customFieldValue.setValueString(customFieldMapValue);
+                     }
+                  }
                }
 
             }
