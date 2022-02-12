@@ -242,6 +242,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     * Key is the tag name + contained id, all in UPPERCASE
     */
    private final Map<String, TagWithNotes> _allTagsWithNotes = new HashMap<>();
+   private final Map<String, String>              _allTagsWithNotes_ByRefId = new HashMap<>();
 
    /**
     * Key is the attribute RefId (UUID) of ST3
@@ -428,7 +429,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          for (final Equipment equipment : allEquipments_FromFitLogEx) {
 
             final String name = equipment.getName();
-            final String id = equipment.Id;
+            final String id = equipment.Id.trim();
 
             final String key = (name + UI.DASH + id).toUpperCase();
 
@@ -441,6 +442,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                         id
 
                   ));
+
+            _allTagsWithNotes_ByRefId.put(id, key);
          }
 //         }
 //      }
@@ -915,6 +918,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       _currentActivity.customTrackDefinitions.clear();//custom tracks
       _currentActivity.customDataFields.clear();
       _currentActivity.customDataFields_ByRefId.clear();
+      _currentActivity.pauses.clear();
 
       _importState_File.isFileImportedWithValidData = true;
    }
@@ -946,11 +950,26 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     */
    private void finalizeTour_20_SetTags(final TourData tourData) {
 
-      final boolean isNewTourTag = RawDataManager.setTourTags(tourData, _allTagsWithNotes);
+      final Map<String, TagWithNotes> activityTagsWithNotes = new HashMap<>();
 
-      if (isNewTourTag) {
-         _importState_Process.isCreated_NewTag().set(true);
+      for(final Equipment equipment:_currentActivity.equipments) {
+         final String key = _allTagsWithNotes_ByRefId.get(equipment.Id);
+         if (key != null) {
+            final TagWithNotes tagWithNotes = _allTagsWithNotes.get(key);
+            if (tagWithNotes != null) {
+               activityTagsWithNotes.put(key, tagWithNotes);
+            }
+         }
       }
+
+      if (activityTagsWithNotes != null && !activityTagsWithNotes.isEmpty()) {
+         final boolean isNewTourTag = RawDataManager.setTourTags(tourData, activityTagsWithNotes);
+
+         if (isNewTourTag) {
+            _importState_Process.isCreated_NewTag().set(true);
+         }
+      }
+
    }
 
    /**
