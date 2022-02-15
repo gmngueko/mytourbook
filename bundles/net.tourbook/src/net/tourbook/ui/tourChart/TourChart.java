@@ -89,6 +89,7 @@ import net.tourbook.tour.TourManager;
 import net.tourbook.tour.filter.TourFilterFieldOperator;
 import net.tourbook.tour.photo.TourPhotoLink;
 import net.tourbook.ui.ITourProvider;
+import net.tourbook.ui.ValuePoint_ToolTip_UI;
 import net.tourbook.ui.action.ActionEditQuick;
 import net.tourbook.ui.tourChart.action.ActionCanAutoZoomToSlider;
 import net.tourbook.ui.tourChart.action.ActionCanMoveSlidersWhenZoomed;
@@ -360,7 +361,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    private ChartPauseToolTip             _tourPauseTooltip;
    private TourSegmenterTooltip          _tourSegmenterTooltip;
    private ChartTitleToolTip             _tourTitleTooltip;
-   private ValuePoint_ToolTip_UI         _valuePointTooltip;
+   private ValuePoint_ToolTip_UI         _valuePointTooltipUI;
    //
    private ControlListener               _ttControlListener              = new ControlListener();
    private IKeyListener                  _chartKeyListener               = new ChartKeyListener();
@@ -900,9 +901,9 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       _tourSegmenterTooltip = new TourSegmenterTooltip(this);
 
       /*
-       * setup value point tooltip
+       * Setup value point tooltip
        */
-      final IPinned_Tooltip_Owner vpToolTipOwner = new IPinned_Tooltip_Owner() {
+      final IPinned_Tooltip_Owner valuePoint_ToolTipOwner = new IPinned_Tooltip_Owner() {
 
          @Override
          public Control getControl() {
@@ -914,8 +915,15 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             handleTooltipMouseEvent(event, mouseDisplayPosition);
          }
       };
-      _valuePointTooltip = new ValuePoint_ToolTip_UI(vpToolTipOwner, _state);
-      setValuePointToolTipProvider(_valuePointTooltip);
+      _valuePointTooltipUI = new ValuePoint_ToolTip_UI(
+            valuePoint_ToolTipOwner,
+            Messages.Tour_Chart_Label_ValuePoint_Title,
+            _state,
+            ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE_CHART,
+
+            true // allow to show the chart zoom factor
+      );
+      setValuePointToolTipProvider(_valuePointTooltipUI);
 
       _photoTooltip = new ChartPhotoToolTip(this, _state);
       _tourMarkerTooltip = new ChartMarkerToolTip(this);
@@ -1240,7 +1248,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                isChartModified = true;
                keepMinMax = false;
 
-               _valuePointTooltip.reopen();
+               _valuePointTooltipUI.reopen();
 
                final ActionXAxisDistance tourAction = (ActionXAxisDistance) _allTourChartActions.get(ACTION_ID_X_AXIS_DISTANCE);
                tourAction.setImages();
@@ -3758,7 +3766,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       _prefStore.removePropertyChangeListener(_prefChangeListener);
       _prefStore_Common.removePropertyChangeListener(_prefChangeListener_Common);
 
-      _valuePointTooltip.hide();
+      _valuePointTooltipUI.hide();
    }
 
    private void onMarker_ChartResized() {
@@ -4285,7 +4293,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    public void partIsHidden() {
 
       // hide value point tooltip
-      _valuePointTooltip.setShellVisible(false);
+      _valuePointTooltipUI.setShellVisible(false);
 
       // hide photo tooltip
       _photoTooltip.hide();
@@ -4294,7 +4302,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    public void partIsVisible() {
 
       // show tool tip again
-      _valuePointTooltip.setShellVisible(true);
+      _valuePointTooltipUI.setShellVisible(true);
    }
 
    private void removeActions_10_GraphActionsCustomTracks() {
@@ -4387,7 +4395,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    void saveState() {
 
       _photoTooltip.saveState();
-      _valuePointTooltip.saveState();
+      _valuePointTooltipUI.saveState();
    }
 
    private void selectSegmenterSegment(final ChartKeyEvent keyEvent) {
@@ -6074,7 +6082,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          _tourData = null;
          _tcc = null;
 
-         _valuePointTooltip.setTourData(null);
+         _valuePointTooltipUI.setTourData(null);
 
          // disable all actions
          if (_allTourChartActions != null) {
@@ -6391,7 +6399,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
          // there are no new tour data
 
-         _valuePointTooltip.setTourData(null);
+         _valuePointTooltipUI.setTourData(null);
          return;
       }
 
@@ -6502,7 +6510,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       }
 
       _tourInfoIconTooltipProvider.setTourData(_tourData);
-      _valuePointTooltip.setTourData(_tourData);
+      _valuePointTooltipUI.setTourData(_tourData);
       _tourMarkerTooltip.setIsShowMarkerActions(_tourData.isMultipleTours() == false);
 
       // when a tour is saved after a photo was removed, update the photo gallery to see the removed photo
