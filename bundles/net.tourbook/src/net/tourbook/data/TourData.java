@@ -10188,6 +10188,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     *         Returns <code>true</code> then {@link #srtmSerie} contains SRTM 1 values or partly,
     *         otherwise SRTM 3 values
     */
+   @JsonIgnore
    public boolean isSRTM1Values() {
       return _isSRTM1Values;
    }
