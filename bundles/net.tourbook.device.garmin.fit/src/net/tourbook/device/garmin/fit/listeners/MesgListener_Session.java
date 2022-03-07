@@ -173,7 +173,13 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
       final Integer leftRightBalance = mesg.getLeftRightBalance();
       if (leftRightBalance != null) {
-         tourData.setPower_PedalLeftRightBalance(leftRightBalance);
+         final int maskRight = 0x8000;
+         final int maskValue = 0x3FFF;
+         final int valueLeft = (100 - (leftRightBalance & maskValue) / 100);
+         final int isRight = leftRightBalance & maskRight;
+         if (isRight != 0) {
+            tourData.setPower_PedalLeftRightBalance(valueLeft);
+         }
       }
 
       final Float avgLeftTorqueEffectiveness = mesg.getAvgLeftTorqueEffectiveness();
