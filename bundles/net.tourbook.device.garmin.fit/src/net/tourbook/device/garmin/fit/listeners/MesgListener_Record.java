@@ -627,117 +627,274 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          }
       }
 
-      final Float[] leftPowerPhase = mesg.getLeftPowerPhase();
-      if (leftPowerPhase != null && leftPowerPhase.length > 0) {
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = leftPowerPhase[0];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
-         }
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = leftPowerPhase[leftPowerPhase.length - 1];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
+      final Float leftPowerPhaseStart = mesg.getLeftPowerPhase(com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue());
+      if (leftPowerPhaseStart != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPowerPhaseStart;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
          }
       }
 
-      final Float[] rightPowerPhase = mesg.getRightPowerPhase();
-      if (rightPowerPhase != null && rightPowerPhase.length > 0) {
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = rightPowerPhase[0];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
-         }
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = rightPowerPhase[rightPowerPhase.length - 1];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
+      final Float leftPowerPhaseEnd = mesg.getLeftPowerPhase(com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue());
+      if (leftPowerPhaseEnd != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPowerPhaseEnd;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
          }
       }
 
-      final Float[] leftPowerPhasePeak = mesg.getLeftPowerPhasePeak();
-      if (leftPowerPhasePeak != null && leftPowerPhasePeak.length > 0) {
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = leftPowerPhasePeak[0];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
-         }
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = leftPowerPhasePeak[leftPowerPhasePeak.length - 1];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
+      final Float rightPowerPhaseStart = mesg.getRightPowerPhase(com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue());
+      if (rightPowerPhaseStart != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPowerPhaseStart;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
          }
       }
 
-      final Float[] rightPowerPhasePeak = mesg.getRightPowerPhasePeak();
-      if (rightPowerPhasePeak != null && rightPowerPhasePeak.length > 0) {
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = rightPowerPhasePeak[0];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
-         }
-         {
-            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.NameIdx];
-            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UUIDIdx];
-            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UnitIdx];
-            final CustomTrackValue customTrackValue = new CustomTrackValue();
-            customTrackValue.id = customFieldId;
-            customTrackValue.value = rightPowerPhasePeak[rightPowerPhasePeak.length - 1];
-            nonStandardDeveloperFields.add(customTrackValue);
-            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
-               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
-            }
+      final Float rightPowerPhaseEnd = mesg.getRightPowerPhase(com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue());
+      if (rightPowerPhaseEnd != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPowerPhaseEnd;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
          }
       }
+
+      /*
+       * final Float[] leftPowerPhase = mesg.getLeftPowerPhase();
+       * if (leftPowerPhase != null && leftPowerPhase.length > 0) {
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * leftPowerPhase[com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * leftPowerPhase[com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * }
+       */
+
+      /*
+       * final Float[] rightPowerPhase = mesg.getRightPowerPhase();
+       * if (rightPowerPhase != null && rightPowerPhase.length > 0) {
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * rightPowerPhase[com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * rightPowerPhase[com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * }
+       */
+
+      final Float leftPowerPhasePeakStart = mesg.getLeftPowerPhasePeak(com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue());
+      if (leftPowerPhasePeakStart != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPowerPhasePeakStart;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float leftPowerPhasePeakEnd = mesg.getLeftPowerPhasePeak(com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue());
+      if (leftPowerPhasePeakEnd != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPowerPhasePeakEnd;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float rightPowerPhasePeakStart = mesg.getRightPowerPhasePeak(com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue());
+      if (rightPowerPhasePeakStart != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPowerPhasePeakStart;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float rightPowerPhasePeakEnd = mesg.getRightPowerPhasePeak(com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue());
+      if (rightPowerPhasePeakEnd != null) {
+         final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPowerPhasePeakEnd;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      /*
+       * final Float[] leftPowerPhasePeak = mesg.getLeftPowerPhasePeak();
+       * if (leftPowerPhasePeak != null && leftPowerPhasePeak.length > 0) {
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * leftPowerPhasePeak[com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * leftPowerPhasePeak[com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * }
+       * final Float[] rightPowerPhasePeak = mesg.getRightPowerPhasePeak();
+       * if (rightPowerPhasePeak != null && rightPowerPhasePeak.length > 0) {
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * rightPowerPhasePeak[com.garmin.fit.PowerPhaseType.POWER_PHASE_START_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * {
+       * final String customFieldName =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.NameIdx];
+       * final String customFieldId =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+       * final String customFieldUnit =
+       * DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UnitIdx];
+       * final CustomTrackValue customTrackValue = new CustomTrackValue();
+       * customTrackValue.id = customFieldId;
+       * customTrackValue.value =
+       * rightPowerPhasePeak[com.garmin.fit.PowerPhaseType.POWER_PHASE_END_ANGLE.getValue()];
+       * nonStandardDeveloperFields.add(customTrackValue);
+       * if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId))
+       * {
+       * fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+       * }
+       * }
+       * }
+       */
 
    }
 
