@@ -25,6 +25,7 @@ import java.util.List;
 
 import net.tourbook.common.UI;
 import net.tourbook.data.CustomTrackValue;
+import net.tourbook.data.DataSerieStaticValue;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
@@ -323,6 +324,11 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
     */
    private void setRecord_DeveloperData(final RecordMesg mesg, final TimeData timeData) {
 
+      final List<CustomTrackValue> nonStandardDeveloperFields = new ArrayList<>();
+      final List<CustomTracksFieldDefinition> developerFieldDefinitions = fitData.get_developerFieldDefinition();
+
+      setRecord_NonStandardData(nonStandardDeveloperFields, developerFieldDefinitions, mesg);
+
       int developerFieldCount = 0;
       for (final DeveloperField developerField : mesg.getDeveloperFields()) {
          final String fieldName = developerField.getName();
@@ -332,6 +338,9 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
       }
 
       if (developerFieldCount == 0) {
+         if (nonStandardDeveloperFields.size() > 0) {
+            timeData.customTracks = nonStandardDeveloperFields.toArray(new CustomTrackValue[nonStandardDeveloperFields.size()]);
+         }
          return;
       }
 
@@ -345,9 +354,6 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
             ++powerDataSources;
          }
       }
-
-      final List<CustomTrackValue> nonStandardDeveloperFields = new ArrayList<>();
-      final List<CustomTracksFieldDefinition> developerFieldDefinitions = fitData.get_developerFieldDefinition();
 
       for (final DeveloperField devField : mesg.getDeveloperFields()) {
 
@@ -503,6 +509,234 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
 
       if (nonStandardDeveloperFields.size() > 0) {
          timeData.customTracks = nonStandardDeveloperFields.toArray(new CustomTrackValue[nonStandardDeveloperFields.size()]);
+      }
+
+   }
+
+   private void setRecord_NonStandardData(final List<CustomTrackValue> nonStandardDeveloperFields, final List<CustomTracksFieldDefinition> developerFieldDefinitions, final RecordMesg mesg) {
+
+      final Float grit = mesg.getGrit();
+      if (grit != null) {
+         final String customFieldName = DataSerieStaticValue.GARMIN_GRIT[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.GARMIN_GRIT[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.GARMIN_GRIT[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = grit;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float flow = mesg.getFlow();
+      if (flow != null) {
+         final String customFieldName = DataSerieStaticValue.GARMIN_FLOW[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.GARMIN_FLOW[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.GARMIN_FLOW[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = flow;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Byte leftPco = mesg.getLeftPco();
+      if (leftPco != null) {
+         final String customFieldName = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_LEFT[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_LEFT[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_LEFT[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPco.floatValue();
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Byte rightPco = mesg.getRightPco();
+      if (rightPco != null) {
+         final String customFieldName = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_RIGHT[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_RIGHT[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.PLATFORM_CENTER_OFFSET_RIGHT[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPco.floatValue();
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float leftPedalSmoooth = mesg.getLeftPedalSmoothness();
+      if (leftPedalSmoooth != null) {
+         final String customFieldName = DataSerieStaticValue.LEFT_PEDAL_SMOOTHNESS[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.LEFT_PEDAL_SMOOTHNESS[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.LEFT_PEDAL_SMOOTHNESS[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftPedalSmoooth;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float rightPedalSmoooth = mesg.getLeftPedalSmoothness();
+      if (rightPedalSmoooth != null) {
+         final String customFieldName = DataSerieStaticValue.RIGHT_PEDAL_SMOOTHNESS[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.RIGHT_PEDAL_SMOOTHNESS[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.RIGHT_PEDAL_SMOOTHNESS[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightPedalSmoooth;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float leftTorqueEff = mesg.getLeftTorqueEffectiveness();
+      if (leftTorqueEff != null) {
+         final String customFieldName = DataSerieStaticValue.LEFT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.LEFT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.LEFT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = leftTorqueEff;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float rightTorqueEff = mesg.getLeftTorqueEffectiveness();
+      if (rightTorqueEff != null) {
+         final String customFieldName = DataSerieStaticValue.RIGHT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.RIGHT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.RIGHT_TORQUE_EFFECTIVENESS[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = rightTorqueEff;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float[] leftPowerPhase = mesg.getLeftPowerPhase();
+      if (leftPowerPhase != null && leftPowerPhase.length > 0) {
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = leftPowerPhase[0];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_END[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = leftPowerPhase[leftPowerPhase.length - 1];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+      }
+
+      final Float[] rightPowerPhase = mesg.getRightPowerPhase();
+      if (rightPowerPhase != null && rightPowerPhase.length > 0) {
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = rightPowerPhase[0];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_END[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = rightPowerPhase[rightPowerPhase.length - 1];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+      }
+
+      final Float[] leftPowerPhasePeak = mesg.getLeftPowerPhasePeak();
+      if (leftPowerPhasePeak != null && leftPowerPhasePeak.length > 0) {
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = leftPowerPhasePeak[0];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_END[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = leftPowerPhasePeak[leftPowerPhasePeak.length - 1];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+      }
+
+      final Float[] rightPowerPhasePeak = mesg.getRightPowerPhasePeak();
+      if (rightPowerPhasePeak != null && rightPowerPhasePeak.length > 0) {
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = rightPowerPhasePeak[0];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+         {
+            final String customFieldName = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_END[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = rightPowerPhasePeak[rightPowerPhasePeak.length - 1];
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
       }
 
    }
