@@ -55,6 +55,9 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
    private static final String DEV_FIELD_NAME__ELEVATION            = "Elevation";                                //$NON-NLS-1$
    private static final String DEV_FIELD_NAME__VERTICAL_OSCILLATION = "Vertical Oscillation";                     //$NON-NLS-1$
 
+   private static final float  POWER_PHASE_START_MIN                = 270;
+   private static final float  POWER_PHASE_START_MAX                = 360;
+
    private IPreferenceStore    _prefStore                           = Activator.getDefault().getPreferenceStore();
 
    private float               _temperatureAdjustment;
@@ -634,7 +637,11 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_LEFT_START[DataSerieStaticValue.UnitIdx];
          final CustomTrackValue customTrackValue = new CustomTrackValue();
          customTrackValue.id = customFieldId;
-         customTrackValue.value = leftPowerPhaseStart;
+         if (leftPowerPhaseStart >= POWER_PHASE_START_MIN && leftPowerPhaseStart <= POWER_PHASE_START_MAX) {
+            customTrackValue.value = leftPowerPhaseStart - POWER_PHASE_START_MAX;
+         } else {
+            customTrackValue.value = leftPowerPhaseStart;
+         }
          nonStandardDeveloperFields.add(customTrackValue);
          if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
             fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
@@ -662,7 +669,11 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_RIGHT_START[DataSerieStaticValue.UnitIdx];
          final CustomTrackValue customTrackValue = new CustomTrackValue();
          customTrackValue.id = customFieldId;
-         customTrackValue.value = rightPowerPhaseStart;
+         if (rightPowerPhaseStart >= POWER_PHASE_START_MIN && rightPowerPhaseStart <= POWER_PHASE_START_MAX) {
+            customTrackValue.value = rightPowerPhaseStart - POWER_PHASE_START_MAX;
+         } else {
+            customTrackValue.value = rightPowerPhaseStart;
+         }
          nonStandardDeveloperFields.add(customTrackValue);
          if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
             fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
@@ -770,7 +781,11 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_LEFT_START[DataSerieStaticValue.UnitIdx];
          final CustomTrackValue customTrackValue = new CustomTrackValue();
          customTrackValue.id = customFieldId;
-         customTrackValue.value = leftPowerPhasePeakStart;
+         if (leftPowerPhasePeakStart >= POWER_PHASE_START_MIN && leftPowerPhasePeakStart <= POWER_PHASE_START_MAX) {
+            customTrackValue.value = leftPowerPhasePeakStart - POWER_PHASE_START_MAX;
+         } else {
+            customTrackValue.value = leftPowerPhasePeakStart;
+         }
          nonStandardDeveloperFields.add(customTrackValue);
          if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
             fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
@@ -798,7 +813,11 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          final String customFieldUnit = DataSerieStaticValue.POWER_PHASE_PEAK_RIGHT_START[DataSerieStaticValue.UnitIdx];
          final CustomTrackValue customTrackValue = new CustomTrackValue();
          customTrackValue.id = customFieldId;
-         customTrackValue.value = rightPowerPhasePeakStart;
+         if (rightPowerPhasePeakStart >= POWER_PHASE_START_MIN && rightPowerPhasePeakStart <= POWER_PHASE_START_MAX) {
+            customTrackValue.value = rightPowerPhasePeakStart - POWER_PHASE_START_MAX;
+         } else {
+            customTrackValue.value = rightPowerPhasePeakStart;
+         }
          nonStandardDeveloperFields.add(customTrackValue);
          if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
             fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
@@ -895,6 +914,68 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
        * }
        * }
        */
+
+      final Short leftRightBalance = mesg.getLeftRightBalance();
+      if (leftRightBalance != null) {
+         final int maskRight = 0x80;
+         final int maskValue = 0x7F;
+         final int valueLeft = (100 - (leftRightBalance & maskValue));
+         final int isRight = leftRightBalance & maskRight;
+         if (isRight != 0) {
+            final String customFieldName = DataSerieStaticValue.POWER_LEFT_RIGHT_BALANCE[DataSerieStaticValue.NameIdx];
+            final String customFieldId = DataSerieStaticValue.POWER_LEFT_RIGHT_BALANCE[DataSerieStaticValue.UUIDIdx];
+            final String customFieldUnit = DataSerieStaticValue.POWER_LEFT_RIGHT_BALANCE[DataSerieStaticValue.UnitIdx];
+            final CustomTrackValue customTrackValue = new CustomTrackValue();
+            customTrackValue.id = customFieldId;
+            customTrackValue.value = valueLeft;
+            nonStandardDeveloperFields.add(customTrackValue);
+            if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+               fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+            }
+         }
+      }
+
+      final Float battery = mesg.getBatterySoc();
+      if (battery != null) {
+         final String customFieldName = DataSerieStaticValue.RECORDING_DEVICE_BATTERY[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.RECORDING_DEVICE_BATTERY[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.RECORDING_DEVICE_BATTERY[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = battery;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float totalHemoglobinConc = mesg.getTotalHemoglobinConc();
+      if (totalHemoglobinConc != null) {
+         final String customFieldName = DataSerieStaticValue.TOTAL_HEMOGLOBIN_CONC[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.TOTAL_HEMOGLOBIN_CONC[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.TOTAL_HEMOGLOBIN_CONC[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = totalHemoglobinConc;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float saturatedHemoglobin = mesg.getSaturatedHemoglobinPercent();
+      if (saturatedHemoglobin != null) {
+         final String customFieldName = DataSerieStaticValue.SATURATED_HEMOGLOBIN[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.SATURATED_HEMOGLOBIN[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.SATURATED_HEMOGLOBIN[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = saturatedHemoglobin;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
 
    }
 

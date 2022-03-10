@@ -1,5 +1,8 @@
 package net.tourbook.data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class DataSerieStaticValue {
    //Name; Comment; Unit; RefId
    public static int            NameIdx                      = 0;
@@ -14,6 +17,7 @@ public class DataSerieStaticValue {
    public static final String[] LEFT_TORQUE_EFFECTIVENESS = { "Left Torque Effectiveness", "", "%", "98c6bf0b-7c3c-4f3a-8ddc-5427cf09cdc9" };
    public static final String[] PLATFORM_CENTER_OFFSET_LEFT = { "Platform center offset - Left", "", "mm", "bd76403c-634e-421a-ba38-8d166483e077" };
    public static final String[] PLATFORM_CENTER_OFFSET_RIGHT = { "Platform center offset - Right", "", "mm", "8f567038-9d9d-4c57-9e7c-5517c5357c9d" };
+   public static final String[] POWER_LEFT_RIGHT_BALANCE     = { "Power balance", "Power balance", "% Left", "dffda4e1-a721-417a-9c50-11fee33bcda7" };
    public static final String[] POWER_PHASE_LEFT_END         = { "Power phase - Left - End", "", "°", "b688de7c-5266-460b-bb38-09b12c348f58" };
    public static final String[] POWER_PHASE_LEFT_START       = { "Power phase - Left - Start", "", "°", "35ed646a-e84f-47b4-8e76-43b84d5efdfb" };
    public static final String[] POWER_PHASE_RIGHT_END        = { "Power phase - Right - End", "", "°", "2cfc2594-0dc0-4e3c-bb38-3bf0eb8a9f48" };
@@ -34,8 +38,53 @@ public class DataSerieStaticValue {
                                               + "in terms of time spent "
                                               + "going over sharp turns or large grade slopes", "", "afb2e7e7-7da7-4b28-809f-ee23ba02b009" };
 
+   public static final String[] RECORDING_DEVICE_BATTERY     = { "battery", "device battery", "%", "5596e3f5-c564-46d4-811d-396f69feee95" };
+
+   public static final String[] TOTAL_HEMOGLOBIN_CONC = { "Total Hemoglobin Concentration", "Total Hemoglobin Concentration "
+                                                                                          + "from Fit data", "g/dL", "c5e54c52-3cb7-4f26-bee5-66e7695d1f15" };
+   public static final String[] SATURATED_HEMOGLOBIN = { "Saturated Hemoglobin Percent", "Saturated Hemoglobin Percent", "%", "f68155fa-1219-4c12-96eb-975bf2b37176" };
+
    /*
     * public static final String[] XX = { "Name", "Comment", "Unit", "UUID" };
     * public static final String[] XX = { "", "", "", "" };
     */
+
+   private static final Map<String, String[]> DATASERIES_STATIC = new HashMap<>();
+
+   public static final Map<String, String[]> getList() {
+
+      DATASERIES_STATIC.put(GARMIN_SPO2[UUIDIdx], GARMIN_SPO2);
+      DATASERIES_STATIC.put(GARMIN_RESPRATE[UUIDIdx], GARMIN_RESPRATE);
+      DATASERIES_STATIC.put(GEAR_RATIO[UUIDIdx], GEAR_RATIO);
+
+      DATASERIES_STATIC.put(LEFT_PEDAL_SMOOTHNESS[UUIDIdx], LEFT_PEDAL_SMOOTHNESS);
+      DATASERIES_STATIC.put(LEFT_TORQUE_EFFECTIVENESS[UUIDIdx], LEFT_TORQUE_EFFECTIVENESS);
+
+      DATASERIES_STATIC.put(PLATFORM_CENTER_OFFSET_LEFT[UUIDIdx], PLATFORM_CENTER_OFFSET_LEFT);
+      DATASERIES_STATIC.put(PLATFORM_CENTER_OFFSET_RIGHT[UUIDIdx], PLATFORM_CENTER_OFFSET_RIGHT);
+
+      DATASERIES_STATIC.put(POWER_LEFT_RIGHT_BALANCE[UUIDIdx], POWER_LEFT_RIGHT_BALANCE);
+
+      DATASERIES_STATIC.put(POWER_PHASE_LEFT_END[UUIDIdx], POWER_PHASE_LEFT_END);
+      DATASERIES_STATIC.put(POWER_PHASE_LEFT_START[UUIDIdx], POWER_PHASE_LEFT_START);
+      DATASERIES_STATIC.put(POWER_PHASE_RIGHT_END[UUIDIdx], POWER_PHASE_RIGHT_END);
+      DATASERIES_STATIC.put(POWER_PHASE_RIGHT_START[UUIDIdx], POWER_PHASE_RIGHT_START);
+
+      DATASERIES_STATIC.put(POWER_PHASE_PEAK_LEFT_END[UUIDIdx], POWER_PHASE_PEAK_LEFT_END);
+      DATASERIES_STATIC.put(POWER_PHASE_PEAK_LEFT_START[UUIDIdx], POWER_PHASE_PEAK_LEFT_START);
+      DATASERIES_STATIC.put(POWER_PHASE_PEAK_RIGHT_END[UUIDIdx], POWER_PHASE_PEAK_RIGHT_END);
+      DATASERIES_STATIC.put(POWER_PHASE_PEAK_RIGHT_START[UUIDIdx], POWER_PHASE_PEAK_RIGHT_START);
+
+      DATASERIES_STATIC.put(RIGHT_PEDAL_SMOOTHNESS[UUIDIdx], RIGHT_PEDAL_SMOOTHNESS);
+      DATASERIES_STATIC.put(RIGHT_TORQUE_EFFECTIVENESS[UUIDIdx], RIGHT_TORQUE_EFFECTIVENESS);
+
+      DATASERIES_STATIC.put(GARMIN_FLOW[UUIDIdx], GARMIN_FLOW);
+      DATASERIES_STATIC.put(GARMIN_GRIT[UUIDIdx], GARMIN_GRIT);
+
+      DATASERIES_STATIC.put(RECORDING_DEVICE_BATTERY[UUIDIdx], RECORDING_DEVICE_BATTERY);
+      DATASERIES_STATIC.put(TOTAL_HEMOGLOBIN_CONC[UUIDIdx], TOTAL_HEMOGLOBIN_CONC);
+      DATASERIES_STATIC.put(SATURATED_HEMOGLOBIN[UUIDIdx], SATURATED_HEMOGLOBIN);
+
+      return DATASERIES_STATIC;
+   }
 }
