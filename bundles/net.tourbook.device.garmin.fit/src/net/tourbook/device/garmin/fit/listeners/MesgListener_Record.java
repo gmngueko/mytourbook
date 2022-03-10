@@ -917,8 +917,8 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
 
       final Short leftRightBalance = mesg.getLeftRightBalance();
       if (leftRightBalance != null) {
-         final int maskRight = 0x80;
-         final int maskValue = 0x7F;
+         final int maskRight = com.garmin.fit.LeftRightBalance.RIGHT;//0x80;
+         final int maskValue = com.garmin.fit.LeftRightBalance.MASK;//0x7F;
          final int valueLeft = (100 - (leftRightBalance & maskValue));
          final int isRight = leftRightBalance & maskRight;
          if (isRight != 0) {

@@ -173,8 +173,8 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
       final Integer leftRightBalance = mesg.getLeftRightBalance();
       if (leftRightBalance != null) {
-         final int maskRight = 0x8000;
-         final int maskValue = 0x3FFF;
+         final int maskRight = com.garmin.fit.LeftRightBalance100.RIGHT;//0x8000;
+         final int maskValue = com.garmin.fit.LeftRightBalance100.MASK;//0x3FFF;
          final int valueLeft = (100 - (leftRightBalance & maskValue) / 100);
          final int isRight = leftRightBalance & maskRight;
          if (isRight != 0) {
