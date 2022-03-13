@@ -797,7 +797,7 @@ public class CSVTourDataReader extends TourbookDevice {
                      final WeatherData res = parseWeatherST3(allToken[idx]);
                      if (res != null) {
                         if (res.avgDegree != null) {
-                           tourData.setAvgTemperature(res.avgDegree);
+                           tourData.setWeather_Temperature_Average(res.avgDegree);
                         }
                         if (res.minDegree != null) {
                            tourData.setWeather_Temperature_Min(res.minDegree);
