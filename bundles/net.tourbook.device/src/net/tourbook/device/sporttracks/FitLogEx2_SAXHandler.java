@@ -563,15 +563,15 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
        */
       //tourData.setWeather(_currentActivity.weatherText); //custom tracks commented out this line
       tourData.setWeather(_currentActivity.weatherText + UI.NEW_LINE2 + _currentActivity.weatherConditionsNotes); //custom tracks
-      tourData.setWeatherClouds(_weatherId.get(_currentActivity.weatherConditions));
+      tourData.setWeather_Clouds(_weatherId.get(_currentActivity.weatherConditions));
 
       final float weatherTemperature = _currentActivity.weatherTemperature;
       if (weatherTemperature != Float.MIN_VALUE) {
-         tourData.setAvgTemperature(weatherTemperature);
+         tourData.setWeather_Temperature_Average(weatherTemperature);
       }
 
       if (_currentActivity.weatherWindSpeed != Integer.MIN_VALUE) {
-         tourData.setWeatherWindSpeed(_currentActivity.weatherWindSpeed);
+         tourData.setWeather_Wind_Speed(_currentActivity.weatherWindSpeed);
       }
       //custom tracks start
       if (_currentActivity.weatherTemperatureFeel != Float.MIN_VALUE) {
@@ -581,7 +581,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          tourData.setWeather_Humidity((short) _currentActivity.weatherHumidity);
       }
       if (_currentActivity.weatherWindDirection != Float.MIN_VALUE) {
-         tourData.setWeatherWindDir((int) _currentActivity.weatherWindDirection);
+         tourData.setWeather_Wind_Direction((int) _currentActivity.weatherWindDirection);
       }
       if (_currentActivity.weatherPressure != Float.MIN_VALUE) {
          tourData.setWeather_Pressure(_currentActivity.weatherPressure);

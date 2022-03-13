@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -113,10 +113,11 @@ public class TourDatabase {
    /**
     * Version for the database which is required that the tourbook application works successfully
     */
-   private static final int TOURBOOK_DB_VERSION = 46;
+   private static final int TOURBOOK_DB_VERSION = 47;
 
-//   private static final int TOURBOOK_DB_VERSION = 46; // 21.?
+//   private static final int TOURBOOK_DB_VERSION = 47; // 22.X ??
 
+//   private static final int TOURBOOK_DB_VERSION = 46; // 21.12
 //   private static final int TOURBOOK_DB_VERSION = 45; // 21.9
 //   private static final int TOURBOOK_DB_VERSION = 44; // 21.6
 //   private static final int TOURBOOK_DB_VERSION = 43; // 21.3
@@ -218,13 +219,13 @@ public class TourDatabase {
    private static final String JOINTABLE__TOURPERSON__TOURPERSON_HRZONE = TABLE_TOUR_PERSON + "_" + TABLE_TOUR_PERSON_HRZONE; //$NON-NLS-1$
 
    // never used tables, they are needed to drop them
-   private static final String TABLE_TOUR_CATEGORY                = "TourCategory";                                         //$NON-NLS-1$
-   private static final String TABLE_TOURCATEGORY__TOURDATA       = TABLE_TOUR_CATEGORY + "_" + TABLE_TOUR_DATA;            //$NON-NLS-1$
+   private static final String TABLE_TOUR_CATEGORY                        = "TourCategory";                                         //$NON-NLS-1$
+   private static final String TABLE_TOURCATEGORY__TOURDATA               = TABLE_TOUR_CATEGORY + "_" + TABLE_TOUR_DATA;            //$NON-NLS-1$
 
    /**
     * Is <code>-1</code>, this is the id for a not saved entity
     */
-   public static final int     ENTITY_IS_NOT_SAVED                = -1;
+   public static final int     ENTITY_IS_NOT_SAVED                        = -1;
    //
    public static final String  ENTITY_ID_CUSTOM_FIELD             = "FieldID";                                                     //$NON-NLS-1$
    public static final String  ENTITY_ID_CUSTOM_FIELD_VALUE       = "FieldValueID";                                                //$NON-NLS-1$
@@ -246,7 +247,7 @@ public class TourDatabase {
    public static final String  ENTITY_ID_WAY_POINT                = "WayPointID";                                           //$NON-NLS-1$
    //
    private static final String KEY_CUSTOM_FIELD                   = TABLE_CUSTOM_FIELD + "_" + ENTITY_ID_CUSTOM_FIELD;             //$NON-NLS-1$
-//   private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
+// private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
    private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;          //$NON-NLS-1$
 
    private static final String KEY_BIKE                           = TABLE_TOUR_BIKE + "_" + ENTITY_ID_BIKE;                 //$NON-NLS-1$
@@ -261,27 +262,41 @@ public class TourDatabase {
     * Renaming existing fields in the tour database causes lots of troubles and additional work to
     * fix and test it for ALL possible cases -> It is not a good idea to rename fields
     */
-   private static final String RENAMED__BIKER_WEIGHT__FROM        = "bikerWeight";                                          //$NON-NLS-1$
-   private static final String RENAMED__BIKER_WEIGHT__INTO        = "BodyWeight";                                           //$NON-NLS-1$
-   private static final String RENAMED__TOUR_DRIVING_TIME__FROM   = "tourDrivingTime";                                      //$NON-NLS-1$
-   private static final String RENAMED__TOUR_DRIVING_TIME__INTO   = "TourComputedTime_Moving";                              //$NON-NLS-1$
-   private static final String RENAMED__TOUR_RECORDING_TIME__FROM = "tourRecordingTime";                                    //$NON-NLS-1$
-   private static final String RENAMED__TOUR_RECORDING_TIME__INTO = "TourDeviceTime_Elapsed";                               //$NON-NLS-1$
+   private static final String RENAMED__BIKER_WEIGHT__FROM                = "bikerWeight";                                          //$NON-NLS-1$
+   private static final String RENAMED__BIKER_WEIGHT__INTO                = "BodyWeight";                                           //$NON-NLS-1$
+   private static final String RENAMED__TOUR_DRIVING_TIME__FROM           = "tourDrivingTime";                                      //$NON-NLS-1$
+   private static final String RENAMED__TOUR_DRIVING_TIME__INTO           = "TourComputedTime_Moving";                              //$NON-NLS-1$
+   private static final String RENAMED__TOUR_RECORDING_TIME__FROM         = "tourRecordingTime";                                    //$NON-NLS-1$
+   private static final String RENAMED__TOUR_RECORDING_TIME__INTO         = "TourDeviceTime_Elapsed";                               //$NON-NLS-1$
+   private static final String RENAMED__TOUR_AVG_TEMPERATURE__FROM        = "avgTemperature";                                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_AVG_TEMPERATURE__INTO        = "weather_Temperature_Average_Device";                   //$NON-NLS-1$
+   private static final String RENAMED__TOUR_MAX_TEMPERATURE__FROM        = "weather_Temperature_Max";                              //$NON-NLS-1$
+   private static final String RENAMED__TOUR_MAX_TEMPERATURE__INTO        = "weather_Temperature_Max_Device";                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_MIN_TEMPERATURE__FROM        = "weather_Temperature_Min";                              //$NON-NLS-1$
+   private static final String RENAMED__TOUR_MIN_TEMPERATURE__INTO        = "weather_Temperature_Min_Device";                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_ISWEATHERDATAFROMAPI__FROM   = "isWeatherDataFromApi";                                 //$NON-NLS-1$
+   private static final String RENAMED__TOUR_ISWEATHERDATAFROMAPI__INTO   = "isWeatherDataFromProvider";                            //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_CLOUDS__FROM         = "weatherClouds";                                        //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_CLOUDS__INTO         = "weather_Clouds";                                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_WIND_DIRECTION__FROM = "weatherWindDir";                                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_WIND_DIRECTION__INTO = "weather_Wind_Direction";                               //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_WIND_SPEED__FROM     = "weatherWindSpd";                                       //$NON-NLS-1$
+   private static final String RENAMED__TOUR_WEATHER_WIND_SPEED__INTO     = "weather_Wind_Speed";                                   //$NON-NLS-1$
 
-   private static final String DEFAULT_0                          = "0";                                                    //$NON-NLS-1$
-   private static final String DEFAULT_1_0                        = "1.0";                                                  //$NON-NLS-1$
-   private static final String DEFAULT_FALSE                      = "false";                                                //$NON-NLS-1$
-   private static final String DEFAULT_IGNORED                    = "-1";                                                   //$NON-NLS-1$
+   private static final String DEFAULT_0                                  = "0";                                                    //$NON-NLS-1$
+   private static final String DEFAULT_1_0                                = "1.0";                                                  //$NON-NLS-1$
+   private static final String DEFAULT_FALSE                              = "false";                                                //$NON-NLS-1$
+   private static final String DEFAULT_IGNORED                            = "-1";                                                   //$NON-NLS-1$
 
-   private static final String PERSISTENCE_UNIT_NAME              = "tourdatabase";                                         //$NON-NLS-1$
+   private static final String PERSISTENCE_UNIT_NAME                      = "tourdatabase";                                         //$NON-NLS-1$
 
-   private static final String DERBY_DATABASE                     = "derby-database";                                       //$NON-NLS-1$
-   private static final String DERBY_DB_TOURBOOK                  = "tourbook";                                             //$NON-NLS-1$
+   private static final String DERBY_DATABASE                             = "derby-database";                                       //$NON-NLS-1$
+   private static final String DERBY_DB_TOURBOOK                          = "tourbook";                                             //$NON-NLS-1$
    private static String       DERBY_DRIVER_CLASS;
    private static String       DERBY_URL;
-   private static final String DERBY_URL_COMMAND_CREATE_TRUE      = ";create=true";                                         //$NON-NLS-1$
-   private static final String DERBY_URL_COMMAND_SHUTDOWN_TRUE    = ";shutdown=true";                                       //$NON-NLS-1$
-   private static final String DERBY_URL_COMMAND_UPGRADE_TRUE     = ";upgrade=true";                                        //$NON-NLS-1$
+   private static final String DERBY_URL_COMMAND_CREATE_TRUE              = ";create=true";                                         //$NON-NLS-1$
+   private static final String DERBY_URL_COMMAND_SHUTDOWN_TRUE            = ";shutdown=true";                                       //$NON-NLS-1$
+   private static final String DERBY_URL_COMMAND_UPGRADE_TRUE             = ";upgrade=true";                                        //$NON-NLS-1$
    //
    //
    private static volatile TourDatabase                   _instance;
@@ -2550,10 +2565,8 @@ public class TourDatabase {
     */
    private static ConcurrentSkipListSet<String> getDistinctValues(final String db, final String fieldname) {
 
-      final ConcurrentSkipListSet<String> sortedValues = new ConcurrentSkipListSet<>(new Comparator<String>() {
-         @Override
-         public int compare(final String text1, final String text2) {
-
+      final ConcurrentSkipListSet<String> sortedValues = new ConcurrentSkipListSet<>((text1, text2) -> {
+         {
             // sort without case
             return text1.compareToIgnoreCase(text2);
          }
@@ -4937,9 +4950,9 @@ public class TourDatabase {
 
             // version 8 start
 
-            + " weatherWindDir         INTEGER DEFAULT 0,                                    " + NL //$NON-NLS-1$
-            + " weatherWindSpd         INTEGER DEFAULT 0,                                    " + NL //$NON-NLS-1$
-            + " weatherClouds          VARCHAR(" + TourData.DB_LENGTH_WEATHER_CLOUDS + "),   " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + " weather_Wind_Direction INTEGER DEFAULT -1,                                   " + NL //$NON-NLS-1$
+            + " weather_Wind_Speed     INTEGER DEFAULT 0,                                    " + NL //$NON-NLS-1$
+            + " weather_Clouds         VARCHAR(" + TourData.DB_LENGTH_WEATHER_CLOUDS + "),   " + NL //$NON-NLS-1$ //$NON-NLS-2$
             + " restPulse              INTEGER DEFAULT 0,                                    " + NL //$NON-NLS-1$
             + " isDistanceFromSensor   SMALLINT DEFAULT 0,                                   " + NL //$NON-NLS-1$
 
@@ -5013,7 +5026,7 @@ public class TourDatabase {
             + " maxPulse               FLOAT DEFAULT 0,                                    " + NL //$NON-NLS-1$
             + " avgPulse               FLOAT DEFAULT 0,                                    " + NL //$NON-NLS-1$
             + " avgCadence             FLOAT DEFAULT 0,                                    " + NL //$NON-NLS-1$
-            + " avgTemperature         FLOAT DEFAULT 0,                                    " + NL //$NON-NLS-1$
+            + " weather_Temperature_Average_Device  FLOAT DEFAULT 0,                                    " + NL //$NON-NLS-1$
 
             // version 21 end ---------
 
@@ -5135,12 +5148,12 @@ public class TourDatabase {
 
             // version 39 start  -  19.7
 
-            + " isWeatherDataFromApi                  BOOLEAN  DEFAULT FALSE,             " + NL //$NON-NLS-1$
+            + " isWeatherDataFromProvider             BOOLEAN  DEFAULT FALSE,             " + NL //$NON-NLS-1$
             + " weather_Humidity                      SMALLINT DEFAULT 0,                 " + NL //$NON-NLS-1$
             + " weather_Precipitation                 FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
             + " weather_Pressure                      FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
-            + " weather_Temperature_Min               FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
-            + " weather_Temperature_Max               FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
+            + " weather_Temperature_Min_Device        FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
+            + " weather_Temperature_Max_Device        FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
             + " weather_Temperature_WindChill         FLOAT    DEFAULT 0,                 " + NL //$NON-NLS-1$
 
             // version 39 end
@@ -5182,6 +5195,15 @@ public class TourDatabase {
 
             // version 46 start  -  after 21.9
             // version 46 end
+
+            // version 47 start  -  after 21.12
+
+            + " weather_Temperature_Average           FLOAT DEFAULT 0,                   " + NL //$NON-NLS-1$
+            + " weather_Temperature_Max               FLOAT DEFAULT 0,                   " + NL //$NON-NLS-1$
+            + " weather_Temperature_Min               FLOAT DEFAULT 0,                   " + NL //$NON-NLS-1$
+            + " weather_Snowfall                      FLOAT DEFAULT 0,                   " + NL //$NON-NLS-1$
+
+            // version 47 end
 
             // version 5 start
             /**
@@ -6423,7 +6445,7 @@ public class TourDatabase {
 
          if (dbVersion_BeforeDataUpdate < TOURBOOK_DB_VERSION) {
 
-            if (updateDb__2_Data(conn, dbVersion_BeforeDataUpdate, splashManager) == false) {
+            if (updateDb__2_Data(conn, splashManager) == false) {
                return false;
             }
 
@@ -6645,7 +6667,7 @@ public class TourDatabase {
 
          // 3 -> 4
          if (currentDbVersion == 3) {
-            updateDb_003_To_004(conn, splashManager);
+            updateDb_003_To_004(conn);
             currentDbVersion = _dbDesignVersion_New = 4;
          }
 
@@ -6762,7 +6784,7 @@ public class TourDatabase {
 
          // 25 -> 26    14.14 / 15.3
          if (currentDbVersion == 25) {
-            currentDbVersion = _dbDesignVersion_New = updateDb_025_To_026(conn, splashManager);
+            currentDbVersion = _dbDesignVersion_New = updateDb_025_To_026(splashManager);
          }
 
          // 26 -> 27    15.3.1
@@ -6860,7 +6882,7 @@ public class TourDatabase {
             currentDbVersion = _dbDesignVersion_New = updateDb_044_To_045(conn, splashManager);
          }
 
-         // 45 -> 46    21.?
+         // 45 -> 46    21.12
          if (currentDbVersion == 45) {
             currentDbVersion = _dbDesignVersion_New = updateDb_045_To_046(conn, splashManager);
          }
@@ -6873,6 +6895,11 @@ public class TourDatabase {
 
          // Extra Data for Maintenance on TourTag table
          updateDb_TourTag_AddColumn_ExtraData(currentDbVersion, conn, splashManager);
+
+         // 46 -> 47    22.?
+         if (currentDbVersion == 46) {
+            currentDbVersion = _dbDesignVersion_New = updateDb_046_To_047(conn, splashManager);
+         }
 
          // update db design version number
          updateVersionNumber_10_AfterDesignUpdate(conn, _dbDesignVersion_New);
@@ -6892,7 +6919,7 @@ public class TourDatabase {
    /**
     * This method may be updated when the database version is updated
     */
-   private boolean updateDb__2_Data(final Connection conn, final int currentDbVersion, final SplashManager splashManager) {
+   private boolean updateDb__2_Data(final Connection conn, final SplashManager splashManager) {
 
       /**
        * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -6912,7 +6939,7 @@ public class TourDatabase {
          updateDb_004_To_005_DataUpdate(conn, splashManager);
          updateDb_008_To_009_DataUpdate(conn, splashManager);
          updateDb_010_To_011_DataUpdate(conn, splashManager);
-         updateDb_012_To_013_DataUpdate(conn, splashManager);
+         updateDb_012_To_013_DataUpdate(conn);
          updateDb_019_To_020_DataUpdate(conn, splashManager);
          updateDb_021_To_022_DataUpdate(conn, splashManager);
          updateDb_022_To_023_DataUpdate(conn, splashManager);
@@ -6925,6 +6952,7 @@ public class TourDatabase {
          updateDb_039_To_040_DataUpdate(conn, splashManager);
          updateDb_041_To_042_DataUpdate(conn);
          updateDb_042_to_043_DataUpdate(conn, splashManager);
+         updateDb_046_to_047_DataUpdate(conn);
 
       } catch (final SQLException e) {
 
@@ -6980,7 +7008,7 @@ public class TourDatabase {
       logDbUpdate_End(dbVersion);
    }
 
-   private void updateDb_003_To_004(final Connection conn, final SplashManager splashManager) throws SQLException {
+   private void updateDb_003_To_004(final Connection conn) throws SQLException {
 
       final int dbVersion = 4;
 
@@ -7518,7 +7546,7 @@ public class TourDatabase {
     * @param splashManager
     * @throws SQLException
     */
-   private void updateDb_012_To_013_DataUpdate(final Connection conn, final SplashManager splashManager) throws SQLException {
+   private void updateDb_012_To_013_DataUpdate(final Connection conn) throws SQLException {
 
       final long startTime = System.currentTimeMillis();
 
@@ -8573,7 +8601,7 @@ public class TourDatabase {
    }
 
    // 25 -> 26    14.14 / 15.3
-   private int updateDb_025_To_026(final Connection conn, final SplashManager splashManager) throws SQLException {
+   private int updateDb_025_To_026(final SplashManager splashManager) {
 
       final int newDbVersion = 26;
 
@@ -10004,7 +10032,7 @@ public class TourDatabase {
    }
 
    /**
-    * DB version 45 -> 46 ... MT version 21.?
+    * DB version 45 -> 46 ... MT version 21.12
     *
     * @param conn
     * @param splashManager
@@ -10034,6 +10062,88 @@ public class TourDatabase {
       logDbUpdate_End(newDbVersion);
 
       return newDbVersion;
+   }
+
+   /**
+    * DB version 46 -> 47 ... MT version 22.?
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private int updateDb_046_To_047(final Connection conn, final SplashManager splashManager) throws SQLException {
+
+      final int newDbVersion = 47;
+
+      logDbUpdate_Start(newDbVersion);
+      updateMonitor(splashManager, newDbVersion);
+
+      try (Statement stmt = conn.createStatement()) {
+
+// SET_FORMATTING_OFF
+
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_AVG_TEMPERATURE__FROM,        RENAMED__TOUR_AVG_TEMPERATURE__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_MAX_TEMPERATURE__FROM,        RENAMED__TOUR_MAX_TEMPERATURE__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_MIN_TEMPERATURE__FROM,        RENAMED__TOUR_MIN_TEMPERATURE__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_ISWEATHERDATAFROMAPI__FROM,   RENAMED__TOUR_ISWEATHERDATAFROMAPI__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_WEATHER_CLOUDS__FROM,         RENAMED__TOUR_WEATHER_CLOUDS__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_WEATHER_WIND_DIRECTION__FROM, RENAMED__TOUR_WEATHER_WIND_DIRECTION__INTO);
+            SQL.RenameCol(stmt,     TABLE_TOUR_DATA,     RENAMED__TOUR_WEATHER_WIND_SPEED__FROM,     RENAMED__TOUR_WEATHER_WIND_SPEED__INTO);
+
+            // Add new columns
+            SQL.AddColumn_Float(stmt, TABLE_TOUR_DATA,   "weather_Temperature_Average", DEFAULT_0);               //$NON-NLS-1$
+            SQL.AddColumn_Float(stmt, TABLE_TOUR_DATA,   "weather_Temperature_Max", DEFAULT_0);                   //$NON-NLS-1$
+            SQL.AddColumn_Float(stmt, TABLE_TOUR_DATA,   "weather_Temperature_Min", DEFAULT_0);                   //$NON-NLS-1$
+            SQL.AddColumn_Float(stmt, TABLE_TOUR_DATA,   "weather_Snowfall", DEFAULT_0);                   //$NON-NLS-1$
+
+// SET_FORMATTING_ON
+      }
+
+      logDbUpdate_End(newDbVersion);
+
+      return newDbVersion;
+   }
+
+   /**
+    * For the previous average, max, min temperatures, if they were retrieved by
+    * a weather provider we copy them to the new fields
+    *
+    * @param conn
+    * @throws SQLException
+    */
+   private void updateDb_046_to_047_DataUpdate(final Connection conn) throws SQLException {
+
+      final long startTime = System.currentTimeMillis();
+
+      final int dbDataVersion = 47;
+
+      if (getDbVersion(conn, TABLE_DB_VERSION_DATA) >= dbDataVersion) {
+         // data version is higher -> nothing to do
+         return;
+      }
+
+      PreparedStatement stmtUpdate = null;
+
+      try {
+
+         stmtUpdate = conn.prepareStatement(UI.EMPTY_STRING
+
+               + "UPDATE " + TABLE_TOUR_DATA //                      //$NON-NLS-1$
+               + " SET" //                                           //$NON-NLS-1$
+               + " weather_Temperature_Average = weather_Temperature_Average_Device," //$NON-NLS-1$
+               + " weather_Temperature_Max = weather_Temperature_Max_Device," //$NON-NLS-1$
+               + " weather_Temperature_Min = weather_Temperature_Min_Device" //$NON-NLS-1$
+               + " WHERE isWeatherDataFromProvider=true"); //$NON-NLS-1$
+
+         stmtUpdate.executeUpdate();
+
+      } finally {
+
+         net.tourbook.common.util.SQL.close(stmtUpdate);
+      }
+
+      updateVersionNumber_20_AfterDataUpdate(conn, dbDataVersion, startTime);
    }
 
    /**
