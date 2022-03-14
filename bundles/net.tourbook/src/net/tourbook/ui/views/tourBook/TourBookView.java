@@ -1799,8 +1799,6 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
 
       final boolean isWeatherRetrievalActivated = TourManager.isWeatherRetrievalActivated();
 
-      final boolean useWeatherOwmRetrieval = _prefStore.getBoolean(ITourbookPreferences.WEATHER_USE_WEATHER_RETRIEVAL);
-
       final boolean isTableLayout = _isLayoutNatTable;
       final boolean isTreeLayout = !isTableLayout;
 
@@ -1816,7 +1814,7 @@ public class TourBookView extends ViewPart implements ITourProvider2, ITourViewe
        */
       _subMenu_AdjustTourValues.setEnabled(isTourSelected || isAllToursSelected);
       //TODO: Martial align with new update on weather
-      _subMenu_AdjustTourValues.getActionRetrieveWeatherOwmData().setEnabled(useWeatherOwmRetrieval);
+      _subMenu_AdjustTourValues.getActionRetrieveWeatherOwmData().setEnabled(isWeatherRetrievalActivated);
       _subMenu_AdjustTourValues.getActionRetrieveWeatherData().setEnabled(isWeatherRetrievalActivated);
 
       // re-import and tour values deletion can be run on all/selected/between dates tours
