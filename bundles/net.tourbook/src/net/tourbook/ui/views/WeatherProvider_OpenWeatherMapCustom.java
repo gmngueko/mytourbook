@@ -30,7 +30,7 @@ import net.tourbook.common.util.StringUtils;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.tour.TourLogManager;
 import net.tourbook.tour.TourLogState;
-import net.tourbook.weather.HistoricalWeatherOwmRetriever;
+import net.tourbook.weather.openweathermapCustom.HistoricalWeatherOwmRetriever;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;

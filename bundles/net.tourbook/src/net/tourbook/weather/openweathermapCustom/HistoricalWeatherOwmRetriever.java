@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, 2020 Frédéric Bard
+ * Copyright (C) 2021,2022 Gervais-Martial Ngueko
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -13,7 +13,7 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.weather;
+package net.tourbook.weather.openweathermapCustom;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -42,10 +42,10 @@ import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.ui.views.calendar.CalendarProfile;
-import net.tourbook.weather.OWMResults.OWMResponse;
-import net.tourbook.weather.OWMResults.OWMResponse_Weather;
-import net.tourbook.weather.OWMResults.OWMWeather_Description_Map;
-import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
+import net.tourbook.weather.openweathermapCustom.OWMResults.OWMResponse;
+import net.tourbook.weather.openweathermapCustom.OWMResults.OWMResponse_Weather;
+import net.tourbook.weather.openweathermapCustom.OWMResults.OWMWeather_Description_Map;
+import net.tourbook.weather.openweathermapCustom.OWMResults.OWMWeather_Main_Map;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 

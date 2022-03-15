@@ -12,7 +12,7 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.weather;
+package net.tourbook.weather.openweathermapCustom;
 
 public class OWMUtils {
    public static String OWM_Temperature_UUID         = "068d3ba6-4acc-48ba-a370-6164af242b78";                                                      //$NON-NLS-1$

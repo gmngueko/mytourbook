@@ -13,7 +13,7 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.weather;
+package net.tourbook.weather.openweathermapCustom;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +22,7 @@ import net.tourbook.common.UI;
 import net.tourbook.common.weather.IWeather;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
-import net.tourbook.weather.OWMResults.OWMWeather_Main_Map;
+import net.tourbook.weather.openweathermapCustom.OWMResults.OWMWeather_Main_Map;
 
 /**
  * Class to store data from the Open Weather Map API.

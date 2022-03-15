@@ -1,4 +1,4 @@
 eclipse.preferences.version=1
 encoding//src/net/tourbook/data/TourData.java=UTF-8
-encoding//src/net/tourbook/weather/OWMResults.java=UTF-8
-encoding//src/net/tourbook/weather/OWMWindCompute.java=UTF-8
+encoding//src/net/tourbook/weather/openweathermapCustom/OWMResults.java=UTF-8
+encoding//src/net/tourbook/weather/openweathermapCustom/OWMWindCompute.java=UTF-8

@@ -102,10 +102,9 @@ import net.tourbook.ui.views.collateTours.CollatedToursView;
 import net.tourbook.ui.views.rawData.RawDataView;
 import net.tourbook.ui.views.tourBook.TourBookView;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
-//TODO: Martial align with new weather processing
-import net.tourbook.weather.HistoricalWeatherOwmRetriever;
-import net.tourbook.weather.OWMWeatherData;
 import net.tourbook.weather.TourWeatherRetriever;
+import net.tourbook.weather.openweathermapCustom.HistoricalWeatherOwmRetriever;
+import net.tourbook.weather.openweathermapCustom.OWMWeatherData;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.ListenerList;

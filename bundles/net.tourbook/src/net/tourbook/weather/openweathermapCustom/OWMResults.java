@@ -1,4 +1,4 @@
-package net.tourbook.weather;
+package net.tourbook.weather.openweathermapCustom;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
