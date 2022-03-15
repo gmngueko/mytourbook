@@ -24,6 +24,8 @@ public interface IWeatherProvider {
    public static final String WEATHER_PROVIDER_OPENWEATHERMAP     = "OpenWeatherMap";     //$NON-NLS-1$
    public static final String WEATHER_PROVIDER_WORLDWEATHERONLINE = "WorldWeatherOnline"; //$NON-NLS-1$
 
+   public static final String WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM = "OpenWeatherMapCustom"; //$NON-NLS-1$
+
    Composite createUI(WeatherProvidersUI weatherProvidersUI,
                       Composite parent,
                       FormToolkit formToolkit);

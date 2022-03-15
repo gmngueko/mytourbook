@@ -2006,6 +2006,8 @@ public class TourManager {
 
       switch (weatherProviderId) {
 
+      case IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM:
+         return StringUtils.hasContent(_prefStore.getString(ITourbookPreferences.WEATHER_OWM_API_KEY));
       case IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP:
          return true;
       case IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE:
@@ -2888,6 +2890,7 @@ public class TourManager {
                                                 final int intervalSeconds,
                                                 final double defaultOWNLatitude,
                                                 final double defaultOWNLongitude) {
+      //TODO align with new weather processing
 
       // ensure data is available otherwise use default
       if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
@@ -2899,7 +2902,7 @@ public class TourManager {
 
          //return false;
       }
-      //TODO align with new weather processing
+
       final HistoricalWeatherOwmRetriever historicalWeatherOwmRetriever = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(
             intervalSeconds,
             defaultOWNLatitude,
@@ -2932,6 +2935,7 @@ public class TourManager {
       tourData.setWeather_Temperature_Max(historicalWeatherData.getTemperatureMax());
       tourData.setWeather_Temperature_Min(historicalWeatherData.getTemperatureMin());
       tourData.setWeather_Temperature_WindChill(historicalWeatherData.getWindChill());
+      tourData.setWeather_Snowfall(historicalWeatherData.getPrecipitationSnow());
 
       TourLogManager.addSubLog(TourLogState.OK, "OWM import done for interval:" + intervalSeconds);
 

@@ -51,7 +51,12 @@ public class WeatherProvidersUI {
 
          new WeatherProvider(
                IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE,
-               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE)
+               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE),
+
+         new WeatherProvider(
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM,
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM),
+
    };
 
    private final IPreferenceStore         _prefStore                          = TourbookPlugin.getPrefStore();
@@ -61,6 +66,8 @@ public class WeatherProvidersUI {
    private IWeatherProvider               _weatherProvider_None               = new WeatherProvider_None();
    private IWeatherProvider               _weatherProvider_OpenWeatherMap     = new WeatherProvider_OpenWeatherMap();
    private IWeatherProvider               _weatherProvider_WorldWeatherOnline = new WeatherProvider_WorldWeatherOnline();
+
+   private IWeatherProvider               _weatherProvider_OpenWeatherMapCustom = new WeatherProvider_OpenWeatherMapCustom();
 
    /*
     * UI controls
@@ -76,6 +83,7 @@ public class WeatherProvidersUI {
    private Composite   _pageNoneUI;
    private Composite   _pageOpenWeatherMapUI;
    private Composite   _pageWorldWeatherOnlineUI;
+   private Composite   _pageOpenWeatherMapCustomUI;
 
    private Button      _chkDisplayFullLog;
 
@@ -164,6 +172,12 @@ public class WeatherProvidersUI {
                this,
                _pagebookWeatherProvider,
                _formToolkit);
+
+         _pageOpenWeatherMapCustomUI = _weatherProvider_OpenWeatherMapCustom.createUI(
+               this,
+               _pagebookWeatherProvider,
+               _formToolkit);
+
       }
    }
 
@@ -188,6 +202,7 @@ public class WeatherProvidersUI {
       _weatherProvider_None.dispose();
       _weatherProvider_OpenWeatherMap.dispose();
       _weatherProvider_WorldWeatherOnline.dispose();
+      _weatherProvider_OpenWeatherMapCustom.dispose();
 
       _formToolkit.dispose();
    }
@@ -227,6 +242,7 @@ public class WeatherProvidersUI {
       _weatherProvider_None.performDefaults();
       _weatherProvider_OpenWeatherMap.performDefaults();
       _weatherProvider_WorldWeatherOnline.performDefaults();
+      _weatherProvider_OpenWeatherMapCustom.performDefaults();
    }
 
    private void restoreState() {
@@ -250,6 +266,7 @@ public class WeatherProvidersUI {
 
          _chkDisplayFullLog.setSelection(
                _prefStore.getBoolean(ITourbookPreferences.WEATHER_DISPLAY_FULL_LOG));
+
       }
       _isUpdateUI = false;
    }
@@ -278,6 +295,7 @@ public class WeatherProvidersUI {
       _weatherProvider_None.saveState();
       _weatherProvider_OpenWeatherMap.saveState();
       _weatherProvider_WorldWeatherOnline.saveState();
+      _weatherProvider_OpenWeatherMapCustom.saveState();
    }
 
    private void selectWeatherProvider(final String prefWeatherProviderId) {
@@ -329,6 +347,11 @@ public class WeatherProvidersUI {
       } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE)) {
 
          _pagebookWeatherProvider.showPage(_pageWorldWeatherOnlineUI);
+
+      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM)) {
+
+         _pagebookWeatherProvider.showPage(_pageOpenWeatherMapCustomUI);
+
       }
 
       _chkDisplayFullLog.setVisible(areMainPreferencesVisible);
