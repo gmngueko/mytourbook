@@ -538,6 +538,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
    private boolean               isWeatherDataFromProvider;
 
    private int                   weather_Wind_Direction  = -1;                         // db-version 8
+   /**
+    * Speed in km/h
+    */
    private int                   weather_Wind_Speed;                                   // db-version 8
    private String                weather_Clouds;                                       // db-version 8
 
@@ -10081,12 +10084,15 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return weather_Snowfall;
    }
 
+   /**
+    * @return Returns metric average temperature from a weather provider or manually entered
+    */
    public float getWeather_Temperature_Average() {
       return weather_Temperature_Average;
    }
 
    /**
-    * @return Returns metric average temperature
+    * @return Returns metric average temperature from a device
     */
    public float getWeather_Temperature_Average_Device() {
       return weather_Temperature_Average_Device;

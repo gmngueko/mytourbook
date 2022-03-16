@@ -1256,6 +1256,7 @@ public class Messages extends NLS {
    public static String        Log_Reimport_Tour_Skipped_OtherReasons;
    public static String        Log_RetrieveWeatherData_001_Start;
    public static String        Log_RetrieveWeatherData_002_End;
+   public static String        Log_RetrieveWeatherData_003_NoWeatherData;
    public static String        Log_RetrieveWeatherData_010_NoGpsDataSeries;
 
    //GMN START
@@ -1299,6 +1300,7 @@ public class Messages extends NLS {
    public static String        Log_Tour_SaveTours_File;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Humidity;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Precipitation;
+   public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Pressure;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Snowfall;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_FeelsLike;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_Max;
@@ -1520,6 +1522,7 @@ public class Messages extends NLS {
    public static String        Pref_DisplayFormat_Label_Power;
    public static String        Pref_DisplayFormat_Label_Pulse;
    public static String        Pref_DisplayFormat_Label_Speed;
+   public static String        Pref_DisplayFormat_Label_Temperature;
    public static String        Pref_DisplayFormat_Tab_MultipleTours;
    public static String        Pref_DisplayFormat_Tab_MultipleTours_Tooltip;
    public static String        Pref_DisplayFormat_Tab_OneTour;
@@ -2722,6 +2725,7 @@ public class Messages extends NLS {
    public static String        Tour_Database_PostUpdate_037_SetHasGeoData;
    public static String        Tour_Database_PostUpdate_040_SetTourRecordingTime;
    public static String        Tour_Database_PostUpdate_043_LatLonE6;
+   public static String        Tour_Database_PostUpdate_047_Weather;
    public static String        Tour_Database_TourSaveError;
    public static String        Tour_Database_Update;
    public static String        Tour_Database_UpdateDone;
