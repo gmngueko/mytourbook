@@ -627,7 +627,7 @@ public class TourManager {
     * @return Returns <code>true</code> when distance values are computed and {@link TourData} are
     *         updated but not yet saved.
     */
-   public static boolean computeDistanceValuesFromGeoPosition(final ArrayList<TourData> tourDataList) {
+   public static boolean computeDistanceValuesFromGeoPosition(final List<TourData> tourDataList) {
 
       if (tourDataList == null || tourDataList.isEmpty()) {
          return false;
@@ -795,7 +795,7 @@ public class TourManager {
     * @param tourIds
     * @return
     */
-   public static TourData createJoinedTourData(final ArrayList<Long> tourIds) {
+   public static TourData createJoinedTourData(final List<Long> tourIds) {
 
       // check if the requested data are already available
       final int tourIds_Hash = tourIds.hashCode();
@@ -3202,7 +3202,7 @@ public class TourManager {
       yData.setRgbBar_Line(new RGB[] { rgbLineColor });
    }
 
-   public static boolean setElevationValuesFromSRTM(final ArrayList<TourData> allTourData) {
+   public static boolean setElevationValuesFromSRTM(final List<TourData> allTourData) {
 
       if (allTourData == null || allTourData.isEmpty()) {
          return false;
@@ -5824,19 +5824,6 @@ public class TourManager {
    }
 
    /**
-    * Fills a list with {@link TourData} from it's id's.
-    *
-    * @param allTourData
-    * @param tourIds
-    */
-   public void getTourData(final ArrayList<TourData> allTourData, final ArrayList<Long> tourIds) {
-
-      for (final Long tourId : tourIds) {
-         allTourData.add(getTourData(tourId));
-      }
-   }
-
-   /**
     * @param tourIds
     * @return Returns a list with {@link TourData} for all tour ids. <code>Null</code> is returned
     *         when {@link TourData} are not available.
@@ -5853,6 +5840,19 @@ public class TourManager {
       }
 
       return tourDataList.isEmpty() ? null : tourDataList;
+   }
+
+   /**
+    * Fills a list with {@link TourData} from it's id's.
+    *
+    * @param allTourData
+    * @param tourIds
+    */
+   public void getTourData(final List<TourData> allTourData, final List<Long> tourIds) {
+
+      for (final Long tourId : tourIds) {
+         allTourData.add(getTourData(tourId));
+      }
    }
 
    /**
