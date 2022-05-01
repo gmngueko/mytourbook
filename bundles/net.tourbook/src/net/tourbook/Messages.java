@@ -1321,6 +1321,7 @@ public class Messages extends NLS {
    public static String        Photo_Filter_Operator_IsMore;
    public static String        Photo_Filter_Operator_IsMore_Tooltip;
    public static String        Photo_Filter_Title_Map2PhotoFilter;
+   public static String        Photo_Filter_Title_Map25PhotoFilter;
 
    public static String        Photo_Gallery_Action_ToggleGalleryHorizontal_ToolTip;
    public static String        Photo_Gallery_Action_ToggleGalleryVertical_ToolTip;
@@ -2163,6 +2164,8 @@ public class Messages extends NLS {
    public static String        Slideout_TourChartOptions_Radio_SRTM3;
    public static String        Slideout_TourChartSmoothing_Label_Title;
 
+   public static String        Slideout_TourEditor_Checkbox_RecomputeElevationUpDown;
+   public static String        Slideout_TourEditor_Checkbox_RecomputeElevationUpDown_Tooltip;
    public static String        Slideout_TourEditor_Label_LatLonDigits;
    public static String        Slideout_TourEditor_Label_LatLonDigits_Tooltip;
    public static String        Slideout_TourEditor_Label_Title;
