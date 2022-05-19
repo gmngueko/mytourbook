@@ -2206,7 +2206,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             //TODO write custom tracks to CSV
 
             // end of line
-            sb.append(net.tourbook.ui.UI.SYSTEM_NEW_LINE);
+            sb.append(UI.SYSTEM_NEW_LINE);
             exportWriter.write(sb.toString());
          }
 
@@ -4055,8 +4055,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             _linkWeather.setToolTipText(Messages.Tour_Editor_Link_RetrieveWeather_Tooltip);
             GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(_linkWeather);
             _linkWeather.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
-               //Retrieve the weather
 
+               //Retrieve the weather
                if (_isSetField || _isSavingInProgress) {
                   return;
                }
@@ -4078,7 +4078,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                   //
                   // SWT.DEFAULT causes lots of problems with the layout therefore the hint is set
                   //
-                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(2))
+                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(6))
                   .applyTo(_txtWeather);
          }
          {
@@ -6670,7 +6670,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _spinWeather_SnowfallValue.setEnabled(canEdit);
       _spinWeather_Wind_DirectionValue.setEnabled(canEdit && isWindDirectionAvailable);
       _spinWeather_Wind_SpeedValue.setEnabled(canEdit);
-      _txtWeather.setEnabled(canEdit && isWeatherRetrievalActivated);
+      _txtWeather.setEnabled(canEdit);
       _spinWeather_Temperature_Average.setEnabled(canEdit);
       _spinWeather_Temperature_Max.setEnabled(canEdit);
       _spinWeather_Temperature_Min.setEnabled(canEdit);
@@ -7611,9 +7611,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
    private void onSelect_Weather_Text() {
 
-      final List<TourData> tourDataList = new ArrayList<>();
-      tourDataList.add(_tourData);
-      final List<TourData> modifiedTours = TourManager.retrieveWeatherData(tourDataList);
+      final List<TourData> modifiedTours = TourManager.retrieveWeatherData(List.of(_tourData));
 
       if (modifiedTours.size() > 0) {
          setTourDirty();
@@ -9820,7 +9818,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       sb.append(UI.TAB);
 
       // end of line
-      sb.append(net.tourbook.ui.UI.SYSTEM_NEW_LINE);
+      sb.append(UI.SYSTEM_NEW_LINE);
       exportWriter.write(sb.toString());
    }
 }
