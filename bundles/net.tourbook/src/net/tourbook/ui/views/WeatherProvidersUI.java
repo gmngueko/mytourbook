@@ -52,23 +52,25 @@ public class WeatherProvidersUI {
                IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP_ID),
 
          new WeatherProvider(
-               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM,
-               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM),
-
-         new WeatherProvider(
                IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_ID,
                IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_NAME),
 
          new WeatherProvider(
                IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_ID,
-               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_NAME)
+               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_NAME),
+
+         new WeatherProvider(
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM,
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM)
+
    };
 
    private List<IWeatherProvider>         _weatherProviders     = List.of(
          new WeatherProvider_None(),
          new WeatherProvider_OpenWeatherMap(),
          new WeatherProvider_WeatherApi(),
-         new WeatherProvider_WorldWeatherOnline());
+         new WeatherProvider_WorldWeatherOnline(),
+         new WeatherProvider_OpenWeatherMapCustom());
 
    private List<Composite>                _weatherProviderPages = new ArrayList<>();
 
@@ -76,7 +78,7 @@ public class WeatherProvidersUI {
 
    private boolean                        _isUpdateUI;
 
-   private IWeatherProvider               _weatherProvider_OpenWeatherMapCustom = new WeatherProvider_OpenWeatherMapCustom();
+   //private IWeatherProvider               _weatherProvider_OpenWeatherMapCustom = new WeatherProvider_OpenWeatherMapCustom();
 
    /*
     * UI controls
@@ -89,7 +91,7 @@ public class WeatherProvidersUI {
 
    private PageBook    _pagebookWeatherProvider;
 
-   private Composite   _pageOpenWeatherMapCustomUI;
+   //private Composite   _pageOpenWeatherMapCustomUI;
 
    private Button      _chkDisplayFullLog;
    private Button      _chkSaveLogInTourWeatherDescription;
@@ -171,10 +173,10 @@ public class WeatherProvidersUI {
                _pagebookWeatherProvider,
                _formToolkit)));
 
-         _pageOpenWeatherMapCustomUI = _weatherProvider_OpenWeatherMapCustom.createUI(
-               this,
-               _pagebookWeatherProvider,
-               _formToolkit);
+//         _pageOpenWeatherMapCustomUI = _weatherProvider_OpenWeatherMapCustom.createUI(
+//               this,
+//               _pagebookWeatherProvider,
+//               _formToolkit);
 
       }
    }
@@ -201,7 +203,7 @@ public class WeatherProvidersUI {
 
    public void dispose() {
 
-      _weatherProvider_OpenWeatherMapCustom.dispose();
+      //_weatherProvider_OpenWeatherMapCustom.dispose();
       _weatherProviders.forEach(IWeatherProvider::dispose);
 
       _formToolkit.dispose();
@@ -241,7 +243,7 @@ public class WeatherProvidersUI {
 
       updateUI();
 
-      _weatherProvider_OpenWeatherMapCustom.performDefaults();
+      //_weatherProvider_OpenWeatherMapCustom.performDefaults();
       _weatherProviders.forEach(IWeatherProvider::performDefaults);
    }
 
@@ -288,7 +290,7 @@ public class WeatherProvidersUI {
             ITourbookPreferences.WEATHER_DISPLAY_FULL_LOG,
             _chkDisplayFullLog.getSelection());
 
-      _weatherProvider_OpenWeatherMapCustom.saveState();
+      //_weatherProvider_OpenWeatherMapCustom.saveState();
       _weatherProviders.forEach(IWeatherProvider::saveState);
    }
 
@@ -349,7 +351,8 @@ public class WeatherProvidersUI {
 
       } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM)) {
 
-         _pagebookWeatherProvider.showPage(_pageOpenWeatherMapCustomUI);
+         //_pagebookWeatherProvider.showPage(_pageOpenWeatherMapCustomUI);
+         selectedWeatherProviderPage = _weatherProviderPages.get(4);
       }
 
       _pagebookWeatherProvider.showPage(selectedWeatherProviderPage);
