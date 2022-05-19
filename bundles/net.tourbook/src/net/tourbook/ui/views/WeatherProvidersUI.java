@@ -17,7 +17,9 @@ package net.tourbook.ui.views;
 
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
@@ -31,6 +33,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -38,33 +41,40 @@ import org.eclipse.ui.part.PageBook;
 
 public class WeatherProvidersUI {
 
-   private static final WeatherProvider[] WEATHER_PROVIDER                    = {
+   private static final WeatherProvider[] WEATHER_PROVIDER      = {
 
          new WeatherProvider(
                IWeatherProvider.Pref_Weather_Provider_None,
                Messages.Pref_Weather_Provider_None),
 
          new WeatherProvider(
-               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP,
-               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP),
-
-         new WeatherProvider(
-               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE,
-               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE),
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP_ID,
+               IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP_ID),
 
          new WeatherProvider(
                IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM,
                IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM),
 
+         new WeatherProvider(
+               IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_ID,
+               IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_NAME),
+
+         new WeatherProvider(
+               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_ID,
+               IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_NAME)
    };
 
-   private final IPreferenceStore         _prefStore                          = TourbookPlugin.getPrefStore();
+   private List<IWeatherProvider>         _weatherProviders     = List.of(
+         new WeatherProvider_None(),
+         new WeatherProvider_OpenWeatherMap(),
+         new WeatherProvider_WeatherApi(),
+         new WeatherProvider_WorldWeatherOnline());
+
+   private List<Composite>                _weatherProviderPages = new ArrayList<>();
+
+   private final IPreferenceStore         _prefStore            = TourbookPlugin.getPrefStore();
 
    private boolean                        _isUpdateUI;
-
-   private IWeatherProvider               _weatherProvider_None               = new WeatherProvider_None();
-   private IWeatherProvider               _weatherProvider_OpenWeatherMap     = new WeatherProvider_OpenWeatherMap();
-   private IWeatherProvider               _weatherProvider_WorldWeatherOnline = new WeatherProvider_WorldWeatherOnline();
 
    private IWeatherProvider               _weatherProvider_OpenWeatherMapCustom = new WeatherProvider_OpenWeatherMapCustom();
 
@@ -79,12 +89,10 @@ public class WeatherProvidersUI {
 
    private PageBook    _pagebookWeatherProvider;
 
-   private Composite   _pageNoneUI;
-   private Composite   _pageOpenWeatherMapUI;
-   private Composite   _pageWorldWeatherOnlineUI;
    private Composite   _pageOpenWeatherMapCustomUI;
 
    private Button      _chkDisplayFullLog;
+   private Button      _chkSaveLogInTourWeatherDescription;
 
    public WeatherProvidersUI() {}
 
@@ -148,6 +156,7 @@ public class WeatherProvidersUI {
    }
 
    private void createUI_20_WeatherProviderPagebook() {
+
       /*
        * Pagebook: Weather provider
        */
@@ -157,20 +166,10 @@ public class WeatherProvidersUI {
             .span(2, 1)
             .applyTo(_pagebookWeatherProvider);
       {
-         _pageNoneUI = _weatherProvider_None.createUI(
+         _weatherProviders.forEach(weatherProvider -> _weatherProviderPages.add(weatherProvider.createUI(
                this,
                _pagebookWeatherProvider,
-               _formToolkit);
-
-         _pageOpenWeatherMapUI = _weatherProvider_OpenWeatherMap.createUI(
-               this,
-               _pagebookWeatherProvider,
-               _formToolkit);
-
-         _pageWorldWeatherOnlineUI = _weatherProvider_WorldWeatherOnline.createUI(
-               this,
-               _pagebookWeatherProvider,
-               _formToolkit);
+               _formToolkit)));
 
          _pageOpenWeatherMapCustomUI = _weatherProvider_OpenWeatherMapCustom.createUI(
                this,
@@ -186,22 +185,24 @@ public class WeatherProvidersUI {
       GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
       GridLayoutFactory.fillDefaults().applyTo(container);
       {
-         // Checkbox: Displays the full log
+         // Checkbox: Save the weather log in the tour weather's description
+         _chkSaveLogInTourWeatherDescription = new Button(container, SWT.CHECK);
+         _chkSaveLogInTourWeatherDescription.setText(Messages.Pref_Weather_Check_SaveLogInTourWeatherDescription);
+         _chkSaveLogInTourWeatherDescription.setToolTipText(Messages.Pref_Weather_Check_SaveLogInTourWeatherDescription_Tooltip);
+         GridDataFactory.fillDefaults().applyTo(_chkSaveLogInTourWeatherDescription);
+
+         // Checkbox: Display the full log
          _chkDisplayFullLog = new Button(container, SWT.CHECK);
-         _chkDisplayFullLog.setText(
-               Messages.Pref_Weather_Check_DisplayFullLog);
-         _chkDisplayFullLog.setToolTipText(
-               Messages.Pref_Weather_Check_DisplayFullLog_Tooltip);
+         _chkDisplayFullLog.setText(Messages.Pref_Weather_Check_DisplayFullLog);
+         _chkDisplayFullLog.setToolTipText(Messages.Pref_Weather_Check_DisplayFullLog_Tooltip);
          GridDataFactory.fillDefaults().applyTo(_chkDisplayFullLog);
       }
    }
 
    public void dispose() {
 
-      _weatherProvider_None.dispose();
-      _weatherProvider_OpenWeatherMap.dispose();
-      _weatherProvider_WorldWeatherOnline.dispose();
       _weatherProvider_OpenWeatherMapCustom.dispose();
+      _weatherProviders.forEach(IWeatherProvider::dispose);
 
       _formToolkit.dispose();
    }
@@ -230,6 +231,8 @@ public class WeatherProvidersUI {
 
    public void performDefaults() {
 
+      _chkSaveLogInTourWeatherDescription.setSelection(
+            _prefStore.getDefaultBoolean(ITourbookPreferences.WEATHER_SAVE_LOG_IN_TOUR_WEATHER_DESCRIPTION));
       _chkDisplayFullLog.setSelection(
             _prefStore.getDefaultBoolean(ITourbookPreferences.WEATHER_DISPLAY_FULL_LOG));
 
@@ -238,10 +241,8 @@ public class WeatherProvidersUI {
 
       updateUI();
 
-      _weatherProvider_None.performDefaults();
-      _weatherProvider_OpenWeatherMap.performDefaults();
-      _weatherProvider_WorldWeatherOnline.performDefaults();
       _weatherProvider_OpenWeatherMapCustom.performDefaults();
+      _weatherProviders.forEach(IWeatherProvider::performDefaults);
    }
 
    private void restoreState() {
@@ -254,6 +255,8 @@ public class WeatherProvidersUI {
          // Weather provider
          selectWeatherProvider(weatherProviderId);
 
+         _chkSaveLogInTourWeatherDescription.setSelection(
+               _prefStore.getBoolean(ITourbookPreferences.WEATHER_SAVE_LOG_IN_TOUR_WEATHER_DESCRIPTION));
          _chkDisplayFullLog.setSelection(
                _prefStore.getBoolean(ITourbookPreferences.WEATHER_DISPLAY_FULL_LOG));
 
@@ -279,13 +282,14 @@ public class WeatherProvidersUI {
    public void saveVendorsState() {
 
       _prefStore.setValue(
+            ITourbookPreferences.WEATHER_SAVE_LOG_IN_TOUR_WEATHER_DESCRIPTION,
+            _chkSaveLogInTourWeatherDescription.getSelection());
+      _prefStore.setValue(
             ITourbookPreferences.WEATHER_DISPLAY_FULL_LOG,
             _chkDisplayFullLog.getSelection());
 
-      _weatherProvider_None.saveState();
-      _weatherProvider_OpenWeatherMap.saveState();
-      _weatherProvider_WorldWeatherOnline.saveState();
       _weatherProvider_OpenWeatherMapCustom.saveState();
+      _weatherProviders.forEach(IWeatherProvider::saveState);
    }
 
    private void selectWeatherProvider(final String prefWeatherProviderId) {
@@ -324,26 +328,33 @@ public class WeatherProvidersUI {
       final String selectedWeatherProvider = getSelectedWeatherProvider().weatherProviderId;
       boolean areMainPreferencesVisible = true;
 
-      // select weather provider page
+      Control selectedWeatherProviderPage = null;
+
       if (selectedWeatherProvider.equals(IWeatherProvider.Pref_Weather_Provider_None)) {
 
-         _pagebookWeatherProvider.showPage(_pageNoneUI);
+         selectedWeatherProviderPage = _weatherProviderPages.get(0);
          areMainPreferencesVisible = false;
 
-      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP)) {
+      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP_ID)) {
 
-         _pagebookWeatherProvider.showPage(_pageOpenWeatherMapUI);
+         selectedWeatherProviderPage = _weatherProviderPages.get(1);
 
-      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE)) {
+      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_ID)) {
 
-         _pagebookWeatherProvider.showPage(_pageWorldWeatherOnlineUI);
+         selectedWeatherProviderPage = _weatherProviderPages.get(2);
+
+      } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_WORLDWEATHERONLINE_ID)) {
+
+         selectedWeatherProviderPage = _weatherProviderPages.get(3);
 
       } else if (selectedWeatherProvider.equals(IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM)) {
 
          _pagebookWeatherProvider.showPage(_pageOpenWeatherMapCustomUI);
-
       }
 
+      _pagebookWeatherProvider.showPage(selectedWeatherProviderPage);
+
+      _chkSaveLogInTourWeatherDescription.setVisible(areMainPreferencesVisible);
       _chkDisplayFullLog.setVisible(areMainPreferencesVisible);
 
       UI.updateScrolledContent(_uiContainer);
