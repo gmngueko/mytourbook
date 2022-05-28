@@ -169,6 +169,7 @@ public class Messages extends NLS {
    public static String        App_Action_RemoveTourPhotos;
    public static String        App_Action_Remove_Immediate;
    public static String        App_Action_Rename;
+   public static String        App_Action_ResetValue_Tooltip;
    public static String        App_Action_RestartApp;
    public static String        App_Action_Save;
    public static String        App_Action_SetPerson;
@@ -1963,22 +1964,40 @@ public class Messages extends NLS {
    public static String        Slideout_LinkWithOtherViews_Label_Title_Checkbox_IsShowTourTitle;
    public static String        Slideout_LinkWithOtherViews_Label_Title_Checkbox_IsShowTourTitle_Tooltip;
 
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_3DBuilding;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_Cartography;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_Cartography_Tooltip;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_Hillshading;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_LabelSymbol;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_Photo_Size;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_Satellite;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_ScaleBar;
-   public static String        Slideout_Map25MapOptions_Checkbox_Layer_TileInfo;
-   public static String        Slideout_Map25MapOptions_Checkbox_Photo_Title;
-   public static String        Slideout_Map25MapOptions_Checkbox_UseDraggedKeyNavigation;
-   public static String        Slideout_Map25MapOptions_Checkbox_UseDraggedKeyNavigation_Tooltip;
-   public static String        Slideout_Map25MapOptions_Group_MapLayer;
-   public static String        Slideout_Map25MapOptions_Label_MapOptions;
-   public static String        Slideout_Map25MapOptions_Spinner_Layer_Hillshading;
-   public static String        Slideout_Map25MapOptions_Spinner_Layer_Photo_Size;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_3DBuilding;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_Building_IsShowShadow;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_Cartography;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_Cartography_Tooltip;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_Hillshading;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_LabelSymbol;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_LabelSymbol_IsBehindBuilding;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_Satellite;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_ScaleBar;
+   public static String        Slideout_Map25Layer_Checkbox_Layer_TileInfo;
+   public static String        Slideout_Map25Layer_Combo_SunPosition_CurrentTime;
+   public static String        Slideout_Map25Layer_Combo_SunPosition_DayTime;
+   public static String        Slideout_Map25Layer_Combo_SunPosition_NightTime;
+   public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel;
+   public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel_Tooltip;
+   public static String        Slideout_Map25Layer_Label_MapLayer;
+   public static String        Slideout_Map25Layer_Label_SelectedSunTime;
+   public static String        Slideout_Map25Layer_Label_SunPosition;
+   public static String        Slideout_Map25Layer_Label_Sunrise;
+   public static String        Slideout_Map25Layer_Label_Sunset;
+   public static String        Slideout_Map25Layer_Label_SunTime;
+   public static String        Slideout_Map25Layer_Label_SunTime_Tooltip;
+   public static String        Slideout_Map25Layer_Spinner_Layer_Hillshading;
+   public static String        Slideout_Map25Layer_Spinner_SunTime_Coarse;
+   public static String        Slideout_Map25Layer_Spinner_SunTime_Fine;
+
+   public static String        Slideout_Map25Options_Checkbox_UseDraggedKeyNavigation;
+   public static String        Slideout_Map25Options_Checkbox_UseDraggedKeyNavigation_Tooltip;
+   public static String        Slideout_Map25Options_Label_MapOptions;
+
+   public static String        Slideout_Map25PhotoOptions_Checkbox_Layer_Photo_Size;
+   public static String        Slideout_Map25PhotoOptions_Checkbox_Photo_Title;
+   public static String        Slideout_Map25PhotoOptions_Spinner_Layer_Photo_Size;
+
    public static String        Slideout_Map25MarkerOptions_Checkbox_IsMarkerClustering;
    public static String        Slideout_Map25MarkerOptions_Checkbox_IsShowBookmarks;
    public static String        Slideout_Map25MarkerOptions_Checkbox_IsShowTourMarker;
@@ -2004,12 +2023,14 @@ public class Messages extends NLS {
    public static String        Slideout_Map25MarkerOptions_Label_Name_Tooltip;
    public static String        Slideout_Map25MarkerOptions_Label_SwapColor_Tooltip;
    public static String        Slideout_Map25MarkerOptions_Label_Title;
+
    public static String        Slideout_Map25Provider_Combo_MapProvider_Offline_Tooltip;
    public static String        Slideout_Map25Provider_Combo_MapProvider_Online_Tooltip;
    public static String        Slideout_Map25Provider_Label_DefaultTheme;
    public static String        Slideout_Map25Provider_Label_MapProvider;
    public static String        Slideout_Map25Provider_Label_MapProvider_Title;
    public static String        Slideout_Map25Provider_Label_ThemeStyle;
+
    public static String        Slideout_Map25TrackOptions_Label_ConfigName_Tooltip;
    public static String        Slideout_Map25TrackOptions_Label_DirectionArrows;
    public static String        Slideout_Map25TrackOptions_Label_DirectionArrows_Tooltip;
