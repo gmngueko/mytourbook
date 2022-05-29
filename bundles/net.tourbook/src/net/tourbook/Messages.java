@@ -134,7 +134,7 @@ public class Messages extends NLS {
    public static String        app_action_collapse_others_tooltip;
    public static String        App_Action_Columns;
    public static String        App_Action_Copy;
-   public static String        App_Action_CopyDataIntoClipboard;
+   public static String        App_Action_CopyDataIntoClipboard_Tooltip;
    public static String        App_Action_CopyDataIntoClipboard_CopyIsDone;
    public static String        App_Action_Delete;
    public static String        App_Action_DeleteProfile;
@@ -1866,13 +1866,13 @@ public class Messages extends NLS {
    public static String        Pref_Weather_CheckHTTPConnection_Message;
    public static String        Pref_Weather_CheckHTTPConnection_OK_Message;
    public static String        Pref_Weather_Label_ApiKey;
+   public static String        Pref_Weather_Label_OpenWeatherMap_FiveDaysLimit;
    public static String        Pref_Weather_Label_WeatherProvider;
+   public static String        Pref_Weather_Label_WeatherApi_SevenDaysLimit;
+   public static String        Pref_Weather_Label_WorldWeatherOnline_ApiKey_Tooltip;
    public static String        Pref_Weather_Link_ApiSignup;
-   public static String        Pref_Weather_OpenWeatherMap_Label_FiveDaysLimit;
    public static String        Pref_Weather_Provider_None;
-   public static String        Pref_Weather_WeatherApi_Label_SevenDaysLimit;
 
-   public static String        Pref_Weather_WorldWeatherOnline_Label_ApiKey_Tooltip;
 
    //GMN START
    public static String        Pref_WeatherOwm_Label_ApiKey;
@@ -2076,10 +2076,10 @@ public class Messages extends NLS {
    public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel;
    public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel_Tooltip;
    public static String        Slideout_Map25Layer_Label_MapLayer;
-   public static String        Slideout_Map25Layer_Label_SelectedSunTime;
+   public static String        Slideout_Map25Layer_Label_SelectedSunTime_Tooltip;
    public static String        Slideout_Map25Layer_Label_SunPosition;
-   public static String        Slideout_Map25Layer_Label_Sunrise;
-   public static String        Slideout_Map25Layer_Label_Sunset;
+   public static String        Slideout_Map25Layer_Label_Sunrise_Tooltip;
+   public static String        Slideout_Map25Layer_Label_Sunset_Tooltip;
    public static String        Slideout_Map25Layer_Label_SunTime;
    public static String        Slideout_Map25Layer_Label_SunTime_Tooltip;
    public static String        Slideout_Map25Layer_Spinner_Layer_Hillshading;
