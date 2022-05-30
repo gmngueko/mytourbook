@@ -1873,7 +1873,6 @@ public class Messages extends NLS {
    public static String        Pref_Weather_Link_ApiSignup;
    public static String        Pref_Weather_Provider_None;
 
-
    //GMN START
    public static String        Pref_WeatherOwm_Label_ApiKey;
    public static String        Pref_WeatherOwm_Label_ApiKey_Tooltip;
@@ -2073,6 +2072,7 @@ public class Messages extends NLS {
    public static String        Slideout_Map25Layer_Combo_SunPosition_CurrentTime;
    public static String        Slideout_Map25Layer_Combo_SunPosition_DayTime;
    public static String        Slideout_Map25Layer_Combo_SunPosition_NightTime;
+   public static String        Slideout_Map25Layer_Decorator_Cartography;
    public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel;
    public static String        Slideout_Map25Layer_Label_BuildingMinZoomLevel_Tooltip;
    public static String        Slideout_Map25Layer_Label_MapLayer;
