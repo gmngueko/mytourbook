@@ -247,7 +247,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    private static final String           STATE_SECTION_PERSONAL                       = "STATE_SECTION_PERSONAL";                               //$NON-NLS-1$
    private static final String           STATE_SECTION_TITLE                          = "STATE_SECTION_TITLE";                                  //$NON-NLS-1$
    private static final String           STATE_SECTION_WEATHER                        = "STATE_SECTION_WEATHER";                                //$NON-NLS-1$
-   private static final String           STATE_SECTION_OTHER_INFOS                    = "STATE_SECTION_OTHER_INFOS";                            //$NON-NLS-1$
+// private static final String           STATE_SECTION_OTHER_INFOS                    = "STATE_SECTION_OTHER_INFOS";                            //$NON-NLS-1$
 // private static final String           STATE_SECTION_CUSTOM_TRACKS                  = "STATE_SECTION_CUSTOM_TRACKS";                          //$NON-NLS-1$
    //
    static final String                   STATE_DESCRIPTION_NUMBER_OF_LINES                = "STATE_DESCRIPTION_NUMBER_OF_LINES";                    //$NON-NLS-1$
@@ -8151,7 +8151,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _sectionTitle.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_TITLE, true));
       _sectionWeather.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_WEATHER, true));
 
-      _sectionOtherInfos.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_OTHER_INFOS, true));
+      //_sectionOtherInfos.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_OTHER_INFOS, true));
       //Custom Tracks state are only saved in memory not on disk for now
       //_sectionCustomTracks.setExpanded(Util.getStateBoolean(_state, STATE_SECTION_CUSTOM_TRACKS, true));
    }
@@ -8176,7 +8176,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _state.put(STATE_SECTION_PERSONAL, _sectionPersonal.isExpanded());
       _state.put(STATE_SECTION_TITLE, _sectionTitle.isExpanded());
       _state.put(STATE_SECTION_WEATHER, _sectionWeather.isExpanded());
-      _state.put(STATE_SECTION_OTHER_INFOS, _sectionOtherInfos.isExpanded());
+      //_state.put(STATE_SECTION_OTHER_INFOS, _sectionOtherInfos.isExpanded());
       // _state.put(STATE_SECTION_CUSTOM_TRACKS, _sectionCustomTracks.isExpanded());
    }
 
