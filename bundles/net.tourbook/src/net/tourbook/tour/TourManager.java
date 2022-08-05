@@ -1765,6 +1765,10 @@ public class TourManager {
     */
    public static String getTourTitle(final TourData tourData) {
 
+      if (tourData == null) {
+         return UI.EMPTY_STRING;
+      }
+
       return getTourDateLong(tourData.getTourStartTime())//
             + UI.DASH_WITH_SPACE
             + getTourTimeShort(tourData);

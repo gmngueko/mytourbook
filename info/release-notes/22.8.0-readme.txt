@@ -31,6 +31,9 @@ Improvements
 * Tour Editor (Frederic)
   - Added the ability to change the weather description's number of lines https://github.com/mytourbook/mytourbook/issues/897
 
+* Tour printing (Frederic)
+  - Added the ability to enable/disable the opening of the printed tour in the default PDF viewer
+
 
 Changes
 =======
@@ -47,6 +50,9 @@ Bugfix
 
 * 2.5D Map
   - Track width jumped when the zoom-level changed, now it's width is always the same
+
+* TCX Export (Frederic)
+  - Fixed an issue where the exported speed was in km/h instead of m/s https://github.com/mytourbook/mytourbook/issues/903
 
 
 Translation    
