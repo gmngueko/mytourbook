@@ -19,21 +19,15 @@ package net.tourbook.map25.renderer;
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
-import net.tourbook.map25.renderer.VertexDataMT.Chunk;
+import net.tourbook.map25.renderer.TourTrack_VertexData.Chunk;
 
 import org.oscim.utils.pool.Inlist;
 import org.oscim.utils.pool.SyncPool;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A linked list of array chunks to hold temporary vertex data.
- * <p/>
- * TODO override append() etc to update internal (cur) state.
  */
-public class VertexDataMT extends Inlist.List<Chunk> {
-
-   static final Logger       log                   = LoggerFactory.getLogger(VertexDataMT.class);
+public class TourTrack_VertexData extends Inlist.List<Chunk> {
 
    /**
     * Size of array chunks. Must be multiple of:
@@ -41,7 +35,7 @@ public class VertexDataMT extends Inlist.List<Chunk> {
     * 24 (TexLineLayer - one block, i.e. two segments)
     * 24 (TextureLayer)
     */
-   public static final int   SIZE                  = 360;
+   public static final int   SIZE                  = 10_000;
 
    /**
     * Shared chunk pool size.
@@ -50,28 +44,23 @@ public class VertexDataMT extends Inlist.List<Chunk> {
 
    private static final Pool pool                  = new Pool();
 
-   private Chunk             _currentChunk;
-
    /**
     * Set SIZE to get new item on add
     */
    private int               _numUsedChunkVertices = SIZE;
-   private int               _numUsedChunkColors   = SIZE / 4;
+   private int               _numUsedChunkColors;
 
+   private Chunk             _currentChunk;
    private short[]           _currentChunk_Vertices;
-
-   /**
-    * There are 4 color components for 4 chunks
-    */
    private byte[]            _currentChunk_Colors;
 
    public static class Chunk extends Inlist<Chunk> {
 
-      public final short[] _chunkVertices = new short[SIZE];
-      public final byte[]  _chunkColors   = new byte[SIZE];
+      public final short[] __chunkVertices = new short[SIZE];
+      public final byte[]  __chunkColors   = new byte[SIZE];
 
-      public int           _numChunkUsedVertices;
-      public int           _numChunkUsedColors;
+      public int           __numChunkUsedVertices;
+      public int           __numChunkUsedColors;
    }
 
    private static class Pool extends SyncPool<Chunk> {
@@ -83,31 +72,24 @@ public class VertexDataMT extends Inlist.List<Chunk> {
       @Override
       protected boolean clearItem(final Chunk chunk) {
 
-         chunk._numChunkUsedVertices = 0;
-         chunk._numChunkUsedColors = 0;
+         chunk.__numChunkUsedVertices = 0;
+         chunk.__numChunkUsedColors = 0;
 
          return true;
       }
 
       @Override
       protected Chunk createItem() {
+
          return new Chunk();
       }
    }
 
-   public void add(final short a, final short b) {
-
-      if (_numUsedChunkVertices == SIZE) {
-         getNext();
-      }
-
-      _currentChunk_Vertices[_numUsedChunkVertices + 0] = a;
-      _currentChunk_Vertices[_numUsedChunkVertices + 1] = b;
-
-      _numUsedChunkVertices += 2;
-   }
-
-   public void add(final short a, final short b, final short c, final short d, final int color) {
+   public void add(final short a,
+                   final short b,
+                   final short c,
+                   final short d,
+                   final int color) {
 
       if (_numUsedChunkVertices == SIZE) {
          getNext();
@@ -134,34 +116,6 @@ public class VertexDataMT extends Inlist.List<Chunk> {
       _numUsedChunkColors += 4;
    }
 
-   /**
-    * @param a
-    * @param b
-    * @param c
-    * @param d
-    * @param e
-    * @param f
-    */
-   /*
-    * THIS IS CURRENTLY USED ONLY FOR LineTexBucketMT which do not support color and will be
-    * removed later on !!!
-    */
-   public void add(final short a, final short b, final short c, final short d, final short e, final short f) {
-
-      if (_numUsedChunkVertices == SIZE) {
-         getNext();
-      }
-
-      _currentChunk_Vertices[_numUsedChunkVertices + 0] = a;
-      _currentChunk_Vertices[_numUsedChunkVertices + 1] = b;
-      _currentChunk_Vertices[_numUsedChunkVertices + 2] = c;
-      _currentChunk_Vertices[_numUsedChunkVertices + 3] = d;
-      _currentChunk_Vertices[_numUsedChunkVertices + 4] = e;
-      _currentChunk_Vertices[_numUsedChunkVertices + 5] = f;
-
-      _numUsedChunkVertices += 6;
-   }
-
    @Override
    public Chunk clear() {
 
@@ -169,49 +123,16 @@ public class VertexDataMT extends Inlist.List<Chunk> {
          return null;
       }
 
-      _currentChunk._numChunkUsedVertices = _numUsedChunkVertices;
-      _currentChunk._numChunkUsedColors = _numUsedChunkColors;
+      _currentChunk.__numChunkUsedVertices = _numUsedChunkVertices;
+      _currentChunk.__numChunkUsedColors = _numUsedChunkColors;
 
-      _numUsedChunkVertices = SIZE; // set SIZE to get new item on add
+      _numUsedChunkVertices = SIZE; // set to SIZE to get new a item on add
 
       _currentChunk = null;
       _currentChunk_Vertices = null;
       _currentChunk_Colors = null;
 
       return super.clear();
-   }
-
-   /**
-    * Copy vertices into the <code>vertexBuffer</code> and colors into the <code>colorBuffer</code>
-    *
-    * @param vertexBuffer
-    * @param colorBuffer
-    * @return sum of elements added
-    */
-   public int compile(final ShortBuffer vertexBuffer, final ByteBuffer colorBuffer) {
-
-      if (_currentChunk == null) {
-         return 0;
-      }
-
-      _currentChunk._numChunkUsedVertices = _numUsedChunkVertices;
-      _currentChunk._numChunkUsedColors = _numUsedChunkColors;
-
-      int numAllUsedVertices = 0;
-      for (Chunk chunk = head(); chunk != null; chunk = chunk.next) {
-
-         numAllUsedVertices += chunk._numChunkUsedVertices;
-
-         vertexBuffer.put(chunk._chunkVertices, 0, chunk._numChunkUsedVertices);
-
-         if (colorBuffer != null) {
-            colorBuffer.put(chunk._chunkColors, 0, chunk._numChunkUsedColors);
-         }
-      }
-
-      dispose();
-
-      return numAllUsedVertices;
    }
 
    public void dispose() {
@@ -225,8 +146,38 @@ public class VertexDataMT extends Inlist.List<Chunk> {
       _currentChunk_Colors = null;
    }
 
-   public boolean empty() {
-      return _currentChunk == null;
+   /**
+    * Copy vertices into the <code>vertexBuffer</code> and colors into the <code>colorBuffer</code>
+    *
+    * @param vertexBuffer
+    * @param colorBuffer
+    * @return sum of elements added
+    */
+   public int fillVerticesBuffer(final ShortBuffer vertexBuffer, final ByteBuffer colorBuffer) {
+
+      if (_currentChunk == null) {
+         return 0;
+      }
+
+      _currentChunk.__numChunkUsedVertices = _numUsedChunkVertices;
+      _currentChunk.__numChunkUsedColors = _numUsedChunkColors;
+
+      int numAllUsedVertices = 0;
+
+      for (Chunk chunk = head(); chunk != null; chunk = chunk.next) {
+
+         numAllUsedVertices += chunk.__numChunkUsedVertices;
+
+         vertexBuffer.put(chunk.__chunkVertices, 0, chunk.__numChunkUsedVertices);
+
+         if (colorBuffer != null) {
+            colorBuffer.put(chunk.__chunkColors, 0, chunk.__numChunkUsedColors);
+         }
+      }
+
+      dispose();
+
+      return numAllUsedVertices;
    }
 
    private void getNext() {
@@ -243,34 +194,18 @@ public class VertexDataMT extends Inlist.List<Chunk> {
             throw new IllegalStateException("seeeked..."); //$NON-NLS-1$
          }
 
-         _currentChunk._numChunkUsedVertices = SIZE;
-         _currentChunk._numChunkUsedColors = _numUsedChunkColors;
+         _currentChunk.__numChunkUsedVertices = SIZE;
+         _currentChunk.__numChunkUsedColors = _numUsedChunkColors;
 
          _currentChunk.next = pool.get();
          _currentChunk = _currentChunk.next;
       }
 
-      _currentChunk_Vertices = _currentChunk._chunkVertices;
-      _currentChunk_Colors = _currentChunk._chunkColors;
+      _currentChunk_Vertices = _currentChunk.__chunkVertices;
+      _currentChunk_Colors = _currentChunk.__chunkColors;
 
       _numUsedChunkVertices = 0;
       _numUsedChunkColors = 0;
    }
 
-   /**
-    * Do not use!
-    */
-   /*
-    * THIS IS CURRENTLY USED ONLY FOR LineTexBucketMT which do not support color and will be
-    * removed later on !!!
-    */
-   public void seek(final int offset) {
-
-      _numUsedChunkVertices += offset;
-      _currentChunk._numChunkUsedVertices = _numUsedChunkVertices;
-
-      if (_numUsedChunkVertices > SIZE || _numUsedChunkVertices < 0) {
-         throw new IllegalStateException("seeked too far: " + offset + "/" + _numUsedChunkVertices); //$NON-NLS-1$ //$NON-NLS-2$
-      }
-   }
 }
