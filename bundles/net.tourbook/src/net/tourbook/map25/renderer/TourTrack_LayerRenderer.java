@@ -1,148 +1,111 @@
-/*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
- * Copyright (C) 2018, 2021 Thomas Theussing
+/**
+ * Copyright 2013 Hannes Janetzek
+ * Copyright 2016 devemux86
  *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free Software
- * Foundation version 2 of the License.
+ * This file is part of the OpenScienceMap project (http://www.opensciencemap.org).
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * This program is free software: you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later version.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
- *******************************************************************************/
-
-/*
- * Original: org.oscim.layers.PathLayer
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with
+ * this program. If not, see <http://www.gnu.org/licenses/>.
  */
-package net.tourbook.map25.layer.tourtrack;
+package net.tourbook.map25.renderer;
 
-import gnu.trove.list.array.TFloatArrayList;
-import gnu.trove.list.array.TIntArrayList;
+import static org.oscim.renderer.MapRenderer.COORD_SCALE;
 
 import net.tourbook.common.color.ColorUtil;
 import net.tourbook.map25.Map25ConfigManager;
+import net.tourbook.map25.layer.tourtrack.Map25TrackConfig;
 import net.tourbook.map25.layer.tourtrack.Map25TrackConfig.LineColorMode;
-import net.tourbook.map25.renderer.BucketRendererMT;
-import net.tourbook.map25.renderer.LineBucketMT;
-import net.tourbook.map25.renderer.RenderBucketMT;
-import net.tourbook.map25.renderer.RenderBucketsAllMT;
+import net.tourbook.map25.layer.tourtrack.TourTrack_Layer;
 
+import org.eclipse.collections.impl.list.mutable.primitive.FloatArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
 import org.oscim.backend.canvas.Paint.Cap;
 import org.oscim.core.GeoPoint;
 import org.oscim.core.MapPosition;
 import org.oscim.core.MercatorProjection;
 import org.oscim.core.Tile;
-import org.oscim.layers.Layer;
-//import org.oscim.layers.vector.
 import org.oscim.map.Map;
+import org.oscim.renderer.GLMatrix;
+import org.oscim.renderer.GLState;
 import org.oscim.renderer.GLViewport;
+import org.oscim.renderer.LayerRenderer;
 import org.oscim.theme.styles.LineStyle;
 import org.oscim.utils.FastMath;
 import org.oscim.utils.async.SimpleWorker;
 import org.oscim.utils.geom.LineClipper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class draws a path line in given color or texture.
- * <p>
- * Example to handle track hover/selection
- * org.oscim.layers.marker.ItemizedLayer.activateSelectedItems(MotionEvent, ActiveItem)
- * <p>
- * Original code: org.oscim.layers.PathLayer
+ * Base class to use the renderer.elements for drawing.
+ * <p/>
+ * All methods that modify 'buckets' MUST be synchronized!
  */
-public class TourLayer extends Layer {
+public class TourTrack_LayerRenderer extends LayerRenderer {
 
-   private static final int RENDERING_DELAY = 0;
+   public static final Logger            log               = LoggerFactory.getLogger(TourTrack_LayerRenderer.class);
+
+   private static final int              RENDERING_DELAY   = 0;
+
+   /**
+    * Use _mapPosition.copy(position) to keep the position for which
+    * the Overlay is *compiled*. NOTE: required by setMatrix utility
+    * functions to draw this layer fixed to the map
+    */
+   private MapPosition                   _mapPosition;
+   private Map                           _map;
+
+   /**
+    * Wrap around dateline
+    */
+   private boolean                       _isFlipOnDateLine = true;
+
+   /**
+    * Buckets for rendering
+    */
+   private final TourTrack_BucketManager _bucketManager_ForPainting;
+   private TourTrack_BucketManager       _bucketManager_ForWorker;
+
+   private boolean                       _isUpdateLayer;
+   private boolean                       _isUpdatePoints;
 
    /**
     * Stores points, converted to the map projection.
     */
-   private GeoPoint[]       _allGeoPoints;
-   private TIntArrayList    _allTourStarts;
+   private GeoPoint[]                    _allGeoPoints;
+   private IntArrayList                  _allTourStarts;
+   private int[]                         _allGeoPointColors;
 
-   private boolean          _isUpdatePoints;
+   private int                           __oldX            = -1;
+   private int                           __oldY            = -1;
+   private int                           __oldZoomScale    = -1;
+
+   private TourTrack_Layer               _tourLayer;
+
+   private final Worker                  _simpleWorker;
 
    /**
     * Line style
     */
-   private LineStyle        _lineStyle;
+   private LineStyle                     _lineStyle;
 
    /*
     * Track config values
     */
-   private int                _config_LineColorMode;
-
-   private final Worker       _simpleWorker;
-
-   private boolean            _isUpdateLayer;
-   private int[]              _allGeoPointColors;
-
-   private RenderBucketsAllMT _currentTaskRenderBuckets;
-
-   private final class TourRenderer extends BucketRendererMT {
-
-      private int __oldX         = -1;
-      private int __oldY         = -1;
-      private int __oldZoomScale = -1;
-
-      @Override
-      public synchronized void update(final GLViewport viewport) {
-
-         if (isEnabled() == false) {
-            return;
-         }
-
-         final int currentZoomScale = 1 << viewport.pos.zoomLevel;
-         final int currentX = (int) (viewport.pos.x * currentZoomScale);
-         final int currentY = (int) (viewport.pos.y * currentZoomScale);
-
-         // update layers when map moved by at least one tile
-         if (currentX != __oldX || currentY != __oldY || currentZoomScale != __oldZoomScale || _isUpdateLayer) {
-
-            /*
-             * It took me many days to find this solution that a newly selected tour is
-             * displayed after the map position was moved/tilt/rotated. It works but I don't
-             * know exacly why.
-             */
-            if (_isUpdateLayer) {
-               _simpleWorker.cancel(true);
-            }
-
-            _isUpdateLayer = false;
-
-            _simpleWorker.submit(RENDERING_DELAY);
-
-            __oldX = currentX;
-            __oldY = currentY;
-            __oldZoomScale = currentZoomScale;
-         }
-
-         final TourRenderTask workerTask = _simpleWorker.poll();
-
-         if (workerTask == null) {
-
-            // task is done -> nothing to do
-            return;
-         }
-
-         // keep position to render relative to current state
-         mMapPosition.copy(workerTask.__mapPos);
-
-         // compile new layers
-         final RenderBucketMT firstChainedBucket = workerTask.__allRenderBuckets.get();
-         allBuckets.set(firstChainedBucket);
-
-         compile();
-      }
-   }
+   private int _config_LineColorMode;
 
    private final static class TourRenderTask {
 
-      RenderBucketsAllMT __allRenderBuckets = new RenderBucketsAllMT();
-      MapPosition        __mapPos           = new MapPosition();
+      TourTrack_BucketManager __taskBucketManager = new TourTrack_BucketManager();
+      MapPosition             __mapPos            = new MapPosition();
    }
 
    final class Worker extends SimpleWorker<TourRenderTask> {
@@ -168,14 +131,16 @@ public class TourLayer extends Layer {
       private float[]           __pixelPoints;
 
       /**
-       * One {@link #__pixelPointColors2} has two {@link #__pixelPoints}, 2 == Half of items
+       * One {@link #__pixelPointColorsHalf} has two {@link #__pixelPoints}, half == Half of items
        */
-      private int[]             __pixelPointColors2;
+      private int[]             __pixelPointColorsHalf;
 
       /**
        * Contains the x/y projected pixels where direction arrows are painted
        */
-      private TFloatArrayList   __pixelDirectionArrows = new TFloatArrayList();
+      private FloatArrayList    __pixelDirectionArrows = new FloatArrayList();
+
+      private int[]             __allGeoPointColors;
 
       /**
        * Is clipping line positions between
@@ -199,8 +164,8 @@ public class TourLayer extends Layer {
                MAX_VISIBLE_PIXEL);
 
          __pixelPoints = new float[0];
-         __pixelPointColors2 = new int[0];
-         __pixelDirectionArrows.clearQuick();
+         __pixelPointColorsHalf = new int[0];
+         __pixelDirectionArrows.clear();
       }
 
       /**
@@ -224,7 +189,7 @@ public class TourLayer extends Layer {
       @Override
       public void cleanup(final TourRenderTask task) {
 
-         task.__allRenderBuckets.clear();
+         task.__taskBucketManager.clear();
       }
 
       @Override
@@ -246,34 +211,37 @@ public class TourLayer extends Layer {
                   projectedPoints = __projectedPoints = new double[numGeoPoints * 2];
 
                   __pixelPoints = new float[numGeoPoints * 2];
-                  __pixelPointColors2 = new int[numGeoPoints];
-                  __pixelDirectionArrows.clearQuick();
+                  __pixelPointColorsHalf = new int[numGeoPoints];
+                  __pixelDirectionArrows.clear();
                }
 
                for (int pointIndex = 0; pointIndex < numGeoPoints; pointIndex++) {
                   MercatorProjection.project(_allGeoPoints[pointIndex], projectedPoints, pointIndex);
                }
+
+               // fix concurrent issue, it does not need to clone the array
+               __allGeoPointColors = _allGeoPointColors;
             }
          }
 
-         _currentTaskRenderBuckets = task.__allRenderBuckets;
+         _bucketManager_ForWorker = task.__taskBucketManager;
 
          if (numGeoPoints == 0) {
 
-            if (task.__allRenderBuckets.get() != null) {
+            if (task.__taskBucketManager.getBucket_Painter() != null) {
 
-               task.__allRenderBuckets.clear();
+               task.__taskBucketManager.clear();
 
                mMap.render();
             }
 
-            return true;
+         } else {
+
+            doWork_Rendering(task, numGeoPoints);
+
+            // trigger redraw to let renderer fetch the result
+            mMap.render();
          }
-
-         doWork_Rendering(task, numGeoPoints);
-
-         // trigger redraw to let renderer fetch the result.
-         mMap.render();
 
          return true;
       }
@@ -281,8 +249,10 @@ public class TourLayer extends Layer {
       private void doWork_Rendering(final TourRenderTask task, final int numPoints) {
 
          final Map25TrackConfig trackConfig = Map25ConfigManager.getActiveTourTrackConfig();
+         final boolean isShowDirectionArrows = trackConfig.isShowDirectionArrow;
+         final int arrow_MinimumDistance = trackConfig.arrow_MinimumDistance;
 
-         final LineBucketMT lineBucket = getLineBucket(task.__allRenderBuckets);
+         final TourTrack_Bucket workerBucket = getWorkerBucket(task.__taskBucketManager);
 
          final MapPosition mapPos = task.__mapPos;
          mMap.getMapPosition(mapPos);
@@ -323,14 +293,14 @@ public class TourLayer extends Layer {
          __lineClipper.clipStart(pixelX, pixelY);
 
          final float[] pixelPoints = __pixelPoints;
-         final int[] pixelPointColors2 = __pixelPointColors2;
+         final int[] pixelPointColorsHalf = __pixelPointColorsHalf;
 
-         __pixelDirectionArrows.clearQuick();
-         final TFloatArrayList allDirectionArrowPixel = __pixelDirectionArrows;
+         final FloatArrayList allDirectionArrowPixel = __pixelDirectionArrows;
+         allDirectionArrowPixel.clear();
 
          // set first point / color / direction arrow
          int pixelPointIndex = addPoint(pixelPoints, 0, pixelX, pixelY);
-         pixelPointColors2[0] = _allGeoPointColors[0];
+         pixelPointColorsHalf[0] = __allGeoPointColors[0];
          allDirectionArrowPixel.add(pixelX);
          allDirectionArrowPixel.add(pixelY);
 
@@ -365,13 +335,13 @@ public class TourLayer extends Layer {
                flip = flipDirection;
 
                if (pixelPointIndex > 2) {
-                  lineBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColors2);
+                  workerBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColorsHalf);
                }
 
                __lineClipper.clipStart(pixelX, pixelY);
 
                pixelPointIndex = addPoint(pixelPoints, 0, pixelX, pixelY);
-               pixelPointColors2[0] = _allGeoPointColors[projectedPointIndex / 2];
+               pixelPointColorsHalf[0] = __allGeoPointColors[projectedPointIndex / 2];
 
                continue;
             }
@@ -381,7 +351,7 @@ public class TourLayer extends Layer {
 
                // finish last tour (copied from flip code)
                if (pixelPointIndex > 2) {
-                  lineBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColors2);
+                  workerBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColorsHalf);
                }
 
                // setup next tour
@@ -389,7 +359,7 @@ public class TourLayer extends Layer {
 
                __lineClipper.clipStart(pixelX, pixelY);
                pixelPointIndex = addPoint(pixelPoints, 0, pixelX, pixelY);
-               pixelPointColors2[0] = _allGeoPointColors[projectedPointIndex / 2];
+               pixelPointColorsHalf[0] = __allGeoPointColors[projectedPointIndex / 2];
 
                continue;
             }
@@ -403,14 +373,14 @@ public class TourLayer extends Layer {
                 */
 
                if (pixelPointIndex > 2) {
-                  lineBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColors2);
+                  workerBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColorsHalf);
                }
 
                if (clipperCode == LineClipper.INTERSECTION) {
 
                   // add line segment
                   segment = __lineClipper.getLine(segment, 0);
-                  lineBucket.addLine(segment, 4, false, pixelPointColors2);
+                  workerBucket.addLine(segment, 4, false, pixelPointColorsHalf);
 
                   // the prev point is the real point not the clipped point
                   // prevX = __lineClipper.outX2;
@@ -427,7 +397,7 @@ public class TourLayer extends Layer {
                   pixelPoints[pixelPointIndex++] = prevX;
                   pixelPoints[pixelPointIndex++] = prevY;
 
-                  pixelPointColors2[(pixelPointIndex - 1) / 2] = _allGeoPointColors[projectedPointIndex / 2];
+                  pixelPointColorsHalf[(pixelPointIndex - 1) / 2] = __allGeoPointColors[projectedPointIndex / 2];
                }
 
                continue;
@@ -447,13 +417,13 @@ public class TourLayer extends Layer {
                pixelPoints[pixelPointIndex++] = prevX = pixelX;
                pixelPoints[pixelPointIndex++] = prevY = pixelY;
 
-               pixelPointColors2[(pixelPointIndex - 1) / 2] = _allGeoPointColors[projectedPointIndex / 2];
+               pixelPointColorsHalf[(pixelPointIndex - 1) / 2] = __allGeoPointColors[projectedPointIndex / 2];
             }
 
             final float diffXArrow = pixelX - prevXArrow;
             final float diffYArrow = pixelY - prevYArrow;
 
-            if (projectedPointIndex == 0 || FastMath.absMaxCmp(diffXArrow, diffYArrow, trackConfig.arrow_MinimumDistance)) {
+            if (projectedPointIndex == 0 || FastMath.absMaxCmp(diffXArrow, diffYArrow, arrow_MinimumDistance)) {
 
                // point > min distance
 
@@ -466,11 +436,11 @@ public class TourLayer extends Layer {
          }
 
          if (pixelPointIndex > 2) {
-            lineBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColors2);
+            workerBucket.addLine(pixelPoints, pixelPointIndex, false, pixelPointColorsHalf);
          }
 
-         if (trackConfig.isShowDirectionArrow) {
-            lineBucket.createDirectionArrowVertices(__pixelDirectionArrows);
+         if (isShowDirectionArrows) {
+            workerBucket.createDirectionArrowVertices(__pixelDirectionArrows);
          }
       }
 
@@ -485,17 +455,20 @@ public class TourLayer extends Layer {
 
    }
 
-   public TourLayer(final Map map) {
+   public TourTrack_LayerRenderer(final TourTrack_Layer tourLayer, final Map map) {
 
-      super(map);
+      _tourLayer = tourLayer;
+      _map = map;
 
-      _lineStyle = createLineStyle();
+      _bucketManager_ForPainting = new TourTrack_BucketManager();
+      _mapPosition = new MapPosition();
 
       _allGeoPoints = new GeoPoint[] {};
-      _allTourStarts = new TIntArrayList();
+      _allTourStarts = new IntArrayList();
 
-      mRenderer = new TourRenderer();
       _simpleWorker = new Worker(map);
+
+      _lineStyle = createLineStyle();
    }
 
    private LineStyle createLineStyle() {
@@ -546,23 +519,23 @@ public class TourLayer extends Layer {
    /**
     * Update linestyle in the bucket
     *
-    * @param allRenderBuckets
+    * @param bucketManager
     * @return
     */
-   private LineBucketMT getLineBucket(final RenderBucketsAllMT allRenderBuckets) {
+   private TourTrack_Bucket getWorkerBucket(final TourTrack_BucketManager bucketManager) {
 
-      LineBucketMT lineBucket;
+      TourTrack_Bucket trackBucket;
 
-      lineBucket = allRenderBuckets.getLineBucket(0);
+      trackBucket = bucketManager.getBucket_Worker();
 
 // SET_FORMATTING_OFF
 
-      lineBucket.lineStyle       = _lineStyle;
-      lineBucket.lineColorMode   = _config_LineColorMode;
+      trackBucket.lineStyle       = _lineStyle;
+      trackBucket.lineColorMode   = _config_LineColorMode;
 
 // SET_FORMATTING_ON
 
-      return lineBucket;
+      return trackBucket;
    }
 
    public void onModifyConfig(final boolean isVerticesModified) {
@@ -579,13 +552,88 @@ public class TourLayer extends Layer {
 
          // do a fast update
 
-         getLineBucket(_currentTaskRenderBuckets);
+         getWorkerBucket(_bucketManager_ForWorker);
 
-         mMap.render();
+         _map.render();
       }
    }
 
-   public void setPoints(final GeoPoint[] allGeoPoints, final int[] allGeoPointColors, final TIntArrayList allTourStarts) {
+   /**
+    * Render (do OpenGL drawing) all 'buckets'
+    */
+   @Override
+   public synchronized void render(final GLViewport viewport) {
+
+      final TourTrack_Bucket trackBucket = _bucketManager_ForPainting.getBucket_Painter();
+      if (trackBucket == null) {
+         return;
+      }
+
+      final MapPosition mapPosition = _mapPosition;
+
+      GLState.test(false, false);
+      GLState.blend(true);
+
+      // viewport scale 2 map scale: it is between 1...2
+      final float viewport2mapscale = (float) (viewport.pos.scale / mapPosition.scale);
+
+      setMatrix(viewport, true);
+
+      TourTrack_Shader.paint(trackBucket, viewport, viewport2mapscale, _bucketManager_ForPainting);
+   }
+
+   public void setIsUpdateLayer(final boolean isUpdateLayer) {
+      _isUpdateLayer = isUpdateLayer;
+   }
+
+   /**
+    * Utility: Set matrices.mvp matrix relative to the difference of current
+    * MapPosition and the last updated Overlay MapPosition.
+    * <p>
+    * Use this to 'stick' your layer to the map. Note: Vertex coordinates
+    * are assumed to be scaled by MapRenderer.COORD_SCALE (== 8).
+    *
+    * @param viewport
+    *           GLViewport
+    * @param isProjected
+    *           if true apply view- and projection, or just view otherwise.
+    */
+   private void setMatrix(final GLViewport viewport,
+                          final boolean isProjected) {
+
+      final float coordScale = COORD_SCALE;
+      final GLMatrix mvp = viewport.mvp;
+      final MapPosition mapPosition = _mapPosition;
+
+      final double tileScale = Tile.SIZE * viewport.pos.scale;
+
+      double x = mapPosition.x - viewport.pos.x;
+      final double y = mapPosition.y - viewport.pos.y;
+
+      if (_isFlipOnDateLine) {
+
+         //wrap around date-line
+         while (x < 0.5) {
+            x += 1.0;
+         }
+
+         while (x > 0.5) {
+            x -= 1.0;
+         }
+      }
+
+      mvp.setTransScale(
+            (float) (x * tileScale),
+            (float) (y * tileScale),
+            (float) (viewport.pos.scale / mapPosition.scale) / coordScale);
+
+      mvp.multiplyLhs(isProjected
+
+            ? viewport.viewproj
+            : viewport.view);
+   }
+
+   public void setupTourPositions(final GeoPoint[] allGeoPoints, final int[] allGeoPointColors, final IntArrayList allTourStarts) {
 
       synchronized (_allGeoPoints) {
 
@@ -599,6 +647,62 @@ public class TourLayer extends Layer {
       _simpleWorker.cancel(true);
 
       _isUpdatePoints = true;
-      _isUpdateLayer = true;
+
+      setIsUpdateLayer(true);
+
+      // set start time for the direction arrow animation
+      TourTrack_Shader.dirArrowAnimation_StartTime = System.currentTimeMillis();
+   }
+
+   @Override
+   public synchronized void update(final GLViewport viewport) {
+
+      if (_tourLayer.isEnabled() == false) {
+         return;
+      }
+
+      final int currentZoomScale = 1 << viewport.pos.zoomLevel;
+      final int currentX = (int) (viewport.pos.x * currentZoomScale);
+      final int currentY = (int) (viewport.pos.y * currentZoomScale);
+
+      // update layers when map moved by at least one tile
+      if (currentX != __oldX || currentY != __oldY || currentZoomScale != __oldZoomScale || _isUpdateLayer) {
+
+         /*
+          * It took me many days to find this solution that a newly selected tour is
+          * displayed after the map position was moved/tilt/rotated. It works but I don't
+          * know exacly why.
+          */
+         if (_isUpdateLayer) {
+            _simpleWorker.cancel(true);
+         }
+
+         _isUpdateLayer = false;
+
+         _simpleWorker.submit(RENDERING_DELAY);
+
+         __oldX = currentX;
+         __oldY = currentY;
+         __oldZoomScale = currentZoomScale;
+      }
+
+      final TourRenderTask workerTask = _simpleWorker.poll();
+
+      if (workerTask == null) {
+
+         // task is done -> nothing to do
+         return;
+      }
+
+      // keep position to render relative to current state
+      _mapPosition.copy(workerTask.__mapPos);
+
+      // compile new layers
+      final TourTrack_Bucket workerBucket = workerTask.__taskBucketManager.getBucket_Painter();
+      _bucketManager_ForPainting.setBucket_Painter(workerBucket);
+
+      final boolean isDataAvailable = _bucketManager_ForPainting.fillOpenGLBufferData();
+
+      setReady(isDataAvailable);
    }
 }
