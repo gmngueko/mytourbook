@@ -28,10 +28,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.skedgo.converter.TimezoneMapper;
 
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.map.hash.TIntObjectHashMap;
-import gnu.trove.set.hash.TIntHashSet;
-
 import java.awt.Point;
 import java.io.File;
 import java.io.PrintStream;
@@ -112,6 +108,9 @@ import net.tourbook.ui.views.ISmoothingAlgorithm;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 import net.tourbook.weather.WeatherUtils;
 
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
@@ -1411,25 +1410,25 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * Caches the world positions for the tour lat/long values for each zoom level
     */
    @Transient
-   private final TIntObjectHashMap<Point[]>                    _tourWorldPosition   = new TIntObjectHashMap<>();
+   private final IntObjectHashMap<Point[]>                    _tourWorldPosition   = new IntObjectHashMap<>();
 
    /**
     * Caches the world positions for the way point lat/long values for each zoom level
     */
    @Transient
-   private final TIntObjectHashMap<TIntObjectHashMap<Point>>   _twpWorldPosition    = new TIntObjectHashMap<>();
+   private final IntObjectHashMap<IntObjectHashMap<Point>>   _twpWorldPosition    = new IntObjectHashMap<>();
 
    /**
     * Cashes tour tile hashes for each zoom level
     */
    @Transient
-   private final TIntObjectHashMap<TIntHashSet>                _tileHashes_Tours     = new TIntObjectHashMap<>();
+   private final IntObjectHashMap<IntHashSet>                _tileHashes_Tours     = new IntObjectHashMap<>();
 
    /**
     * Cashes way point tile hashes for each zoom level
     */
    @Transient
-   private final TIntObjectHashMap<TIntHashSet>                _tileHashes_WayPoints       = new TIntObjectHashMap<>();
+   private final IntObjectHashMap<IntHashSet>                _tileHashes_WayPoints       = new IntObjectHashMap<>();
 
    /**
     * When a tour was deleted and is still visible in the raw data view, resaving the tour or
@@ -4316,7 +4315,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          return;
       }
 
-      geoGrid = computeGeo_Grid(latitudeSerie, longitudeSerie, 0, latitudeSerie.length).toArray();
+      geoGrid = computeGeo_Grid(latitudeSerie, longitudeSerie, 0, latitudeSerie.length);
    }
 
    /**
@@ -4330,10 +4329,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     *           Last index + 1
     * @return Returns all geo partitions or <code>null</code> when geo data are not available.
     */
-   private TIntHashSet computeGeo_Grid(final double[] partLatitude,
-                                       final double[] partLongitude,
-                                       final int indexStart,
-                                       final int indexEnd) {
+   private int[] computeGeo_Grid(final double[] partLatitude,
+                                 final double[] partLongitude,
+                                 final int indexStart,
+                                 final int indexEnd) {
 
       if (partLatitude == null || partLongitude == null) {
          return null;
@@ -4352,7 +4351,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       }
 
       // unique set with all geo parts
-      final TIntHashSet allGeoParts = new TIntHashSet();
+      final IntHashSet allGeoParts = new IntHashSet();
 
       for (int serieIndex = firstIndex; serieIndex < lastIndex; serieIndex++) {
 
@@ -4397,7 +4396,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 //            (net.tourbook.common.UI.timeStampNano() + " [" + getClass().getSimpleName() + "] ")
 //                  + ("\tsize: " + allGeoParts.toArray().length));
 
-      return allGeoParts;
+      return allGeoParts.toArray();
    }
 
    /**
@@ -4411,13 +4410,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
          return null;
       }
 
-      final TIntHashSet computedGeoParts = computeGeo_Grid(
-            latitudeSerie,
-            longitudeSerie,
-            firstIndex,
-            lastIndex);
-
-      return computedGeoParts.toArray();
+      return computeGeo_Grid(latitudeSerie, longitudeSerie, firstIndex, lastIndex);
    }
 
    public NormalizedGeoData computeGeo_NormalizeLatLon(final int measureStartIndex,
@@ -7128,7 +7121,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
 
       final int numTimeSlices = allTimeData.length;
 
-      final TIntArrayList allPulseTimes = new TIntArrayList(numTimeSlices * 3);
+      final IntArrayList allPulseTimes = new IntArrayList(numTimeSlices * 3);
       final int[] allPulseTime_TimeIndex = new int[numTimeSlices];
 
       Arrays.fill(allPulseTime_TimeIndex, -1);
@@ -9723,12 +9716,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       return serie;
    }
 
-   public TIntHashSet getTileHashes_ForTours(final int projectionHash, final int mapZoomLevel) {
+   public IntHashSet getTileHashes_ForTours(final int projectionHash, final int mapZoomLevel) {
 
       return _tileHashes_Tours.get(projectionHash + mapZoomLevel);
    }
 
-   public TIntHashSet getTileHashes_ForWayPoints(final int projectionHash, final int mapZoomLevel) {
+   public IntHashSet getTileHashes_ForWayPoints(final int projectionHash, final int mapZoomLevel) {
 
       return _tileHashes_WayPoints.get(projectionHash + mapZoomLevel);
    }
@@ -10211,7 +10204,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * @param projectionHash
     * @return Returns the world position for way points
     */
-   public TIntObjectHashMap<Point> getWorldPositionForWayPoints(final int projectionHash, final int zoomLevel) {
+   public IntObjectHashMap<Point> getWorldPositionForWayPoints(final int projectionHash, final int zoomLevel) {
       return _twpWorldPosition.get(projectionHash + zoomLevel);
    }
 
@@ -11674,12 +11667,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
       this.temperatureScale = temperatureScale;
    }
 
-   public void setTileHashes_ForTours(final TIntHashSet tileHashes, final int mapZoomLevel, final int projectionHash) {
+   public void setTileHashes_ForTours(final IntHashSet tileHashes, final int mapZoomLevel, final int projectionHash) {
 
       _tileHashes_Tours.put(projectionHash + mapZoomLevel, tileHashes);
    }
 
-   public void setTileHashes_ForWayPoints(final TIntHashSet tileHashes, final int mapZoomLevel, final int projectionHash) {
+   public void setTileHashes_ForWayPoints(final IntHashSet tileHashes, final int mapZoomLevel, final int projectionHash) {
 
       _tileHashes_WayPoints.put(projectionHash + mapZoomLevel, tileHashes);
    }
@@ -12735,7 +12728,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Cloneable
     * @param zoomLevel
     * @param projectionHash
     */
-   public void setWorldPixelForWayPoints(final TIntObjectHashMap<Point> worldPositions,
+   public void setWorldPixelForWayPoints(final IntObjectHashMap<Point> worldPositions,
                                          final int zoomLevel,
                                          final int projectionHash) {
 
