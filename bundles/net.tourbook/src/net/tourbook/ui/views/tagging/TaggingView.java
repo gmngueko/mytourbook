@@ -493,7 +493,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
       }
    }
 
-   public class TagFilter extends ViewerFilter {
+   private class TagFilter extends ViewerFilter {
 
       @Override
       public boolean select(final Viewer viewer, final Object parentElement, final Object element) {
@@ -1537,6 +1537,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    @Override
    public void dispose() {
 
+      getViewSite().getPage().removePartListener(_partListener);
       getSite().getPage().removePostSelectionListener(_postSelectionListener);
       TourManager.getInstance().removeTourEventListener(_tourEventListener);
 
