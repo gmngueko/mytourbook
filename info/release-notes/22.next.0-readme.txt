@@ -29,6 +29,10 @@ New
 * 2.5D Map
   - Show direction arrows                       https://github.com/mytourbook/mytourbook/issues/516#issuecomment-1234322325
   
+* Map Player
+  - This player can play an animation in a map, currently only the 2.5D map is supported
+                                                https://github.com/mytourbook/mytourbook/issues/948
+  
 
 Improvements
 ============
@@ -44,6 +48,10 @@ Improvements
   - Fixed an issue where the marker distance values were erroneous
   - Fixed an issue where the time values were erroneous when an activity overlapped over more than 1 day
     https://github.com/mytourbook/mytourbook/issues/927
+
+* SRTM Download 
+  - Improved UI when setting tour elevation values from SRTM to display the previous and new elevation gain values
+    https://github.com/mytourbook/mytourbook/issues/334
 
 
 Changes
