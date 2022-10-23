@@ -1,3 +1,4 @@
+
 /*******************************************************************************
  * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
  *
@@ -39,9 +40,9 @@ public class MtMath {
     * Calculates geodetic distance between two points specified by latitude/longitude using
     * Vincenty inverse formula for ellipsoids
     *
-    * &#64;param   {Number} lat1, lon1: first point in decimal degrees
-    * &#64;param   {Number} lat2, lon2: second point in decimal degrees
-    * &#64;returns (Number} distance in metres between points
+	 * @param   {Number} lat1, lon1: first point in decimal degrees
+	 * @param   {Number} lat2, lon2: second point in decimal degrees
+    * @returns (Number} distance in metres between points
     *
     *    function distVincenty(lat1, lon1, lat2, lon2) {
     *      var a = 6378137, b = 6356752.314245,  f = 1/298.257223563;  // WGS-84 ellipsoid params
@@ -62,7 +63,7 @@ public class MtMath {
     *        var sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma;
     *        var cosSqAlpha = 1 - sinAlpha*sinAlpha;
     *        var cos2SigmaM = cosSigma - 2*sinU1*sinU2/cosSqAlpha;
-    *        if (isNaN(cos2SigmaM)) cos2SigmaM = 0;  // equatorial line: cosSqAlpha=0 (ง6)
+    *        if (isNaN(cos2SigmaM)) cos2SigmaM = 0;  // equatorial line: cosSqAlpha=0 (ยง6)
     *        var C = f/16*cosSqAlpha*(4+f*(4-3*cosSqAlpha));
     *        lambdaP = lambda;
     *        lambda = L + (1-C) * f * sinAlpha *
@@ -88,6 +89,7 @@ public class MtMath {
     *    }
     *
     *    /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  *
+	 *
     * </pre>
     */
 
@@ -98,7 +100,7 @@ public class MtMath {
    // = 1/298.2572229328709613   1/298.257223563 // ca. (A-B)/A
    private static final double ABPLATTUNG_F = (HALBACHSE_A - HALBACHSE_B) / HALBACHSE_A;
 
-   public static double angleOf(final float x1, final float y1, final float x2, final float y2) {
+   public static double angleFromShorts(final short x1, final short y1, final short x2, final short y2) {
 
       final double deltaY = y1 - y2;
       final double deltaX = x2 - x1;
