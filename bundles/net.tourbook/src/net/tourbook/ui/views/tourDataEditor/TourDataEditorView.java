@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -6867,7 +6867,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             serieIndex0 = sliceSerieIndex;
             serieIndex1 = sliceSerieIndex < numSlices - 1
                   ? sliceSerieIndex + 1
-                  : SelectionChartXSliderPosition.IGNORE_SLIDER_POSITION;
+                  : sliceSerieIndex;
 
             serieIndex2 = SelectionChartXSliderPosition.IGNORE_SLIDER_POSITION;
          }
@@ -6886,8 +6886,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             /*
              * Position slider at the beginning of the first slice
              */
-//          serieIndex1 = timeSerieIndex1 > 0 ? timeSerieIndex1 - 1 : 0;
-
             serieIndex1 = 0;
 
             if (swimSerieIndex1 > 0) {
@@ -6910,7 +6908,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             /*
              * Position slider at the beginning of the first slice
              */
-            serieIndex1 = serieIndexFirst > 0 ? serieIndexFirst - 1 : 0;
+            serieIndex1 = serieIndexFirst;
             serieIndex2 = ((TimeSlice) selectedSlices[numSelectedSlices - 1]).serieIndex;
 
          }
