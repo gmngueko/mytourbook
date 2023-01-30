@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -2341,12 +2341,14 @@ public class TourManager {
     * @param firstIndex
     * @param lastIndex
     * @param isRemoveTime
+    * @param isRemoveDistance
     * @param isAdjustTourStartTime
     */
    public static void removeTimeSlices(final TourData tourData,
                                        final int firstIndex,
                                        final int lastIndex,
                                        final boolean isRemoveTime,
+                                       final boolean isRemoveDistance,
                                        final boolean isAdjustTourStartTime) {
 
       // this must be done with the original timeSerie
@@ -2358,6 +2360,7 @@ public class TourManager {
             firstIndex,
             lastIndex,
             isRemoveTime,
+            isRemoveDistance,
             isAdjustTourStartTime);
 
       short[] shortSerie;
@@ -2630,10 +2633,19 @@ public class TourManager {
       return newDataSerie;
    }
 
+   /**
+    * @param tourData
+    * @param firstIndex
+    * @param lastIndex
+    * @param isRemoveTime
+    * @param isRemoveDistance
+    * @param isAdjustTourStartTime
+    */
    private static void removeTimeSlices_TimeAndDistance(final TourData tourData,
                                                         final int firstIndex,
                                                         final int lastIndex,
                                                         final boolean isRemoveTime,
+                                                        final boolean isRemoveDistance,
                                                         final boolean isAdjustTourStartTime) {
 
       final int[] timeSerie = tourData.timeSerie;
@@ -2659,7 +2671,7 @@ public class TourManager {
       }
 
       float distDiff = -1;
-      if (distSerie != null) {
+      if (isRemoveDistance && distSerie != null) {
          distDiff = distSerie[lastIndex + 1] - distSerie[firstIndex];
       }
 
