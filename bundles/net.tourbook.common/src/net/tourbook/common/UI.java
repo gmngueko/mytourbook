@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -72,6 +72,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Color;
@@ -849,6 +850,49 @@ public class UI {
          }
 
       }));
+   }
+
+   /**
+    * @param event
+    * @param isDirectionUp
+    *           Is <code>true</code> when direction is up, right or forward
+    * @return Returns <code>true</code> when the scale value was adjusted, otherwise
+    *         <code>false</code>
+    */
+   public static boolean adjustScaleValueOnKey(final KeyEvent event, final boolean isDirectionUp) {
+
+      boolean isCtrlKey;
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (event.stateMask & SWT.MOD3) > 0;
+      } else {
+         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (event.stateMask & SWT.MOD2) > 0;
+      }
+
+      // skip when not accelerated otherwise it would add at least 1 which increments by 2 as minimum
+      if (isCtrlKey == false && isShiftKey == false) {
+         return false;
+      }
+
+      // accelerate with Ctrl + Shift key
+      int accelerator = isCtrlKey ? 10 : 1;
+      accelerator *= isShiftKey ? 5 : 1;
+
+      final Scale scale = (Scale) event.widget;
+      final int increment = scale.getIncrement();
+      final int oldValue = scale.getSelection();
+      final int valueDiff = (isDirectionUp
+            ? increment
+            : -increment)
+
+            * accelerator;
+
+      scale.setSelection(oldValue + valueDiff);
+
+      return true;
    }
 
    public static void adjustScaleValueOnMouseScroll(final MouseEvent event) {
@@ -2710,7 +2754,7 @@ public class UI {
    }
 
    public static String timeStampNano() {
-      return (new Timestamp()).toString();
+      return (new Timestamp()).logWithNano();
    }
 
    /**

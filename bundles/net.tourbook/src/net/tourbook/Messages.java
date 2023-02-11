@@ -122,6 +122,7 @@ public class Messages extends NLS {
    public static String        app_action_button_down;
    public static String        app_action_button_up;
    public static String        App_Action_Cancel;
+   public static String        App_Action_Close;
    public static String        App_Action_Close_ToolTip;
    public static String        App_Action_CollapseAll;
    public static String        app_action_collapse_others_tooltip;
@@ -745,7 +746,7 @@ public class Messages extends NLS {
    public static String        Dialog_JoinTours_ComboText_ConcatenateTime;
    public static String        Dialog_JoinTours_ComboText_KeepTime;
    public static String        Dialog_JoinTours_ComboText_MarkerTourTime;
-   public static String        Dialog_JoinTours_ComboText_TourTileCustom;
+   public static String        Dialog_JoinTours_ComboText_TourTitleCustom;
    public static String        Dialog_JoinTours_ComboText_TourTitleFromTour;
    public static String        Dialog_JoinTours_ComboText_TourTypeCustom;
    public static String        Dialog_JoinTours_ComboText_TourTypeFromTour;
@@ -774,6 +775,21 @@ public class Messages extends NLS {
 
    public static String        Dialog_Label_Description;
    public static String        Dialog_Label_Name;
+
+   public static String        Dialog_MapModel_Checkbox_IsLiveUpdate;
+   public static String        Dialog_MapModel_Checkbox_IsLiveUpdate_Tooltip;
+   public static String        Dialog_MapModel_Dialog_ModelFilepath_Title;
+   public static String        Dialog_MapModel_Label_Description;
+   public static String        Dialog_MapModel_Label_ForwardAngle;
+   public static String        Dialog_MapModel_Label_ForwardAngle_Tooltip;
+   public static String        Dialog_MapModel_Label_HeadPositionFactor;
+   public static String        Dialog_MapModel_Label_HeadPositionFactor_Tooltip;
+   public static String        Dialog_MapModel_Label_ModelFilepath;
+   public static String        Dialog_MapModel_Label_Name;
+   public static String        Dialog_MapModel_Title;
+   public static String        Dialog_MapModel_Title_Add;
+   public static String        Dialog_MapModel_Title_Edit;
+   public static String        Dialog_MapModel_Title_Message_Add;
 
    public static String        Dialog_ModifyTours_Button_LockMultipleToursSelection_Text;
    public static String        Dialog_ModifyTours_Button_UnlockMultipleToursSelection_Text;
@@ -861,7 +877,7 @@ public class Messages extends NLS {
    public static String        Dialog_SplitTour_Checkbox_KeepTime;
    public static String        Dialog_SplitTour_ComboText_KeepSlices;
    public static String        Dialog_SplitTour_ComboText_RemoveSlices;
-   public static String        Dialog_SplitTour_ComboText_TourTileCustom;
+   public static String        Dialog_SplitTour_ComboText_TourTitleCustom;
    public static String        Dialog_SplitTour_ComboText_TourTitleFromFirstMarker;
    public static String        Dialog_SplitTour_ComboText_TourTitleFromTour;
    public static String        Dialog_SplitTour_ComboText_TourTypeCustom;
@@ -1285,13 +1301,22 @@ public class Messages extends NLS {
    public static String        Map_Bookmark_Dialog_ValidationAddName;
    public static String        Map_Bookmark_Dialog_ValidationRename;
 
-   public static String        Map_Player_Action_Loop_Tooltip;
-   public static String        Map_Player_Checkbox_IsReLivePlaying;
-   public static String        Map_Player_Label_FramesPerSecond;
-   public static String        Map_Player_Lable_TimeEndOrRemaining_Tooltip;
-   public static String        Map_Player_PlayContol_Play_Tooptip;
-   public static String        Map_Player_PlayControl_Pause_Tooltip;
-   public static String        Map_Player_Spinner_FramesPerSecond_Tooptip;
+   public static String        Map_Player_Button_MapModel_Tooltip;
+   public static String        Map_Player_Button_MapModelCursor_Tooltip;
+   public static String        Map_Player_Button_Pause_Tooltip;
+   public static String        Map_Player_Button_Play_Tooltip;
+   public static String        Map_Player_Button_PlayLoop_Tooltip;
+   public static String        Map_Player_Checkbox_ReLivePlaying;
+   public static String        Map_Player_Error_InvalidModelFilepath;
+   public static String        Map_Player_Label_ModelCursorSize;
+   public static String        Map_Player_Label_ModelCursorSize_Tooltip;
+   public static String        Map_Player_Label_ModelSize;
+   public static String        Map_Player_Label_Speed;
+   public static String        Map_Player_Label_SpeedMultiplier;
+   public static String        Map_Player_Label_SpeedMultiplier_Tooltip;
+   public static String        Map_Player_Label_Timeline;
+   public static String        Map_Player_Label_TurningAngle;
+   public static String        Map_Player_Label_TurningAngle_Tooltip;
 
    public static String        merge_tour_dlg_invalid_serie_data_message;
    public static String        merge_tour_dlg_invalid_tour_data_message;
@@ -2020,6 +2045,8 @@ public class Messages extends NLS {
    public static String        Slideout_Map25Layer_Spinner_SunTime_Coarse;
    public static String        Slideout_Map25Layer_Spinner_SunTime_Fine;
 
+   public static String        Slideout_Map25Options_Checkbox_BackgroundFPS;
+   public static String        Slideout_Map25Options_Checkbox_BackgroundFPS_Tooltip;
    public static String        Slideout_Map25Options_Checkbox_MapCenter_VerticalPosition;
    public static String        Slideout_Map25Options_Checkbox_MapCenter_VerticalPosition_Tooltip;
    public static String        Slideout_Map25Options_Checkbox_UseDraggedKeyNavigation;
@@ -2063,8 +2090,6 @@ public class Messages extends NLS {
    public static String        Slideout_Map25Provider_Label_MapProvider;
    public static String        Slideout_Map25Provider_Label_MapProvider_Title;
    public static String        Slideout_Map25Provider_Label_ThemeStyle;
-   public static String        Slideout_Map25TrackOptions_Checkbox_AnimateDirectionArrows;
-   public static String        Slideout_Map25TrackOptions_Checkbox_AnimateDirectionArrows_Tooltip;
    public static String        Slideout_Map25TrackOptions_Checkbox_Outline;
    public static String        Slideout_Map25TrackOptions_Checkbox_Outline_Tooltip;
    public static String        Slideout_Map25TrackOptions_Checkbox_TrackVerticalOffset;
@@ -2166,6 +2191,11 @@ public class Messages extends NLS {
    public static String        Slideout_Map_TourColors_Label_Title;
    public static String        Slideout_Map_TrackOptions_Label_Title;
    public static String        Slideout_Map_TrackOptions_Label_Title_Tooltip;
+
+   public static String        Slideout_MapModel_Column_Name;
+   public static String        Slideout_MapModel_Dialog_DeleteModel_Message;
+   public static String        Slideout_MapModel_Dialog_DeleteModel_Title;
+   public static String        Slideout_MapModel_Label_Title;
 
    public static String        Slideout_RefTour_YearStatisticOptions_Label_Title;
 
