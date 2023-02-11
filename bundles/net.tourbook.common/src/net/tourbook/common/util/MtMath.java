@@ -1,6 +1,6 @@
 
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,8 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
 package net.tourbook.common.util;
+
+import java.util.Arrays;
 
 /**
  * MyTourbook Mathematics
@@ -262,5 +264,98 @@ public class MtMath {
 //
 //      return km * 1000;
 //   }
+
+   /**
+    * @param allValues
+    * @param value
+    * @return Returns the index for the searched value which is the exact index or the index before
+    *         the searched value
+    */
+   public static int searchIndex(final float[] allValues, final float value) {
+
+      if (allValues == null || allValues.length == 0 || value <= allValues[0]) {
+         return 0;
+      }
+
+      if (value >= allValues[allValues.length - 1]) {
+         return allValues.length - 1;
+      }
+
+      final int result = Arrays.binarySearch(allValues, value);
+
+      if (result >= 0) {
+         return result;
+      }
+
+      final int insertionPoint = -result - 1;
+      final int indexBeforeInsertionPoint = insertionPoint - 1;
+
+      return indexBeforeInsertionPoint;
+   }
+
+   /**
+    * @param allValues
+    * @param value
+    * @return Returns the index for the searched value which is the exact index or the index before
+    *         the searched value
+    */
+   public static int searchIndex(final int[] allValues, final int value) {
+
+      if (allValues == null || allValues.length == 0 || value <= allValues[0]) {
+         return 0;
+      }
+
+      if (value >= allValues[allValues.length - 1]) {
+         return allValues.length - 1;
+      }
+
+      final int result = Arrays.binarySearch(allValues, value);
+
+      if (result >= 0) {
+         return result;
+      }
+
+      final int insertionPoint = -result - 1;
+      final int indexBeforeInsertionPoint = insertionPoint - 1;
+
+      return indexBeforeInsertionPoint;
+   }
+
+   /**
+    * Find the nearest values in a sorted array
+    * <p>
+    * Original source<br>
+    * <a href=
+    * "https://stackoverflow.com/questions/30245166/find-the-nearest-closest-value-in-a-sorted-list#30245398">https://stackoverflow.com/questions/30245166/find-the-nearest-closest-value-in-a-sorted-list#30245398</a>
+    *
+    * @param allValues
+    * @param value
+    * @return Returns the index of the nearest value and not the nearest value itself
+    */
+   public static int searchNearestIndex(final int[] allValues, final int value) {
+
+      if (allValues == null || allValues.length == 0 || value <= allValues[0]) {
+         return 0;
+      }
+
+      if (value >= allValues[allValues.length - 1]) {
+         return allValues.length - 1;
+      }
+
+      final int result = Arrays.binarySearch(allValues, value);
+
+      if (result >= 0) {
+         return result;
+      }
+
+      final int insertionPoint = -result - 1;
+
+      final int nearestDiff1 = allValues[insertionPoint] - value;
+      final int nearestDiff2 = value - allValues[insertionPoint - 1];
+
+      return nearestDiff1 < nearestDiff2
+            ? insertionPoint
+            : insertionPoint - 1;
+   }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -176,11 +176,16 @@ public class Images {
    public static final String MapBookmark_New                            = "map-bookmark-new.png";                                //$NON-NLS-1$
    public static final String MapLayer                                   = "map-layer.png";                                       //$NON-NLS-1$
    public static final String MapLayer_Dark                              = "map-layer-dark.png";                                  //$NON-NLS-1$
+   public static final String MapModel                                   = "map-model.png";                                       //$NON-NLS-1$
+   public static final String MapModel_Disabled                          = "map-model-disabled.png";                              //$NON-NLS-1$
+   public static final String MapModelCursor                             = "map-model-cursor.png";                                //$NON-NLS-1$
+   public static final String MapModelCursor_Disabled                    = "map-model-cursor-disabled.png";                       //$NON-NLS-1$
+   public static final String MapModelList                               = "map-model-list.png";                                  //$NON-NLS-1$
+   public static final String MapModelList_Disabled                      = "map-model-list-disabled.png";                         //$NON-NLS-1$
    public static final String MapOptions                                 = "map-options.png";                                     //$NON-NLS-1$
    public static final String MapOptions_Dark                            = "map-options-dark.png";                                //$NON-NLS-1$
    public static final String MapOptions_Disabled                        = "map-options-disabled.png";                            //$NON-NLS-1$
    public static final String MapPlayer                                  = "map-player.png";                                      //$NON-NLS-1$
-   public static final String MapPlayer_Dark                             = "map-player-dark.png";                                 //$NON-NLS-1$
    public static final String MapProvider                                = "change-map-provider.png";                             //$NON-NLS-1$
    public static final String MergeTours                                 = "merge-tours.png";                                     //$NON-NLS-1$
    public static final String MyTourbook16                               = "tourbook16.png";                                      //$NON-NLS-1$
