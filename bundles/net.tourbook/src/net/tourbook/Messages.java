@@ -1301,6 +1301,10 @@ public class Messages extends NLS {
    public static String        Map_Bookmark_Dialog_ValidationAddName;
    public static String        Map_Bookmark_Dialog_ValidationRename;
 
+   public static String        Map_Model_Name_Bicycle;
+   public static String        Map_Model_Name_HighWheeler;
+   public static String        Map_Model_Name_Skateboard;
+
    public static String        Map_Player_Button_MapModel_Tooltip;
    public static String        Map_Player_Button_MapModelCursor_Tooltip;
    public static String        Map_Player_Button_Pause_Tooltip;
@@ -1309,7 +1313,6 @@ public class Messages extends NLS {
    public static String        Map_Player_Checkbox_ReLivePlaying;
    public static String        Map_Player_Error_InvalidModelFilepath;
    public static String        Map_Player_Label_ModelCursorSize;
-   public static String        Map_Player_Label_ModelCursorSize_Tooltip;
    public static String        Map_Player_Label_ModelSize;
    public static String        Map_Player_Label_Speed;
    public static String        Map_Player_Label_SpeedMultiplier;
