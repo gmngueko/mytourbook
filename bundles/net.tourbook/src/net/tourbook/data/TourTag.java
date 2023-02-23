@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -38,14 +38,15 @@ import net.tourbook.database.TourDatabase;
 @Entity
 public class TourTag implements Cloneable, Comparable<Object> {
 
-   private static final char NL                         = UI.NEW_LINE;
+   private static final char          NL                         = UI.NEW_LINE;
 
-   public static final int   DB_LENGTH_NAME             = 255;
-   public static final int   DB_LENGTH_NOTES            = 32000;
+   public static final int            DB_LENGTH_FILE_PATH        = 260;
+   public static final int            DB_LENGTH_NAME             = 255;
+   public static final int            DB_LENGTH_NOTES            = 32000;
 
-   public static final int   EXPAND_TYPE_YEAR_MONTH_DAY = 0;
-   public static final int   EXPAND_TYPE_FLAT           = 1;
-   public static final int   EXPAND_TYPE_YEAR_DAY       = 2;
+   public static final int            EXPAND_TYPE_YEAR_MONTH_DAY = 0;
+   public static final int            EXPAND_TYPE_FLAT           = 1;
+   public static final int            EXPAND_TYPE_YEAR_DAY       = 2;
 
    /**
     * Manually created marker or imported marker create a unique id to identify them, saved marker
@@ -101,6 +102,8 @@ public class TourTag implements Cloneable, Comparable<Object> {
     */
    @Transient
    private long                _createId = 0;
+
+   private String imageFilePath;
 
 //   /**
 //    * A tag belongs to <b>ONE</b> category and not to many as it was implemented in version 14.4
@@ -202,6 +205,10 @@ public class TourTag implements Cloneable, Comparable<Object> {
       return extraData;
    }
 
+   public String getImageFilePath() {
+      return imageFilePath;
+   }
+
    /**
     * @return Returns the tag notes or an empty string when not available
     */
@@ -279,6 +286,20 @@ public class TourTag implements Cloneable, Comparable<Object> {
          notes = notes.substring(0, DB_LENGTH_NOTES);
       }
 
+      /*
+       * Check: Image file path
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            imageFilePath,
+            DB_LENGTH_FILE_PATH,
+            Messages.Db_Field_TourTag_ImageFilePath);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         imageFilePath = imageFilePath.substring(0, DB_LENGTH_FILE_PATH);
+      }
+
       return true;
    }
 
@@ -288,6 +309,10 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
    public void setExtraData(final ExtraData extraData) {
       this.extraData = extraData;
+   }
+
+   public void setImageFilePath(final String imageFilePath) {
+      this.imageFilePath = imageFilePath;
    }
 
    public void setNotes(final String notes) {
@@ -322,15 +347,17 @@ public class TourTag implements Cloneable, Comparable<Object> {
             + "TourTag" + NL //                          //$NON-NLS-1$
             + "[" + NL //                                //$NON-NLS-1$
 
-            + "   tagId       =" + tagId + NL //         //$NON-NLS-1$
-            + "   isRoot      =" + isRoot + NL //        //$NON-NLS-1$
-            + "   name        =" + name + NL //          //$NON-NLS-1$
-            + "   notes       =" + notes + NL //         //$NON-NLS-1$
-            + "   expandType  =" + expandType + NL //    //$NON-NLS-1$
+            + "   tagId         =" + tagId + NL //         //$NON-NLS-1$
+            + "   isRoot        =" + isRoot + NL //        //$NON-NLS-1$
+            + "   name          =" + name + NL //          //$NON-NLS-1$
+            + "   notes         =" + notes + NL //         //$NON-NLS-1$
+            + "   expandType    =" + expandType + NL //    //$NON-NLS-1$
 
-            + "   _createId   =" + _createId + NL //     //$NON-NLS-1$
+            + "   _createId     =" + _createId + NL //     //$NON-NLS-1$
 
-//          + "   tourData    =" + tourData + NL //      //$NON-NLS-1$
+            + "   imageFilePath =" + imageFilePath + NL //     //$NON-NLS-1$
+
+//          + "   tourData      =" + tourData + NL //      //$NON-NLS-1$
 
             + "]" + NL //                                //$NON-NLS-1$
       ;
@@ -345,7 +372,9 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
       name = modifiedTourTag.name;
       notes = modifiedTourTag.notes;
-      extraData = modifiedTourTag.extraData;
-   }
 
+      extraData = modifiedTourTag.extraData;
+
+      imageFilePath = modifiedTourTag.imageFilePath;
+   }
 }
