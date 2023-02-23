@@ -179,6 +179,7 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -620,7 +621,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    //
    private ComboViewerCadence                     _comboCadence;
    //
-   private CLabel                                 _lblCloudIcon;
    private CLabel                                 _lblTourType;
    //
    private ControlDecoration                      _decoTimeZone;
@@ -632,17 +632,19 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    private Combo              _comboWeather_Wind_DirectionText;
    private Combo              _comboWeather_WindSpeedText;
    //
-   private DateTime                               _dtStartTime;
-   private DateTime                               _dtTourDate;
+   private Composite          _compositeTags;
+   //
+   private DateTime           _dtStartTime;
+   private DateTime           _dtTourDate;
    //
    private Label              _lblAltitudeUpUnit;
    private Label              _lblAltitudeDownUnit;
+   private Label              _lblCloudIcon;
    private Label              _lblDistanceUnit;
    private Label              _lblPerson_BodyWeightUnit;
    private Label              _lblPerson_BodyFatUnit;
    private Label              _lblSpeedUnit;
    private Label              _lblStartTime;
-   private Label              _lblTags;
    private Label              _lblTimeZone;
    private Label              _lblWeather_PrecipitationUnit;
    private Label              _lblWeather_PressureUnit;
@@ -4115,7 +4117,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                label.setToolTipText(Messages.tour_editor_label_clouds_Tooltip);
 
                // icon: clouds
-               _lblCloudIcon = new CLabel(cloudContainer, SWT.NONE);
+               _lblCloudIcon = new Label(cloudContainer, SWT.NONE);
                GridDataFactory
                      .fillDefaults()//
                      .align(SWT.END, SWT.FILL)
@@ -4667,7 +4669,12 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             _tk.adapt(_linkTag, true, true);
             _firstColumnControls.add(_linkTag);
 
-            _lblTags = _tk.createLabel(container, UI.EMPTY_STRING, SWT.WRAP);
+            _compositeTags = new Composite(container, SWT.NONE);
+            final RowLayout rowLayout = new RowLayout();
+            rowLayout.fill = true;
+            _compositeTags.setLayout(rowLayout);
+            _compositeTags.setLayoutData(rowLayout);
+
             GridDataFactory
                   .fillDefaults()//
                   .grab(true, true)
@@ -4676,7 +4683,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                    */
                   .hint(2 * _hintTextColumnWidth, SWT.DEFAULT)
                   .span(3, 1)
-                  .applyTo(_lblTags);
+                  .applyTo(_compositeTags);
          }
 
          {
@@ -6597,7 +6604,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _actionOpenMarkerDialog.setTourMarker(selectedMarker);
 
 // SET_FORMATTING_OFF
-      
+
       _actionDeleteTimeSlices_AdjustTourStartTime  .setEnabled(canDeleteTimeSliced);
       _actionDeleteTimeSlices_KeepTime             .setEnabled(canDeleteTimeSliced);
       _actionDeleteTimeSlices_KeepTimeAndDistance  .setEnabled(canDeleteTimeSliced);
@@ -6608,7 +6615,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       _actionSplitTour           .setEnabled(isOneSliceSelected);
       _actionExtractTour         .setEnabled(numberOfSelectedSlices >= 2);
-      
+
 // SET_FORMATTING_ON
 
       // set start/end position into the actions
@@ -9229,10 +9236,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       displayCloudIcon();
 
       final boolean isTourTemperatureDeviceValid = _tourData.temperatureSerie != null && _tourData.temperatureSerie.length > 0;
-      final boolean isTourTemperatureValid = _tourData.getWeather_Temperature_Average() != 0 ||
-            _tourData.getWeather_Temperature_Max() != 0 ||
-            _tourData.getWeather_Temperature_Min() != 0 ||
-            _tourData.isWeatherDataFromProvider();
+      final boolean temperaturesExist = _tourData.isTemperatureAvailable();
+
       /*
        * Avg temperature from Device
        */
@@ -9265,7 +9270,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _spinWeather_Temperature_Average.setData(UI.FIX_LINUX_ASYNC_EVENT_1, true);
       _spinWeather_Temperature_Average.setDigits(1);
       int avgTemperatureValue = 0;
-      if (isTourTemperatureValid) {
+      if (temperaturesExist) {
          avgTemperatureValue = Math.round(avgTemperature * 10);
 
       }
@@ -9279,7 +9284,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _spinWeather_Temperature_Min.setData(UI.FIX_LINUX_ASYNC_EVENT_1, true);
       _spinWeather_Temperature_Min.setDigits(1);
       int minTemperatureValue = 0;
-      if (isTourTemperatureValid) {
+      if (temperaturesExist) {
          minTemperatureValue = Math.round(minTemperature * 10);
 
       }
@@ -9293,7 +9298,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _spinWeather_Temperature_Max.setData(UI.FIX_LINUX_ASYNC_EVENT_1, true);
       _spinWeather_Temperature_Max.setDigits(1);
       int maxTemperatureValue = 0;
-      if (isTourTemperatureValid) {
+      if (temperaturesExist) {
          maxTemperatureValue = Math.round(maxTemperature * 10);
 
       }
@@ -9307,7 +9312,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _spinWeather_Temperature_WindChill.setData(UI.FIX_LINUX_ASYNC_EVENT_1, true);
       _spinWeather_Temperature_WindChill.setDigits(1);
       int avgWindChillValue = 0;
-      if (isTourTemperatureValid) {
+      if (temperaturesExist) {
          avgWindChillValue = Math.round(avgWindChill * 10);
 
       }
@@ -9426,7 +9431,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       // tour type/tags
       net.tourbook.ui.UI.updateUI_TourType(_tourData, _lblTourType, true);
-      net.tourbook.ui.UI.updateUI_Tags(_tourData, _lblTags);
+      net.tourbook.ui.UI.updateUI_TagsWithImage(_pc, _tourData.getTourTags(), _compositeTags);
 
       // measurement system
       _lblDistanceUnit.setText(UI.UNIT_LABEL_DISTANCE);
@@ -9795,7 +9800,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       // tour type/tags
       net.tourbook.ui.UI.updateUI_TourType(_tourData, _lblTourType, true);
-      net.tourbook.ui.UI.updateUI_Tags(_tourData, _lblTags);
+      net.tourbook.ui.UI.updateUI_TagsWithImage(_pc, _tourData.getTourTags(), _compositeTags);
 
       // reflow layout that the tags are aligned correctly
       _tourContainer.layout(true);
