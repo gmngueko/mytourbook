@@ -101,6 +101,7 @@ import net.tourbook.srtm.GeoLon;
 import net.tourbook.srtm.NumberForm;
 import net.tourbook.tour.BreakTimeResult;
 import net.tourbook.tour.BreakTimeTool;
+import net.tourbook.tour.TourLogManager;
 import net.tourbook.tour.TourManager;
 import net.tourbook.tour.photo.TourPhotoLink;
 import net.tourbook.tour.photo.TourPhotoManager;
@@ -1112,6 +1113,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     */
    @Transient
    private boolean[]             pausedTimeSerie;
+
+   /**
+    * This is a time serie like {@link #timeSerie} but contains only moving times, break times are 0
+    */
+   @Transient
+   private int[]                 movingTimeSerie;
 
    /**
     * Contains the temperature in the metric measurement system.
@@ -2267,6 +2274,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       breakTimeSerie = null;
       pausedTimeSerie = null;
+      movingTimeSerie = null;
 
       _pulseSerie_Smoothed = null;
       pulseSerie_FromTime = null;
@@ -2730,30 +2738,73 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * Computes and sets the altitude up/down values into {@link TourData}
+    * Computes and sets the elevation up/down values from the device into {@link TourData}
     *
-    * @return Returns <code>true</code> when altitude was computed otherwise <code>false</code>
+    * @return Returns <code>true</code> when elevation was computed otherwise <code>false</code>
     */
    public boolean computeAltitudeUpDown() {
 
-      if (altitudeSerie == null) {
+      return computeAltitudeUpDown(true);
+   }
+
+   public ElevationGainLoss computeAltitudeUpDown(final ArrayList<AltitudeUpDownSegment> segmentSerieIndexParameter,
+                                                  final float selectedMinAltiDiff) {
+
+      return computeAltitudeUpDown_30_Algorithm_9_08(segmentSerieIndexParameter, selectedMinAltiDiff);
+   }
+
+   /**
+    * Computes and sets the elevation up/down values into {@link TourData}
+    *
+    * @param isElevationFromDevice
+    *           When <code>true</code> then device values are used ohterwise SRTM elevation values
+    * @return Returns <code>true</code> when altitude was computed otherwise <code>false</code>
+    */
+   public boolean computeAltitudeUpDown(final boolean isElevationFromDevice) {
+
+      float[] elevationSerie;
+
+      if (isElevationFromDevice) {
+
+         elevationSerie = altitudeSerie;
+
+      } else {
+
+         // elevation is from SRTM
+
+         elevationSerie = getSRTMSerie(true);
+
+         if (elevationSerie == null) {
+
+            TourLogManager.showLogView();
+
+            TourLogManager.log_INFO(String.format(
+                  Messages.Tour_Data_LogInfo_SRTM_DataAreNotAvailable,
+                  TourManager.getTourDateShort(this)));
+
+            if (altitudeSerie != null && altitudeSerie.length > 0) {
+
+               TourLogManager.subLog_INFO(String.format(
+                     Messages.Tour_Data_LogInfo_SRTM_UsingDeviceElevationValues,
+                     TourManager.getTourDateShort(this)));
+
+               elevationSerie = altitudeSerie;
+            }
+         }
+      }
+
+      if (elevationSerie == null) {
          return false;
       }
 
-      final AltitudeUpDown altiUpDown = computeAltitudeUpDown(0, altitudeSerie.length - 1);
+      final ElevationGainLoss altiUpDown = computeAltitudeUpDown(elevationSerie);
 
       if (altiUpDown != null) {
-         setTourAltUp(altiUpDown.altitudeUp);
-         setTourAltDown(altiUpDown.altitudeDown);
+         setTourAltUp(altiUpDown.elevationGain);
+         setTourAltDown(altiUpDown.elevationLoss);
       }
 
       return altiUpDown != null;
-   }
-
-   public AltitudeUpDown computeAltitudeUpDown(final ArrayList<AltitudeUpDownSegment> segmentSerieIndexParameter,
-                                               final float selectedMinAltiDiff) {
-
-      return computeAltitudeUpDown_30_Algorithm_9_08(segmentSerieIndexParameter, selectedMinAltiDiff);
    }
 
    /**
@@ -2762,18 +2813,22 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     * @param elevationSerie
     * @return
     */
-   public AltitudeUpDown computeAltitudeUpDown(final float[] elevationSerie) {
+   public ElevationGainLoss computeAltitudeUpDown(final float[] elevationSerie) {
 
       float prefDPTolerance;
 
       if (_isImportedMTTour) {
+
          // use imported value
          prefDPTolerance = dpTolerance / 10f;
+
       } else {
+
          prefDPTolerance = _prefStore.getFloat(ITourbookPreferences.COMPUTED_ALTITUDE_DP_TOLERANCE);
       }
 
-      AltitudeUpDown altiUpDown;
+      ElevationGainLoss altiUpDown;
+
       if (elevationSerie != null) {
 
          // DP needs distance
@@ -2801,7 +2856,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     * @return Returns an <code>AltitudeUpDown</code> when altitude was computed otherwise
     *         <code>null</code>
     */
-   public AltitudeUpDown computeAltitudeUpDown(final int startIndex, final int endIndex) {
+   public ElevationGainLoss computeAltitudeUpDown(final int startIndex, final int endIndex) {
 
       float prefDPTolerance;
 
@@ -2812,7 +2867,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          prefDPTolerance = _prefStore.getFloat(ITourbookPreferences.COMPUTED_ALTITUDE_DP_TOLERANCE);
       }
 
-      AltitudeUpDown altiUpDown;
+      ElevationGainLoss altiUpDown;
       if (distanceSerie != null) {
 
          // DP needs distance
@@ -2842,10 +2897,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     *           The end of the section for which to compute the elevation gain/loss
     * @return Returns <code>null</code> when altitude up/down cannot be computed
     */
-   private AltitudeUpDown computeAltitudeUpDown_20_Algorithm_DP(final float[] elevationSerie,
-                                                                final float dpTolerance,
-                                                                final int startIndex,
-                                                                final int endIndex) {
+   private ElevationGainLoss computeAltitudeUpDown_20_Algorithm_DP(final float[] elevationSerie,
+                                                                   final float dpTolerance,
+                                                                   final int startIndex,
+                                                                   final int endIndex) {
 
       // check if all necessary data are available
       if (elevationSerie == null
@@ -2895,7 +2950,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          prevAltitude = currentAltitude;
       }
 
-      return new AltitudeUpDown(altitudeUpTotal, -altitudeDownTotal);
+      return new ElevationGainLoss(altitudeUpTotal, -altitudeDownTotal);
    }
 
    /**
@@ -2911,8 +2966,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     * @param minAltiDiff
     * @return Returns <code>null</code> when altitude up/down cannot be computed
     */
-   private AltitudeUpDown computeAltitudeUpDown_30_Algorithm_9_08(final ArrayList<AltitudeUpDownSegment> segmentSerie,
-                                                                  final float minAltiDiff) {
+   private ElevationGainLoss computeAltitudeUpDown_30_Algorithm_9_08(final ArrayList<AltitudeUpDownSegment> segmentSerie,
+                                                                     final float minAltiDiff) {
 
       // check if all necessary data are available
       if ((altitudeSerie == null) || (timeSerie == null) || (timeSerie.length < 2)) {
@@ -3085,7 +3140,28 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          prevAltitude = altitude;
       }
 
-      return new AltitudeUpDown(altitudeUpTotal, -altitudeDownTotal);
+      return new ElevationGainLoss(altitudeUpTotal, -altitudeDownTotal);
+   }
+
+   /**
+    * @return Returns elevation up/down values from SRTM data or <code>null</code> when not
+    *         available
+    */
+   public ElevationGainLoss computeAltitudeUpDown_FromSRTM() {
+
+      final float[] srtmSerie = getSRTMSerie(true);
+
+      if (srtmSerie == null) {
+
+         return null;
+      }
+
+      final ElevationGainLoss elevationUpDown = computeAltitudeUpDown(srtmSerie);
+
+      setTourAltUp(elevationUpDown.elevationGain);
+      setTourAltDown(elevationUpDown.elevationLoss);
+
+      return elevationUpDown;
    }
 
    public float computeAvg_Altitude(final int valueIndexLeft, final int valueIndexRight) {
@@ -3329,7 +3405,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       int nextTime = timeSerie[firstIndex + 1];
 
       /**
-       * a break is set from the previous to the current time slice
+       * A break is set from the previous to the current time slice
        */
       final boolean hasBreakTime = breakTimeSerie != null;
       boolean isPrevBreak = hasBreakTime ? breakTimeSerie[firstIndex] : false;
@@ -7438,29 +7514,29 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       out.println("Tour distance (m):   " + getTourDistance()); //$NON-NLS-1$
 
-      out.println(
-            "Tour time:      " //$NON-NLS-1$
-                  + (tourDeviceTime_Elapsed / 3600)
-                  + UI.SYMBOL_COLON
-                  + ((tourDeviceTime_Elapsed % 3600) / 60)
-                  + UI.SYMBOL_COLON
-                  + (tourDeviceTime_Elapsed % 3600) % 60);
+      out.println("Tour time:      " //$NON-NLS-1$
 
-      out.println(
-            "Recorded time:      " //$NON-NLS-1$
-                  + (getTourDeviceTime_Recorded() / 3600)
-                  + UI.SYMBOL_COLON
-                  + ((getTourDeviceTime_Recorded() % 3600) / 60)
-                  + UI.SYMBOL_COLON
-                  + (getTourDeviceTime_Recorded() % 3600) % 60);
+            + (tourDeviceTime_Elapsed / 3600)
+            + UI.SYMBOL_COLON
+            + ((tourDeviceTime_Elapsed % 3600) / 60)
+            + UI.SYMBOL_COLON
+            + (tourDeviceTime_Elapsed % 3600) % 60);
 
-      out.println(
-            "Moving time:      " //$NON-NLS-1$
-                  + (getTourComputedTime_Moving() / 3600)
-                  + UI.SYMBOL_COLON
-                  + ((getTourComputedTime_Moving() % 3600) / 60)
-                  + UI.SYMBOL_COLON
-                  + (getTourComputedTime_Moving() % 3600) % 60);
+      out.println("Recorded time:      " //$NON-NLS-1$
+
+            + (getTourDeviceTime_Recorded() / 3600)
+            + UI.SYMBOL_COLON
+            + ((getTourDeviceTime_Recorded() % 3600) / 60)
+            + UI.SYMBOL_COLON
+            + (getTourDeviceTime_Recorded() % 3600) % 60);
+
+      out.println("Moving time:      " //$NON-NLS-1$
+
+            + (getTourComputedTime_Moving() / 3600)
+            + UI.SYMBOL_COLON
+            + ((getTourComputedTime_Moving() % 3600) / 60)
+            + UI.SYMBOL_COLON
+            + (getTourComputedTime_Moving() % 3600) % 60);
 
       out.println("Altitude up (m):   " + getTourAltUp()); //$NON-NLS-1$
       out.println("Altitude down (m):   " + getTourAltDown()); //$NON-NLS-1$
@@ -8752,6 +8828,56 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     */
    public float[] getMetricDistanceSerie() {
       return distanceSerie;
+   }
+
+   public int[] getMovingTimeSerie() {
+
+      if (movingTimeSerie != null) {
+         return movingTimeSerie;
+      }
+
+      // check if data are available
+      if (timeSerie == null || timeSerie.length == 0) {
+         return null;
+      }
+
+      // get break time when not yet set
+      if (breakTimeSerie == null) {
+         getBreakTime();
+      }
+
+      // check again, a break needs a distance serie
+      if (breakTimeSerie == null) {
+         return null;
+      }
+
+      final int numTimeSlices = timeSerie.length;
+
+      movingTimeSerie = new int[numTimeSlices];
+
+      int sumBreakTimes = 0;
+
+      final int[] timeSerie2 = timeSerie;
+      final boolean[] breakTimeSerie2 = breakTimeSerie;
+
+      for (int serieIndex = 1; serieIndex < numTimeSlices; serieIndex++) {
+
+         final int currentTime = timeSerie2[serieIndex];
+
+         final boolean isBreakTime = breakTimeSerie2[serieIndex];
+
+         if (isBreakTime) {
+
+            final int prevTime = timeSerie2[serieIndex - 1];
+            final int timeDiff = currentTime - prevTime;
+
+            sumBreakTimes += timeDiff;
+         }
+
+         movingTimeSerie[serieIndex] = currentTime - sumBreakTimes;
+      }
+
+      return movingTimeSerie;
    }
 
    /**
@@ -11948,6 +12074,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    public void setTourAltUp(final float tourAltUp) {
+
       this.tourAltUp = (int) (tourAltUp + 0.5);
    }
 
