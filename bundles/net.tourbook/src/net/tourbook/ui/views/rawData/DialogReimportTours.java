@@ -1332,7 +1332,7 @@ class DialogReimportTours extends TitleAreaDialog {
       _state.put(STATE_IS_IMPORT_TIME_SLICE__TEMPERATURE_FROMDEVICE, _chkData_TimeSlice_TemperatureFromDevice.getSelection());
       _state.put(STATE_IS_IMPORT_TIME_SLICE__TIMER_PAUSES,           _chkData_TimeSlice_TourTimerPauses.getSelection());
       _state.put(STATE_IS_IMPORT_TIME_SLICE__TRAINING,               _chkData_TimeSlice_Training.getSelection());
-      _state.put(STATE_IS_IMPORT_TIME_SLICE__CUSTOM_TRACKS,    _chkData_TimeSlice_CustomTracks.getSelection());
+      _state.put(STATE_IS_IMPORT_TIME_SLICE__CUSTOM_TRACKS,          _chkData_TimeSlice_CustomTracks.getSelection());
 
       // Skip tours for which the import file is not found
       _state.put(STATE_IS_SKIP_TOURS_WITH_IMPORTFILE_NOTFOUND, _chkSkipTours_With_ImportFile_NotFound.getSelection());
