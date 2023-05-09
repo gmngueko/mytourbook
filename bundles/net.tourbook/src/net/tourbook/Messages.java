@@ -37,6 +37,10 @@ public class Messages extends NLS {
    public static String        Action_MarkerFilter_WithGPS_Tooltip;
    public static String        Action_MarkerFilter_WithoutGPS_Tooltip;
 
+   public static String        Action_PauseType_Set;
+   public static String        Action_PauseType_Set_Automatic;
+   public static String        Action_PauseType_Set_Manual;
+
    public static String        Action_PhotosAndTours_AddPhoto;
    public static String        Action_PhotosAndTours_FilterNoTours_Tooltip;
    public static String        Action_PhotosAndTours_FilterNotSavedPhotos_Tooltip;
@@ -1658,6 +1662,7 @@ public class Messages extends NLS {
    public static String        Pref_Graphs_Group_Graphs;
    public static String        Pref_Graphs_Group_Grid;
    public static String        Pref_Graphs_Group_mouse_mode;
+   public static String        Pref_Graphs_Group_MouseKeyTranslation;
    public static String        Pref_Graphs_Group_units_for_xaxis;
    public static String        Pref_Graphs_Group_zoom_options;
    public static String        Pref_Graphs_Label_GraphTransparency;
@@ -1673,6 +1678,10 @@ public class Messages extends NLS {
    public static String        Pref_Graphs_move_sliders_when_zoomed;
    public static String        Pref_Graphs_Radio_mouse_mode_slider;
    public static String        Pref_Graphs_Radio_mouse_mode_zoom;
+   public static String        Pref_Graphs_Radio_MouseKey_UpLeft;
+   public static String        Pref_Graphs_Radio_MouseKey_UpLeft_Tooltip;
+   public static String        Pref_Graphs_Radio_MouseKey_UpRight;
+   public static String        Pref_Graphs_Radio_MouseKey_UpRight_Tooltip;
    public static String        Pref_Graphs_Radio_show_distance;
    public static String        Pref_Graphs_Radio_show_time;
    public static String        Pref_Graphs_Tab_graph_defaults;
@@ -2304,11 +2313,13 @@ public class Messages extends NLS {
    public static String        Slideout_MapModel_Dialog_DeleteModel_Title;
    public static String        Slideout_MapModel_Label_Title;
 
-   public static String        Slideout_RefTour_Checkbox_AvgAltimeter;
-   public static String        Slideout_RefTour_Checkbox_AvgPulse;
-   public static String        Slideout_RefTour_Checkbox_AvgSpeed;
-   public static String        Slideout_RefTour_Checkbox_MaxPulse;
+   public static String        Slideout_RefTour_Checkbox_Altimeter_Avg;
+   public static String        Slideout_RefTour_Checkbox_Pulse_Avg;
+   public static String        Slideout_RefTour_Checkbox_Pulse_AvgMax;
+   public static String        Slideout_RefTour_Checkbox_Speed_Avg;
    public static String        Slideout_RefTour_Group_Graphs;
+   public static String        Slideout_RefTour_Label_BarSize;
+   public static String        Slideout_RefTour_Spinner_BarSize_Tooltip;
    public static String        Slideout_RefTour_YearStatisticOptions_Label_Title;
 
    public static String        Slideout_SegmenterChartOptions_Checkbox_HideSmallValues;
@@ -2777,6 +2788,7 @@ public class Messages extends NLS {
    public static String        Tour_Action_MultiplyCaloriesBy1000_Apply;
    public static String        Tour_Action_MultiplyCaloriesBy1000_Message;
    public static String        Tour_Action_MultiplyCaloriesBy1000_Title;
+   public static String        Tour_Action_Pauses;
    public static String        Tour_Action_RetrieveWeatherData;
 
    //GMN START
@@ -3338,6 +3350,7 @@ public class Messages extends NLS {
    public static String        ui_tour_not_defined;
 
    public static String        Year_Statistic_Action_ShowAllValues_Tooltip;
+   public static String        Year_Statistic_Action_SyncMinMaxValues_Tooltip;
    public static String        Year_Statistic_Combo_LastYears_Tooltip;
    public static String        Year_Statistic_Combo_NumberOfYears_Tooltip;
    public static String        Year_Statistic_Label_NumberOfYears;
