@@ -1269,7 +1269,6 @@ public class Messages extends NLS {
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Precipitation;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Pressure;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Snowfall;
-   public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_Avg;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_FeelsLike;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_Max;
    public static String        Log_HistoricalWeatherRetriever_001_WeatherData_Temperature_Min;
@@ -2307,6 +2306,7 @@ public class Messages extends NLS {
    public static String        Slideout_TourChartSmoothing_Label_Title;
 
    public static String        Slideout_TourCollectionFilter_Action_Tooltip;
+   public static String        Slideout_TourCollectionFilter_Label_FilterHint;
    public static String        Slideout_TourCollectionFilter_Label_NumberOfAllTours;
    public static String        Slideout_TourCollectionFilter_Label_NumberOfCollectedTours;
    public static String        Slideout_TourCollectionFilter_Label_Title;
@@ -3212,7 +3212,6 @@ public class Messages extends NLS {
    public static String        Year_Statistic_Action_SyncMinMaxValues_Tooltip;
    public static String        Year_Statistic_Combo_LastYears_Tooltip;
    public static String        Year_Statistic_Combo_NumberOfYears_Tooltip;
-   public static String        Year_Statistic_Label_NumberOfYears;
 
 //   public static String        Pref_SignImages_Dialog_ConfirmDelete_Message;
 //   public static String        Pref_SignImages_Dialog_Delete_Title;
