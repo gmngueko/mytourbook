@@ -10,7 +10,7 @@
    <name>MyTourbook App</name>
 
    <artifactId>mytourbook-app</artifactId>   <groupId>net.tourbook</groupId>
-                                             <version>23.3.2-SNAPSHOT</version>
+                                             <version>23.5.0-SNAPSHOT</version>
    <packaging>pom</packaging>
    
    <dependencies>
@@ -89,11 +89,6 @@
          <url>http://download.eclipse.org/nattable/releases/2.0.3/repository</url>
       </repository> 
       
-      <repository>
-         <id>eclipse.nebula.3.0</id>                                  <layout>p2</layout>
-         <url>https://download.eclipse.org/nebula/releases/3.0.0</url>
-      </repository>
-
       <!-- IMPORTANT: Keep that tag in a single line as it is commented out during the GitHub build -->
       <repository> <id>eclipse.4.17.nl</id> <layout>p2</layout> <url>file:build/build.eclipse.4.17.nl.repo</url> </repository>
 
@@ -171,7 +166,7 @@
 
       <plugin>
          <artifactId>maven-surefire-plugin</artifactId>        <groupId>org.apache.maven.plugins</groupId>
-                                                               <version>3.0.0</version>
+                                                               <version>3.1.0</version>
          <configuration>
             <skipTests>true</skipTests>
          </configuration>
