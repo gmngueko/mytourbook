@@ -64,6 +64,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -142,7 +143,7 @@ class DialogReimportTours extends TitleAreaDialog {
 
    private final ITourViewer3 _tourViewer;
 
-   private SelectionAdapter   _defaultListener;
+   private SelectionListener  _defaultListener;
 
    private PixelConverter     _pc;
 
@@ -1089,12 +1090,7 @@ class DialogReimportTours extends TitleAreaDialog {
 
       _pc = new PixelConverter(_parent);
 
-      _defaultListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            enableControls();
-         }
-      };
+      _defaultListener = widgetSelectedAdapter(selectionEvent -> enableControls());
 
       _parent.addDisposeListener(disposeEvent -> {
          _imageLock_Closed.dispose();
