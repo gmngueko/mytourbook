@@ -2602,6 +2602,7 @@ public class UI {
       IS_BRIGHT_THEME = isDarkThemeSelected == false;
    }
 
+
    /**
     * Set the themed image descriptor for a {@link UIElement} with images from the
     * {@link TourbookPlugin} plugin
