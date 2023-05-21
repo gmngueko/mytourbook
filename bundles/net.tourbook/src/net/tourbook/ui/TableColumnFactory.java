@@ -4045,7 +4045,7 @@ public abstract class TableColumnFactory {
          public TableColumnDefinition createColumn(final ColumnManager columnManager,
                                                    final PixelConverter pixelConverter) {
 
-            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, TOUR_TYPE_ID, SWT.TRAIL);
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, TOUR_TYPE_ID, SWT.CENTER);
 
             colDef.setColumnCategory(           Messages.ColumnFactory_Category_Tour);
 
@@ -4459,7 +4459,7 @@ public abstract class TableColumnFactory {
          public TableColumnDefinition createColumn(final ColumnManager columnManager,
                                                    final PixelConverter pixelConverter) {
 
-            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, WEATHER_CLOUDS_ID, SWT.TRAIL);
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, WEATHER_CLOUDS_ID, SWT.CENTER);
 
             colDef.setColumnCategory(           Messages.ColumnFactory_Category_Weather);
 
