@@ -238,6 +238,8 @@ public class Messages extends NLS {
    public static String        ColumnFactory_ElevationLossDelta_Label;
    public static String        ColumnFactory_ElevationGainDelta_Tooltip;
    public static String        ColumnFactory_ElevationLossDelta_Tooltip;
+   public static String        ColumnFactory_ElevationTotal_Gain_Tooltip;
+   public static String        ColumnFactory_ElevationTotal_Loss_Tooltip;
 
    public static String        ColumnFactory_GearFrontShiftCount_Header;
    public static String        ColumnFactory_GearFrontShiftCount_Label;
@@ -251,6 +253,8 @@ public class Messages extends NLS {
    public static String        ColumnFactory_GearTeeth_Header;
    public static String        ColumnFactory_GearTeeth_Label;
    public static String        ColumnFactory_GearTeeth_Tooltip;
+   public static String        ColumnFactory_HasGeoData_Header;
+   public static String        ColumnFactory_HasGeoData_Label;
 
    public static String        ColumnFactory_Id_Label;
    public static String        ColumnFactory_Id_Tooltip;
