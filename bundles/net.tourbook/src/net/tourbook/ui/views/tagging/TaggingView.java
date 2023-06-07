@@ -185,6 +185,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private boolean                             _isBehaviour_SingleExpand_CollapseOthers = true;
    private boolean                             _isBehaviour_OnSelect_ExpandCollapse     = true;
    private boolean                             _isInCollapseAll;
+   private boolean                             _isInExpandingSelection;
    private int                                 _expandRunnableCounter;
 
    private TourDoubleClickState                _tourDoubleClickState                    = new TourDoubleClickState();
@@ -243,8 +244,6 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private Composite _viewerContainer;
 
    private Menu      _treeContextMenu;
-
-   private boolean   _isInExpandingSelection;
 
    private class Action_CollapseAll_WithoutSelection extends ActionCollapseAll {
 
@@ -830,11 +829,11 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
 
       _tagViewer.setUseHashlookup(true);
 
-      _tagViewer.addSelectionChangedListener(this::onTagViewer_Selection);
+      _tagViewer.addSelectionChangedListener(selectionChangedEvent -> onTagViewer_Selection(selectionChangedEvent));
       _tagViewer.addDoubleClickListener(doubleClickEvent -> onTagViewer_DoubleClick());
 
-      tree.addListener(SWT.MouseDoubleClick, this::onTagTree_DoubleClick);
-      tree.addListener(SWT.MouseDown, this::onTagTree_MouseDown);
+      tree.addListener(SWT.MouseDoubleClick, event -> onTagTree_DoubleClick(event));
+      tree.addListener(SWT.MouseDown, event -> onTagTree_MouseDown(event));
 
       tree.addKeyListener(keyPressedAdapter(keyEvent -> {
 
@@ -2210,7 +2209,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
 
       ) {
 
-         // expand/collapse tree category items
+         // category is selected, expand/collapse category items
 
          if (_isSelectedWithKeyboard == false) {
 
