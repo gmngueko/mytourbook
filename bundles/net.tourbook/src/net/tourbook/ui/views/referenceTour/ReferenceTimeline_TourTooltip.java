@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,32 +15,32 @@
  *******************************************************************************/
 package net.tourbook.ui.views.referenceTour;
 
-import net.tourbook.Images;
-import net.tourbook.Messages;
-import net.tourbook.application.TourbookPlugin;
-import net.tourbook.chart.Chart;
+import net.tourbook.chart.ChartComponents;
+import net.tourbook.common.util.TourToolTip;
 
-import org.eclipse.jface.action.Action;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.widgets.Control;
 
-public class ActionSynchChartHorizontalByScale extends Action {
+public class ReferenceTimeline_TourTooltip extends TourToolTip {
 
-   private ISynchedChart _synchChart;
-
-   public ActionSynchChartHorizontalByScale(final ISynchedChart resultView) {
-
-      super(null, AS_CHECK_BOX);
-
-      _synchChart = resultView;
-
-      setToolTipText(Messages.RefTour_Action_SyncChartsByScale_Tooltip);
-
-      setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.SyncGraph_ByScale));
-      setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.SyncGraph_ByScale_Disabled));
+   public ReferenceTimeline_TourTooltip(final Control control) {
+      super(control);
    }
 
    @Override
-   public void run() {
+   public void show(final Point point) {
 
-      _synchChart.synchCharts(isChecked(), Chart.SYNCH_MODE_BY_SCALE);
+      /*
+       * Delay tooltip because first the bar must be selected which selects the tour
+       */
+      _toolTipControl.getDisplay().timerExec(ChartComponents.BAR_SELECTION_DELAY_TIME + 200, () -> {
+
+         if (_toolTipControl.isDisposed()) {
+            return;
+         }
+
+         ReferenceTimeline_TourTooltip.super.show(point);
+      });
    }
+
 }
