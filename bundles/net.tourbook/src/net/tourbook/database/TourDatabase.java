@@ -491,6 +491,7 @@ public class TourDatabase {
 
    private boolean                               _isDbInitialized;
    private boolean                               _isDbInDataUpdate;
+   private boolean                               _isInDesignUpdate;
    private boolean                               _isTableChecked;
    private boolean                               _isDataVersionChecked;
    private boolean                               _isDesignVersionChecked;
@@ -6105,7 +6106,7 @@ public class TourDatabase {
     */
    private boolean sqlStartup_10_IsSqlServerUpAndRunning() {
 
-      if (_isDbInitialized || _isDbInDataUpdate) {
+      if (_isDbInitialized || _isDbInDataUpdate || _isInDesignUpdate) {
          return true;
       }
 
@@ -6702,7 +6703,8 @@ public class TourDatabase {
     */
    private boolean updateDb__1_Design(int currentDbVersion, final SplashManager splashManager) {
 
-      if (!_isSilentDatabaseUpdate) {
+      if (_isSilentDatabaseUpdate == false) {
+
          /*
           * Confirm update
           */
@@ -6728,11 +6730,14 @@ public class TourDatabase {
                1).open()) != Window.OK) {
 
             // the user will not update -> close application
+
             PlatformUI.getWorkbench().close();
 
             return false;
          }
       }
+
+      _isInDesignUpdate = true;
 
       /*
        * Do an additional check because version 20 is restructuring the data series
@@ -7035,6 +7040,11 @@ public class TourDatabase {
          _isSQLDesignUpdateError = true;
 
          return false;
+
+      } finally {
+
+         _isInDesignUpdate = false;
+
       }
 
       return true;
