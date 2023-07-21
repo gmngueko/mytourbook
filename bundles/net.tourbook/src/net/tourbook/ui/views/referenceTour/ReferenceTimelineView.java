@@ -1507,7 +1507,7 @@ public class ReferenceTimelineView extends ViewPart implements IGeoCompareListen
       if (_currentRefItem != null
             && _currentGeoCompareData != null
 
-            && _currentRefItem.refId == _currentGeoCompareData.refId) {
+            && _currentRefItem.refId == _currentGeoCompareData.refTour_RefId) {
 
          geoCompareData = _currentGeoCompareData;
       }
@@ -1530,7 +1530,7 @@ public class ReferenceTimelineView extends ViewPart implements IGeoCompareListen
          _currentRefItem = new TVIRefTour_RefTourItem();
 
          _currentRefItem.numTours = geoCompareData.allGeoComparedTours_Filtered.size();
-         _currentRefItem.label = geoCompareData.tourTitle;
+         _currentRefItem.label = geoCompareData.comparedTour_TourTitle;
       }
 
       if (_currentRefItem == null) {
