@@ -37,6 +37,7 @@ import net.tourbook.chart.ChartDataYSerie;
 import net.tourbook.chart.ChartDrawingData;
 import net.tourbook.chart.ChartKeyEvent;
 import net.tourbook.chart.ChartMouseEvent;
+import net.tourbook.chart.ChartSyncMode;
 import net.tourbook.chart.ChartTitleSegment;
 import net.tourbook.chart.ChartTitleSegmentConfig;
 import net.tourbook.chart.ChartType;
@@ -216,15 +217,16 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    private static final String GRAPH_CONTRIBUTION_ID_GEARS                          = "GRAPH_CONTRIBUTION_ID_GEARS";                         //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_GRADIENT                       = "GRAPH_CONTRIBUTION_ID_GRADIENT";                      //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_PACE                           = "GRAPH_CONTRIBUTION_ID_PACE";                          //$NON-NLS-1$
-   private static final String GRAPH_CONTRIBUTION_ID_PACE_INTERVAL                  = "GRAPH_CONTRIBUTION_ID_PACE_INTERVAL";               //$NON-NLS-1$
+   private static final String GRAPH_CONTRIBUTION_ID_PACE_INTERVAL                  = "GRAPH_CONTRIBUTION_ID_PACE_INTERVAL";                 //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_PACE_SUMMARIZED                = "GRAPH_CONTRIBUTION_ID_PACE_SUMMARIZED";               //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_POWER                          = "GRAPH_CONTRIBUTION_ID_POWER";                         //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_PULSE                          = "GRAPH_CONTRIBUTION_ID_PULSE";                         //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_SPEED                          = "GRAPH_CONTRIBUTION_ID_SPEED";                         //$NON-NLS-1$
-   private static final String GRAPH_CONTRIBUTION_ID_SPEED_INTERVAL                 = "GRAPH_CONTRIBUTION_ID_SPEED_INTERVAL";              //$NON-NLS-1$
+   private static final String GRAPH_CONTRIBUTION_ID_SPEED_INTERVAL                 = "GRAPH_CONTRIBUTION_ID_SPEED_INTERVAL";                //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_SPEED_SUMMARIZED               = "GRAPH_CONTRIBUTION_ID_SPEED_SUMMARIZED";              //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_TEMPERATURE                    = "GRAPH_CONTRIBUTION_ID_TEMPERATURE";                   //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_TOUR_COMPARE                   = "GRAPH_CONTRIBUTION_ID_TOUR_COMPARE";                  //$NON-NLS-1$
+   private static final String GRAPH_CONTRIBUTION_ID_TOUR_COMPARE_REF_TOUR          = "GRAPH_CONTRIBUTION_ID_TOUR_COMPARE_REF_TOUR";         //$NON-NLS-1$
 
    private static final String GRAPH_CONTRIBUTION_ID_RUN_DYN_STANCE_TIME            = "GRAPH_CONTRIBUTION_ID_RUN_DYN_STANCE_TIME";           //$NON-NLS-1$
    private static final String GRAPH_CONTRIBUTION_ID_RUN_DYN_STANCE_TIME_BALANCED   = "GRAPH_CONTRIBUTION_ID_RUN_DYN_STANCE_TIME_BALANCED";  //$NON-NLS-1$
@@ -1134,11 +1136,12 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
    }
 
    /**
-    * add a data model listener which is fired when the data model has changed
+    * Set a data model listener which is fired when the data model has changed
     *
     * @param dataModelListener
     */
    public void addDataModelListener(final IDataModelListener dataModelListener) {
+
       _chartDataModelListener = dataModelListener;
    }
 
@@ -1459,6 +1462,14 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
             ThemeUtil.getThemedImageName(Images.Graph_TourCompare_ByElevation),
             ThemeUtil.getThemedImageName(Images.Graph_TourCompare_Disabled),
             GRAPH_CONTRIBUTION_ID_TOUR_COMPARE);
+
+      createActions_12_GraphAction(
+            TourManager.GRAPH_TOUR_COMPARE_REF_TOUR,
+            OtherMessages.GRAPH_LABEL_TOUR_COMPARE_REFERENCE_TOUR,
+            Messages.Tour_Action_Graph_TourCompareReferenceTour_Tooltip,
+            ThemeUtil.getThemedImageName(Images.Graph_TourCompare_ByElevation),
+            ThemeUtil.getThemedImageName(Images.Graph_TourCompare_Disabled),
+            GRAPH_CONTRIBUTION_ID_TOUR_COMPARE_REF_TOUR);
 
       /*
        * Running dynamics
@@ -3034,6 +3045,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
        */
       if (_tcc.canShowTourCompareGraph) {
          tbm.add(_allTourChartActions.get(getGraphActionId(TourManager.GRAPH_TOUR_COMPARE)));
+         tbm.add(_allTourChartActions.get(getGraphActionId(TourManager.GRAPH_TOUR_COMPARE_REF_TOUR)));
       }
 
       tbm.add(new Separator());
@@ -3612,7 +3624,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       for (final ChartDataYSerie yData : allYData) {
 
-         final Integer yDataInfo = (Integer) yData.getCustomData(ChartDataYSerie.YDATA_INFO);
+         final Integer yDataInfo = (Integer) yData.getCustomData(ChartDataYSerie.YDATA_GRAPH_ID);
 
          if (yDataInfo != null && yDataInfo == yDataInfoId) {
 
@@ -6028,9 +6040,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     *           <code>true</code> to enable synch, <code>false</code> to disable synch
     * @param synchedChart
     *           contains the {@link Chart} which is synched with this chart
-    * @param synchMode
+    * @param chartSyncMode
     */
-   public void synchChart(final boolean isSynchEnabled, final TourChart synchedChart, final int synchMode) {
+   public void synchChart(final boolean isSynchEnabled,
+                          final TourChart synchedChart,
+                          final ChartSyncMode chartSyncMode) {
 
       // enable/disable synched chart
       super.setSynchedChart(isSynchEnabled ? synchedChart : null);
@@ -6041,7 +6055,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          return;
       }
 
-      synchedChart.setSynchMode(synchMode);
+      synchedChart.setSynchMode(chartSyncMode);
 
       /*
        * when the position listener is set, the zoom actions will be deactivated
@@ -6058,7 +6072,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          synchedChart.setCanAutoZoomToSlider(true);
 
          // hide the x-sliders
-//         fBackupIsXSliderVisible = synchedChart.isXSliderVisible();
          synchedChart.setShowSlider(false);
 
          synchronizeChart();
@@ -6068,7 +6081,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          // disable chart synchronization
 
          // enable zoom action
-//         actionProxies.get(COMMAND_ID_CAN_SCROLL_CHART).setChecked(synchedChart.getCanScrollZoomedChart());
          synchChartActions.get(ACTION_ID_CAN_AUTO_ZOOM_TO_SLIDER).setChecked(synchedChart.getCanAutoZoomToSlider());
 
          synchedChart.setZoomActionsEnabled(true);
@@ -6081,7 +6093,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
          // show whole chart
          synchedChart.getChartDataModel().resetMinMaxValues();
-//         synchedChart.onExecuteZoomOut(true);
          synchedChart.onExecuteZoomFitGraph();
       }
    }
@@ -6267,7 +6278,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          if (xyDataIterator instanceof ChartDataYSerie) {
 
             final ChartDataYSerie yData = (ChartDataYSerie) xyDataIterator;
-            final Integer graphId = (Integer) yData.getCustomData(ChartDataYSerie.YDATA_INFO);
+            final Integer graphId = (Integer) yData.getCustomData(ChartDataYSerie.YDATA_GRAPH_ID);
 
             enabledGraphIds.add(graphId);
          }
@@ -6362,7 +6373,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     * Update the tour chart with the previous data, configuration and min/max values.
     */
    public void updateTourChart() {
-      updateTourChartInternal(_tourData, _tcc, true, false);
+      updateTourChart_Internal(_tourData, _tcc, true, false);
    }
 
    /**
@@ -6372,7 +6383,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     *           <code>true</code> keeps the min/max values from the previous chart
     */
    public void updateTourChart(final boolean keepMinMaxValues) {
-      updateTourChartInternal(_tourData, _tcc, keepMinMaxValues, false);
+      updateTourChart_Internal(_tourData, _tcc, keepMinMaxValues, false);
    }
 
    /**
@@ -6384,11 +6395,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     *           when <code>true</code> the properties for the tour chart have changed
     */
    public void updateTourChart(final boolean keepMinMaxValues, final boolean isPropertyChanged) {
-      updateTourChartInternal(_tourData, _tcc, keepMinMaxValues, isPropertyChanged);
+      updateTourChart_Internal(_tourData, _tcc, keepMinMaxValues, isPropertyChanged);
    }
 
    public void updateTourChart(final TourData tourData, final boolean keepMinMaxValues) {
-      updateTourChartInternal(tourData, _tcc, keepMinMaxValues, false);
+      updateTourChart_Internal(tourData, _tcc, keepMinMaxValues, false);
 
    }
 
@@ -6404,11 +6415,11 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
                                final TourChartConfiguration tourChartConfig,
                                final boolean keepMinMaxValues) {
 
-      updateTourChartInternal(tourData, tourChartConfig, keepMinMaxValues, false);
+      updateTourChart_Internal(tourData, tourChartConfig, keepMinMaxValues, false);
    }
 
    /**
-    * This is the entry point for new tours.
+    * This is THE entry point for new tours.
     * <p>
     * This method is synchronized because when SRTM data are retrieved and the import view is
     * open, the error occurred that the chart config was deleted with {@link #updateChart(null)}
@@ -6418,16 +6429,17 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     * @param keepMinMaxValues
     * @param isPropertyChanged
     */
-   private synchronized void updateTourChartInternal(final TourData newTourData,
-                                                     final TourChartConfiguration newTCC,
-                                                     final boolean keepMinMaxValues,
-                                                     final boolean isPropertyChanged) {
+   private synchronized void updateTourChart_Internal(final TourData newTourData,
+                                                      final TourChartConfiguration newTCC,
+                                                      final boolean keepMinMaxValues,
+                                                      final boolean isPropertyChanged) {
 
       if (newTourData == null || newTCC == null) {
 
          // there are no new tour data
 
          _valuePointTooltipUI.setTourData(null);
+
          return;
       }
 
@@ -6474,11 +6486,10 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       hideLayer_Photo();
       resetSegmenterSelection();
 
-      final ChartDataModel newChartDataModel = TourManager.getInstance()
-            .createChartDataModel(
-                  _tourData,
-                  _tcc,
-                  isPropertyChanged);
+      final ChartDataModel newChartDataModel = TourManager.getInstance().createChartDataModel(
+            _tourData,
+            _tcc,
+            isPropertyChanged);
 
       // set the model BEFORE actions are created/enabled/checked
       setDataModel(newChartDataModel);
@@ -6498,7 +6509,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       fillToolbar();
       updateTourActions();
 
-      // restore min/max values from the chart config
+      // restore min/max values from the tour chart config
       final ChartYDataMinMaxKeeper newMinMaxKeeper = _tcc.getMinMaxKeeper();
       final boolean isMinMaxKeeper = (newMinMaxKeeper != null) && keepMinMaxValues;
       if (isMinMaxKeeper) {
@@ -6522,6 +6533,9 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       setupChartSegmentTitle();
 
       updateChart(newChartDataModel, !isMinMaxKeeper);
+
+      // enable/disable geo compare action
+      onGeoCompareOnOff(GeoCompareManager.isGeoComparingOn());
 
       /*
        * This must be done after the chart is created because is sets an action, set it only once

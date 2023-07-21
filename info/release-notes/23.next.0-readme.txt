@@ -55,8 +55,17 @@ Improvements
   
 * Geo Compare View
   - Display tour filter in the main view
-  - New filter: Filter compared tours by sequence number
-  - New columns: Elevation gain/loss
+  - Save filter settings in the reference tour
+  - New filters: 
+    - Filter compared tours by elevation gain/loss difference
+    - Filter compared tours by sequence number
+  - New columns: 
+    - Elevation gain + loss difference
+    - Elevation gain/loss total
+    - Elevation gain/loss difference 
+  
+* Compared Tour Chart View
+  - Show reference tour graph which can overlap the compared tour
   
 * Elevation Compare View
   - New columns: Elevation gain/loss
@@ -101,6 +110,9 @@ Bugfix
 * Marker Editor
   - Fixed height of the marker viewer. This issue exists since ever and was annoying since ever.
     Until now the marker viewer height decreased every time when this dialog was reopened.
+
+* Tour Segmenter (Frederic)
+  - Fixed an issue where the segment creation was erroneous when using the "Minimum Elevation Difference" after changing the measurement system.
 
 
 Translation    
