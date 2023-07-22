@@ -336,6 +336,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
     */
    private TourMarker                                       _selectedTourMarker;
    //
+   //
    private IFillPainter                                     _customBackgroundPainter;
 
    private OpenDialogManager                                _openDlgMgr                     = new OpenDialogManager();
