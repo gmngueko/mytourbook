@@ -370,6 +370,8 @@ public class Messages extends NLS {
    public static String        Compare_Result_Column_kmh_moved_label;
    public static String        Compare_Result_Column_kmh_moved_tooltip;
    public static String        Compare_Result_Column_kmh_tooltip;
+   public static String        Compare_Result_Column_Pace_Label;
+   public static String        Compare_Result_Column_Pace_Tooltip;
    public static String        Compare_Result_Column_tour;
 
    public static String        Compute_BreakTime_Button_ComputeAllTours;
@@ -1808,6 +1810,7 @@ public class Messages extends NLS {
    public static String        Pref_People_Label_device;
    public static String        Pref_People_Label_first_name;
    public static String        Pref_People_Label_Gender;
+   public static String        Pref_People_Label_GenderDiverse;
    public static String        Pref_People_Label_GenderFemale;
    public static String        Pref_People_Label_GenderMale;
    public static String        Pref_People_Label_height;
@@ -2386,6 +2389,7 @@ public class Messages extends NLS {
    public static String        Slideout_MapModel_Label_Title;
 
    public static String        Slideout_RefTour_Checkbox_Altimeter_Avg;
+   public static String        Slideout_RefTour_Checkbox_Pace_Avg;
    public static String        Slideout_RefTour_Checkbox_Pulse_Avg;
    public static String        Slideout_RefTour_Checkbox_Pulse_AvgMax;
    public static String        Slideout_RefTour_Checkbox_Speed_Avg;
@@ -2947,6 +2951,7 @@ public class Messages extends NLS {
    public static String        Tour_Database_PostUpdate_043_LatLonE6;
    public static String        Tour_Database_PostUpdate_047_Weather;
    public static String        Tour_Database_PostUpdate_050_ComparedTour;
+   public static String        Tour_Database_PostUpdate_051_ComparedTour;
    public static String        Tour_Database_PostUpdate;
    public static String        Tour_Database_TourSaveError;
    public static String        Tour_Database_Update;
