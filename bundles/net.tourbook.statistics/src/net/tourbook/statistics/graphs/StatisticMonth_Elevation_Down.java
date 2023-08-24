@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020 Frédéric Bard
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,27 +18,28 @@ package net.tourbook.statistics.graphs;
 import net.tourbook.chart.ChartDataModel;
 import net.tourbook.chart.ChartType;
 
-public class StatisticMonth_AthleteData extends StatisticMonth {
+public class StatisticMonth_Elevation_Down extends StatisticMonth {
 
    @Override
    protected String getBarOrderingStateKey() {
-      return STATE_BAR_ORDERING_MONTH_ATHLETEDATA;
+
+      return STATE_BAR_ORDERING_MONTH_ELEVATION_DOWN;
    }
 
    @Override
    ChartDataModel getChartDataModel() {
 
-      final ChartDataModel chartDataModel = new ChartDataModel(ChartType.LINE);
+      final ChartDataModel chartDataModel = new ChartDataModel(ChartType.BAR);
 
       createXData_Months(chartDataModel);
-      createYData_AthleteBodyWeight(chartDataModel);
-      createYData_AthleteBodyFat(chartDataModel);
+      createYData_ElevationDown(chartDataModel);
 
       return chartDataModel;
    }
 
    @Override
-   protected String getGridPrefPrefix() {
-      return GRID_MONTH_ATHLETE_DATA;
+   public String getGridPrefPrefix() {
+
+      return GRID_MONTH_ELEVATION_DOWN;
    }
 }
