@@ -444,7 +444,7 @@ public class Messages extends NLS {
 
    public static String        Conconi_Chart_Chk_LogScaling;
    public static String        Conconi_Chart_Chk_LogScaling_Tooltip;
-   public static String        Conconi_Chart_DeflactionPoint;
+   public static String        Conconi_Chart_DeflectionPoint;
    public static String        Conconi_Chart_InvalidData;
    public static String        Conconi_Chart_Label_ScalingFactor;
    public static String        Conconi_Chart_Label_Tour;
@@ -1832,7 +1832,8 @@ public class Messages extends NLS {
    public static String        pref_view_layout_label_sub;
    public static String        pref_view_layout_label_sub_sub;
    public static String        pref_view_layout_label_title;
-   public static String        pref_view_layout_label_Tour;
+   public static String        Pref_View_Layout_Label_Total;
+   public static String        Pref_View_Layout_Label_Tour;
 
    public static String        Pref_Weather_Button_TestHTTPConnection;
    public static String        Pref_Weather_Checkbox_ShowOrHideApiKey;
@@ -2792,6 +2793,7 @@ public class Messages extends NLS {
    public static String        Tour_Book_Action_delete_selected_tours_dlg_title_confirm;
    public static String        Tour_Book_Action_delete_selected_tours_menu;
    public static String        Tour_Book_Action_ExportViewCSV_Tooltip;
+   public static String        Tour_Book_Action_GoToLastTour_Tooltip;
    public static String        Tour_Book_Action_ToggleViewLayout_Tooltip;
    public static String        Tour_Book_Combo_statistic_tooltip;
    public static String        Tour_Book_Label_chart_title;
