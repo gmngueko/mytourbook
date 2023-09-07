@@ -1958,6 +1958,7 @@ public class TourManager {
    public static boolean isTourEditorModified(final boolean isOpenEditor) {
 
       final TourDataEditorView tourDataEditor = getTourDataEditor();
+
       if (tourDataEditor != null && tourDataEditor.isDirty()) {
 
          if (isOpenEditor) {
