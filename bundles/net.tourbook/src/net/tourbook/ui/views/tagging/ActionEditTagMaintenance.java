@@ -57,9 +57,9 @@ public class ActionEditTagMaintenance extends Action {
       /*
        * Open dialog
        */
-      if (viewerCellData instanceof TVITagView_Tag) {
+      if (viewerCellData instanceof TVITaggingView_Tag) {
 
-         final TVITagView_Tag tourTagItem = ((TVITagView_Tag) viewerCellData);
+         final TVITaggingView_Tag tourTagItem = ((TVITaggingView_Tag) viewerCellData);
 
          final HashMap<Long, TourTag> allTourTags = TourDatabase.getAllTourTags();
 
@@ -87,14 +87,14 @@ public class ActionEditTagMaintenance extends Action {
 
          final ColumnViewer tagViewer = _tourViewer.getViewer();
 
-         if (viewerCellData instanceof TVITagView_Tag) {
+         if (viewerCellData instanceof TVITaggingView_Tag) {
 
             // update model
             final TourTag tourTag = finalTourTag[0];
             TourDatabase.saveEntity(tourTag, tourTag.getTagId(), TourTag.class);
 
             // update UI
-            final TVITagView_Tag tourTagItem = ((TVITagView_Tag) viewerCellData);
+            final TVITaggingView_Tag tourTagItem = ((TVITaggingView_Tag) viewerCellData);
             tagViewer.update(tourTagItem, null);
 
          }
