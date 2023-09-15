@@ -188,9 +188,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     */
    public static final double            MAX_GEO_DIFF                      = 0.0001;
 
-   public static final double            NORMALIZED_LATITUDE_OFFSET        = 90.0;
+   private static final double           NORMALIZED_LATITUDE_OFFSET        = 90.0;
    public static final int               NORMALIZED_LATITUDE_OFFSET_E2     = 9000;
-   public static final double            NORMALIZED_LONGITUDE_OFFSET       = 180.0;
+   private static final double           NORMALIZED_LONGITUDE_OFFSET       = 180.0;
    public static final int               NORMALIZED_LONGITUDE_OFFSET_E2    = 18000;
 
    private static final String           TIME_ZONE_ID_EUROPE_BERLIN        = "Europe/Berlin";                         //$NON-NLS-1$
@@ -327,6 +327,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    /**
     * Total recorded time in seconds
     */
+   @XmlElement
    @JsonProperty
    private long                  tourDeviceTime_Recorded;
 
@@ -335,6 +336,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     *
     * This number could come from a direct value or from {@link tourTimerPauses}
     */
+   @XmlElement
    @JsonProperty
    private long                  tourDeviceTime_Paused;
 
@@ -1179,7 +1181,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     * One time slice contains all of it's R-R interval values.
     */
    @Transient
-   public String[]               pulseSerie_RRIntervals;
+   private String[]               pulseSerie_RRIntervals;
 
    /**
     * This value is contained in the saved {@link SerieData}
@@ -2541,9 +2543,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @Override
    public int compareTo(final Object obj) {
 
-      if (obj instanceof TourData) {
-
-         final TourData otherTourData = (TourData) obj;
+      if (obj instanceof final TourData otherTourData) {
 
          final long tourStartTime2 = otherTourData.tourStartTime;
 
@@ -7902,8 +7902,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          return true;
       }
 
-      if (obj instanceof TourData) {
-         return tourId.longValue() == ((TourData) obj).tourId.longValue();
+      if (obj instanceof final TourData tourData) {
+         return tourId.longValue() == tourData.tourId.longValue();
       }
 
       return false;
@@ -9181,11 +9181,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       // get break time when not yet set
       if (breakTimeSerie == null) {
          getBreakTime();
-      }
 
-      // check again, a break needs a distance serie
-      if (breakTimeSerie == null) {
-         return null;
+         // check again, a break needs a distance serie
+         if (breakTimeSerie == null) {
+            return null;
+         }
       }
 
       final int numTimeSlices = timeSerie.length;
@@ -9930,17 +9930,19 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
                   final int timeDiff = nextRelativeTime - relativeTime;
 
                   // set pause in the next slice because the pause flag is set before the pause
-                  nextSlicePausedTime = isAutoPause
+                  nextSlicePausedTime = // isAutoPause
 
 //                      // auto pauses are ignored
 //                      ? 0
 
                         // auto pauses are not ignored
                         // https://github.com/mytourbook/mytourbook/issues/502#issuecomment-1498240431
-                        ? timeDiff
+                        //? timeDiff
 
                         // pause is triggered by a user
-                        : timeDiff;
+                        //: timeDiff;
+
+                        timeDiff;
 
                   if (isLastPause) {
                      isLastPauseChecked = true;
