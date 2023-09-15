@@ -169,7 +169,7 @@ public class TourManager {
    public static final String  CUSTOM_DATA_POWER                               = "power";                                                       //$NON-NLS-1$
    public static final String  CUSTOM_DATA_PULSE                               = "pulse";                                                       //$NON-NLS-1$
    public static final String  CUSTOM_DATA_SPEED                               = "speed";                                                       //$NON-NLS-1$
-   public static final String  CUSTOM_DATA_SPEED_INTERVAL                      = "speed-interval";                                              //$NON-NLS-1$
+   private static final String CUSTOM_DATA_SPEED_INTERVAL                      = "speed-interval";                                              //$NON-NLS-1$
    public static final String  CUSTOM_DATA_SPEED_SUMMARIZED                    = "speed-summarized";                                            //$NON-NLS-1$
    public static final String  CUSTOM_DATA_TEMPERATURE                         = "temperature";                                                 //$NON-NLS-1$
    private static final String CUSTOM_DATA_TIME                                = "time";                                                        //$NON-NLS-1$
@@ -393,8 +393,8 @@ public class TourManager {
           * VERY IMPORTANT
           * <p>
           * When cache size is 0, each time when the same tour is requested from the tour manager, a
-          * new TourData entity is created. So each opened view gets a new tourdata for the same
-          * tour which causes LOTs of troubles.
+          * new TourData entity is created. So each opened view gets a new {@link TourData} for the
+          * same tour which causes LOTs of troubles.
           */
          _tourDataCache = new TourDataCache(10);
       }
@@ -1504,12 +1504,12 @@ public class TourManager {
          for (final IWorkbenchPage wbPage : wbWindow.getPages()) {
 
             final IEditorPart activeEditor = wbPage.getActiveEditor();
-            if (activeEditor instanceof TourEditor) {
+            if (activeEditor instanceof final TourEditor tourEditor) {
 
                /*
                 * check if the tour data in the editor is the same
                 */
-               final TourChart tourChart = ((TourEditor) activeEditor).getTourChart();
+               final TourChart tourChart = tourEditor.getTourChart();
                final TourData tourChartTourData = tourChart.getTourData();
                if (tourChartTourData == tourData) {
 
@@ -1531,9 +1531,7 @@ public class TourManager {
             if (viewRef != null) {
 
                final IViewPart view = viewRef.getView(false);
-               if (view instanceof TourChartView) {
-
-                  final TourChartView tourChartView = ((TourChartView) view);
+               if (view instanceof final TourChartView tourChartView) {
 
                   /*
                    * check if the tour data in the tour chart is the same
@@ -2278,9 +2276,9 @@ public class TourManager {
 
             final IViewPart viewPart = page.showView(TourDataEditorView.ID, null, IWorkbenchPage.VIEW_VISIBLE);
 
-            if (viewPart instanceof TourDataEditorView) {
+            if (viewPart instanceof final TourDataEditorView tourDataEditorViewPart) {
 
-               tourDataEditorView[0] = (TourDataEditorView) viewPart;
+               tourDataEditorView[0] = tourDataEditorViewPart;
 
                if (isActive) {
 
@@ -2826,7 +2824,7 @@ public class TourManager {
 
       final List<TourData> allModifiedTours = new ArrayList<>();
 
-      if (allTourData == null || allTourData.size() == 0) {
+      if (allTourData == null || allTourData.isEmpty()) {
          return allModifiedTours;
       }
 
@@ -2883,6 +2881,7 @@ public class TourManager {
          } catch (InvocationTargetException | InterruptedException e) {
 
             TourLogManager.log_EXCEPTION_WithStacktrace(e);
+            Thread.currentThread().interrupt();
          }
       }
 
@@ -3834,12 +3833,14 @@ public class TourManager {
 
             final TourData tourData = (TourData) chartModel.getCustomData(CUSTOM_DATA_TOUR_DATA);
 
-            return tourData.computeAvg_Altitude(valueIndexLeft, valueIndexRight);
+            final float averageAltitude = tourData.computeAvg_Altitude(valueIndexLeft, valueIndexRight);
+
+            return averageAltitude / UI.UNIT_VALUE_ELEVATION;
          }
       };
 
       /*
-       * Compute the average altimeter speed between the two sliders
+       * Compute the average gradient between the two sliders
        */
       _computeAvg_Gradient = new ComputeChartValue() {
 
@@ -3855,10 +3856,10 @@ public class TourManager {
             final float[] altitudeValues = ((ChartDataYSerie) (customDataAltitude)).getHighValuesFloat()[0];
             final double[] distanceValues = ((ChartDataXSerie) (customDataDistance)).getHighValuesDouble()[0];
 
-            final float leftAltitude = altitudeValues[valueIndexLeft];
-            final float rightAltitude = altitudeValues[valueIndexRight];
-            final double leftDistance = distanceValues[valueIndexLeft];
-            final double rightDistance = distanceValues[valueIndexRight];
+            final float leftAltitude = altitudeValues[valueIndexLeft] * UI.UNIT_VALUE_ELEVATION;
+            final float rightAltitude = altitudeValues[valueIndexRight] * UI.UNIT_VALUE_ELEVATION;
+            final double leftDistance = distanceValues[valueIndexLeft] * UI.UNIT_VALUE_DISTANCE;
+            final double rightDistance = distanceValues[valueIndexRight] * UI.UNIT_VALUE_DISTANCE;
 
             if (leftDistance == rightDistance) {
                // left and right slider are at the same position
@@ -4127,7 +4128,7 @@ public class TourManager {
       }
 
       /*
-       * Don't draw a (visible) line when a break occures, break time can be minutes, hours or days.
+       * Don't draw a (visible) line when a break occurs, break time can be minutes, hours or days.
        * This feature prevents to draw triangles between 2 value points
        */
       xDataTime.setNoLine(tourData.getBreakTimeSerie());
@@ -5037,7 +5038,7 @@ public class TourManager {
 
                   } else if (xAxisRRTime > xAxisTime) {
 
-                     // this occured when bpm < 60
+                     // this occurred when bpm < 60
 
                      while (rrIndex < numRRTimes // check array bounds
 
