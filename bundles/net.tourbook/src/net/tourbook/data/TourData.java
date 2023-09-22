@@ -84,6 +84,7 @@ import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.time.TourDateTime;
 import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.common.util.StreamUtils;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.weather.IWeather;
 import net.tourbook.database.FIELD_VALIDATION;
@@ -8747,6 +8748,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    public short getDpTolerance() {
       return dpTolerance;
+   }
+
+   public double getElevation_Avg() {
+
+      return StreamUtils.computeAverage(getAltitudeSerie());
    }
 
    /**

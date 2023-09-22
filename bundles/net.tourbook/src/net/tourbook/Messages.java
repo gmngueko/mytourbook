@@ -1958,7 +1958,7 @@ public class Messages extends NLS {
    public static String        Reference_Timeline_Page_SelectReferenceTour;
 
    public static String        RefTour_Action_CreateLeftMarker;
-   public static String        RefTour_Action_CreaateMarker;
+   public static String        RefTour_Action_CreateMarker;
    public static String        RefTour_Action_CreateReferenceTour;
    public static String        RefTour_Action_CreateRightMarker;
    public static String        RefTour_Action_DeleteTours;
@@ -3144,8 +3144,8 @@ public class Messages extends NLS {
    public static String        Tour_Editor_No_Custom_Track_Data_Tooltip;
    //GMN END
 
-   public static String        Tour_Editor_Link_SetDefautTimeZone;
-   public static String        Tour_Editor_Link_SetDefautTimeZone_Tooltip;
+   public static String        Tour_Editor_Link_SetDefaultTimeZone;
+   public static String        Tour_Editor_Link_SetDefaultTimeZone_Tooltip;
    public static String        Tour_Editor_Link_SetGeoTimeZone;
    public static String        Tour_Editor_Link_SetGeoTimeZone_Tooltip;
    public static String        tour_editor_message_person_is_required;
