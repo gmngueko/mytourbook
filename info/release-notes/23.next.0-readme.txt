@@ -4,6 +4,12 @@
 TODO's
 ======               
 
+* Remove debug code in ColumnManager.java
+   // TODO
+      System.out.println("All columns in _allDefinedColumnDefinitions, number of entries: " + _allDefinedColumnDefinitions.size());
+      System.out.println();
+
+
 * TRANSLATION
 
   - Inform translators to update the Messages editor by using the install procedure from
@@ -42,10 +48,21 @@ Experimental
 
 New
 ===
+
+* Reference Tours
+  - Implemented feature request #1 from 2007 "Tourmap view is not using the person or tour type filter"
+    "Tourmap" was renamed into "Tour Catalog" which was renamed into "Reference Tours"
+    https://github.com/mytourbook/mytourbook/issues/651
   
 * Tour Segmenter
   - New segmenter "By Elevation - Flat, Gain & Loss"
     https://github.com/mytourbook/mytourbook/issues/1126#issuecomment-1732513808
+
+* Calendar - Weekly summary (Frederic)
+  - Training Stress Score (TSS)
+
+* Tour Filter (Frederic)
+  - Added a property to filter tours based on their measured air quality
 
 * Tour Info Tooltip
   - Show flat/gain/loss values
@@ -97,6 +114,9 @@ Improvements
 Changes
 =======
 
+* Reference Tours
+  - These tours are now filtered by the selected person and tour type in the app toolbar
+
 * Tour Segmenter
   - The tour segmenter color for total values is used for the foreground color and not for the background color
 
@@ -110,6 +130,12 @@ Bugfix
 
 * Tour Analyzer View (Frederic)
   - Some values are not properly computed when the measurement system is changed (averages: elevation, gradient)
+
+* Calendar View (Frederic)
+  - Fix for a regression that caused the "Link with other views" button to be not persisted. The regression appeared in v18.9.0
+
+* Tour Editor (Frederic)
+  - Fix for linux async event (when using the tour editor, the tour chart and the segmenter view and switching from imperial to metric or vice-versa)
 
 
 Translation    
