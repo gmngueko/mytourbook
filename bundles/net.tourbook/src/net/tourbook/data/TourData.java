@@ -3249,7 +3249,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       flatGainLoss.distanceLoss = distanceLossTotal;
 
       flatGainLoss.elevationGain = elevationGainTotal;
-      flatGainLoss.elevationLoss = elevationLossTotal;
+      flatGainLoss.elevationLoss = -elevationLossTotal;
 
       return flatGainLoss;
    }
@@ -5198,6 +5198,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    private void computeMaxSpeed() {
+
       if (distanceSerie != null) {
          computeDataSeries_Smoothed();
       }
@@ -6650,9 +6651,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       final boolean isPaceAndSpeedFromRecordedTime = _prefStore.getBoolean(ITourbookPreferences.APPEARANCE_IS_PACEANDSPEED_FROM_RECORDED_TIME);
 
-      final float[] segmenterAltitudeSerie = getAltitudeSmoothedSerie(false);
+      final float[] segmenterElevationSerie = getAltitudeSmoothedSerieMetric();
 
-      final boolean isElevationSerie = (segmenterAltitudeSerie != null) && (segmenterAltitudeSerie.length > 0);
+      final boolean isElevationSerie = (segmenterElevationSerie != null) && (segmenterElevationSerie.length > 0);
       final boolean isCadenceSerie = (cadenceSerie != null) && (cadenceSerie.length > 0);
       final boolean isDistanceSerie = (distanceSerie != null) && (distanceSerie.length > 0);
       final boolean isPulseSerie = (pulseSerie != null) && (pulseSerie.length > 0);
@@ -6672,7 +6673,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       float elevationStart = 0;
       if (isElevationSerie) {
-         elevationStart = segmenterAltitudeSerie[firstSerieIndex];
+         elevationStart = segmenterElevationSerie[firstSerieIndex];
       }
 
       float distanceStart = 0;
@@ -6813,12 +6814,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
           */
          if (isElevationSerie) {
 
-            final float elevationEnd = segmenterAltitudeSerie[segmentEndIndex];
+            final float elevationEnd = segmenterElevationSerie[segmentEndIndex];
             final float elevationDiff = elevationEnd - elevationStart;
 
             final float altiUpDownHour = segmentTime == 0
                   ? 0
-                  : (elevationDiff / UI.UNIT_VALUE_ELEVATION) / segmentTime * 3600;
+                  : elevationDiff / segmentTime * 3600;
 
             segmentSerie_Elevation_Diff[segmentIndex] = segment.altitude_Segment_Border_Diff = elevationDiff;
             segmentSerie_Elevation_GainLoss_Hour[segmentIndex] = altiUpDownHour;
@@ -6862,7 +6863,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
                float sumSegmentAltitude_Down = 0;
 
                // get initial altitude
-               float altitude1 = segmenterAltitudeSerie[segmentStartIndex];
+               float altitude1 = segmenterElevationSerie[segmentStartIndex];
 
                for (; segmentIndex2nd < segmentSerieIndex2nd.length; segmentIndex2nd++) {
 
@@ -6872,7 +6873,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
                      break;
                   }
 
-                  final float altitude2 = segmenterAltitudeSerie[serieIndex2nd];
+                  final float altitude2 = segmenterElevationSerie[serieIndex2nd];
                   final float altitude2Diff = altitude2 - altitude1;
 
                   altitude1 = altitude2;
@@ -6924,7 +6925,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          /*
           * Gradient
           */
-         if (isDistanceSerie && isElevationSerie && (segmentDistance != 0.0)) {
+         if (isDistanceSerie
+               && isElevationSerie
+               && segmentDistance != 0.0) {
 
             segmentSerie_Gradient[segmentIndex] = segment.gradient =
                   segment.altitude_Segment_Border_Diff * 100 / segmentDistance;
@@ -8396,6 +8399,22 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
             return altitudeSerieSmoothed;
          }
       }
+   }
+
+   /**
+    * @return Returns smoothed elevation metric values or <code>null</code> when not available
+    */
+   public float[] getAltitudeSmoothedSerieMetric() {
+
+      if (altitudeSerie == null) {
+         return null;
+      }
+
+      if (altitudeSerieSmoothed == null) {
+         computeDataSeries_Smoothed();
+      }
+
+      return altitudeSerieSmoothed;
    }
 
    /**
