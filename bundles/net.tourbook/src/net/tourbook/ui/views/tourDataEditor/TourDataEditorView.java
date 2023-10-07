@@ -90,6 +90,7 @@ import net.tourbook.importdata.RawDataManager;
 import net.tourbook.map2.view.SelectionMapPosition;
 import net.tourbook.map2.view.SelectionMapSelection;
 import net.tourbook.preferences.ITourbookPreferences;
+import net.tourbook.preferences.PrefPageWeather;
 import net.tourbook.tag.TagContentLayout;
 import net.tourbook.tag.TagManager;
 import net.tourbook.tag.TagMenuManager;
@@ -119,6 +120,8 @@ import net.tourbook.ui.action.ActionSetTourTypeMenu;
 import net.tourbook.ui.action.ActionSplitTour;
 import net.tourbook.ui.tourChart.ChartLabelMarker;
 import net.tourbook.ui.tourChart.TourChart;
+import net.tourbook.ui.views.WeatherProvider;
+import net.tourbook.ui.views.WeatherProvidersUI;
 import net.tourbook.ui.views.referenceTour.SelectionReferenceTourView;
 import net.tourbook.ui.views.referenceTour.TVIElevationCompareResult_ComparedTour;
 import net.tourbook.ui.views.referenceTour.TVIRefTour_ComparedTour;
@@ -210,6 +213,7 @@ import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.commands.ICommandService;
+import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
@@ -1863,6 +1867,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       /**
        * @param sortColumnId
+       *
        * @return Returns the column widget by it's column id, when column id is not found then the
        *         first column is returned.
        */
@@ -2741,9 +2746,11 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             _timeSlice_Viewer.getTable().setLinesVisible(_prefStore.getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
             _timeSlice_Viewer.refresh();
 
-         } else if (property.equals(ITourbookPreferences.WEATHER_WEATHER_PROVIDER_ID)) {
+         } else if (property.equals(ITourbookPreferences.WEATHER_WEATHER_PROVIDER_ID)
+               || property.equals(ITourbookPreferences.WEATHER_IS_APPEND_WEATHER_DESCRIPTION)) {
 
             enableControls();
+            updateUI_WeatherLinkTooltip();
          }
       };
 
@@ -2988,6 +2995,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
     *
     * @param firstSliceIndex
     * @param lastSliceIndex
+    *
     * @return Returns <code>true</code> when the marker can be deleted or there is no marker <br>
     *         Returns <code>false</code> when the marker can not be deleted.
     */
@@ -4207,18 +4215,21 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
              */
             _linkWeather = new Link(container, SWT.NONE);
             _linkWeather.setText(Messages.Tour_Editor_Link_RetrieveWeather);
-            _linkWeather.setToolTipText(Messages.Tour_Editor_Link_RetrieveWeather_Tooltip);
-            GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(_linkWeather);
             _linkWeather.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
 
                //Retrieve the weather
                if (_isSetField || _isSavingInProgress) {
                   return;
                }
-               onSelect_Weather_Text();
+
+               onSelect_Weather_Text(selectionEvent);
             }));
+
+            GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.BEGINNING).applyTo(_linkWeather);
             _tk.adapt(_linkWeather, true, true);
             _firstColumnControls.add(_linkWeather);
+
+            updateUI_WeatherLinkTooltip();
 
             _txtWeather = _tk.createText(
                   container,
@@ -5044,6 +5055,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
    /**
     * @param parent
+    *
     * @return returns the controls for the tab
     */
    private Control createUI_Tab_20_TimeSlices(final Composite parent) {
@@ -7399,7 +7411,9 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
     * Converts a string into a float value
     *
     * @param valueText
+    *
     * @return Returns the float value for the parameter valueText, return <code>0</code>
+    *
     * @throws IllegalArgumentException
     */
    private float getFloatValue(String valueText) throws IllegalArgumentException {
@@ -7954,23 +7968,39 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
    }
 
-   private void onSelect_Weather_Text() {
+   private void onSelect_Weather_Text(final SelectionEvent selectionEvent) {
 
-      final List<TourData> modifiedTours = TourManager.retrieveWeatherData(List.of(_tourData));
+      if (UI.isCtrlKey(selectionEvent)) {
 
-      if (modifiedTours.size() == 0) {
+         // open weather pref page
 
-         // tour is not modified which is caused when an error occurs -> show error log
-
-         TourLogManager.showLogView();
+         PreferencesUtil.createPreferenceDialogOn(
+               _parent.getDisplay().getActiveShell(),
+               PrefPageWeather.ID,
+               null,
+               null)
+               .open();
 
       } else {
 
-         // tour is modified
+         // append or replace weather text
 
-         setTourDirty();
+         final List<TourData> modifiedTours = TourManager.retrieveWeatherData(List.of(_tourData));
 
-         updateUI_FromModel(modifiedTours.get(0), false, true);
+         if (modifiedTours.size() == 0) {
+
+            // tour is not modified which is caused when an error occurs -> show error log
+
+            TourLogManager.showLogView();
+
+         } else {
+
+            // tour is modified
+
+            setTourDirty();
+
+            updateUI_FromModel(modifiedTours.get(0), false, true);
+         }
       }
    }
 
@@ -8160,6 +8190,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
     * tour id which is within the selection
     *
     * @param selection
+    *
     * @return Returns <code>true</code> when the current tour is within the selection
     */
    private boolean onSelectionChanged_IsTourInSelection(final ISelection selection) {
@@ -8482,6 +8513,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
    /**
     * @param isConfirmSave
+    *
     * @return Returns <code>true</code> when the tour was saved, <code>false</code> when the tour is
     *         not saved but canceled
     */
@@ -10200,6 +10232,24 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       // reflow layout that the tags are aligned correctly
       _tourContainer.layout(true);
+   }
+
+   private void updateUI_WeatherLinkTooltip() {
+
+      final boolean isAppendWeatherDescription = _prefStore.getBoolean(ITourbookPreferences.WEATHER_IS_APPEND_WEATHER_DESCRIPTION);
+
+      final WeatherProvider weatherProvider = WeatherProvidersUI.getCurrentWeatherProvider();
+
+      if (isAppendWeatherDescription) {
+
+         _linkWeather.setToolTipText(Messages.Tour_Editor_Link_RetrieveWeatherAndAppend_Tooltip
+               .formatted(weatherProvider.uiText));
+
+      } else {
+
+         _linkWeather.setToolTipText(Messages.Tour_Editor_Link_RetrieveWeatherAndReplace_Tooltip
+               .formatted(weatherProvider.uiText));
+      }
    }
 
    private void writeCSVHeader(final Writer exportWriter, final StringBuilder sb) throws IOException {
