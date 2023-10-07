@@ -27,7 +27,7 @@ public interface IWeatherProvider {
    public static final String WEATHER_PROVIDER_WORLDWEATHERONLINE_ID   = "WorldWeatherOnline";   //$NON-NLS-1$
    public static final String WEATHER_PROVIDER_WORLDWEATHERONLINE_NAME = "World Weather Online"; //$NON-NLS-1$
 
-   public static final String WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM = "OpenWeatherMapCustom"; //$NON-NLS-1$
+   public static final String WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM    = "OpenWeatherMapCustom"; //$NON-NLS-1$
 
    Composite createUI(WeatherProvidersUI weatherProvidersUI,
                       Composite parent,

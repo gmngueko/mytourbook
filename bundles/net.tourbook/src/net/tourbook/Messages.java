@@ -1946,6 +1946,8 @@ public class Messages extends NLS {
    public static String        Pref_Weather_Label_WorldWeatherOnline_ApiKey_Tooltip;
    public static String        Pref_Weather_Link_ApiSignup;
    public static String        Pref_Weather_Provider_None;
+   public static String        Pref_Weather_Radio_WeatherDescription_Append;
+   public static String        Pref_Weather_Radio_WeatherDescription_Replace;
 
    //GMN START
    public static String        Pref_WeatherOwm_Label_ApiKey;
@@ -3140,12 +3142,13 @@ public class Messages extends NLS {
    public static String        Tour_Editor_Link_RemoveTimeZone;
    public static String        Tour_Editor_Link_RemoveTimeZone_Tooltip;
    public static String        Tour_Editor_Link_RetrieveWeather;
-   public static String        Tour_Editor_Link_RetrieveWeather_Tooltip;
 
    //GMN START
    public static String        Tour_Editor_No_Custom_Track_Data_Tooltip;
    //GMN END
 
+   public static String        Tour_Editor_Link_RetrieveWeatherAndAppend_Tooltip;
+   public static String        Tour_Editor_Link_RetrieveWeatherAndReplace_Tooltip;
    public static String        Tour_Editor_Link_SetDefaultTimeZone;
    public static String        Tour_Editor_Link_SetDefaultTimeZone_Tooltip;
    public static String        Tour_Editor_Link_SetGeoTimeZone;
