@@ -563,15 +563,11 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
     */
    private int                                        _latLonDigits;
 
-   /**
-    * Number of lines for the tour's description text.
-    */
-   private int                                        _descriptionNumLines;
+   /** Number of lines for the tour's description text */
+   private int                                        _numLines_TourDescription;
 
-   /**
-    * Number of lines for the weather's description text.
-    */
-   private int                                        weatherDescriptionNumLines;
+   /** Number of lines for the weather's description text */
+   private int                                        _numLines_WeatherDescription;
 
    private final NumberFormat                         _nfLatLon                       = NumberFormat.getNumberInstance();
 
@@ -2641,10 +2637,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
                   _postSelectionProvider.setSelection(new SelectionTourData(null, _tourData));
                }
-
-               // update save icon
-               final ICommandService cs = PlatformUI.getWorkbench().getService(ICommandService.class);
-               cs.refreshElements(AppCommands.COMMAND_NET_TOURBOOK_TOUR_SAVE_TOUR, null);
             }
          }
 
@@ -2695,6 +2687,15 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                _isPartVisible = true;
 
                Display.getCurrent().asyncExec(() -> updateUI_FromModelRunnable());
+
+               /*
+                * Ensure that the save/retore icons display correctly, otherwise the bright icons
+                * (with dark theme) could be displayed until a refresh occurs
+                */
+               final ICommandService cs = PlatformUI.getWorkbench().getService(ICommandService.class);
+
+               cs.refreshElements(AppCommands.COMMAND_NET_TOURBOOK_TOUR_SAVE_TOUR, null);
+               cs.refreshElements(AppCommands.COMMAND_NET_TOURBOOK_TOUR_RESTORE_TOUR, null);
             }
          }
       };
@@ -3616,7 +3617,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                   //
                   // SWT.DEFAULT causes lot's of problems with the layout therefore the hint is set
                   //
-                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(_descriptionNumLines))
+                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(_numLines_TourDescription))
                   .applyTo(_txtDescription);
 
             _txtDescription.addModifyListener(_modifyListener);
@@ -4272,7 +4273,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
                   //
                   // SWT.DEFAULT causes lots of problems with the layout therefore the hint is set
                   //
-                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(weatherDescriptionNumLines))
+                  .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(_numLines_WeatherDescription))
                   .applyTo(_txtWeather);
          }
          {
@@ -4839,12 +4840,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          _tableComboWeather_AirQuality.setToolTipText(Messages.Tour_Editor_Label_AirQuality_Tooltip);
          _tableComboWeather_AirQuality.setShowTableHeader(false);
          _tableComboWeather_AirQuality.defineColumns(1);
-         _tableComboWeather_AirQuality.addModifyListener(_modifyListener);
 
          // We update the model in the selection listener as the selected
          // index value comes back with -1 in the modify listener
-         _tableComboWeather_AirQuality.addSelectionListener(
-               widgetSelectedAdapter(selectionEvent -> onSelect_AirQuality()));
+         _tableComboWeather_AirQuality.addSelectionListener(_selectionListener);
 
          _tk.adapt(_tableComboWeather_AirQuality, true, false);
          GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.FILL).applyTo(_tableComboWeather_AirQuality);
@@ -6445,7 +6444,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
       if (_tourData == null) {
 
-         Display.getCurrent().asyncExec(() -> {
+         _pageBook.getDisplay().asyncExec(() -> {
 
             if (_pageBook.isDisposed()) {
                return;
@@ -7124,16 +7123,12 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       tbm.add(_actionToggleReadEditMode);
       tbm.add(_actionToggleRowSelectMode);
 
-      tbm.add(new Separator());
+      // save and restore actions are added from plugin.xml
+      tbm.add(new Separator("group_SaveAndRestoreActions"));
+
       tbm.add(_actionViewSettings);
 
       tbm.update(true);
-
-      /*
-       * fill toolbar view menu
-       */
-//      final IMenuManager menuMgr = getViewSite().getActionBars().getMenuManager();
-
    }
 
    /**
@@ -7903,17 +7898,6 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _containerTags_Scrolled.setMinSize(contentSize);
    }
 
-   private void onSelect_AirQuality() {
-
-      final int airQuality_SelectionIndex = _tableComboWeather_AirQuality.getSelectionIndex();
-      String airQualityValue = IWeather.airQualityTexts[airQuality_SelectionIndex];
-      if (airQualityValue.equals(IWeather.airQualityIsNotDefined)) {
-         // replace invalid value
-         airQualityValue = UI.EMPTY_STRING;
-      }
-      _tourData.setWeather_AirQuality(airQualityValue);
-   }
-
    private void onSelect_Slice(final SelectionChangedEvent selectionChangedEvent) {
 
       final StructuredSelection selection = (StructuredSelection) selectionChangedEvent.getSelection();
@@ -8468,8 +8452,11 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       _latLonDigits = Util.getStateInt(_state, STATE_LAT_LON_DIGITS, STATE_LAT_LON_DIGITS_DEFAULT);
       setup_LatLonDigits();
 
-      _descriptionNumLines = Util.getStateInt(_state, STATE_DESCRIPTION_NUMBER_OF_LINES, STATE_DESCRIPTION_NUMBER_OF_LINES_DEFAULT);
-      weatherDescriptionNumLines = Util.getStateInt(_state,
+      _numLines_TourDescription = Util.getStateInt(_state,
+            STATE_DESCRIPTION_NUMBER_OF_LINES,
+            STATE_DESCRIPTION_NUMBER_OF_LINES_DEFAULT);
+
+      _numLines_WeatherDescription = Util.getStateInt(_state,
             STATE_WEATHERDESCRIPTION_NUMBER_OF_LINES,
             STATE_WEATHERDESCRIPTION_NUMBER_OF_LINES_DEFAULT);
    }
@@ -9178,6 +9165,10 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
             _tourData.setWeather_Temperature_WindChill(UI.convertTemperatureToMetric(temperature_WindChill));
          }
 
+         final int airQualityIndex = _tableComboWeather_AirQuality.getSelectionIndex();
+         final String airQualityId = IWeather.airQualityIds[airQualityIndex];
+         _tourData.setWeather_AirQuality(airQualityId);
+
          /*
           * Time
           */
@@ -9403,22 +9394,22 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    void updateUI_DescriptionNumLines(final int numTourDescriptionLines,
                                      final int numWeatherDescriptionLines) {
 
-      if (numTourDescriptionLines == _descriptionNumLines &&
-            numWeatherDescriptionLines == weatherDescriptionNumLines) {
+      if (numTourDescriptionLines == _numLines_TourDescription &&
+            numWeatherDescriptionLines == _numLines_WeatherDescription) {
 
          // nothing has changed
          return;
       }
 
-      _descriptionNumLines = numTourDescriptionLines;
-      weatherDescriptionNumLines = numWeatherDescriptionLines;
+      _numLines_TourDescription = numTourDescriptionLines;
+      _numLines_WeatherDescription = numWeatherDescriptionLines;
 
       // update layouts
-      final GridData gd = (GridData) _txtDescription.getLayoutData();
-      gd.heightHint = _pc.convertHeightInCharsToPixels(_descriptionNumLines);
+      final GridData gdDescription = (GridData) _txtDescription.getLayoutData();
+      gdDescription.heightHint = _pc.convertHeightInCharsToPixels(_numLines_TourDescription);
 
-      final GridData weatherGridData = (GridData) _txtWeather.getLayoutData();
-      weatherGridData.heightHint = _pc.convertHeightInCharsToPixels(weatherDescriptionNumLines);
+      final GridData gdWeather = (GridData) _txtWeather.getLayoutData();
+      gdWeather.heightHint = _pc.convertHeightInCharsToPixels(_numLines_WeatherDescription);
 
       onResize_Tab1();
    }
