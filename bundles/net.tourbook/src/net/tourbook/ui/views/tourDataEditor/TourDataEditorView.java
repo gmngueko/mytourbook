@@ -109,6 +109,7 @@ import net.tourbook.tour.SelectionTourPause;
 import net.tourbook.tour.TourEvent;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourLogManager;
+import net.tourbook.tour.TourLogManager.AutoOpenEvent;
 import net.tourbook.tour.TourManager;
 import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.ComboViewerCadence;
@@ -5058,8 +5059,8 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
       {
          _tourContainer = new Composite(_tab1Container, SWT.NONE);
          GridDataFactory.fillDefaults().applyTo(_tourContainer);
-         _tk.adapt(_tourContainer);
          GridLayoutFactory.swtDefaults().applyTo(_tourContainer);
+         _tk.adapt(_tourContainer);
 //       _tourContainer.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_DARK_BLUE));
 
          // set content for scrolled composite
@@ -5068,17 +5069,9 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          _tk.setBorderStyle(SWT.BORDER);
          {
             createUI_Section_110_Tour(_tourContainer);
-            createUI_SectionSeparator(_tourContainer);
-
             createUI_Section_120_DateTime(_tourContainer);
-            createUI_SectionSeparator(_tourContainer);
-
             createUI_Section_130_Personal(_tourContainer);
-            createUI_SectionSeparator(_tourContainer);
-
             createUI_Section_140_Weather(_tourContainer);
-            createUI_SectionSeparator(_tourContainer);
-
             createUI_Section_150_Characteristics(_tourContainer);
 
             createUI_SectionSeparator(_tourContainer);
@@ -8040,7 +8033,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
 
             // tour is not modified which is caused when an error occurs -> show error log
 
-            TourLogManager.showLogView();
+            TourLogManager.showLogView(AutoOpenEvent.DOWNLOAD_SOMETHING);
 
          } else {
 
@@ -8669,6 +8662,35 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
          _tourData.computeComputedValues();
 
          /*
+          * Update absolute tour marker time when this time is not set correctly. This can happen
+          * when the tour start time is modified, e.g. when a tour is copied and the tour start
+          * date/time is adjusted
+          */
+         final long absoluteTourStartTime = _tourData.getTourStartTimeMS();
+
+         for (final TourMarker tourMarker : _tourData.getTourMarkers()) {
+
+            final int relativeMarkerTime = tourMarker.getTime();
+
+            if (relativeMarkerTime == -1) {
+
+               // relative time is not available
+
+               continue;
+            }
+
+            final long absoluteFromRelativeMarkerTime = absoluteTourStartTime + relativeMarkerTime * 1000;
+            final long absoluteMarkerTime = tourMarker.getTourTime();
+
+            if (absoluteMarkerTime != absoluteFromRelativeMarkerTime) {
+
+               // adjust marker time
+
+               tourMarker.setTime(relativeMarkerTime, absoluteFromRelativeMarkerTime);
+            }
+         }
+
+         /*
           * saveTour() will check the tour editor dirty state, but when the tour is saved, the dirty
           * flag can be set before to prevent an out of sync error
           */
@@ -8739,7 +8761,7 @@ public class TourDataEditorView extends ViewPart implements ISaveablePart, ISave
    }
 
    /**
-    * saves the tour in the {@link TourDataEditorView}
+    * Saves the tour in the {@link TourDataEditorView}
     *
     * @return Returns <code>true</code> when the tour is saved or <code>false</code> when the tour
     *         could not saved because the user canceled saving

@@ -83,6 +83,7 @@ import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.preferences.PrefPageViews;
 import net.tourbook.srtm.IPreferences;
 import net.tourbook.srtm.PrefPageSRTMData;
+import net.tourbook.tour.TourLogManager.AutoOpenEvent;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.ITourProviderAll;
 import net.tourbook.ui.action.ActionEditQuick;
@@ -2912,7 +2913,7 @@ public class TourManager {
 
       final String weatherProvider = _prefStore.getString(ITourbookPreferences.WEATHER_WEATHER_PROVIDER_ID);
 
-      TourLogManager.showLogView();
+      TourLogManager.showLogView(AutoOpenEvent.DOWNLOAD_SOMETHING);
       TourLogManager.subLog_INFO(NLS.bind(LOG_RETRIEVE_WEATHER_DATA_001_START, weatherProvider));
 
       final int numTours = allTourData.size();
@@ -3343,7 +3344,7 @@ public class TourManager {
          return false;
       }
 
-      TourLogManager.showLogView();
+      TourLogManager.showLogView(AutoOpenEvent.TOUR_ADJUSTMENTS);
 
       TourLogManager.addLog(
             TourLogState.DEFAULT,
