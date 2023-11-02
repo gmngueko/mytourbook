@@ -19,6 +19,7 @@ import static org.eclipse.swt.events.KeyListener.keyPressedAdapter;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.List;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
@@ -344,22 +345,41 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
 
                   final long viewTourId = _tourData.getTourId();
 
-                  for (final TourData tourData : modifiedTours) {
-                     if (tourData.getTourId() == viewTourId) {
+                  // The view contains multiple tours
+                  if (_tourData.isMultipleTours()) {
 
-                        // get modified tour
-                        _tourData = tourData;
-                        _isMultipleTours = tourData.isMultipleTours();
+                     final List<Long> tourIds = new ArrayList<>();
 
-                        updateUI_MarkerViewer();
+                     modifiedTours.forEach(tour -> tourIds.add(tour.getTourId()));
+                     _tourData = TourManager.createJoinedTourData(tourIds);
+                     _isMultipleTours = true;
 
-                        // removed old tour data from the selection provider
-                        _postSelectionProvider.clearSelection();
+                     updateUI_MarkerViewer();
 
-                        // nothing more to do, the view contains only one tour
-                        return;
+                     // removed old tour data from the selection provider
+                     _postSelectionProvider.clearSelection();
+
+                  } else {
+
+                     // The view contains a single tour
+                     for (final TourData tourData : modifiedTours) {
+                        if (tourData.getTourId() == viewTourId) {
+
+                           // get modified tour
+                           _tourData = tourData;
+                           _isMultipleTours = tourData.isMultipleTours();
+
+                           updateUI_MarkerViewer();
+
+                           // removed old tour data from the selection provider
+                           _postSelectionProvider.clearSelection();
+
+                           // nothing more to do, the view contains only one tour
+                           return;
+                        }
                      }
                   }
+
                }
 
             } else if (tourEventId == TourEventId.MARKER_SELECTION) {
@@ -389,6 +409,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
     * Computes the average speed between two markers (in km/h or mph)
     *
     * @param cell
+    *
     * @return
     */
    private double computeAverageSpeed(final ViewerCell cell) {
@@ -459,7 +480,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
 
       _viewerMenuManager = new MenuManager("#PopupMenu"); //$NON-NLS-1$
       _viewerMenuManager.setRemoveAllWhenShown(true);
-      _viewerMenuManager.addMenuListener(this::fillContextMenu);
+      _viewerMenuManager.addMenuListener(manager -> fillContextMenu(manager));
    }
 
    @Override
@@ -1203,6 +1224,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
     * Retrieves the index of the marker currently selected.
     *
     * @param cell
+    *
     * @return
     */
    private int getCurrentMarkerIndex(final ViewerCell cell) {
@@ -1232,6 +1254,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
     * Retrieves the index of the marker located before the current marker.
     *
     * @param cell
+    *
     * @return
     */
    private int getPreviousMarkerIndex(final ViewerCell cell) {
@@ -1342,9 +1365,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
             }
          }
 
-      } else if (selection instanceof SelectionReferenceTourView) {
-
-         final SelectionReferenceTourView tourCatalogSelection = (SelectionReferenceTourView) selection;
+      } else if (selection instanceof final SelectionReferenceTourView tourCatalogSelection) {
 
          final TVIRefTour_RefTourItem refItem = tourCatalogSelection.getRefItem();
          if (refItem != null) {
