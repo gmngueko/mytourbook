@@ -1167,7 +1167,6 @@ class DialogReimportTours extends TitleAreaDialog {
             DialogUtils.addTourValueTypeFromCheckbox(_chkData_Tour_Weather,            TourValueType.TOUR__WEATHER,              tourValueTypes);
             DialogUtils.addTourValueTypeFromCheckbox(_chkData_Tour_CustomFields,       TourValueType.TOUR__CUSTOM_FIELDS,        tourValueTypes);
 
-// SET_FORMATTING_ON
          }
 
          doReimport(tourValueTypes);
@@ -1178,26 +1177,28 @@ class DialogReimportTours extends TitleAreaDialog {
 
    private void onDeselectAll_DataItems() {
 
-      _chkData_AllTimeSlices.setSelection(false);
-      _chkData_TimeSlice_Elevation.setSelection(false);
+      _chkData_AllTimeSlices                    .setSelection(false);
+      _chkData_TimeSlice_Elevation              .setSelection(false);
 
-      _chkData_Tour_Calories.setSelection(false);
-      _chkData_Tour_ImportFileLocation.setSelection(false);
-      _chkData_Tour_Markers.setSelection(false);
-      _chkData_Tour_CustomFields.setSelection(false);
-      _chkData_Tour_Weather.setSelection(false);
+      _chkData_Tour_Calories                    .setSelection(false);
+      _chkData_Tour_ImportFileLocation          .setSelection(false);
+      _chkData_Tour_Markers                     .setSelection(false);
+      _chkData_Tour_CustomFields                .setSelection(false);
+      _chkData_Tour_Weather                     .setSelection(false);
 
-      _chkData_TimeSlice_Battery.setSelection(false);
-      _chkData_TimeSlice_Cadence.setSelection(false);
-      _chkData_TimeSlice_Gear.setSelection(false);
-      _chkData_TimeSlice_PowerAndPulse.setSelection(false);
-      _chkData_TimeSlice_PowerAndSpeed.setSelection(false);
-      _chkData_TimeSlice_RunningDynamics.setSelection(false);
-      _chkData_TimeSlice_Swimming.setSelection(false);
-      _chkData_TimeSlice_TemperatureFromDevice.setSelection(false);
-      _chkData_TimeSlice_TourTimerPauses.setSelection(false);
-      _chkData_TimeSlice_Training.setSelection(false);
-      _chkData_TimeSlice_CustomTracks.setSelection(false);
+      _chkData_TimeSlice_Battery                .setSelection(false);
+      _chkData_TimeSlice_Cadence                .setSelection(false);
+      _chkData_TimeSlice_Gear                   .setSelection(false);
+      _chkData_TimeSlice_PowerAndPulse          .setSelection(false);
+      _chkData_TimeSlice_PowerAndSpeed          .setSelection(false);
+      _chkData_TimeSlice_RunningDynamics        .setSelection(false);
+      _chkData_TimeSlice_Swimming               .setSelection(false);
+      _chkData_TimeSlice_TemperatureFromDevice  .setSelection(false);
+      _chkData_TimeSlice_TourTimerPauses        .setSelection(false);
+      _chkData_TimeSlice_Training               .setSelection(false);
+      _chkData_TimeSlice_CustomTracks           .setSelection(false);
+
+// SET_FORMATTING_ON
 
       enableControls();
    }

@@ -3135,7 +3135,7 @@ public class TourManager {
     * @param modifiedTours
     *           modified tours
     * @param canFireNotification
-    *           when <code>true</code>, a notification is fired when the data are saved
+    *           When <code>true</code>, a notification is fired when the data are saved
     *
     * @return a list with all persisted {@link TourData}
     */
@@ -3159,7 +3159,12 @@ public class TourManager {
 
          // no progress when only 1 tour is saved
 
-         saveModifiedTours_OneTour(savedTours, tourDataEditorSavedTour, doFireChangeEvent, modifiedTours.get(0));
+         saveModifiedTours_OneTour(
+               
+               savedTours,
+               tourDataEditorSavedTour,
+               doFireChangeEvent,
+               modifiedTours.get(0));
 
       } else {
 
@@ -3181,7 +3186,12 @@ public class TourManager {
                            ++saveCounter,
                            tourSize));
 
-                     saveModifiedTours_OneTour(savedTours, tourDataEditorSavedTour, doFireChangeEvent, tourData);
+                     saveModifiedTours_OneTour(
+                           
+                           savedTours,
+                           tourDataEditorSavedTour,
+                           doFireChangeEvent,
+                           tourData);
 
                      monitor.worked(1);
                   }
