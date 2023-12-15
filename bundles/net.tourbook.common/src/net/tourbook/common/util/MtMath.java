@@ -1,4 +1,3 @@
-
 /*******************************************************************************
  * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
@@ -175,26 +174,26 @@ public class MtMath {
                                               final double distance,
                                               final double bearing) {
 
-      // sinb2 = sinlatR⋅cosdARad + coslatR⋅sindARad⋅cosbear
-      // tanΔλ = sinbear⋅sindARad⋅coslatR / cosdARad−sinlatR⋅sinb2
+      // sinφ2 = sinφ1⋅cosδ + cosφ1⋅sinδ⋅cosθ
+      // tanΔλ = sinθ⋅sinδ⋅cosφ1 / cosδ−sinφ1⋅sinφ2
 
       // see mathforum.org/library/drmath/view/52049.html for derivation
 
-      final double dARad = distance / EARTH_RADIUS; // angular distance in radians
-      final double bear = Math.toRadians(bearing);
+      final double δ = distance / EARTH_RADIUS; // angular distance in radians
+      final double θ = Math.toRadians(bearing);
 
-      final double latR = Math.toRadians(latitude1);
-      final double longR = Math.toRadians(longitude1);
+      final double φ1 = Math.toRadians(latitude1);
+      final double λ1 = Math.toRadians(longitude1);
 
-      final double sinb2 = Math.sin(latR) * Math.cos(dARad) + Math.cos(latR) * Math.sin(dARad) * Math.cos(bear);
-      final double b2 = Math.asin(sinb2);
+      final double sinφ2 = Math.sin(φ1) * Math.cos(δ) + Math.cos(φ1) * Math.sin(δ) * Math.cos(θ);
+      final double φ2 = Math.asin(sinφ2);
 
-      final double y = Math.sin(bear) * Math.sin(dARad) * Math.cos(latR);
-      final double x = Math.cos(dARad) - Math.sin(latR) * sinb2;
-      final double a2 = longR + Math.atan2(y, x);
+      final double y = Math.sin(θ) * Math.sin(δ) * Math.cos(φ1);
+      final double x = Math.cos(δ) - Math.sin(φ1) * sinφ2;
+      final double λ2 = λ1 + Math.atan2(y, x);
 
-      final double lat2 = Math.toDegrees(b2);
-      final double lon2 = Math.toDegrees(a2);
+      final double lat2 = Math.toDegrees(φ2);
+      final double lon2 = Math.toDegrees(λ2);
 
       return new GeoPosition(lat2, lon2);
    }
