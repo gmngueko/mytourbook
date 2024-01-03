@@ -12867,7 +12867,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    /**
     * @param tourEndPlace
-    *           the tourEndPlace to set
+    *           Set tour end location text
     */
    public void setTourEndPlace(final String tourEndPlace) {
       this.tourEndPlace = tourEndPlace;
@@ -12992,7 +12992,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    /**
     * @param tourStartPlace
-    *           the tourStartPlace to set
+    *           Set tour start location text
     */
    public void setTourStartPlace(final String tourStartPlace) {
       this.tourStartPlace = tourStartPlace;
