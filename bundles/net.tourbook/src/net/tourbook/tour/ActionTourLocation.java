@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2024 Wolfgang Schramm and Contributors
+ * Copyright (C) 2023, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -232,10 +232,15 @@ public class ActionTourLocation extends ContributionItem {
          itemBounds.x = itemDisplayPosition.x;
          itemBounds.y = itemDisplayPosition.y;
 
+         final TourLocation tourLocation = _isStartLocation
+               ? _tourData.getTourLocationStart()
+               : _tourData.getTourLocationEnd();
+
          _slideoutLocationProfiles = new SlideoutLocationProfiles(
 
                _tourLocationConsumer,
-               _tourData,
+               tourLocation,
+
                _toolbar,
                itemBounds,
                _state,
