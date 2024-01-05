@@ -5850,18 +5850,19 @@ public class TourDatabase {
 
             // version 38 end ---------
 
+            //
+            // version 49 start
+
+            + "   imageFilePath              VARCHAR(" + TourTag.DB_LENGTH_FILE_PATH + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version 49 end ---------
+
             // TourTag extraData GMN start
             //
             + "   extraData             BLOB(2G)                                          " + NL //$NON-NLS-1$
             //
             // TourTag extraData GMN end ---------
 
-            //
-            // version 49 start
-
-            + "   imageFilePath              VARCHAR(" + TourTag.DB_LENGTH_FILE_PATH + ") " + NL //$NON-NLS-1$ //$NON-NLS-2$
-
-            // version 49 end ---------
 
             + ")"); //$NON-NLS-1$
 
