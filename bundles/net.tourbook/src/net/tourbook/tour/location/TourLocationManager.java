@@ -775,6 +775,7 @@ public class TourLocationManager {
       }
 
       List<TourLocation> allDelReapplyLocations;
+      TourLocation oneActionLocation = null;
 
       if (isOneAction) {
 
@@ -788,6 +789,8 @@ public class TourLocationManager {
          // skip 1st location
 
          allDelReapplyLocations = allLocations.subList(1, numLocations);
+
+         oneActionLocation = allLocations.get(0);
 
       } else {
 
@@ -812,8 +815,8 @@ public class TourLocationManager {
             true, // is set start
             true, // is set end
 
-            true // isOneAction
-      );
+            true, // isOneAction
+            oneActionLocation);
 
       return true;
    }
@@ -1738,6 +1741,86 @@ public class TourLocationManager {
    }
 
    /**
+    * Set location text into the tour start/end location fields for all tours which have the tour
+    * location
+    *
+    * @param label
+    * @param tourLocation
+    */
+   public static void setLocationIntoTour(final String label, final TourLocation tourLocation) {
+
+      final String locationLabel = validString(label);
+      final long locationId = tourLocation.getLocationId();
+
+      PreparedStatement stmtStart = null;
+      PreparedStatement stmtEnd = null;
+      PreparedStatement stmtLocation = null;
+
+      try (Connection conn = TourDatabase.getInstance().getConnection()) {
+
+         final String sqlStartLocation = UI.EMPTY_STRING
+
+               + "UPDATE " + TourDatabase.TABLE_TOUR_DATA + NL //          //$NON-NLS-1$
+
+               + "SET tourStartPlace = ?" + NL //                       1  //$NON-NLS-1$
+
+               + "WHERE tourLocationStart_LocationID = ?" + NL //       2  //$NON-NLS-1$
+         ;
+
+         final String sqlEndLocation = UI.EMPTY_STRING
+
+               + "UPDATE " + TourDatabase.TABLE_TOUR_DATA + NL //          //$NON-NLS-1$
+
+               + "SET tourEndPlace = ?" + NL //                         1  //$NON-NLS-1$
+
+               + "WHERE tourLocationEnd_LocationID = ?" + NL //         2  //$NON-NLS-1$
+         ;
+
+         final String sqlLocation = UI.EMPTY_STRING
+
+               + "UPDATE " + TourDatabase.TABLE_TOUR_LOCATION + NL //      //$NON-NLS-1$
+
+               + "SET " //                                                 //$NON-NLS-1$
+               + " appliedName  = ?," + NL //                           1  //$NON-NLS-1$
+               + " lastModified = ?" + NL //                            2  //$NON-NLS-1$
+
+               + "WHERE LocationID = ?" + NL //                         3  //$NON-NLS-1$
+         ;
+
+// SET_FORMATTING_OFF
+
+         stmtStart = conn.prepareStatement(sqlStartLocation);
+         stmtStart.setString(          1, locationLabel);
+         stmtStart.setLong(            2, locationId);
+         stmtStart.executeUpdate();
+
+         stmtEnd = conn.prepareStatement(sqlEndLocation);
+         stmtEnd.setString(            1, locationLabel);
+         stmtEnd.setLong(              2, locationId);
+         stmtEnd.executeUpdate();
+
+         // log applied label
+         stmtLocation = conn.prepareStatement(sqlLocation);
+         stmtLocation.setString(       1, locationLabel);
+         stmtLocation.setLong(         2, System.currentTimeMillis());
+         stmtLocation.setLong(         3, locationId);
+         stmtLocation.executeUpdate();
+
+// SET_FORMATTING_ON
+
+      } catch (final SQLException e) {
+
+         UI.showSQLException(e);
+
+      } finally {
+
+         Util.closeSql(stmtStart);
+         Util.closeSql(stmtEnd);
+         Util.closeSql(stmtLocation);
+      }
+   }
+
+   /**
     * Save resized bounding box in the database for the provided tour location ID
     *
     * @param locationId
@@ -1895,14 +1978,20 @@ public class TourLocationManager {
     * @param isOneAction
     *           When <code>true</code> then existing locations are ignored and retrieved again from
     *           the DB or location provider
+    * @param oneActionLocation
     */
    public static void setTourLocations(final List<TourData> requestedTours,
                                        final TourLocationProfile locationProfile,
+
                                        final boolean isSetStartLocation,
                                        final boolean isSetEndLocation,
-                                       final boolean isOneAction) {
+
+                                       final boolean isOneAction,
+                                       final TourLocation oneActionLocation) {
 
       final ArrayList<TourData> savedTours = new ArrayList<>();
+
+      final boolean hasOneActionAppliedName = oneActionLocation != null && StringUtils.hasContent(oneActionLocation.appliedName);
 
       try {
 
@@ -1954,11 +2043,16 @@ public class TourLocationManager {
 
                      if (isOneAction) {
 
-                        // keep location text
-//                      tourData.setTourStartPlace(null);
+                        // overwrite location text, but only when an applied name is available
+                        if (hasOneActionAppliedName) {
+
+                           tourData.setTourStartPlace(oneActionLocation.appliedName);
+                        }
 
                         tourData.setTourLocationStart(null);
                      }
+
+                     String appliedName = null;
 
                      TourLocation tourLocationStart = tourData.getTourLocationStart();
                      if (tourLocationStart == null) {
@@ -1974,15 +2068,25 @@ public class TourLocationManager {
 
                            waitingTime = startLocationData.waitingTime;
                            tourLocationStart = startLocationData.tourLocation;
+
+                           appliedName = tourLocationStart.appliedName;
                         }
                      }
 
                      if (tourLocationStart != null) {
 
-                        final String startLocationText = createLocationDisplayName(tourLocationStart, locationProfile);
+                        // reapply name when available
+                        if (appliedName != null) {
 
-                        if (isOneAction == false) {
-                           tourData.setTourStartPlace(startLocationText);
+                           tourData.setTourStartPlace(appliedName);
+
+                        } else {
+
+                           final String startLocationText = createLocationDisplayName(tourLocationStart, locationProfile);
+
+                           if (isOneAction == false) {
+                              tourData.setTourStartPlace(startLocationText);
+                           }
                         }
 
                         tourData.setTourLocationStart(tourLocationStart);
@@ -2003,11 +2107,16 @@ public class TourLocationManager {
 
                      if (isOneAction) {
 
-                        // keep location text
-//                      tourData.setTourEndPlace(null);
+                        // overwrite location text, but only when an applied name is available
+                        if (hasOneActionAppliedName) {
+
+                           tourData.setTourEndPlace(oneActionLocation.appliedName);
+                        }
 
                         tourData.setTourLocationEnd(null);
                      }
+
+                     String appliedName = null;
 
                      TourLocation tourLocationEnd = tourData.getTourLocationEnd();
                      if (tourLocationEnd == null) {
@@ -2026,15 +2135,25 @@ public class TourLocationManager {
 
                            waitingTime = endLocationData.waitingTime;
                            tourLocationEnd = endLocationData.tourLocation;
+
+                           appliedName = tourLocationEnd.appliedName;
                         }
                      }
 
                      if (tourLocationEnd != null) {
 
-                        final String endLocationText = createLocationDisplayName(tourLocationEnd, locationProfile);
+                        // reapply name when available
+                        if (appliedName != null) {
 
-                        if (isOneAction == false) {
-                           tourData.setTourEndPlace(endLocationText);
+                           tourData.setTourEndPlace(appliedName);
+
+                        } else {
+
+                           final String endLocationText = createLocationDisplayName(tourLocationEnd, locationProfile);
+
+                           if (isOneAction == false) {
+                              tourData.setTourEndPlace(endLocationText);
+                           }
                         }
 
                         tourData.setTourLocationEnd(tourLocationEnd);
