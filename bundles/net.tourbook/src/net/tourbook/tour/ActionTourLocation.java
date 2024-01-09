@@ -101,7 +101,7 @@ public class ActionTourLocation extends ContributionItem {
 
       public ActionLocationPart() {
 
-         super("&Set Location Part", AS_DROP_DOWN_MENU);
+         super(Messages.Tour_Location_Action_SetLocationPart, AS_DROP_DOWN_MENU);
       }
 
       @Override
@@ -469,8 +469,11 @@ public class ActionTourLocation extends ContributionItem {
 
       fillMenu_AllProfileActions(menuMgr);
 
-      menuMgr.add(_actionSlideoutLocationProfiles);
+      menuMgr.add(new Separator());
       menuMgr.add(_actionRetrieveLocationAgain);
+
+      menuMgr.add(new Separator());
+      menuMgr.add(_actionSlideoutLocationProfiles);
    }
 
    /**
@@ -495,8 +498,6 @@ public class ActionTourLocation extends ContributionItem {
       menuMgr.add(_actionProfileTitle);
 
       fillMenu_AllProfileActions(menuMgr, allProfiles, defaultProfile);
-
-      menuMgr.add(new Separator());
    }
 
    private void fillMenu_AllProfileActions(final IMenuManager menuMgr,
