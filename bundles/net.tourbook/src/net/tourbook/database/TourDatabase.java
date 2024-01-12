@@ -121,11 +121,12 @@ public class TourDatabase {
     * <li>/net.tourbook.export/format-templates/mt-1.0.vm</li>
     * <li>net.tourbook.device.mt.MT_StAXHandler</li>
     */
-   private static final int TOURBOOK_DB_VERSION = 53;
+   private static final int TOURBOOK_DB_VERSION = 54;
 
-//   private static final int TOURBOOK_DB_VERSION = 54; // 24.x ??????
+//   private static final int TOURBOOK_DB_VERSION = 55; // 24.x ??????
 
-//   private static final int TOURBOOK_DB_VERSION = 53; // 24.1
+//   private static final int TOURBOOK_DB_VERSION = 54; // 24.1 fixed db data update bug 47 -> 48
+//   private static final int TOURBOOK_DB_VERSION = 53; // 24.1 added new fields
 //   private static final int TOURBOOK_DB_VERSION = 52; // 24.1
 //   private static final int TOURBOOK_DB_VERSION = 51; // 23.8
 //   private static final int TOURBOOK_DB_VERSION = 50; // 23.5
@@ -178,7 +179,6 @@ public class TourDatabase {
 //   private static final String SQL_STATE_XJ004_DATABASE_NOT_FOUND         = "XJ004";                                                 //$NON-NLS-1$
 
    private static final String NL                                         = UI.NEW_LINE;
-   private static final String TIME_STAMP                                 = net.tourbook.common.UI.timeStamp();
 
    private static final int    MAX_TRIES_TO_PING_SERVER                   = 10;
 
@@ -3292,6 +3292,33 @@ public class TourDatabase {
       }
    }
 
+   static void logDbUpdate(final String info) {
+
+      System.out.println(net.tourbook.common.UI.timeStamp() + "[DB Update] " + info); //$NON-NLS-1$
+   }
+
+   private static void logDbUpdate_End(final int dbVersion) {
+
+      System.out.println(NLS.bind(Messages.Tour_Database_UpdateDone, dbVersion));
+      System.out.println();
+   }
+
+   private static void logDbUpdate_Start(final int dbVersion) {
+
+      System.out.println();
+      System.out.println(NLS.bind(Messages.Tour_Database_Update, dbVersion));
+   }
+
+   private static void logDerbyCommand(final String dbUrl) {
+
+      System.out.println(net.tourbook.common.UI.timeStamp() + "[Executing Derby command] " + dbUrl); //$NON-NLS-1$
+   }
+
+   private static void logDerbyInfo(final String info) {
+
+      System.out.println(net.tourbook.common.UI.timeStamp() + "[Derby] " + info); //$NON-NLS-1$
+   }
+
    /**
     * Persists an entity.
     * <p>
@@ -6243,44 +6270,6 @@ public class TourDatabase {
             : RENAMED__TOUR_RECORDING_TIME__INTO;
    }
 
-   private void logDbUpdate(final String info) {
-
-      System.out.println(TIME_STAMP + "[DB Update] " + info); //$NON-NLS-1$
-   }
-
-   private void logDbUpdate_End(final int dbVersion) {
-
-      System.out.println(NLS.bind(Messages.Tour_Database_UpdateDone, dbVersion));
-      System.out.println();
-   }
-
-   private void logDbUpdate_End_Special(final int dbVersion, final String message) {
-
-      System.out.println(message + ". End on db version:" + NLS.bind(Messages.Tour_Database_UpdateDone, dbVersion));
-      System.out.println();
-   }
-
-   private void logDbUpdate_Start(final int dbVersion) {
-
-      System.out.println();
-      System.out.println(NLS.bind(Messages.Tour_Database_Update, dbVersion));
-   }
-
-   private void logDbUpdate_Start_Special(final int dbVersion, final String message) {
-
-      System.out.println();
-      System.out.println(message + ". Start on db version:" + NLS.bind(Messages.Tour_Database_Update, dbVersion));//$NON-NLS-1$
-   }
-
-   private void logDerbyCommand(final String dbUrl) {
-
-      System.out.println(TIME_STAMP + "[Executing Derby command] " + dbUrl); //$NON-NLS-1$
-   }
-
-   private void logDerbyInfo(final String info) {
-
-      System.out.println(TIME_STAMP + "[Derby] " + info); //$NON-NLS-1$
-   }
 
    private void modifyColumn_Type(final String table,
                                   final String fieldName,
@@ -7384,6 +7373,11 @@ public class TourDatabase {
             currentDbVersion = _dbDesignVersion_New = updateDb_052_To_053(conn, splashManager);
          }
 
+         // 53 -> 54    24.1
+         if (currentDbVersion == 53) {
+            currentDbVersion = _dbDesignVersion_New = updateDb_053_To_054(conn, splashManager);
+         }
+
          // update db design version number
          updateVersionNumber_10_AfterDesignUpdate(conn, _dbDesignVersion_New);
 
@@ -7436,20 +7430,16 @@ public class TourDatabase {
          updateDb_028_To_029_DataUpdate(conn, splashManager);
          updateDb_031_To_032_DataUpdate(conn, splashManager);
          updateDb_033_To_034_DataUpdate(conn, splashManager);
-         updateDb_036_To_037_DataUpdate(conn, splashManager);
-         updateDb_039_To_040_DataUpdate(conn, splashManager);
-         updateDb_041_To_042_DataUpdate(conn);
-         updateDb_042_to_043_DataUpdate(conn, splashManager);
-         updateDb_046_to_047_DataUpdate(conn, splashManager);
-
-         // ...... 47 to  48
-         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_047_to_048());
-
-         updateDb_049_To_050_DataUpdate(conn, splashManager);
-         updateDb_050_To_051_DataUpdate(conn, splashManager);
-
-         // ...... 51 to  52
-         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_051_to_052());
+         updateDb_036_To_037_DataUpdate(conn, splashManager); //                                   37 - 19.2
+         updateDb_039_To_040_DataUpdate(conn, splashManager); //                                   40 - 19.10
+         updateDb_041_To_042_DataUpdate(conn); //                                                  42 - 20.11.1
+         updateDb_042_to_043_DataUpdate(conn, splashManager); //                                   43 - 21.3
+         updateDb_046_to_047_DataUpdate(conn, splashManager); //                                   47 - 22.3
+         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_047_to_048()); //     48 - 22.6
+         updateDb_049_To_050_DataUpdate(conn, splashManager); //                                   50 - 23.5
+         updateDb_050_To_051_DataUpdate(conn, splashManager); //                                   51 - 23.8
+         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_051_to_052()); //     52 - 24.1
+         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_053_to_054()); //     54 - 24.1
 
       } catch (final SQLException e) {
 
@@ -7471,7 +7461,9 @@ public class TourDatabase {
       final int dbDataVersion = tourDataUpdater.getDatabaseVersion();
 
       if (getDbVersion(connection, TABLE_DB_VERSION_DATA) >= dbDataVersion) {
+
          // data version is higher -> nothing to do
+
          return;
       }
 
@@ -11374,10 +11366,6 @@ public class TourDatabase {
       updateMonitor(splashManager, newDbVersion);
 
       /**
-       * This check is VERY IMPORTANT because db version 53 was used during development and this db
-       * update would cause an exception for a "normal" user because of the new database in db
-       * version 52.
-       * <p>
        * Checking the column do not work when the database was just created, so the SQL exception is
        * ignored
        */
@@ -11411,64 +11399,95 @@ public class TourDatabase {
    }
 
    /**
-    * Add CustomField on DB version xxxgmn
+    * Dummy update that {@link net.tourbook.database.TourDataUpdate_053_to_054} works
     *
     * @param conn
     * @param splashManager
+    *
     * @return
+    *
     * @throws SQLException
     */
-   private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
-         throws SQLException {
+   private int updateDb_053_To_054(final Connection conn, final SplashManager splashManager) throws SQLException {
 
-      final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
-      logDbUpdate_Start_Special(currentDbVersion, message);
-      updateMonitor(splashManager, currentDbVersion);
+      final int newDbVersion = 54;
 
-      final Statement stmt = conn.createStatement();
-      {
-         // double check if db already exists
-         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
-            createTable_CustomField(stmt);
-         }
+      logDbUpdate_Start(newDbVersion);
+      updateMonitor(splashManager, newDbVersion);
 
-         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
-            createTable_CustomFieldValues(stmt);
-         }
+      // this is a dummy db design update that the db data update works
 
-      }
-      stmt.close();
+      logDbUpdate_End(newDbVersion);
 
-      logDbUpdate_End_Special(currentDbVersion, message);
+      return newDbVersion;
    }
 
       /**
-       * Add DataSerie on DB version xx
+       * Add CustomField on DB version xxxgmn
        *
        * @param conn
        * @param splashManager
        * @return
        * @throws SQLException
        */
-      private void updateDb_Add_DataSerie(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+      private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
             throws SQLException {
 
-         final String message = "Adding DataSerie Table in DB"; //$NON-NLS-1$
-         logDbUpdate_Start_Special(currentDbVersion, message);
+         final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
+         final String message_End = "CustomField and CustomFieldValue Table's has been added in DB"; //$NON-NLS-1$
+         logDbUpdate_Start(currentDbVersion);
+         logDbUpdate(message);
          updateMonitor(splashManager, currentDbVersion);
 
          final Statement stmt = conn.createStatement();
          {
             // double check if db already exists
-            if (isTableAvailable(conn, TABLE_DATA_SERIE) == false) {
-               createTable_DataSerie(stmt);
+            if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
+               createTable_CustomField(stmt);
             }
+
+            if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
+               createTable_CustomFieldValues(stmt);
+            }
+
          }
          stmt.close();
 
-         logDbUpdate_End_Special(currentDbVersion, message);
-
+         logDbUpdate(message_End);
+         logDbUpdate_End(currentDbVersion);
       }
+
+   /**
+    * Add DataSerie on DB version xx
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private void updateDb_Add_DataSerie(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding DataSerie Table in DB"; //$NON-NLS-1$
+      final String message_End = "DataSerie Table has been added in DB"; //$NON-NLS-1$
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate(message);
+
+      updateMonitor(splashManager, currentDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // double check if db already exists
+         if (isTableAvailable(conn, TABLE_DATA_SERIE) == false) {
+            createTable_DataSerie(stmt);
+         }
+      }
+      stmt.close();
+
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
+
+   }
 
    /**
     * Add Column {@link TourTag#extraData} blob on TABLE_TOUR_TAG.
@@ -11480,8 +11499,10 @@ public class TourDatabase {
          throws SQLException {
 
       final String message = "Adding ExtraData Column on TourTag Table"; //$NON-NLS-1$
+      final String message_End = "ExtraData Column has been added on TourTag Table"; //$NON-NLS-1$
       final String message2 = "ExtraData Column Already on TourTag Table"; //$NON-NLS-1$
-      logDbUpdate_Start_Special(currentDbVersion, message);
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate( message);
       updateMonitor(splashManager, currentDbVersion);
 
       final DatabaseMetaData meta = conn.getMetaData();
@@ -11491,7 +11512,8 @@ public class TourDatabase {
       while (rsColumns.next()) {
          final String name = rsColumns.getString("COLUMN_NAME"); //$NON-NLS-1$
          if (name.compareToIgnoreCase("extraData") == 0) { //$NON-NLS-1$
-            logDbUpdate_End_Special(currentDbVersion, message2);
+            logDbUpdate( message2);
+            logDbUpdate_End(currentDbVersion);
             return;//column exist already
          }
       }
@@ -11512,7 +11534,8 @@ public class TourDatabase {
       }
       stmt.close();
 
-      logDbUpdate_End_Special(currentDbVersion, message);
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
      }
 
    private void updateMonitor(final SplashManager splashManager, final int newDbVersion) {
