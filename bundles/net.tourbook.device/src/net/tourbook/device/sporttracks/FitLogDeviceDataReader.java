@@ -153,6 +153,12 @@ public class FitLogDeviceDataReader extends TourbookDevice {
    @Override
    public boolean validateRawData(final String fileName) {
 
+      //custom tracks check "<FitnessWorkbookEx2 "
+      final boolean isValid = isValidXMLFile(fileName, XML_FIT_LOG_EX2_TAG, true);
+      if(isValid) {
+         return true;
+      }
+
       /*
        * .fitlog files contain BOM's (Byte Order Mark)
        */
@@ -165,9 +171,6 @@ public class FitLogDeviceDataReader extends TourbookDevice {
             || isValidXMLFile(fileName, XML_FIT_LOG_EX_TAG, true)
 
             // check "<FitnessWorkbookExFree "
-            || isValidXMLFile(fileName, XML_FIT_LOG_EX_FREE_TAG, true)
-
-            //custom tracks check "<FitnessWorkbookEx2 "
-            || isValidXMLFile(fileName, XML_FIT_LOG_EX2_TAG, true);
+            || isValidXMLFile(fileName, XML_FIT_LOG_EX_FREE_TAG, true);
    }
 }
