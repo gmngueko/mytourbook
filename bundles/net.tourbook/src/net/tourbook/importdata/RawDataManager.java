@@ -3434,10 +3434,12 @@ public class RawDataManager {
 
       if (importState_File.isFileImportedWithValidData) {
 
+         //Martial start
          Set<CustomFieldValue> oldCustomFieldValues = null;
          if (tourValueTypes.get(0) == TourValueType.ENTIRE_TOUR || tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
             oldCustomFieldValues = new HashSet<>(oldTourData.getCustomFieldValues());
          }
+         //Martial end
 
          /*
           * Tour(s) could be re-imported from the file, check if it contains a valid tour
@@ -3481,6 +3483,8 @@ public class RawDataManager {
                 * Save tour but don't fire a change event because the tour editor would set the tour
                 * to dirty
                 */
+               //Martial change below to account to custom field change, so must always align with original function
+               //final TourData savedTourData = TourDatabase.saveTour_Concurrent(updatedTourData, true);
                final TourData savedTourData = TourDatabase.saveTour_Concurrent_CleanOld(updatedTourData, oldCustomFieldValues, true);
 
                updatedTourData = savedTourData;
