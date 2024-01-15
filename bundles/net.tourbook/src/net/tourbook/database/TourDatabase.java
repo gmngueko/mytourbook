@@ -3936,6 +3936,207 @@ public class TourDatabase {
       saveTransientInstances_TourLocation(tourData);
       saveTransientInstances_TourType(tourData);
       saveTransientInstances_Sensors(tourData);
+      saveTransientInstances_DataSeries(tourData);
+      saveTransientInstances_CustomFields(tourData);
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void saveTransientInstances_CustomFields(final TourData tourData) {
+
+      final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+      if (allTourData_CustomFieldValues.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<CustomField> allNotSavedCustomFields = new ArrayList<>();
+
+      final HashMap<String, CustomField> allDbCustomFields = new HashMap<>(getAllCustomFields_ByRefId());
+
+      // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
+      for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+         final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
+
+         final long fieldId = tourData_CustomField.getFieldId();
+
+         if (fieldId != ENTITY_IS_NOT_SAVED) {
+
+            // CustomField is saved
+
+            continue;
+         }
+
+         // CustomField is not yet saved
+         // 1. CustomField can still be new
+         // 2. CustomField is already created but not updated in the not yet saved tour
+
+         final CustomField dbCustomField = allDbCustomFields.get(tourData_CustomField.getRefId());
+
+         if (dbCustomField == null) {
+
+            // CustomField not available -> create a new CustomField
+
+            allNotSavedCustomFields.add(tourData_CustomField);
+         }
+      }
+
+      boolean isNewCustomFieldSaved = false;
+
+      if (allNotSavedCustomFields.size() > 0) {
+
+         // create new CustomFields
+
+         synchronized (TRANSIENT_LOCK) {
+
+            HashMap<String, CustomField> allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+            for (final CustomField newCustomField : allNotSavedCustomFields) {
+
+               // check again, CustomField list could be updated in another thread
+               final CustomField dbSensor = allDbCustomFields_InLock.get(newCustomField.getRefId());
+
+               if (dbSensor == null) {
+
+                  // CustomField is not yet in db -> create it
+
+                  saveEntity(
+                        newCustomField,
+                        ENTITY_IS_NOT_SAVED,
+                        CustomField.class);
+
+                  isNewCustomFieldSaved = true;
+               }
+            }
+
+            if (isNewCustomFieldSaved) {
+
+               /*
+                * Replace CustomField in CustomField values
+                */
+
+               // force to reload db CustomFields
+               clearCustomFields();
+               TourManager.getInstance().clearTourDataCache();
+
+               allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+               // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
+               for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+                  final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
+
+                  final String referenceId = tourData_CustomField.getRefId();
+
+                  final CustomField customField = allDbCustomFields_InLock.get(referenceId);
+
+                  tourData_CustomFieldValue.setCustomField(customField);
+               }
+            }
+         }
+      }
+
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void saveTransientInstances_DataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allTourDataDataSeries = tourData.getDataSeries();
+
+      if (allTourDataDataSeries.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<DataSerie> allAppliedDataSeries = new ArrayList<>();
+      final ArrayList<DataSerie> allNewDataSeries = new ArrayList<>();
+
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = new HashMap<>(getAllDataSeries_ByRefId());
+
+      // loop: all DataSeries in the tour -> find DataSeries which are not yet saved
+      for (final DataSerie tourDataSerie : allTourDataDataSeries) {
+
+         final long serieId = tourDataSerie.getSerieId();
+
+         if (serieId != ENTITY_IS_NOT_SAVED) {
+
+            // DataSerie is saved
+
+            allAppliedDataSeries.add(tourDataSerie);
+
+            continue;
+         }
+
+         // dataSerie is not yet saved
+         // 1. dataSerie can still be new
+         // 2. dataSerie is already created but not updated in the not yet saved tour
+
+         final DataSerie dbDataSerie = allDbDataSeries_ByRefId.get(tourDataSerie.getRefId());
+
+         if (dbDataSerie == null) {
+
+            // DataSerie not available -> create a new DataSerie
+
+            allNewDataSeries.add(tourDataSerie);
+
+         } else {
+
+            // use found DataSerie
+
+            allAppliedDataSeries.add(dbDataSerie);
+         }
+      }
+
+      boolean isNewDataSerieSaved = false;
+
+      if (allNewDataSeries.size() > 0) {
+
+         // create new dataSeries
+
+         synchronized (TRANSIENT_LOCK) {
+
+            final HashMap<String, DataSerie> allDbDataSeries_ByRefID_InLock = new HashMap<>(getAllDataSeries_ByRefId());
+
+            for (final DataSerie newDataSerie : allNewDataSeries) {
+
+               // check again, tour DataSerie list could be updated in another thread
+               final DataSerie dbDataSerie = allDbDataSeries_ByRefID_InLock.get(newDataSerie.getRefId());
+
+               if (dbDataSerie == null) {
+
+                  // dataSerie is not yet in db -> create it
+
+                  final DataSerie savedDataSerie = saveEntity(
+                        newDataSerie,
+                        ENTITY_IS_NOT_SAVED,
+                        DataSerie.class);
+
+                  isNewDataSerieSaved = true;
+
+                  allAppliedDataSeries.add(savedDataSerie);
+
+               } else {
+
+                  allAppliedDataSeries.add(dbDataSerie);
+               }
+            }
+
+            if (isNewDataSerieSaved) {
+
+               // force to reload db DataSeries
+
+               clearDataSeries();
+               TourManager.getInstance().clearTourDataCache();
+            }
+         }
+      }
+
+      // replace tags in the tour, either with the old tags and/or with newly created tags
+      allTourDataDataSeries.clear();
+      allTourDataDataSeries.addAll(allAppliedDataSeries);
    }
 
    /**
