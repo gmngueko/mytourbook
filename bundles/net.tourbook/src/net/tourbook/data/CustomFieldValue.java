@@ -559,6 +559,15 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
       this.tourStartTime = tourStartTime;
    }
 
+   public void setupDeepClone(final TourData tourDataFromClone) {
+
+      _createId = _createCounter.incrementAndGet();
+
+      fieldValueId = TourDatabase.ENTITY_IS_NOT_SAVED;
+
+      tourData = tourDataFromClone;
+   }
+
    public boolean setValue(final String value) {
       if (customField == null) {
          return false;
@@ -627,18 +636,18 @@ public class CustomFieldValue implements Cloneable, Serializable, Comparable<Obj
    public boolean setValueTemp(final String value) {
       if (customField == null) {
          return false;
-      }else {
-         if(customField.getFieldType() == CustomFieldType.NONE) {
+      } else {
+         if (customField.getFieldType() == CustomFieldType.NONE) {
             return false;
-         }else if(customField.getFieldType() == CustomFieldType.FIELD_STRING) {
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_STRING) {
             this.valueStringTemp = value;
             this.valueFloatTemp = null;
             return true;
-         }else if(customField.getFieldType() == CustomFieldType.FIELD_NUMBER) {
+         } else if (customField.getFieldType() == CustomFieldType.FIELD_NUMBER) {
             this.valueStringTemp = null;
             try {
                this.valueFloatTemp = Float.parseFloat(value);
-            }catch (final Exception e) {
+            } catch (final Exception e) {
                System.out.println(e.getMessage());
                return false;
             }

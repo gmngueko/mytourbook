@@ -6509,6 +6509,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          sensorValue.setupDeepClone(tourData_DeepCopy);
       }
 
+      //Martial customization below
+      for (final CustomFieldValue customFieldValue : tourData_DeepCopy.customFieldValues) {
+         customFieldValue.setupDeepClone(tourData_DeepCopy);
+      }
+
       /**
        * Convert PersistentSet into a "normal" set otherwise this exception occurs
        * <p>
@@ -6535,6 +6540,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       final Set<DeviceSensorValue> deviceSensor_Clone = new HashSet<>();
       deviceSensor_Clone.addAll(tourData_DeepCopy.deviceSensorValues);
       tourData_DeepCopy.deviceSensorValues = deviceSensor_Clone;
+
+      //Martial customization below
+      final Set<CustomFieldValue> customField_Clone = new HashSet<>();
+      customField_Clone.addAll(tourData_DeepCopy.customFieldValues);
+      tourData_DeepCopy.customFieldValues = customField_Clone;
 
       /**
        * TourReferences are special, they are bound to the original tour and need to be
