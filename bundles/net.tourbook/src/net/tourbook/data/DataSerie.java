@@ -305,14 +305,18 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
 
    }
 
-   public void setupDeepClone(final TourData tourDataFromClone) {
-
-      _createId = _createCounter.incrementAndGet();
-
-      serieId = TourDatabase.ENTITY_IS_NOT_SAVED;
-      //TODO: not sure what to do below
-      //tourData = tourDataFromClone;
-   }
+   /**
+    * remove from deepCopy as it a many to many collection impacting other tours so
+    * should not be changed
+    * public void setupDeepClone(final TourData tourDataFromClone) {
+    * 
+    * _createId = _createCounter.incrementAndGet();
+    * 
+    * serieId = TourDatabase.ENTITY_IS_NOT_SAVED;
+    * //TODO: not sure what to do below
+    * //tourData = tourDataFromClone;
+    * }
+    */
 
    @Override
    public String toString() {

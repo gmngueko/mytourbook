@@ -6515,9 +6515,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       //Martial customization below
-      for (final DataSerie dataSerieValue : tourData_DeepCopy.dataSeries) {
-         dataSerieValue.setupDeepClone(tourData_DeepCopy);
-      }
+      //TODO: check if needed see comment on TourTag which also has many to many relashonsip on other Tours
+      //remove below for now as it contains many to many
+      //for (final DataSerie dataSerieValue : tourData_DeepCopy.dataSeries) {
+      //   dataSerieValue.setupDeepClone(tourData_DeepCopy);
+      //}
 
       /**
        * Convert PersistentSet into a "normal" set otherwise this exception occurs
