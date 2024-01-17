@@ -36,6 +36,7 @@ import net.tourbook.common.UI;
 import net.tourbook.database.FIELD_VALIDATION;
 import net.tourbook.database.TourDatabase;
 
+//DataSerie was created by looking at "TourTag" because it is similar in behaviour !!
 @Entity
 public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    /**
@@ -89,13 +90,13 @@ public class DataSerie implements Cloneable, Serializable, Comparable<Object> {
    private String unit;
 
    /**
-    * Contains all tours which are associated with this tag
+    * Contains all tours which are associated with this dataSerie
     */
    @ManyToMany(mappedBy = "dataSeries", cascade = ALL, fetch = FetchType.LAZY)
    private final Set<TourData> tourData  = new HashSet<>();
 
    /**
-    * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not
+    * Unique id for manually created DataSerie because the {@link #serieId} is -1 when it's not
     * persisted
     */
    @Transient
