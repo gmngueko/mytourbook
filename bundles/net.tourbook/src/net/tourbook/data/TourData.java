@@ -239,6 +239,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    private static final IPreferenceStore _prefStore                        = TourbookPlugin.getPrefStore();
 
+   //Martial customization
+   private static final RawDataManager   _rawDataMgr                       = RawDataManager.getInstance();
+
 // SET_FORMATTING_OFF
 
    /**
@@ -8064,6 +8067,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 //      final String uniqueKey = Integer.toString(Math.abs(getStartDistance()));
 
       String tourIdKey;
+
+      //Martial customization below
+      if (_rawDataMgr != null) {
+         if (_rawDataMgr.getState_CreateTourIdWithTime() == false) {
+            tourId = System.nanoTime();
+            return tourId;
+         }
+      }
 
       try {
          /*

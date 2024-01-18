@@ -2299,6 +2299,13 @@ public class RawDataManager {
       }
    }
 
+   /** Martial customization
+    * @return boolean telling if TourId should be created with time or not
+    */
+   public boolean getState_CreateTourIdWithTime() {
+      return _importState_IsCreateTourIdWithTime;
+   }
+
    /**
     * Import tours from multiple files. The imported tours can be retrieved with
     * {@link #getImportedTours()}
