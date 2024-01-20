@@ -113,6 +113,12 @@ public class ActionMergeIntoMenu extends Action implements IMenuCreator {
          }
       }
 
+      //Martial Customization
+      //add merge into any existing Tour
+      final ActionMergeIntoAny actionMergeAny = new ActionMergeIntoAny(mergeFromTour, fRawDataView);
+      addActionToMenu(actionMergeAny, menu);
+      menuItems++;
+
       // it's possible that a merge action is not available
       if (menuItems == 0) {
          addActionToMenu(new ActionNotAvailable(), menu);
