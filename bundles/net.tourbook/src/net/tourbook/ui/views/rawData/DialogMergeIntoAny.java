@@ -30,7 +30,7 @@ public class DialogMergeIntoAny extends TitleAreaDialog {
 
    private String   dateTargetString;
    private LocalDateTime dateTarget;
-   private Long     targetTourId;
+   private Long                    targetTourId     = null;
 
    private List          tourList = null;
    private ArrayList<Long> tourIdsForDate = null;
@@ -178,6 +178,10 @@ public class DialogMergeIntoAny extends TitleAreaDialog {
 
    public String getDateTargetString() {
       return dateTargetString;
+   }
+
+   public TourData getTargetTourData() {
+      return tourDatasForDate.get(targetTourId);
    }
 
    public Long getTargetTourId() {

@@ -24,6 +24,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MessageBox;
 
 /**
  * Merge a tour into another tour
@@ -95,11 +96,18 @@ public class ActionMergeIntoAny extends Action {
       if (dialog.open() == Window.OK) {
          System.out.println("date to merge:" + dialog.getDateTarget());
          System.out.println("Tour id to merge into:" + dialog.getTargetTourId());
+         final Long tourId = dialog.getTargetTourId();
+         if (tourId != null) {
+            _intoTourData = dialog.getTargetTourData();
+            _rawDataView.actionMergeTours(_fromTourData, _intoTourData);
+         } else {
+            final MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(),
+                  SWT.ICON_WARNING | SWT.OK);
+            messageBox.setText("Warning");
+            messageBox.setMessage("No Tour to Merge!!");
+            messageBox.open();
+         }
       }
-      //to get tourids for day of tour to merge
-      //TourDatabase.getAllTourIds_BetweenTwoDates(buttonID, buttonID)
-      //to get the tourData
-      //final TourData tourDataInDb = tourManager.getTourData(tourData.getTourId());
 	}
 
 }
