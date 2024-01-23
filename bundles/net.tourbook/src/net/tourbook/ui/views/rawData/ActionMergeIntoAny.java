@@ -21,9 +21,9 @@ import net.tourbook.ui.UI;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.MessageBox;
 
 /**
  * Merge a tour into another tour
@@ -79,11 +79,23 @@ public class ActionMergeIntoAny extends Action {
 	@Override
 	public void run() {
       //_rawDataView.actionMergeTours(_fromTourData, _intoTourData);
-      final MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_WARNING | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
+      /*
+       * final MessageBox messageBox = new MessageBox(Display.getCurrent().getActiveShell(),
+       * SWT.ICON_WARNING | SWT.ABORT | SWT.RETRY | SWT.IGNORE);
+       * messageBox.setText("Warning");
+       * messageBox.setMessage("Save the changes before exiting?");
+       * final int buttonID = messageBox.open();
+       */
 
-      messageBox.setText("Warning");
-      messageBox.setMessage("Save the changes before exiting?");
-      final int buttonID = messageBox.open();
+      final DialogMergeIntoAny dialog = new DialogMergeIntoAny(Display.getCurrent().getActiveShell());
+      dialog.setTitleAreaColor(Display.getDefault().getSystemColor(SWT.COLOR_DARK_GRAY).getRGB());
+
+      // now open the dialog
+      dialog.create();
+      if (dialog.open() == Window.OK) {
+         System.out.println("date to merge:" + dialog.getDateTarget());
+         System.out.println("Tour id to merge into:" + dialog.getTargetTourId());
+      }
       //to get tourids for day of tour to merge
       //TourDatabase.getAllTourIds_BetweenTwoDates(buttonID, buttonID)
       //to get the tourData
