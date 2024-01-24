@@ -126,7 +126,10 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
     */
    private Button _chkMergeAltitude;
    private Button _chkMergeCadence;
+
+   //Martial
    private Button _chkMergeCustomTracks;
+
    private Button _chkMergePulse;
    private Button _chkMergeSpeed;
    private Button _chkMergeTemperature;
@@ -177,6 +180,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
    private int                           _backupTargetTimeOffset;
    private int                           _backupTargetAltitudeOffset;
 
+   //Martial customization
    HashMap<String, float[]>                               _backupTargetCustomTracks;
    HashMap<String, CustomTrackDefinition>                 _backupTargetCustomTracksDefinition;
 
@@ -285,6 +289,8 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
 
       final boolean isSourceAltitude = _sourceTour.altitudeSerie != null;
       final boolean isTargetAltitude = _targetTour.altitudeSerie != null;
+
+      //Martial customization
       final HashMap<String, CustomTrackDefinition> newTargetCustomTrackDefinition = _sourceTour.getCustomTracksDefinition();
       final HashMap<String, float[]> newTargetCustomTrack = tourMerger.get_newTargetCustomTrack();
 
@@ -309,6 +315,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
          _targetTour.setCadenceSerie(_backupTargetCadenceSerie);
       }
 
+      //Martial customization
       if (_chkMergeCustomTracks.getSelection()) {
          //first add the backup tracks which were not in the source
          for (final String customTracksId : _backupTargetCustomTracksDefinition.keySet()) {
@@ -614,8 +621,10 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _backupTargetTimeSerie = Util.createIntegerCopy(_targetTour.timeSerie);
       _backupTargetDeviceTime_Elapsed = _targetTour.getTourDeviceTime_Elapsed();
 
+      //Martial
       _backupTargetCustomTracksDefinition = _targetTour.getCustomTracksDefinition();
       _backupTargetCustomTracks = _targetTour.getCustomTracks();
+
       _backupTargetTimeOffset = _targetTour.getMergedTourTimeOffset();
       _backupTargetAltitudeOffset = _targetTour.getMergedAltitudeOffset();
    }
@@ -945,7 +954,8 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
             .applyTo(group);
 
       /*
-       * checkbox: merge pulse
+       * Martial
+       * checkbox: merge customTracks
        */
       _chkMergeCustomTracks = createUIMergeAction(
             group,
@@ -955,6 +965,9 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
             Images.Graph_Custom_Tracks,
             _sourceTour.customTracksDefinition != null && !_sourceTour.customTracksDefinition.isEmpty());
 
+      /*
+       * checkbox: merge pulse
+       */
       _chkMergePulse = createUIMergeAction(
             group,
             TourManager.GRAPH_PULSE,
@@ -1298,6 +1311,8 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       final boolean isSourceTime = _sourceTour.timeSerie != null;
       final boolean isSourceTemperature = _sourceTour.temperatureSerie != null;
       final boolean isSourceCadence = _sourceTour.getCadenceSerie() != null;
+
+      //Martial
       final boolean isSourceCustomTracks = _sourceTour.customTracksDefinition != null && !_sourceTour.customTracksDefinition.isEmpty();
 
       _chkMergeAltitude.setEnabled(isAltitude);
@@ -1305,6 +1320,8 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _chkMergeSpeed.setEnabled(isSourceTime && isSourceDistance);
       _chkMergeTemperature.setEnabled(isSourceTemperature);
       _chkMergeCadence.setEnabled(isSourceCadence);
+
+      //Martial
       _chkMergeCustomTracks.setEnabled(isSourceCustomTracks);
 
       /*
@@ -1325,6 +1342,8 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       if (isSourceCadence == false) {
          _chkMergeCadence.setSelection(false);
       }
+
+      //Martial
       if (isSourceCustomTracks == false) {
          _chkMergeCustomTracks.setSelection(false);
       }
@@ -1506,6 +1525,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _targetTour.timeSerie = Util.createIntegerCopy(_backupTargetTimeSerie);
       _targetTour.setTourDeviceTime_Elapsed(_backupTargetDeviceTime_Elapsed);
 
+      //Martial
       _targetTour.setCustomTracksDefinition(new HashMap<>(_backupTargetCustomTracksDefinition));
       _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
@@ -1538,6 +1558,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       _targetTour.setMergedTourTimeOffset(_backupTargetTimeOffset);
       _targetTour.setMergedAltitudeOffset(_backupTargetAltitudeOffset);
 
+      //Martial
       _targetTour.setCustomTracksDefinition(_backupTargetCustomTracksDefinition);// = _backupTargetCustomTracksDefinition;
       _targetTour.setCustomTracks(_backupTargetCustomTracks);
 
@@ -1580,7 +1601,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       // restore merge graph state
       _chkMergeAltitude.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE));
       _chkMergeCadence.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE));
-
+      //Martial
       _chkMergeCustomTracks.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CUSTOMTRACKS));
 
       _chkMergePulse.setSelection(prefStore.getBoolean(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE));
@@ -1613,6 +1634,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
       // save merged tour graphs
       prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_ALTITUDE, _chkMergeAltitude.getSelection());
       prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CADENCE, _chkMergeCadence.getSelection());
+      //Martial
       prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_CUSTOMTRACKS, _chkMergeCustomTracks.getSelection());
 
       prefStore.setValue(ITourbookPreferences.MERGE_TOUR_MERGE_GRAPH_PULSE, _chkMergePulse.getSelection());
@@ -1666,6 +1688,7 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
          _targetTour.temperatureSerie = _backupTargetTemperatureSerie;
       }
 
+      //Martial Customization
       if (_chkMergeCustomTracks.getSelection()) {
          // custom tracks is already merged
          isMerged = true;
@@ -1824,7 +1847,9 @@ public class DialogMergeTours extends TitleAreaDialog implements ITourProvider2,
             _chkMergeCadence.getSelection() ||
             _chkMergePulse.getSelection() ||
             _chkMergeTemperature.getSelection() ||
-            _chkMergeSpeed.getSelection()) {
+            _chkMergeSpeed.getSelection() ||
+            //Martial Customization
+            _chkMergeCustomTracks.getSelection()) {
          enableMergeButton = true;
       }
 
