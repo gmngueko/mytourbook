@@ -24,6 +24,7 @@ import com.garmin.fit.Sport;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,6 +47,177 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
    public MesgListener_Session(final FitData fitData) {
       super(fitData);
+   }
+
+   private void addCustomField(final CustomField field) {
+
+      if (field == null) {
+         return;
+      }
+      final CustomField customField;
+      customField = RawDataManager.createCustomField(field.getFieldName(),
+            field.getRefId(),
+            field.getUnit(),
+            field.getFieldType(),
+            field.getDescription());
+
+      final CustomField customFieldToCompare = new CustomField();
+      customFieldToCompare.setFieldName(field.getFieldName());
+      customFieldToCompare.setFieldType(customField.getFieldType());
+      customFieldToCompare.setRefId(field.getRefId());
+      if (customField.equals2(customFieldToCompare) == false) {
+         //TODO might not be necessary to update CustomFields
+         //existing CustomFields must sray the way they are
+         //User might have modified on purpose !!!
+         if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+            /*
+             * Nothing to do, customField will be saved when a tour is saved which contains
+             * this customField
+             * in
+             * net.tourbook.database.TourDatabase.checkUnsavedTransientInstances_CustomFields(
+             * )
+             */
+
+         } else {
+
+            /*
+             * Notify post process to update the customField in the db
+             */
+
+            final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
+                  .getAllCustomFieldsToBeUpdated();
+
+            allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+         }
+      }
+   }//end addCustomField
+
+   private CustomFieldValue addCustomFieldValue(final Object fieldValue, final CustomField customField, final TourData tourData) {
+
+      if (customField == null) {
+         return null;
+      }
+
+      //second create CustomFieldValue's
+      final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+      CustomFieldType newCustomFieldType;
+
+      final String customFieldName = customField.getFieldName();
+      final String customFieldUnit = customField.getUnit();
+
+      //String developperFieldString = "";
+
+      /*
+       * Set CustomFieldValue into tour data
+       */
+      customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+      customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
+      customFieldValue.setTourData(tourData);
+
+      //final Object fieldValue = devField.getValue();
+      //developperFieldString += customFieldName + "[" + customFieldUnit + "] " + UI.SYMBOL_EQUAL;
+      //developperFieldString += " " + "\"" + fieldValue + "\"";
+      if (fieldValue instanceof Float) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Float) fieldValue).floatValue());
+      } else if (fieldValue instanceof Integer) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Integer) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Long) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Long) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof String) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //TODO check if string contains a duration(hhh:mm:sec) or a datetime(YYYY-MM-DDThh:mm:ss)
+         if (DateUtil.isValideDuration((String) fieldValue)) {
+            try {
+               final Duration duration = DateUtil.parseDuration((String) fieldValue);
+               //customField.setFieldType(CustomFieldType.FIELD_DURATION);
+               newCustomFieldType = CustomFieldType.FIELD_DURATION;
+               customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+               customFieldValue.setValueString(null);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               //customField.setFieldType(CustomFieldType.FIELD_STRING);
+               newCustomFieldType = CustomFieldType.FIELD_STRING;
+               customFieldValue.setValueFloat(null);
+               customFieldValue.setValueString(((String) fieldValue));
+            }
+
+         } else {
+            //customField.setFieldType(CustomFieldType.FIELD_STRING);
+            newCustomFieldType = CustomFieldType.FIELD_STRING;
+            customFieldValue.setValueFloat(null);
+            customFieldValue.setValueString(((String) fieldValue));
+
+         }
+
+      } else if (fieldValue instanceof Short) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Short) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Byte) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Byte) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Double) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Double) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof BigInteger) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((BigInteger) fieldValue).floatValue());
+
+      } else {
+         //developperFieldString += " {Unknown}";
+         //customField.setFieldType(CustomFieldType.FIELD_STRING);
+         newCustomFieldType = CustomFieldType.FIELD_STRING;
+         customFieldValue.setValueFloat(null);
+         customFieldValue.setValueString(((String) fieldValue));
+
+      }
+      if (customField.getFieldType().compareTo(CustomFieldType.NONE) == 0) {
+         //this is a completly new customField
+         customField.setFieldType(newCustomFieldType);
+      } else {
+         if (customField.getFieldType().compareTo(newCustomFieldType) != 0) {
+            //create a new version with a new referenceid because the user already updated
+            //the existing one with a different fieldType for good reason
+            final CustomField customFieldCopy = RawDataManager.createCustomField(customFieldName,
+                  "v2;" + customField.getRefId(), //$NON-NLS-1$
+                  customFieldUnit,
+                  newCustomFieldType,
+                  customField.getDescriptionShort());
+            customFieldValue.setCustomField(customFieldCopy);
+         }
+      }
+      //developperFieldString += UI.NEW_LINE1;
+
+      return customFieldValue;
    }
 
    @Override
@@ -234,6 +406,44 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          tourData.setTraining_TrainingEffect_Anaerob(totalAnaerobicTrainingEffect);
       }
 
+      //---Martial Static CustomField--------
+      final Set<CustomFieldValue> allTourData_StaticCustomFieldValues = new HashSet<>();
+      String staticFieldString = "";
+
+      final String activityProfile = mesg.getSportProfileName();
+      if(activityProfile!= null) {
+         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_ACTIVITY_PROFILE);
+         addCustomField(myField);
+
+         final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
+               .getAllCustomFieldsToBeUpdated();
+
+         final CustomField myFieldDb = allCustomFieldsToBeUpdated.get(myField.getRefId());
+         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
+
+         if (myFieldValue != null) {
+            allTourData_StaticCustomFieldValues.add(myFieldValue);
+            staticFieldString += "activityProfile" + UI.NEW_LINE1;
+         }
+      }
+
+      final Integer standingCount = mesg.getStandCount();
+      if (standingCount != null) {
+         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_STANDING_COUNT);
+         addCustomField(myField);
+
+         final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
+               .getAllCustomFieldsToBeUpdated();
+
+         final CustomField myFieldDb = allCustomFieldsToBeUpdated.get(myField.getRefId());
+         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
+
+         if (myFieldValue != null) {
+            allTourData_StaticCustomFieldValues.add(myFieldValue);
+            staticFieldString += "standingCount" + UI.NEW_LINE1;
+         }
+      }
+
       // -----------------------Developper field-----------------
       //will be pout into Custom Fields
 
@@ -416,6 +626,19 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          developperFieldString = "Developper Field(s)\n====================\n" + developperFieldString; //$NON-NLS-1$
          final String note = tourData.getTourDescription();
          tourData.setTourDescription(note + UI.NEW_LINE2 + developperFieldString);
+      }
+
+      if (allTourData_StaticCustomFieldValues.size() > 0) {//add static custom field
+         for (final CustomFieldValue field : allTourData_StaticCustomFieldValues) {
+            allTourData_CustomFieldValues.add(field);
+         }
+      }
+
+      if (!staticFieldString.isBlank()) {
+         //add it to description
+         staticFieldString = "Static Field(s)\n====================\n" + staticFieldString; //$NON-NLS-1$
+         final String note = tourData.getTourDescription();
+         tourData.setTourDescription(note + UI.NEW_LINE2 + staticFieldString);
       }
 
       fitData.onSetup_Session_20_Finalize();
