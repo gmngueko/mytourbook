@@ -24,6 +24,7 @@ import com.garmin.fit.Sport;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -408,6 +409,7 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
       //---Martial Static CustomField--------
       final Set<CustomFieldValue> allTourData_StaticCustomFieldValues = new HashSet<>();
+      final HashMap<String, CustomField> allTourData_StaticCustomField = new HashMap<>();
       String staticFieldString = "";
 
       final String activityProfile = mesg.getSportProfileName();
@@ -415,15 +417,13 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_ACTIVITY_PROFILE);
          addCustomField(myField);
 
-         final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
-               .getAllCustomFieldsToBeUpdated();
-
-         final CustomField myFieldDb = allCustomFieldsToBeUpdated.get(myField.getRefId());
-         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
+         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myField, tourData);
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
-            staticFieldString += "activityProfile" + UI.NEW_LINE1;
+            staticFieldString += "activityProfile" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " {" + activityProfile.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
          }
       }
 
@@ -432,15 +432,28 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_STANDING_COUNT);
          addCustomField(myField);
 
-         final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
-               .getAllCustomFieldsToBeUpdated();
-
-         final CustomField myFieldDb = allCustomFieldsToBeUpdated.get(myField.getRefId());
-         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
+         final CustomFieldValue myFieldValue = addCustomFieldValue(standingCount, myField, tourData);
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
-            staticFieldString += "standingCount" + UI.NEW_LINE1;
+            staticFieldString += "standingCount" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " {" + standingCount.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+         }
+      }
+
+      final Integer sweatLoss = mesg.getFieldIntegerValue(178);
+      if (sweatLoss != null) {
+         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_SWEAT_LOSS);
+         addCustomField(myField);
+
+         final CustomFieldValue myFieldValue = addCustomFieldValue(sweatLoss, myField, tourData);
+
+         if (myFieldValue != null) {
+            allTourData_StaticCustomFieldValues.add(myFieldValue);
+            staticFieldString += "sweatLoss" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " {" + sweatLoss.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
          }
       }
 
