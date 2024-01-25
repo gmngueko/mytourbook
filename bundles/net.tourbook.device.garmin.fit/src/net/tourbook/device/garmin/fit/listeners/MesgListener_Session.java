@@ -24,7 +24,6 @@ import com.garmin.fit.Sport;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -409,7 +408,7 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
       //---Martial Static CustomField--------
       final Set<CustomFieldValue> allTourData_StaticCustomFieldValues = new HashSet<>();
-      final HashMap<String, CustomField> allTourData_StaticCustomField = new HashMap<>();
+      //final HashMap<String, CustomField> allTourData_StaticCustomField = new HashMap<>();
       String staticFieldString = "";
 
       final String activityProfile = mesg.getSportProfileName();
@@ -442,23 +441,25 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          }
       }
 
-      final Integer sweatLoss = mesg.getFieldIntegerValue(178);
-      if (sweatLoss != null) {
+      //final Integer sweatLoss = mesg.getFieldIntegerValue(178);
+      final Object sweatLossObj = mesg.getFieldValue(178);
+      //if (sweatLoss != null) {
+      if (sweatLossObj != null) {
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_SWEAT_LOSS);
          addCustomField(myField);
 
-         final CustomFieldValue myFieldValue = addCustomFieldValue(sweatLoss, myField, tourData);
+         final CustomFieldValue myFieldValue = addCustomFieldValue(sweatLossObj, myField, tourData);
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
             staticFieldString += "sweatLoss" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
-            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
-            staticFieldString += " {" + sweatLoss.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+            staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
+            staticFieldString += " {" + sweatLossObj.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
          }
       }
 
       // -----------------------Developper field-----------------
-      //will be pout into Custom Fields
+      //will be put into Custom Fields
 
       final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
 

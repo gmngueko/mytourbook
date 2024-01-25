@@ -42,11 +42,13 @@ public class CustomFieldStatic {
    public static final String                  KEY_STAMINA_POTENTIAL_END            = "Stamina potential End (fit)";
    public static final String                  KEY_STAMINA_MIN                      = "Stamina Minimum (fit)";
 
-   private static HashMap<String, CustomField> map;
-   private static HashMap<String, Integer>     mapKey;
+   private static final HashMap<String, CustomField> map                                  = new HashMap<>();
+   private static final HashMap<String, Integer>     mapKey                               = new HashMap<>();
 
    static {
-      map = new HashMap<>();
+      //map = new HashMap<>();
+      //mapKey = new HashMap<>();
+
       CustomField field = new CustomField();
       field.setFieldName(KEY_ACTIVITY_PROFILE);
       field.setDescription("Garmin Activity Profile");
@@ -87,7 +89,7 @@ public class CustomFieldStatic {
       field.setDescription("Garmin Sweat Loss");
       field.setFieldType(CustomFieldType.NONE);
       field.setRefId("898edbe0-d429-46c2-9b69-d3bcf2ae52a9");
-      field.setUnit("");
+      field.setUnit("ml");
       map.put(KEY_SWEAT_LOSS, field);
 
    }
