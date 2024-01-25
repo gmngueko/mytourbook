@@ -49,10 +49,10 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
       super(fitData);
    }
 
-   private void addCustomField(final CustomField field) {
+   private CustomField addCustomField(final CustomField field) {
 
       if (field == null) {
-         return;
+         return null;
       }
       final CustomField customField;
       customField = RawDataManager.createCustomField(field.getFieldName(),
@@ -91,6 +91,8 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
             allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
          }
       }
+
+      return customField;
    }//end addCustomField
 
    private CustomFieldValue addCustomFieldValue(final Object fieldValue, final CustomField customField, final TourData tourData) {
@@ -412,11 +414,14 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
       String staticFieldString = "";
 
       final String activityProfile = mesg.getSportProfileName();
-      if(activityProfile!= null) {
+      if (activityProfile != null) {
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_ACTIVITY_PROFILE);
-         addCustomField(myField);
+         final CustomField myFieldDb = addCustomField(myField);
+         CustomFieldValue myFieldValue = null;
 
-         final CustomFieldValue myFieldValue = addCustomFieldValue(activityProfile, myField, tourData);
+         if(myFieldDb != null) {
+            myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
+         }
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
@@ -429,9 +434,12 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
       final Integer standingCount = mesg.getStandCount();
       if (standingCount != null) {
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_STANDING_COUNT);
-         addCustomField(myField);
+         final CustomField myFieldDb = addCustomField(myField);
+         CustomFieldValue myFieldValue = null;
 
-         final CustomFieldValue myFieldValue = addCustomFieldValue(standingCount, myField, tourData);
+         if (myFieldDb != null) {
+            myFieldValue = addCustomFieldValue(standingCount, myFieldDb, tourData);
+         }
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
@@ -446,9 +454,12 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
       //if (sweatLoss != null) {
       if (sweatLossObj != null) {
          final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_SWEAT_LOSS);
-         addCustomField(myField);
+         final CustomField myFieldDb = addCustomField(myField);
+         CustomFieldValue myFieldValue = null;
 
-         final CustomFieldValue myFieldValue = addCustomFieldValue(sweatLossObj, myField, tourData);
+         if (myFieldDb != null) {
+            myFieldValue = addCustomFieldValue(sweatLossObj, myFieldDb, tourData);
+         }
 
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
