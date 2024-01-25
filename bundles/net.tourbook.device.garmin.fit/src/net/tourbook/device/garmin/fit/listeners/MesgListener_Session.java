@@ -24,7 +24,9 @@ import com.garmin.fit.Sport;
 import java.math.BigInteger;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -410,62 +412,83 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
 
       //---Martial Static CustomField--------
       final Set<CustomFieldValue> allTourData_StaticCustomFieldValues = new HashSet<>();
-      //final HashMap<String, CustomField> allTourData_StaticCustomField = new HashMap<>();
       String staticFieldString = "";
+
 
       final String activityProfile = mesg.getSportProfileName();
       if (activityProfile != null) {
-         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_ACTIVITY_PROFILE);
+         final CustomField myField =
+               CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_ACTIVITY_PROFILE);
          final CustomField myFieldDb = addCustomField(myField);
          CustomFieldValue myFieldValue = null;
-
-         if(myFieldDb != null) {
+         if (myFieldDb != null) {
             myFieldValue = addCustomFieldValue(activityProfile, myFieldDb, tourData);
          }
-
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
             staticFieldString += "activityProfile" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
             staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
-            staticFieldString += " {" + activityProfile.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+            staticFieldString += " {" + activityProfile.getClass().getSimpleName() + "}" +
+                  UI.NEW_LINE1;
          }
       }
 
-      final Integer standingCount = mesg.getStandCount();
-      if (standingCount != null) {
-         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_STANDING_COUNT);
-         final CustomField myFieldDb = addCustomField(myField);
-         CustomFieldValue myFieldValue = null;
+/*
+ * final Integer standingCount = mesg.getStandCount();
+ * if (standingCount != null) {
+ * final CustomField myField =
+ * CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_STANDING_COUNT);
+ * final CustomField myFieldDb = addCustomField(myField);
+ * CustomFieldValue myFieldValue = null;
+ * if (myFieldDb != null) {
+ * myFieldValue = addCustomFieldValue(standingCount, myFieldDb, tourData);
+ * }
+ * if (myFieldValue != null) {
+ * allTourData_StaticCustomFieldValues.add(myFieldValue);
+ * staticFieldString += "standingCount" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+ * staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+ * staticFieldString += " {" + standingCount.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+ * }
+ * }
+ * //final Integer sweatLoss = mesg.getFieldIntegerValue(178);
+ * final Object sweatLossObj = mesg.getFieldValue(178);
+ * //if (sweatLoss != null) {
+ * if (sweatLossObj != null) {
+ * final CustomField myField =
+ * CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_SWEAT_LOSS);
+ * final CustomField myFieldDb = addCustomField(myField);
+ * CustomFieldValue myFieldValue = null;
+ * if (myFieldDb != null) {
+ * myFieldValue = addCustomFieldValue(sweatLossObj, myFieldDb, tourData);
+ * }
+ * if (myFieldValue != null) {
+ * allTourData_StaticCustomFieldValues.add(myFieldValue);
+ * staticFieldString += "sweatLoss" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+ * staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
+ * staticFieldString += " {" + sweatLossObj.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+ * }
+ * }
+ */
 
-         if (myFieldDb != null) {
-            myFieldValue = addCustomFieldValue(standingCount, myFieldDb, tourData);
-         }
+      final HashMap<String, Integer> mapFit = CustomFieldStatic.getFitMap();
+      for (final Entry<String, Integer> set : mapFit.entrySet()) {
+         final Object fieldObj = mesg.getFieldValue(set.getValue());
 
-         if (myFieldValue != null) {
-            allTourData_StaticCustomFieldValues.add(myFieldValue);
-            staticFieldString += "standingCount" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
-            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
-            staticFieldString += " {" + standingCount.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
-         }
-      }
+         if (fieldObj != null) {
+            final CustomField myField = CustomFieldStatic.getMap().get(set.getKey());
+            final CustomField myFieldDb = addCustomField(myField);
+            CustomFieldValue myFieldValue = null;
 
-      //final Integer sweatLoss = mesg.getFieldIntegerValue(178);
-      final Object sweatLossObj = mesg.getFieldValue(178);
-      //if (sweatLoss != null) {
-      if (sweatLossObj != null) {
-         final CustomField myField = CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_SWEAT_LOSS);
-         final CustomField myFieldDb = addCustomField(myField);
-         CustomFieldValue myFieldValue = null;
+            if (myFieldDb != null) {
+               myFieldValue = addCustomFieldValue(fieldObj, myFieldDb, tourData);
+            }
 
-         if (myFieldDb != null) {
-            myFieldValue = addCustomFieldValue(sweatLossObj, myFieldDb, tourData);
-         }
-
-         if (myFieldValue != null) {
-            allTourData_StaticCustomFieldValues.add(myFieldValue);
-            staticFieldString += "sweatLoss" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
-            staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
-            staticFieldString += " {" + sweatLossObj.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+            if (myFieldValue != null) {
+               allTourData_StaticCustomFieldValues.add(myFieldValue);
+               staticFieldString += set.getKey() + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+               staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
+               staticFieldString += " {" + fieldObj.getClass().getSimpleName() + "}" + UI.NEW_LINE1;
+            }
          }
       }
 
