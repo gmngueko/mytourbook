@@ -1,9 +1,19 @@
 package net.tourbook.device.garmin.fit.listeners;
 
+import java.math.BigInteger;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
+import net.tourbook.common.time.DateUtil;
 import net.tourbook.data.CustomField;
 import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
+import net.tourbook.data.TourData;
+import net.tourbook.database.TourDatabase;
+import net.tourbook.device.garmin.fit.FitData;
+import net.tourbook.importdata.RawDataManager;
+
+import org.joda.time.Duration;
 
 public class CustomFieldStatic {
    public static final String                  KEY_ACTIVITY_PROFILE                 = "Activity Profile (fit)";
@@ -28,10 +38,14 @@ public class CustomFieldStatic {
    public static final String KEY_POWER_PHASE_PEAK_LEFT_START_AVG  = "Power Phase Peak Left Start Avg";
    public static final String KEY_POWER_PHASE_PEAK_LEFT_END_AVG    = "Power Phase Peak Left End Avg";
 
+   public static final String                  KEY_STROKE_COUNT                     = "Stroke Counts (fit)";
+
    public static final String                  KEY_STANDING_TIME                    = "Standing Time (fit)";
    public static final String                  KEY_STANDING_COUNT                   = "Standing Count (fit)";
    public static final String                  KEY_TOTAL_GRIT                       = "Total Grit (fit)";
    public static final String                  KEY_TOTAL_FLOW                       = "Total Flow (fit)";
+   public static final String                  KEY_AVG_GRIT                         = "Avg Grit (fit)";
+   public static final String                  KEY_AVG_FLOW                         = "Avg Flow (fit)";
    public static final String                  KEY_JUMP_COUNT                       = "Jump Count (fit)";
    public static final String                  KEY_TOTAL_STROKES                    = "Total Strokes (fit)";
    public static final String                  KEY_SWEAT_LOSS                       = "Sweat Loss (fit)";
@@ -58,6 +72,7 @@ public class CustomFieldStatic {
       field.setRefId("6a5cef4a-c729-4f87-a442-8e3a6cfa3da9");
       field.setUnit("");
       map.put(KEY_ACTIVITY_PROFILE, field);
+      mapFitKey.put(KEY_ACTIVITY_PROFILE, 110);
       //mapFitKey.put(KEY_ACTIVITY_PROFILE, 5);
 
       field = new CustomField();
@@ -79,6 +94,16 @@ public class CustomFieldStatic {
       mapFitKey.put(KEY_HR_RECOVERY_DECREASE, 202);
 
       field = new CustomField();
+      field.setFieldName(KEY_STROKE_COUNT);
+      field.setDescription("Garmin Stroke Counts");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("de6b84ea-9a09-4d2f-adb8-77d174860cef");
+      field.setUnit("counts");
+      map.put(KEY_STROKE_COUNT, field);
+      mapFitKey.put(KEY_STROKE_COUNT, 85);
+
+
+      field = new CustomField();
       field.setFieldName(KEY_STANDING_COUNT);
       field.setDescription("Garmin Standing Count (cycling)");
       field.setFieldType(CustomFieldType.NONE);
@@ -92,7 +117,7 @@ public class CustomFieldStatic {
       field.setDescription("Garmin Standing Time (cycling)");
       field.setFieldType(CustomFieldType.NONE);
       field.setRefId("a724c61b-040e-4c79-ade3-3722d53be649");
-      field.setUnit("");
+      field.setUnit("s");
       map.put(KEY_STANDING_TIME, field);
       mapFitKey.put(KEY_STANDING_TIME, 112);
 
@@ -113,6 +138,24 @@ public class CustomFieldStatic {
       field.setUnit("Flow");
       map.put(KEY_TOTAL_FLOW, field);
       mapFitKey.put(KEY_TOTAL_FLOW, 182);
+
+      field = new CustomField();
+      field.setFieldName(KEY_AVG_GRIT);
+      field.setDescription("Garmin Average Grit (MTB)");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("aa78a07b-082a-46aa-a2c5-7656ae9cab50");
+      field.setUnit("kGrit");
+      map.put(KEY_AVG_GRIT, field);
+      mapFitKey.put(KEY_AVG_GRIT, 186);
+
+      field = new CustomField();
+      field.setFieldName(KEY_AVG_FLOW);
+      field.setDescription("Garmin Average Flow (MTB)");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("af0d5e2b-1a41-40a7-ba37-e9bbece6916d");
+      field.setUnit("Flow");
+      map.put(KEY_AVG_FLOW, field);
+      mapFitKey.put(KEY_AVG_FLOW, 187);
 
       field = new CustomField();
       field.setFieldName(KEY_JUMP_COUNT);
@@ -186,6 +229,198 @@ public class CustomFieldStatic {
       map.put(KEY_STAMINA_MIN, field);
       mapFitKey.put(KEY_STAMINA_MIN, 207);
 
+      field = new CustomField();
+      field.setFieldName(KEY_VO2MAX_HIGH);
+      field.setDescription("Garmin VO2Max upper limit estimate");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("f5aee6c8-78d4-43eb-8ad8-1bbd604616be");
+      field.setUnit("");
+      map.put(KEY_VO2MAX_HIGH, field);
+
+      field = new CustomField();
+      field.setFieldName(KEY_VO2MAX_LOW);
+      field.setDescription("Garmin VO2Max lower limit estimate");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("a8e27bf8-df62-4bc1-8e93-ff6604af31e5");
+      field.setUnit("");
+      map.put(KEY_VO2MAX_LOW, field);
+
+   }
+
+   public static CustomField addCustomField(final CustomField field, final FitData fitData) {
+
+      if (field == null) {
+         return null;
+      }
+      final CustomField customField;
+      customField = RawDataManager.createCustomField(field.getFieldName(),
+            field.getRefId(),
+            field.getUnit(),
+            field.getFieldType(),
+            field.getDescription());
+
+      final CustomField customFieldToCompare = new CustomField();
+      customFieldToCompare.setFieldName(field.getFieldName());
+      customFieldToCompare.setFieldType(customField.getFieldType());
+      customFieldToCompare.setRefId(field.getRefId());
+      if (customField.equals2(customFieldToCompare) == false) {
+         //TODO might not be necessary to update CustomFields
+         //existing CustomFields must sray the way they are
+         //User might have modified on purpose !!!
+         if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+            /*
+             * Nothing to do, customField will be saved when a tour is saved which contains
+             * this customField
+             * in
+             * net.tourbook.database.TourDatabase.checkUnsavedTransientInstances_CustomFields(
+             * )
+             */
+
+         } else {
+
+            /*
+             * Notify post process to update the customField in the db
+             */
+
+            final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = fitData.getImportState_Process()
+                  .getAllCustomFieldsToBeUpdated();
+
+            allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+         }
+      }
+
+      return customField;
+   }//end addCustomField
+
+   public static CustomFieldValue addCustomFieldValue(final Object fieldValue,
+                                                      final CustomField customField,
+                                                      final TourData tourData,
+                                                      final FitData fitData) {
+
+      if (customField == null) {
+         return null;
+      }
+
+      //second create CustomFieldValue's
+      final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+      CustomFieldType newCustomFieldType;
+
+      final String customFieldName = customField.getFieldName();
+      final String customFieldUnit = customField.getUnit();
+
+      //String developperFieldString = "";
+
+      /*
+       * Set CustomFieldValue into tour data
+       */
+      customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+      customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
+      customFieldValue.setTourData(tourData);
+
+      //final Object fieldValue = devField.getValue();
+      //developperFieldString += customFieldName + "[" + customFieldUnit + "] " + UI.SYMBOL_EQUAL;
+      //developperFieldString += " " + "\"" + fieldValue + "\"";
+      if (fieldValue instanceof Float) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Float) fieldValue).floatValue());
+      } else if (fieldValue instanceof Integer) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Integer) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Long) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Long) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof String) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //TODO check if string contains a duration(hhh:mm:sec) or a datetime(YYYY-MM-DDThh:mm:ss)
+         if (DateUtil.isValideDuration((String) fieldValue)) {
+            try {
+               final Duration duration = DateUtil.parseDuration((String) fieldValue);
+               //customField.setFieldType(CustomFieldType.FIELD_DURATION);
+               newCustomFieldType = CustomFieldType.FIELD_DURATION;
+               customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+               customFieldValue.setValueString(null);
+            } catch (final Exception e) {
+               System.out.println(e.getMessage());
+               //customField.setFieldType(CustomFieldType.FIELD_STRING);
+               newCustomFieldType = CustomFieldType.FIELD_STRING;
+               customFieldValue.setValueFloat(null);
+               customFieldValue.setValueString(((String) fieldValue));
+            }
+
+         } else {
+            //customField.setFieldType(CustomFieldType.FIELD_STRING);
+            newCustomFieldType = CustomFieldType.FIELD_STRING;
+            customFieldValue.setValueFloat(null);
+            customFieldValue.setValueString(((String) fieldValue));
+
+         }
+
+      } else if (fieldValue instanceof Short) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Short) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Byte) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Byte) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof Double) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((Double) fieldValue).floatValue());
+
+      } else if (fieldValue instanceof BigInteger) {
+         //developperFieldString += " {" + fieldValue.getClass().getSimpleName() + "}";
+         //customField.setFieldType(CustomFieldType.FIELD_NUMBER);
+         newCustomFieldType = CustomFieldType.FIELD_NUMBER;
+         customFieldValue.setValueString(null);
+         customFieldValue.setValueFloat(((BigInteger) fieldValue).floatValue());
+
+      } else {
+         //developperFieldString += " {Unknown}";
+         //customField.setFieldType(CustomFieldType.FIELD_STRING);
+         newCustomFieldType = CustomFieldType.FIELD_STRING;
+         customFieldValue.setValueFloat(null);
+         customFieldValue.setValueString(((String) fieldValue));
+
+      }
+      if (customField.getFieldType().compareTo(CustomFieldType.NONE) == 0) {
+         //this is a completly new customField
+         customField.setFieldType(newCustomFieldType);
+      } else {
+         if (customField.getFieldType().compareTo(newCustomFieldType) != 0) {
+            //create a new version with a new referenceid because the user already updated
+            //the existing one with a different fieldType for good reason
+            final CustomField customFieldCopy = RawDataManager.createCustomField(customFieldName,
+                  "v2;" + customField.getRefId(), //$NON-NLS-1$
+                  customFieldUnit,
+                  newCustomFieldType,
+                  customField.getDescriptionShort());
+            customFieldValue.setCustomField(customFieldCopy);
+         }
+      }
+      //developperFieldString += UI.NEW_LINE1;
+
+      return customFieldValue;
    }
 
    public static HashMap<String, Integer> getFitMap() {

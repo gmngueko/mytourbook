@@ -30,14 +30,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.TourData;
+import net.tourbook.device.garmin.fit.listeners.CustomFieldStatic;
 import net.tourbook.device.garmin.fit.listeners.MesgListener_Activity;
 import net.tourbook.device.garmin.fit.listeners.MesgListener_BikeProfile;
 import net.tourbook.device.garmin.fit.listeners.MesgListener_DeviceInfo;
@@ -752,6 +757,70 @@ public class FitDataReader extends TourbookDevice {
       }
    }
 
+   private void onMesg_140_MetMax_VO2Max(final Mesg mesg, final FitData fitData) {
+
+      final Field fieldMetMaxLow = mesg.getField(7);
+      final Field fieldMetMaxHigh = mesg.getField(27);
+
+      final TourData tourData = fitData.getTourData();
+      final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+      final Set<CustomFieldValue> allTourData_StaticCustomFieldValues = new HashSet<>();
+      String staticFieldString = "";
+
+      if (fieldMetMaxLow != null && fieldMetMaxLow.getValue() != null) {
+
+         final Float vO2MaxLow = (float) (fieldMetMaxLow.getIntegerValue() * 3.5 / 65536);
+         final CustomField myField =
+               CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_VO2MAX_LOW);
+         final CustomField myFieldDb = CustomFieldStatic.addCustomField(myField, fitData);
+         CustomFieldValue myFieldValue = null;
+         if (myFieldDb != null) {
+            myFieldValue = CustomFieldStatic.addCustomFieldValue(vO2MaxLow, myFieldDb, tourData, fitData);
+         }
+         if (myFieldValue != null) {
+            allTourData_StaticCustomFieldValues.add(myFieldValue);
+            staticFieldString += "vO2MaxLow" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " {" + vO2MaxLow.getClass().getSimpleName() + "}" +
+                  UI.NEW_LINE1;
+         }
+      }
+
+      if (fieldMetMaxHigh != null && fieldMetMaxHigh.getValue() != null) {
+
+         final Float vO2MaxHigh = (float) (fieldMetMaxHigh.getIntegerValue() * 3.5 / 65536);
+         final CustomField myField =
+               CustomFieldStatic.getMap().get(CustomFieldStatic.KEY_VO2MAX_HIGH);
+         final CustomField myFieldDb = CustomFieldStatic.addCustomField(myField, fitData);
+         CustomFieldValue myFieldValue = null;
+         if (myFieldDb != null) {
+            myFieldValue = CustomFieldStatic.addCustomFieldValue(vO2MaxHigh, myFieldDb, tourData, fitData);
+         }
+         if (myFieldValue != null) {
+            allTourData_StaticCustomFieldValues.add(myFieldValue);
+            staticFieldString += "vO2MaxHigh" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
+            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " {" + vO2MaxHigh.getClass().getSimpleName() + "}" +
+                  UI.NEW_LINE1;
+         }
+      }
+
+      if (allTourData_StaticCustomFieldValues.size() > 0) {//add static custom field
+         for (final CustomFieldValue field : allTourData_StaticCustomFieldValues) {
+            allTourData_CustomFieldValues.add(field);
+         }
+      }
+
+      if (!staticFieldString.isBlank()) {
+         //add it to description
+         staticFieldString = "Static Field(s)(msg 140)\n====================\n" + staticFieldString; //$NON-NLS-1$
+         final String note = tourData.getTourDescription();
+         tourData.setTourDescription(note + UI.NEW_LINE2 + staticFieldString);
+      }
+
+      System.out.println("|--Fit Message 140: --|\n" + staticFieldString);
+   }
+
    private void onMesg_ForDebugLogging(final Mesg mesg, final int[] logCounter) {
 
       final int mesgNum = mesg.getNum();
@@ -985,6 +1054,10 @@ public class FitDataReader extends TourbookDevice {
          onMesg_104_DeviceBattery_Field2(mesg, fitData);
          break;
 
+      case 140:
+         onMesg_140_MetMax_VO2Max(mesg, fitData);
+         break;
+
       case 147:
          // Registered Device Sensor (not documented)
          break;
@@ -1080,6 +1153,9 @@ public class FitDataReader extends TourbookDevice {
                }
             });
          }
+
+         //Martial
+         fitData.getTourData().getCustomFieldValues().clear();
 
          fitBroadcaster.run(fileInputStream);
 
