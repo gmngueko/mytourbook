@@ -31,6 +31,14 @@ public class CustomFieldStatic {
 
    public static final String                  KEY_PCO_LEFT_AVG                     = "PCO Left Avg";
    public static final String                  KEY_PCO_RIGHT_AVG                    = "PCO Right Avg";
+   public static final String                  KEY_POWER_STANDING_MAX               = "Power Standing Max";
+   public static final String                  KEY_POWER_SEATED_MAX                 = "Power Seated Max";
+   public static final String                  KEY_POWER_STANDING_AVG               = "Power Standing Avg";
+   public static final String                  KEY_POWER_SEATED_AVG                 = "Power Seated Avg";
+   public static final String                  KEY_CADENCE_STANDING_MAX             = "Cadence Standing Max";
+   public static final String                  KEY_CADENCE_SEATED_MAX               = "Cadence Seated Max";
+   public static final String                  KEY_CADENCE_STANDING_AVG             = "Cadence Standing Avg";
+   public static final String                  KEY_CADENCE_SEATED_AVG               = "Cadence Seated Avg";
    public static final String                  KEY_POWER_PHASE_RIGHT_START_AVG      = "Power Phase Right Start Avg";
    public static final String                  KEY_POWER_PHASE_RIGHT_END_AVG        = "Power Phase Right End Avg";
    public static final String                  KEY_POWER_PHASE_PEAK_RIGHT_START_AVG = "Power Phase Peak Right Start Avg";
@@ -80,7 +88,7 @@ public class CustomFieldStatic {
       mapFitIndex.put(KEY_ACTIVITY_PROFILE, new FitIndex(110, null));
       //mapFitKey.put(KEY_ACTIVITY_PROFILE, 5);
 
-      //-------------Cycling Dynamics------------
+      //-------------Cycling Position Dynamics------------
       field = new CustomField();
       field.setFieldName(KEY_PCO_LEFT_AVG);
       field.setDescription("Garmin Average Left Pedal Platform Center Offset");
@@ -173,6 +181,82 @@ public class CustomFieldStatic {
       field.setUnit("°");
       map.put(KEY_POWER_PHASE_PEAK_RIGHT_END_AVG, field);
       mapFitIndex.put(KEY_POWER_PHASE_PEAK_RIGHT_END_AVG, new FitIndex(119, 1));
+
+      //---------------------------------------------------
+      //-------------Cycling Power Dynamics------------
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_SEATED_AVG);
+      field.setDescription("Garmin Average Power Seated");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("0dcac865-f330-4fa9-9be6-8020963b7a4e");
+      field.setUnit("watts");
+      map.put(KEY_POWER_SEATED_AVG, field);
+      mapFitIndex.put(KEY_POWER_SEATED_AVG, new FitIndex(120, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_STANDING_AVG);
+      field.setDescription("Garmin Average Power Standing");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("ee1035f8-075d-4ab8-bde5-05bdcab810ef");
+      field.setUnit("watts");
+      map.put(KEY_POWER_STANDING_AVG, field);
+      mapFitIndex.put(KEY_POWER_STANDING_AVG, new FitIndex(120, 1));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_SEATED_MAX);
+      field.setDescription("Garmin Average Power Seated");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("115d64a3-bb05-4566-aafb-074d136e3ed3");
+      field.setUnit("watts");
+      map.put(KEY_POWER_SEATED_MAX, field);
+      mapFitIndex.put(KEY_POWER_SEATED_MAX, new FitIndex(121, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_STANDING_MAX);
+      field.setDescription("Garmin Average Power Standing");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("61e922ca-94df-43a6-9a09-46b80956814e");
+      field.setUnit("watts");
+      map.put(KEY_POWER_STANDING_MAX, field);
+      mapFitIndex.put(KEY_POWER_STANDING_MAX, new FitIndex(121, 1));
+
+      //---------------------------------------------------
+      //-------------Cycling Cadence Dynamics------------
+      field = new CustomField();
+      field.setFieldName(KEY_CADENCE_SEATED_AVG);
+      field.setDescription("Garmin Average Cadence Seated");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("5b85257d-61e7-441d-b436-37875a99dec9");
+      field.setUnit("rpm");
+      map.put(KEY_CADENCE_SEATED_AVG, field);
+      mapFitIndex.put(KEY_CADENCE_SEATED_AVG, new FitIndex(122, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_CADENCE_STANDING_AVG);
+      field.setDescription("Garmin Average Cadence Standing");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("4ebc2c23-79b0-4398-8f23-dd2d386583e4");
+      field.setUnit("rpm");
+      map.put(KEY_CADENCE_STANDING_AVG, field);
+      mapFitIndex.put(KEY_CADENCE_STANDING_AVG, new FitIndex(122, 1));
+
+      field = new CustomField();
+      field.setFieldName(KEY_CADENCE_SEATED_MAX);
+      field.setDescription("Garmin Average Cadence Seated");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("bec41ff0-ac8a-4fb0-943a-457017f30960");
+      field.setUnit("rpm");
+      map.put(KEY_CADENCE_SEATED_MAX, field);
+      mapFitIndex.put(KEY_CADENCE_SEATED_MAX, new FitIndex(123, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_CADENCE_STANDING_MAX);
+      field.setDescription("Garmin Average Cadence Standing");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("22907b17-ea79-4996-b4a0-e6fe25319557");
+      field.setUnit("rpm");
+      map.put(KEY_CADENCE_STANDING_MAX, field);
+      mapFitIndex.put(KEY_CADENCE_STANDING_MAX, new FitIndex(123, 1));
 
       //---------------------------------------------------
 
