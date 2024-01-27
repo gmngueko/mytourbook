@@ -275,13 +275,13 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
 
       /**
        * Running dynamics data <code>
-      
+
       //	|| fieldName.equals("stance_time") //				     253.0  ms
       //	|| fieldName.equals("stance_time_balance") //		   51.31 percent
       //	|| fieldName.equals("step_length") //				    1526.0  mm
       // || fieldName.equals("vertical_oscillation") //       105.2  mm          //$NON-NLS-1$
       // || fieldName.equals("vertical_ratio") //               8.96 percent     //$NON-NLS-1$
-      
+
        * </code>
        */
       final Float stanceTime = mesg.getStanceTime();
@@ -970,6 +970,76 @@ public class MesgListener_Record extends AbstractMesgListener implements RecordM
          final CustomTrackValue customTrackValue = new CustomTrackValue();
          customTrackValue.id = customFieldId;
          customTrackValue.value = saturatedHemoglobin;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float EnhRespirationRate = mesg.getEnhancedRespirationRate();
+      if (EnhRespirationRate != null) {
+         final String customFieldName = DataSerieStaticValue.RESPIRATION_RATE[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.RESPIRATION_RATE[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.RESPIRATION_RATE[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = EnhRespirationRate;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Integer performanceCondition = mesg.getFieldIntegerValue(90);
+      if (performanceCondition != null) {
+         final String customFieldName = DataSerieStaticValue.PERFORMANCE_CONDITION[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.PERFORMANCE_CONDITION[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.PERFORMANCE_CONDITION[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = performanceCondition;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Integer staminaPotential = mesg.getFieldIntegerValue(137);
+      if (staminaPotential != null) {
+         final String customFieldName = DataSerieStaticValue.STAMINA_POTENTIAL[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.STAMINA_POTENTIAL[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.STAMINA_POTENTIAL[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = staminaPotential;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Integer stamina = mesg.getFieldIntegerValue(138);
+      if (stamina != null) {
+         final String customFieldName = DataSerieStaticValue.STAMINA[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.STAMINA[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.STAMINA[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = stamina;
+         nonStandardDeveloperFields.add(customTrackValue);
+         if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
+            fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);
+         }
+      }
+
+      final Float grade = mesg.getGrade();
+      if (grade != null) {
+         final String customFieldName = DataSerieStaticValue.GRADE[DataSerieStaticValue.NameIdx];
+         final String customFieldId = DataSerieStaticValue.GRADE[DataSerieStaticValue.UUIDIdx];
+         final String customFieldUnit = DataSerieStaticValue.GRADE[DataSerieStaticValue.UnitIdx];
+         final CustomTrackValue customTrackValue = new CustomTrackValue();
+         customTrackValue.id = customFieldId;
+         customTrackValue.value = grade;
          nonStandardDeveloperFields.add(customTrackValue);
          if (!fitData.customTracksDefinitions_containsId(developerFieldDefinitions, customFieldId)) {
             fitData.customTracksDefinitions_add(customFieldName, customFieldId, customFieldUnit);

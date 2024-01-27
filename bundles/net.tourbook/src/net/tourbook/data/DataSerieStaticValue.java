@@ -10,6 +10,17 @@ public class DataSerieStaticValue {
    public static int            UnitIdx                      = 2;
    public static int            UUIDIdx                      = 3;
 
+   public static final String[] GRADE                        = { "Grade", "Grade", "%",
+         "e3e1f807-ac01-4ff9-a05d-6ed114e85353" };
+
+   public static final String[] PERFORMANCE_CONDITION        = { "Performance Condition", "Performance Condition", "",
+         "181866cb-0d1c-4888-9a9f-951c1153179b" };
+   public static final String[] STAMINA                      = { "Stamina", "Stamina", "%",
+         "31c38bf1-e823-4077-bb46-5e96b02a7991" };
+   public static final String[] STAMINA_POTENTIAL            = { "Stamina Potential", "Stamina Potential", "%",
+         "bc3cd6d1-2c15-4ce2-87dc-251bf0da3170" };
+   public static final String[] RESPIRATION_RATE             = { "Respiration Rate", "Respiration Rate", "brpm",
+         "d2c81197-b152-4c85-abce-112e42ea5825" };
    public static final String[] GARMIN_SPO2     = { "Garmin SPO2", "Garmin spO2", "%", "12d76972-a064-4cf0-ac91-c023869b2bb3" };
    public static final String[] GARMIN_RESPRATE = { "Garmin RespRate", "Garmin Respiration Rate", "cpm", "c0e4348f-2d8b-48cf-ab91-14d0e32c61d5" };
    public static final String[] GEAR_RATIO      = { "Gear ratio", "", "", "d23af954-ed29-43ae-9206-305e30bc8be3" };
@@ -59,6 +70,13 @@ public class DataSerieStaticValue {
 
    public static final Map<String, String[]> getList() {
       DATASERIES_STATIC.clear();
+
+      DATASERIES_STATIC.put(GRADE[UUIDIdx], GRADE);
+
+      DATASERIES_STATIC.put(PERFORMANCE_CONDITION[UUIDIdx], PERFORMANCE_CONDITION);
+      DATASERIES_STATIC.put(STAMINA[UUIDIdx], STAMINA);
+      DATASERIES_STATIC.put(STAMINA_POTENTIAL[UUIDIdx], STAMINA_POTENTIAL);
+      DATASERIES_STATIC.put(RESPIRATION_RATE[UUIDIdx], RESPIRATION_RATE);
 
       DATASERIES_STATIC.put(GARMIN_SPO2[UUIDIdx], GARMIN_SPO2);
       DATASERIES_STATIC.put(GARMIN_RESPRATE[UUIDIdx], GARMIN_RESPRATE);
