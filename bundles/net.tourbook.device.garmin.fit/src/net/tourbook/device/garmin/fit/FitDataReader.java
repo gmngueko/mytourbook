@@ -780,7 +780,7 @@ public class FitDataReader extends TourbookDevice {
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
             staticFieldString += "vO2MaxLow" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
-            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
             staticFieldString += " {" + vO2MaxLow.getClass().getSimpleName() + "}" +
                   UI.NEW_LINE1;
          }
@@ -799,7 +799,7 @@ public class FitDataReader extends TourbookDevice {
          if (myFieldValue != null) {
             allTourData_StaticCustomFieldValues.add(myFieldValue);
             staticFieldString += "vO2MaxHigh" + "[" + myField.getUnit() + "] " + UI.SYMBOL_EQUAL;
-            staticFieldString += " " + "\"" + myFieldValue.getValueString() + "\"";
+            staticFieldString += " " + "\"" + myFieldValue.getValue() + "\"";
             staticFieldString += " {" + vO2MaxHigh.getClass().getSimpleName() + "}" +
                   UI.NEW_LINE1;
          }

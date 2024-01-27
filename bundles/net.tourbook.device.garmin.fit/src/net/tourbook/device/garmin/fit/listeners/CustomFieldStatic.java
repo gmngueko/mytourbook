@@ -16,7 +16,9 @@ import net.tourbook.importdata.RawDataManager;
 import org.joda.time.Duration;
 
 public class CustomFieldStatic {
+
    public static final String                  KEY_ACTIVITY_PROFILE                 = "Activity Profile (fit)";
+
    public static final String                  KEY_RECOVERY_TIME                    = "Recovery Time (fit)";
    public static final String                  KEY_HR_RECOVERY_DECREASE             = "HR Recovery Decrease (fit)";
 
@@ -27,20 +29,20 @@ public class CustomFieldStatic {
    public static final String                  KEY_PNN50                            = "pNN50 (fit)";
    public static final String                  KEY_RMSSD                            = "RMSSD (fit)";
 
-   public static final String KEY_PCO_LEFT_AVG         = "PCO Left Avg";
-   public static final String KEY_PCO_RIGHT_AVG        = "PCO Right Avg";
-   public static final String KEY_POWER_PHASE_RIGHT_START_AVG      = "Power Phase Right Start Avg";
-   public static final String KEY_POWER_PHASE_RIGHT_END_AVG        = "Power Phase Right End Avg";
-   public static final String KEY_POWER_PHASE_PEAK_RIGHT_START_AVG = "Power Phase Peak Right Start Avg";
-   public static final String KEY_POWER_PHASE_PEAK_RIGHT_END_AVG   = "Power Phase Peak Right End Avg";
-   public static final String KEY_POWER_PHASE_LEFT_START_AVG       = "Power Phase Left Start Avg";
-   public static final String KEY_POWER_PHASE_LEFT_END_AVG         = "Power Phase Left End Avg";
-   public static final String KEY_POWER_PHASE_PEAK_LEFT_START_AVG  = "Power Phase Peak Left Start Avg";
-   public static final String KEY_POWER_PHASE_PEAK_LEFT_END_AVG    = "Power Phase Peak Left End Avg";
-
+   public static final String                  KEY_PCO_LEFT_AVG                     = "PCO Left Avg";
+   public static final String                  KEY_PCO_RIGHT_AVG                    = "PCO Right Avg";
+   public static final String                  KEY_POWER_PHASE_RIGHT_START_AVG      = "Power Phase Right Start Avg";
+   public static final String                  KEY_POWER_PHASE_RIGHT_END_AVG        = "Power Phase Right End Avg";
+   public static final String                  KEY_POWER_PHASE_PEAK_RIGHT_START_AVG = "Power Phase Peak Right Start Avg";
+   public static final String                  KEY_POWER_PHASE_PEAK_RIGHT_END_AVG   = "Power Phase Peak Right End Avg";
+   public static final String                  KEY_POWER_PHASE_LEFT_START_AVG       = "Power Phase Left Start Avg";
+   public static final String                  KEY_POWER_PHASE_LEFT_END_AVG         = "Power Phase Left End Avg";
+   public static final String                  KEY_POWER_PHASE_PEAK_LEFT_START_AVG  = "Power Phase Peak Left Start Avg";
+   public static final String                  KEY_POWER_PHASE_PEAK_LEFT_END_AVG    = "Power Phase Peak Left End Avg";
    public static final String                  KEY_STROKE_COUNT                     = "Stroke Counts (fit)";
 
    public static final String                  KEY_STANDING_TIME                    = "Standing Time (fit)";
+
    public static final String                  KEY_STANDING_COUNT                   = "Standing Count (fit)";
    public static final String                  KEY_TOTAL_GRIT                       = "Total Grit (fit)";
    public static final String                  KEY_TOTAL_FLOW                       = "Total Flow (fit)";
@@ -52,18 +54,20 @@ public class CustomFieldStatic {
    public static final String                  KEY_RESTING_CALORIES                 = "Resting Calories (fit)";
    public static final String                  KEY_VO2MAX_HIGH                      = "VO2max High (fit)";
    public static final String                  KEY_VO2MAX_LOW                       = "VO2max Low (fit)";
-
    public static final String                  KEY_INTENSITY_MODERATE               = "Intensity Moderate (fit)";
+
    public static final String                  KEY_STAMINA_POTENTIAL_START          = "Stamina potential Start (fit)";
    public static final String                  KEY_STAMINA_POTENTIAL_END            = "Stamina potential End (fit)";
    public static final String                  KEY_STAMINA_MIN                      = "Stamina Minimum (fit)";
 
    private static final HashMap<String, CustomField> map                                  = new HashMap<>();
-   private static final HashMap<String, Integer>     mapFitKey                               = new HashMap<>();
+   private static final HashMap<String, FitIndex>    mapFitIndex                          = new HashMap<>();
 
+   private static final HashMap<String, Integer>     mapFitKey                               = new HashMap<>();
    static {
       //map = new HashMap<>();
       //mapKey = new HashMap<>();
+
 
       CustomField field = new CustomField();
       field.setFieldName(KEY_ACTIVITY_PROFILE);
@@ -73,7 +77,104 @@ public class CustomFieldStatic {
       field.setUnit("");
       map.put(KEY_ACTIVITY_PROFILE, field);
       mapFitKey.put(KEY_ACTIVITY_PROFILE, 110);
+      mapFitIndex.put(KEY_ACTIVITY_PROFILE, new FitIndex(110, null));
       //mapFitKey.put(KEY_ACTIVITY_PROFILE, 5);
+
+      //-------------Cycling Dynamics------------
+      field = new CustomField();
+      field.setFieldName(KEY_PCO_LEFT_AVG);
+      field.setDescription("Garmin Average Left Pedal Platform Center Offset");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("515db71d-0027-4ddf-ab3e-91b6f8a16873");
+      field.setUnit("mm");
+      map.put(KEY_PCO_LEFT_AVG, field);
+      mapFitIndex.put(KEY_PCO_LEFT_AVG, new FitIndex(114, null));
+      mapFitKey.put(KEY_PCO_LEFT_AVG, 114);
+
+      field = new CustomField();
+      field.setFieldName(KEY_PCO_RIGHT_AVG);
+      field.setDescription("Garmin Average Right Pedal Platform Center Offset");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("b876aaf4-eed6-4e12-8d72-3f0076fdefe5");
+      field.setUnit("mm");
+      map.put(KEY_PCO_RIGHT_AVG, field);
+      mapFitIndex.put(KEY_PCO_RIGHT_AVG, new FitIndex(115, null));
+      mapFitKey.put(KEY_PCO_RIGHT_AVG, 115);
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_LEFT_START_AVG);
+      field.setDescription("Garmin Average Left Power Phase Start");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("b8e69703-30e0-4db8-bf51-935138000d1e");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_LEFT_START_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_LEFT_START_AVG, new FitIndex(116, 0));
+      //LEFT PHASE
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_LEFT_END_AVG);
+      field.setDescription("Garmin Average Left Power Phase End");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("3b2f4a0c-0856-4b0b-8f1c-f7bd63697a04");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_LEFT_END_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_LEFT_END_AVG, new FitIndex(116, 1));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_PEAK_LEFT_START_AVG);
+      field.setDescription("Garmin Average Left Power Phase Peak Start");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("544cb8ee-2f48-47b2-bd38-8f372d4b8c18");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_PEAK_LEFT_START_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_PEAK_LEFT_START_AVG, new FitIndex(117, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_PEAK_LEFT_END_AVG);
+      field.setDescription("Garmin Average Left Power Phase Peak End");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("c66a669b-4c7e-48f3-adf3-189f481252a4");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_PEAK_LEFT_END_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_PEAK_LEFT_END_AVG, new FitIndex(117, 1));
+
+      //RIGHT PHASE
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_RIGHT_START_AVG);
+      field.setDescription("Garmin Average Right Power Phase Start");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("ef52a26d-4ab7-4acc-8db0-cd40b9f3065d");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_RIGHT_START_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_RIGHT_START_AVG, new FitIndex(118, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_RIGHT_END_AVG);
+      field.setDescription("Garmin Average Right Power Phase End");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("f1361e59-aa64-4a13-80d7-9239d51865be");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_RIGHT_END_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_RIGHT_END_AVG, new FitIndex(118, 1));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_PEAK_RIGHT_START_AVG);
+      field.setDescription("Garmin Average Right Power Phase Peak Start");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("29bbfe74-13ed-45ed-b3e4-a03c934ce508");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_PEAK_RIGHT_START_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_PEAK_RIGHT_START_AVG, new FitIndex(119, 0));
+
+      field = new CustomField();
+      field.setFieldName(KEY_POWER_PHASE_PEAK_RIGHT_END_AVG);
+      field.setDescription("Garmin Average Right Power Phase Peak End");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("e618e08e-df59-40fe-89e3-daea65b0bfbe");
+      field.setUnit("°");
+      map.put(KEY_POWER_PHASE_PEAK_RIGHT_END_AVG, field);
+      mapFitIndex.put(KEY_POWER_PHASE_PEAK_RIGHT_END_AVG, new FitIndex(119, 1));
+
+      //---------------------------------------------------
 
       field = new CustomField();
       field.setFieldName(KEY_RECOVERY_TIME);
@@ -82,6 +183,7 @@ public class CustomFieldStatic {
       field.setRefId("716ed908-3e19-4eb8-a933-429a921052b9");
       field.setUnit("");
       map.put(KEY_RECOVERY_TIME, field);
+      //mapFitIndex.put(KEY_RECOVERY_TIME, new FitIndex(, null));
       //mapKey.put(KEY_RECOVERY_TIME, );
 
       field = new CustomField();
@@ -91,6 +193,7 @@ public class CustomFieldStatic {
       field.setRefId("5681a0f2-2601-46aa-a52b-4128af83d329");
       field.setUnit("bpm");
       map.put(KEY_HR_RECOVERY_DECREASE, field);
+      mapFitIndex.put(KEY_HR_RECOVERY_DECREASE, new FitIndex(202, null));
       mapFitKey.put(KEY_HR_RECOVERY_DECREASE, 202);
 
       field = new CustomField();
@@ -100,6 +203,7 @@ public class CustomFieldStatic {
       field.setRefId("de6b84ea-9a09-4d2f-adb8-77d174860cef");
       field.setUnit("counts");
       map.put(KEY_STROKE_COUNT, field);
+      mapFitIndex.put(KEY_STROKE_COUNT, new FitIndex(85, null));
       mapFitKey.put(KEY_STROKE_COUNT, 85);
 
 
@@ -110,6 +214,7 @@ public class CustomFieldStatic {
       field.setRefId("f507d70a-bd67-4f90-8451-3a9870f3101e");
       field.setUnit("");
       map.put(KEY_STANDING_COUNT, field);
+      mapFitIndex.put(KEY_STANDING_COUNT, new FitIndex(113, null));
       mapFitKey.put(KEY_STANDING_COUNT, 113);
 
       field = new CustomField();
@@ -119,6 +224,7 @@ public class CustomFieldStatic {
       field.setRefId("a724c61b-040e-4c79-ade3-3722d53be649");
       field.setUnit("s");
       map.put(KEY_STANDING_TIME, field);
+      mapFitIndex.put(KEY_STANDING_TIME, new FitIndex(112, null));
       mapFitKey.put(KEY_STANDING_TIME, 112);
 
       field = new CustomField();
@@ -128,6 +234,7 @@ public class CustomFieldStatic {
       field.setRefId("2679ce1f-783b-48d9-9c34-a4e82e49e6f2");
       field.setUnit("kGrit");
       map.put(KEY_TOTAL_GRIT, field);
+      mapFitIndex.put(KEY_TOTAL_GRIT, new FitIndex(181, null));
       mapFitKey.put(KEY_TOTAL_GRIT, 181);
 
       field = new CustomField();
@@ -137,6 +244,7 @@ public class CustomFieldStatic {
       field.setRefId("4711e2ab-1367-4ea3-a0e7-1b5ee141e216");
       field.setUnit("Flow");
       map.put(KEY_TOTAL_FLOW, field);
+      mapFitIndex.put(KEY_TOTAL_FLOW, new FitIndex(182, null));
       mapFitKey.put(KEY_TOTAL_FLOW, 182);
 
       field = new CustomField();
@@ -146,6 +254,7 @@ public class CustomFieldStatic {
       field.setRefId("aa78a07b-082a-46aa-a2c5-7656ae9cab50");
       field.setUnit("kGrit");
       map.put(KEY_AVG_GRIT, field);
+      mapFitIndex.put(KEY_AVG_GRIT, new FitIndex(186, null));
       mapFitKey.put(KEY_AVG_GRIT, 186);
 
       field = new CustomField();
@@ -155,6 +264,7 @@ public class CustomFieldStatic {
       field.setRefId("af0d5e2b-1a41-40a7-ba37-e9bbece6916d");
       field.setUnit("Flow");
       map.put(KEY_AVG_FLOW, field);
+      mapFitIndex.put(KEY_AVG_FLOW, new FitIndex(187, null));
       mapFitKey.put(KEY_AVG_FLOW, 187);
 
       field = new CustomField();
@@ -164,6 +274,7 @@ public class CustomFieldStatic {
       field.setRefId("00575577-6482-4971-b8a5-0ce1f53672e0");
       field.setUnit("");
       map.put(KEY_JUMP_COUNT, field);
+      mapFitIndex.put(KEY_JUMP_COUNT, new FitIndex(183, null));
       mapFitKey.put(KEY_JUMP_COUNT, 183);
 
       field = new CustomField();
@@ -173,6 +284,7 @@ public class CustomFieldStatic {
       field.setRefId("41ca5f0c-cd1b-4a9a-a65d-bf6f7133c0f4");
       field.setUnit("");
       map.put(KEY_TOTAL_STROKES, field);
+      mapFitIndex.put(KEY_TOTAL_STROKES, new FitIndex(10, null));
       mapFitKey.put(KEY_TOTAL_STROKES, 10);
 
       field = new CustomField();
@@ -182,6 +294,7 @@ public class CustomFieldStatic {
       field.setRefId("898edbe0-d429-46c2-9b69-d3bcf2ae52a9");
       field.setUnit("ml");
       map.put(KEY_SWEAT_LOSS, field);
+      mapFitIndex.put(KEY_SWEAT_LOSS, new FitIndex(178, null));
       mapFitKey.put(KEY_SWEAT_LOSS, 178);
 
       field = new CustomField();
@@ -191,6 +304,7 @@ public class CustomFieldStatic {
       field.setRefId("f9c9dc74-bdcc-4ce6-ac75-184d146a6752");
       field.setUnit("kcal");
       map.put(KEY_RESTING_CALORIES, field);
+      mapFitIndex.put(KEY_RESTING_CALORIES, new FitIndex(196, null));
       mapFitKey.put(KEY_RESTING_CALORIES, 196);
 
       field = new CustomField();
@@ -200,6 +314,7 @@ public class CustomFieldStatic {
       field.setRefId("6acec2a5-a488-4add-a824-265a970013e1");
       field.setUnit("min");
       map.put(KEY_INTENSITY_MODERATE, field);
+      mapFitIndex.put(KEY_INTENSITY_MODERATE, new FitIndex(212, null));
       mapFitKey.put(KEY_INTENSITY_MODERATE, 212);
 
       field = new CustomField();
@@ -209,6 +324,7 @@ public class CustomFieldStatic {
       field.setRefId("3d7f4d1e-e4a3-4c07-9a85-7ab8b1cf5f5a");
       field.setUnit("%");
       map.put(KEY_STAMINA_POTENTIAL_START, field);
+      mapFitIndex.put(KEY_STAMINA_POTENTIAL_START, new FitIndex(205, null));
       mapFitKey.put(KEY_STAMINA_POTENTIAL_START, 205);
 
       field = new CustomField();
@@ -218,6 +334,7 @@ public class CustomFieldStatic {
       field.setRefId("12e5b08b-c046-4d38-bccf-e6f9945bcc2e");
       field.setUnit("%");
       map.put(KEY_STAMINA_POTENTIAL_END, field);
+      mapFitIndex.put(KEY_STAMINA_POTENTIAL_END, new FitIndex(206, null));
       mapFitKey.put(KEY_STAMINA_POTENTIAL_END, 206);
 
       field = new CustomField();
@@ -227,6 +344,7 @@ public class CustomFieldStatic {
       field.setRefId("bd2ab323-d6de-4a1b-a3c1-d52a8dc3823b");
       field.setUnit("%");
       map.put(KEY_STAMINA_MIN, field);
+      mapFitIndex.put(KEY_STAMINA_MIN, new FitIndex(207, null));
       mapFitKey.put(KEY_STAMINA_MIN, 207);
 
       field = new CustomField();
@@ -421,6 +539,10 @@ public class CustomFieldStatic {
       //developperFieldString += UI.NEW_LINE1;
 
       return customFieldValue;
+   }
+
+   public static HashMap<String, FitIndex> getFitIndexMap() {
+      return mapFitIndex;
    }
 
    public static HashMap<String, Integer> getFitMap() {

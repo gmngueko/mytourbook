@@ -299,13 +299,25 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
  * }
  */
 
-      final HashMap<String, Integer> mapFit = CustomFieldStatic.getFitMap();
-      for (final Entry<String, Integer> set : mapFit.entrySet()) {
-         final Object fieldObj = mesg.getFieldValue(set.getValue());
+      //final HashMap<String, Integer> mapFit = CustomFieldStatic.getFitMap();
+      final HashMap<String, FitIndex> mapFitIndex = CustomFieldStatic.getFitIndexMap();
+      //for (final Entry<String, Integer> set : mapFit.entrySet()) {
+      for (final Entry<String, FitIndex> set : mapFitIndex.entrySet()) {
+         Object fieldObj = null;
+
+         if (set.getValue() != null && set.getValue().fieldNbr != null
+               && set.getValue().arrayIdx != null) {
+            fieldObj = mesg.getFieldValue(set.getValue().fieldNbr, set.getValue().arrayIdx);
+         } else if (set.getValue() != null && set.getValue().fieldNbr != null) {
+            fieldObj = mesg.getFieldValue(set.getValue().fieldNbr);
+         }
 
          if (fieldObj != null) {
             final CustomField myField = CustomFieldStatic.getMap().get(set.getKey());
-            final CustomField myFieldDb = CustomFieldStatic.addCustomField(myField, fitData);
+            CustomField myFieldDb = null;
+            if (myField != null) {
+               myFieldDb = CustomFieldStatic.addCustomField(myField, fitData);
+            }
             CustomFieldValue myFieldValue = null;
 
             if (myFieldDb != null) {
