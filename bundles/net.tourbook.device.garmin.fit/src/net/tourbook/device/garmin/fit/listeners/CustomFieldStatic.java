@@ -22,6 +22,10 @@ public class CustomFieldStatic {
    public static final String                  KEY_RECOVERY_TIME                    = "Recovery Time (fit)";
    public static final String                  KEY_HR_RECOVERY_DECREASE             = "HR Recovery Decrease (fit)";
 
+   public static final String                  KEY_RESPIRATION_RATE_AVG             = "Respiration Rate Avg (fit)";
+   public static final String                  KEY_RESPIRATION_RATE_MAX             = "Respiration Rate Max (fit)";
+   public static final String                  KEY_RESPIRATION_RATE_MIN             = "Respiration Rate Min (fit)";
+
    public static final String                  KEY_R_R_AVG                          = "Average R-R (fit)";
    public static final String                  KEY_R_R_MIN                          = "Min R-R (fit)";
    public static final String                  KEY_R_R_MAX                          = "Max R-R (fit)";
@@ -87,6 +91,37 @@ public class CustomFieldStatic {
       mapFitKey.put(KEY_ACTIVITY_PROFILE, 110);
       mapFitIndex.put(KEY_ACTIVITY_PROFILE, new FitIndex(110, null));
       //mapFitKey.put(KEY_ACTIVITY_PROFILE, 5);
+
+      //-------------Respiration Rate------------
+      field = new CustomField();
+      field.setFieldName(KEY_RESPIRATION_RATE_AVG);
+      field.setDescription("Garmin Average Respiration Rate");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("c2e53890-e5fe-458f-a317-b48c130fc117");
+      field.setUnit("Br/min");
+      map.put(KEY_RESPIRATION_RATE_AVG, field);
+      mapFitIndex.put(KEY_RESPIRATION_RATE_AVG, new FitIndex(169, null));
+      mapFitKey.put(KEY_RESPIRATION_RATE_AVG, 169);
+
+      field = new CustomField();
+      field.setFieldName(KEY_RESPIRATION_RATE_MAX);
+      field.setDescription("Garmin Maximum Respiration Rate");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("fb5261f2-f458-4615-8c9b-11b5cda27702");
+      field.setUnit("Br/min");
+      map.put(KEY_RESPIRATION_RATE_MAX, field);
+      mapFitIndex.put(KEY_RESPIRATION_RATE_MAX, new FitIndex(170, null));
+      mapFitKey.put(KEY_RESPIRATION_RATE_MAX, 170);
+
+      field = new CustomField();
+      field.setFieldName(KEY_RESPIRATION_RATE_MIN);
+      field.setDescription("Garmin Minimum Respiration Rate");
+      field.setFieldType(CustomFieldType.NONE);
+      field.setRefId("63e49b3a-ea86-48c5-827c-ecb3a5c9df26");
+      field.setUnit("Br/min");
+      map.put(KEY_RESPIRATION_RATE_MIN, field);
+      mapFitIndex.put(KEY_RESPIRATION_RATE_MIN, new FitIndex(180, null));
+      mapFitKey.put(KEY_RESPIRATION_RATE_MIN, 180);
 
       //-------------Cycling Position Dynamics------------
       field = new CustomField();
