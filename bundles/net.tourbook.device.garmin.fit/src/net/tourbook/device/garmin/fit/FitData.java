@@ -35,6 +35,7 @@ import net.tourbook.data.GearData;
 import net.tourbook.data.SwimData;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourDataCompute;
 import net.tourbook.data.TourMarker;
 import net.tourbook.importdata.ImportState_Process;
 import net.tourbook.importdata.RawDataManager;
@@ -308,6 +309,9 @@ public class FitData {
          // time zone is different -> fix tour start components with adjusted time zone
          _tourData.setTourStartTime_YYMMDD(tourStartTime_FromLatLon);
       }
+
+      //Martial compute some data
+      TourDataCompute.computeHRVData(_tourData);
 
       if (_alreadyImportedTours.containsKey(tourId) == false) {
 

@@ -2099,6 +2099,26 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @Transient
    public TourLocationData    tourLocationData_End;
 
+   // ############################################# Martial STATISTICS TRANSIENT#######################################
+   //HRV
+   @Transient
+   public Double rmssd_ms = null;
+
+   @Transient
+   public Double pnn50 = null;
+
+   @Transient
+   public Double rrStdDev_ms = null;
+
+   @Transient
+   public Integer rrMin_ms = null;
+
+   @Transient
+   public Integer rrMax_ms = null;
+
+   @Transient
+   public Double rrAvg_ms = null;
+
 
 // SET_FORMATTING_ON
 
@@ -11872,6 +11892,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       pulseTime_Milliseconds  = serieData.pulseTimes;
       pulseTime_TimeIndex     = serieData.pulseTime_TimeIndex;
+
+      //Martial compute some data
+      TourDataCompute.computeHRVData(this);
 
       if (powerSerie != null) {
          isPowerSerieFromDevice = true;
