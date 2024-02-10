@@ -217,6 +217,111 @@ public class TourDataCompute {
       }
    }
 
+   public static Double[] interpolate_nan_values(final Double[] rr_intervals,
+                                                 final String interpolation_method,
+                                                 final String limit_area,
+                                                 final String limit_direction,
+                                                 final Double limit) {
+      //def interpolate_nan_values(rr_intervals: list,
+      //interpolation_method: str = "linear",
+      //limit_area: str = None,
+      //limit_direction: str = "forward",
+      //limit=None,) -> list:
+      Double[] resultArray;
+
+      //      """
+      //      Function that interpolate Nan values with linear interpolation
+      //
+      //      Parameters
+      //      ---------
+      //      rr_intervals : list
+      //          RrIntervals list.
+      //      interpolation_method : str
+      //          Method used to interpolate Nan values of series.
+      //      limit_area: str
+      //          If limit is specified, consecutive NaNs will be filled with this restriction.
+      //      limit_direction: str
+      //          If limit is specified, consecutive NaNs will be filled in this direction.
+      //      limit: int
+      //          TODO
+      //      Returns
+      //      ---------
+      //      interpolated_rr_intervals : list
+      //          new list with outliers replaced by interpolated values.
+      //      """
+
+      try {
+         resultArray = interpolate_nan_values_linear(rr_intervals,
+               limit,
+               limit_area,
+               limit_direction);
+      } catch (final Exception e) {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+         resultArray = null;
+      }
+
+      return resultArray;
+   }
+
+   public static Double[] interpolate_nan_values_linear(final Double[] values,
+                                                    final Double limit,
+                                                    final String limit_area,
+                                                    final String limit_direction) throws Exception {
+
+      final Double[] resultArray = new Double[values.length];
+      int startIdx = 0;
+      for (final Double value : values) {
+         if (value.isNaN()) {
+            startIdx++;
+         } else {
+            break;//found the frist non NaN value end here
+         }
+      }
+
+      if (startIdx >= values.length) {
+         throw new Exception("array contains only Double.Nan values");
+      }
+
+      for (int idx = 0; idx <= startIdx; idx++) {//fill first Nan value with first non NaN value
+         resultArray[idx] = values[startIdx];
+      }
+
+      int endIdx = values.length -1;
+      for (int idx = values.length -1; idx > -1; idx--) {
+         if (values[idx].isNaN()) {
+            endIdx--;
+         } else {
+            break;//found the last non NaN value end here
+         }
+      }
+
+      if (endIdx < 0) {
+         throw new Exception("array contains only Double.Nan values");
+      }
+
+      for (int idx = values.length - 1; idx >= endIdx; idx--) {//fill last Nan value with first non NaN value
+         resultArray[idx] = values[endIdx];
+      }
+
+      //linear interpolate remaining NaN and supposing equal spacing for the data
+      int lastGoodIdx = startIdx;
+      for (int idx = startIdx + 1; idx < endIdx; idx++) {
+         if (!values[idx].isNaN()) {//current index is not a Nan so check the previous one
+            resultArray[idx] = values[idx];
+            if (values[idx - 1].isNaN()) {//need to interpolate all the previous NaN, since the current index is not a NaN
+               final Double increment = (values[idx] - values[lastGoodIdx]) / (idx - lastGoodIdx);
+               lastGoodIdx = idx;
+               for (int j = lastGoodIdx + 1; j < idx; j++) {
+                  resultArray[j] = resultArray[j - 1] + increment;
+               }
+            }
+         }
+      }
+
+      return resultArray;
+   }
+
    public static boolean is_outlier(final Double rr_interval,
                                     final Double next_rr_interval,
                                     String method,
