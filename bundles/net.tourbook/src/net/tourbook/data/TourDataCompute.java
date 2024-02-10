@@ -217,6 +217,96 @@ public class TourDataCompute {
       }
    }
 
+   public static Double[] get_nn_intervals(final Double[] rr_intervals,
+                                           Integer low_rri,
+                                           Integer high_rri,
+                                           String limit_area,
+                                           String limit_direction,
+                                           String interpolation_method,
+                                           String ectopic_beats_removal_method,
+                                           final boolean verbose) {
+      //   def get_nn_intervals(rr_intervals: List[float], low_rri: int = 300, high_rri: int = 2000,
+      //         limit_area: str = None, limit_direction: str = "forward",
+      //         interpolation_method: str = "linear", ectopic_beats_removal_method: str = KAMATH_RULE,
+      //         verbose: bool = True) -> List[float]:
+
+      //      """
+      //      Function that computes NN Intervals from RR-intervals.
+      //
+      //      Parameters
+      //      ---------
+      //      rr_intervals : list
+      //          RrIntervals list.
+      //      interpolation_method : str
+      //          Method used to interpolate Nan values of series.
+      //      ectopic_beats_removal_method : str
+      //          method to use to clean outlier. malik, kamath, karlsson, acar or custom.
+      //      low_rri : int
+      //          lowest RrInterval to be considered plausible.
+      //      high_rri : int
+      //          highest RrInterval to be considered plausible.
+      //      limit_area: str
+      //          If limit is specified, consecutive NaNs will be filled with this restriction.
+      //      limit_direction: str
+      //          If limit is specified, consecutive NaNs will be filled in this direction.
+      //      verbose : bool
+      //          Print information about deleted outliers.
+      //
+      //      Returns
+      //      ---------
+      //      interpolated_nn_intervals : list
+      //          list of NN Interval interpolated
+      //      """
+
+      if (low_rri == null) {
+         low_rri = 300;
+      }
+      if (high_rri == null) {
+         high_rri = 2000;
+      }
+      if (limit_direction == null) {
+         limit_direction = "forward";
+      }
+      if (limit_area == null) {
+         limit_area = "";
+      }
+
+      if (interpolation_method == null) {
+         interpolation_method = "linear";
+      }
+      if (ectopic_beats_removal_method == null) {
+         ectopic_beats_removal_method = KAMATH_RULE;
+      }
+
+      Double[] interpolated_nn_intervals = null;
+      final Double[] rr_intervals_cleaned;
+      final Double[] interpolated_rr_intervals;
+      final Remove_Outlier_Result nn_intervals;
+
+      rr_intervals_cleaned = remove_outliers(rr_intervals, verbose, low_rri, high_rri);
+      interpolated_rr_intervals = interpolate_nan_values(rr_intervals_cleaned,
+            interpolation_method,
+            limit_area,
+            limit_direction,
+            null);
+      try {
+         nn_intervals = remove_ectopic_beats(interpolated_rr_intervals,
+               ectopic_beats_removal_method,
+               null,
+               verbose);
+      } catch (final Exception e) {
+         e.printStackTrace();
+         return null;
+      }
+      interpolated_nn_intervals = interpolate_nan_values(nn_intervals.nn_intervals,
+            interpolation_method,
+            limit_area,
+            limit_direction,
+            null);
+
+      return interpolated_nn_intervals;
+   }
+
    public static Double[] interpolate_nan_values(final Double[] rr_intervals,
                                                  final String interpolation_method,
                                                  final String limit_area,
