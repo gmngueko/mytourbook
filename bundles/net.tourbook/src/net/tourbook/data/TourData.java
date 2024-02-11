@@ -2103,21 +2103,33 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    //HRV
    @Transient
    public Double rmssd_ms = null;
+   @Transient
+   public Double rmssd_ms_Raw = null;
 
    @Transient
    public Double pnn50 = null;
+   @Transient
+   public Double pnn50_Raw = null;
 
    @Transient
    public Double rrStdDev_ms = null;
+   @Transient
+   public Double rrStdDev_ms_Raw = null;
 
    @Transient
    public Integer rrMin_ms = null;
+   @Transient
+   public Integer rrMin_ms_Raw = null;
 
    @Transient
    public Integer rrMax_ms = null;
+   @Transient
+   public Integer rrMax_ms_Raw = null;
 
    @Transient
    public Double rrAvg_ms = null;
+   @Transient
+   public Double rrAvg_ms_Raw = null;
 
 
 // SET_FORMATTING_ON

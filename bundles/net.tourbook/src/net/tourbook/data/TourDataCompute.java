@@ -11,6 +11,11 @@ public class TourDataCompute {
    public static final String ACAR_RULE      = "acar";
    public static final String CUSTOM_RULE    = "custom";
 
+   public static class Compute_Rmssd_Pnn50_Result {
+      Double rmssd = Double.NaN;
+      Double pnn50 = Double.NaN;
+   }
+
    public static class Remove_Outlier_Result {
       int      outlier_count = 0;
       Double[] nn_intervals  = null;
@@ -142,25 +147,82 @@ public class TourDataCompute {
       return result;
    }
 
-   public static double calculateStandardDeviation(final double[] array) {
+   public static Compute_Rmssd_Pnn50_Result calculateRMSSD(final Double[] nn_intervals) {
+      Compute_Rmssd_Pnn50_Result result = new Compute_Rmssd_Pnn50_Result();
 
-      if(array == null || array.length == 0) {
+      if (nn_intervals.length > 1) {
+         double num1 = nn_intervals[0];
+         double num2 = 0.0;
+         int num3 = 0;
+         for (int index = 1; index < nn_intervals.length; ++index) {
+            if (nn_intervals[index] == null) {
+               continue;
+            }
+            final double num4 = nn_intervals[index] - num1;
+            num2 += num4 * num4;
+            num1 = nn_intervals[index];
+            if (num4 > 50.0 || num4 < -50.0) {
+               ++num3;
+            }
+         }
+
+         result = new Compute_Rmssd_Pnn50_Result();
+         result.rmssd = Math.sqrt(num2 / (nn_intervals.length - 1));
+         result.pnn50 = 1f * (double) num3 / (nn_intervals.length - 1);
+      }
+
+      return result;
+   }
+
+   public static Compute_Rmssd_Pnn50_Result calculate_RMSSD_PNN50(final int[] values) {
+      Compute_Rmssd_Pnn50_Result result = new Compute_Rmssd_Pnn50_Result();
+
+      if (values.length > 1) {
+         float currentInterval = values[0];
+         double mssd = 0.0;
+         int nn50 = 0;
+         for (int index = 1; index < values.length; ++index) {
+            final double diffWithPrevValue = (double) values[index] - (double) currentInterval;
+            mssd += diffWithPrevValue * diffWithPrevValue;
+            currentInterval = values[index];
+            if (diffWithPrevValue > 50.0 || diffWithPrevValue < -50.0) {
+               ++nn50;
+            }
+         }
+
+         result = new Compute_Rmssd_Pnn50_Result();
+         result.rmssd = Math.sqrt(mssd / (values.length - 1));
+         result.pnn50 = 1f * (double) nn50 / (values.length - 1);
+      }
+
+      return result;
+   }
+
+   public static double calculateStandardDeviation(final Double[] nn_intervals) {
+
+      if (nn_intervals == null || nn_intervals.length == 0) {
          return Double.NaN;
       }
       // get the sum of array
       double sum = 0.0;
-      for (final double i : array) {
-         sum += i;
+      for (final Double nn_interval : nn_intervals) {
+         if (nn_interval == null) {
+            continue;
+         }
+         sum += nn_interval;
       }
 
       // get the mean of array
-      final int length = array.length;
+      final int length = nn_intervals.length;
       final double mean = sum / length;
 
       // calculate the standard deviation
       double standardDeviation = 0.0;
-      for (final double num : array) {
-         standardDeviation += Math.pow(num - mean, 2);
+      for (final Double nn_interval : nn_intervals) {
+         if (nn_interval == null) {
+            continue;
+         }
+         standardDeviation += Math.pow(nn_interval - mean, 2);
       }
 
       return Math.sqrt(standardDeviation / length);
@@ -195,25 +257,85 @@ public class TourDataCompute {
          return;
       }
 
-      tourData.rrAvg_ms = Arrays.stream(tourData.pulseTime_Milliseconds).average().orElse(Double.NaN);
-      tourData.rrMax_ms = Arrays.stream(tourData.pulseTime_Milliseconds).max().orElse(-1);
-      tourData.rrMin_ms = Arrays.stream(tourData.pulseTime_Milliseconds).min().orElse(-1);
+      tourData.rrAvg_ms_Raw = Arrays.stream(tourData.pulseTime_Milliseconds).average().orElse(Double.NaN);
+      tourData.rrMax_ms_Raw = Arrays.stream(tourData.pulseTime_Milliseconds).max().orElse(-1);
+      tourData.rrMin_ms_Raw = Arrays.stream(tourData.pulseTime_Milliseconds).min().orElse(-1);
       final int[] values = tourData.pulseTime_Milliseconds;
       if (values.length > 1) {
-         float num1 = values[0];
-         double num2 = 0.0;
-         int num3 = 0;
-         for (int index = 1; index < values.length; ++index) {
-            final double num4 = (double) values[index] - (double) num1;
-            num2 += num4 * num4;
-            num1 = values[index];
-            if (num4 > 50.0 || num4 < -50.0) {
-               ++num3;
+         //         float num1 = values[0];
+         //         double num2 = 0.0;
+         //         int num3 = 0;
+         //         for (int index = 1; index < values.length; ++index) {
+         //            final double num4 = (double) values[index] - (double) num1;
+         //            num2 += num4 * num4;
+         //            num1 = values[index];
+         //            if (num4 > 50.0 || num4 < -50.0) {
+         //               ++num3;
+         //            }
+         //         }
+         final Compute_Rmssd_Pnn50_Result result = calculate_RMSSD_PNN50(values);
+         tourData.rmssd_ms_Raw = result.rmssd;// (double) Math.sqrt(num2 / (values.length - 1));
+         tourData.pnn50_Raw = result.pnn50;// 1f * (double) num3 / (values.length - 1);
+         tourData.rrStdDev_ms_Raw = calculateStandardDeviation(tourData.pulseTime_Milliseconds);
+      }
+
+      //cleaned
+      final Double[] rr_intervals = new Double[tourData.pulseTime_Milliseconds.length];
+      Double[] nn_intervals = null;
+      final Integer low_rri = 300;
+      final Integer high_rri = 2000;
+      final String limit_area = "";
+      final String limit_direction = "forward";
+      final String interpolation_method = "linear";
+      final String ectopic_beats_removal_method = KAMATH_RULE;
+      for (int i = 0; i < tourData.pulseTime_Milliseconds.length; i++) {
+         rr_intervals[i] = Double.valueOf(tourData.pulseTime_Milliseconds[i]);
+      }
+      nn_intervals = get_nn_intervals(rr_intervals,
+            low_rri,
+            high_rri,
+            limit_area,
+            limit_direction,
+            interpolation_method,
+            ectopic_beats_removal_method,
+            true);
+      if (nn_intervals != null) {
+         Double sum = 0.0;
+         int count = 0;
+         tourData.rrMin_ms = -1;
+         tourData.rrMax_ms = -1;
+         for (final Double nn_interval : nn_intervals) {
+            if (nn_interval != null && !nn_interval.isNaN()) {
+               sum += nn_interval;
+               count++;
+               if (tourData.rrMax_ms == -1) {
+                  tourData.rrMax_ms = nn_interval.intValue();
+               } else if (nn_interval > tourData.rrMax_ms) {
+                  tourData.rrMax_ms = nn_interval.intValue();
+               }
+               if (tourData.rrMin_ms == -1) {
+                  tourData.rrMin_ms = nn_interval.intValue();
+               } else if (nn_interval < tourData.rrMin_ms) {
+                  tourData.rrMin_ms = nn_interval.intValue();
+               }
             }
          }
-         tourData.rmssd_ms = (double) Math.sqrt(num2 / (values.length - 1));
-         tourData.pnn50 = 1f * (double) num3 / (values.length - 1);
-         tourData.rrStdDev_ms = calculateStandardDeviation(tourData.pulseTime_Milliseconds);
+         if (count == 0) {
+            tourData.rrAvg_ms = Double.NaN;
+         } else {
+            tourData.rrAvg_ms = sum / count;
+         }
+
+         if (nn_intervals.length > 1) {
+            final Compute_Rmssd_Pnn50_Result result = calculateRMSSD(nn_intervals);
+            tourData.rmssd_ms = result.rmssd;// (double) Math.sqrt(num2 / (values.length - 1));
+            tourData.pnn50 = result.pnn50;// 1f * (double) num3 / (values.length - 1);
+            tourData.rrStdDev_ms = calculateStandardDeviation(nn_intervals);
+         } else {
+            System.out.println("!!!!!!ERROR nn_intervals is <= 1!!!!!");
+         }
+      } else {
+         System.out.println("!!!!!!ERROR computing nn_intervals out of givne rr_inetrvals!!!!!");
       }
    }
 
@@ -355,9 +477,9 @@ public class TourDataCompute {
    }
 
    public static Double[] interpolate_nan_values_linear(final Double[] values,
-                                                    final Double limit,
-                                                    final String limit_area,
-                                                    final String limit_direction) throws Exception {
+                                                        final Double limit,
+                                                        final String limit_area,
+                                                        final String limit_direction) throws Exception {
 
       final Double[] resultArray = new Double[values.length];
       int startIdx = 0;
@@ -461,8 +583,8 @@ public class TourDataCompute {
    }
 
    public static Remove_Outlier_Result remove_ectopic_beats(final Double[] rr_intervals,
-                                               String method,
-                                               Double custom_removing_rule,
+                                                            String method,
+                                                            Double custom_removing_rule,
                                                             final boolean verbose) throws Exception {
       // def remove_ectopic_beats(rr_intervals: List[float], method: str = "malik",
       // custom_removing_rule: float = 0.2, verbose: bool = True) -> list:
