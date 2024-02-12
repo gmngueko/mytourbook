@@ -1810,7 +1810,7 @@ public class TourManager {
    }
 
    /**
-    * @return returns the title of this tour
+    * @return Returns date + time of a tour
     */
    public static String getTourTitle(final TourData tourData) {
 
@@ -1818,7 +1818,7 @@ public class TourManager {
          return UI.EMPTY_STRING;
       }
 
-      return getTourDateLong(tourData.getTourStartTime())//
+      return getTourDateLong(tourData.getTourStartTime())
             + UI.DASH_WITH_SPACE
             + getTourTimeShort(tourData);
    }
@@ -1827,7 +1827,7 @@ public class TourManager {
 
       final String weekDay = tourDateTime.format(TimeTools.Formatter_Weekday_L);
 
-      return weekDay //
+      return weekDay
             + UI.COMMA_SPACE
             + getTourDateLong(tourDateTime)
             + UI.DASH_WITH_SPACE
