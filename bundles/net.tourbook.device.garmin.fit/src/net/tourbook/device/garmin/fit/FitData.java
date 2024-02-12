@@ -664,14 +664,6 @@ public class FitData {
       return _customTracksDefinition;
    }
 
-   public List<DeviceSensorValue> getAllDeviceSensorValues() {
-      return _allDeviceSensorValues;
-   }
-
-   public List<TimeData> getAllTimeData() {
-      return _allTimeData;
-   }
-
    public List<Short> getBattery_Percentage() {
       return _allBatteryPercentage;
    }
