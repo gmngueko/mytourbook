@@ -15,8 +15,6 @@
  *******************************************************************************/
 package net.tourbook.tag;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -28,6 +26,7 @@ import javax.persistence.EntityManager;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.data.ExtraData;
 import net.tourbook.data.MaintenanceEvent;
 import net.tourbook.data.TourData;

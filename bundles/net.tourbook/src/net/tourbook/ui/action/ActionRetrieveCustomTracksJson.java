@@ -20,8 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import net.tourbook.Messages;
+import net.tourbook.common.UI;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
 import net.tourbook.tour.TourManager;

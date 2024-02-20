@@ -16,8 +16,8 @@
 
 package net.tourbook.ui.views.rawData;
 
+import net.tourbook.common.UI;
 import net.tourbook.data.TourData;
-import net.tourbook.ui.UI;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -53,9 +53,9 @@ public class ActionMergeIntoAny extends Action {
 		final StringBuilder sb = new StringBuilder().append(UI.EMPTY_STRING)//
             .append("Merging Any Tour with")
             .append(UI.COLON_SPACE)
-            .append(UI.getFormatterDateShort().format(start))
+            .append(net.tourbook.ui.UI.getFormatterDateShort().format(start))
 				.append(UI.DASH_WITH_DOUBLE_SPACE)
-				.append(UI.getFormatterTimeShort().format(start))
+            .append(net.tourbook.ui.UI.getFormatterTimeShort().format(start))
 				.append(UI.DASH_WITH_DOUBLE_SPACE)
             .append(mergeFromTour.getDeviceName());
       //.append(mergeIntoTour.getDeviceName());

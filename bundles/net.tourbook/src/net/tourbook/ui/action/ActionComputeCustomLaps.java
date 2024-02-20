@@ -1,16 +1,14 @@
 package net.tourbook.ui.action;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
 import net.tourbook.Messages;
+import net.tourbook.common.UI;
 import net.tourbook.data.CustomTrackIsActiveSettings;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
@@ -594,12 +592,9 @@ public class ActionComputeCustomLaps extends Action {
                         // Get a set of the entries
                         final Set<Entry<Integer, TourMarker>> setCalcMarkers = calcMarkers.entrySet();
 
-                        // Get an iterator
-                        final Iterator<Entry<Integer, TourMarker>> itCalcMarkers = setCalcMarkers.iterator();
                         int lapCount = 0;
                         int lastSerieIndex = 0;
-                        while (itCalcMarkers.hasNext()) {
-                           final Entry<Integer, TourMarker> calcMarker = itCalcMarkers.next();
+                        for (Entry<Integer, TourMarker> calcMarker : setCalcMarkers) {
                            //System.out.print("Key is: "+me.getKey() + " & ");
                            //System.out.println("Value is: "+me.getValue());
                            final int serieIndex = calcMarker.getKey();
@@ -692,11 +687,8 @@ public class ActionComputeCustomLaps extends Action {
                         // Get a set of the entries
                         final Set<Entry<Integer, TourMarker>> setCalcMarkers = calcMarkers.entrySet();
 
-                        // Get an iterator
-                        final Iterator<Entry<Integer, TourMarker>> itCalcMarkers = setCalcMarkers.iterator();
                         int lapCount = 0;
-                        while (itCalcMarkers.hasNext()) {
-                           final Entry<Integer, TourMarker> calcMarker = itCalcMarkers.next();
+                        for (Entry<Integer, TourMarker> calcMarker : setCalcMarkers) {
                            final String descriptionOld = calcMarker.getValue().getDescription();
                            String descriptionNew = "";
                            if (descriptionOld.contains("[[") && descriptionOld.contains("]]")) {
@@ -777,12 +769,9 @@ public class ActionComputeCustomLaps extends Action {
                         // Get a set of the entries
                         final Set<Entry<Integer, TourMarker>> setCalcMarkers = calcMarkers.entrySet();
 
-                        // Get an iterator
-                        final Iterator<Entry<Integer, TourMarker>> itCalcMarkers = setCalcMarkers.iterator();
                         int lapCount = 0;
                         int lastSerieIndex = 0;
-                        while (itCalcMarkers.hasNext()) {
-                           final Entry<Integer, TourMarker> calcMarker = itCalcMarkers.next();
+                        for (Entry<Integer, TourMarker> calcMarker : setCalcMarkers) {
                            //System.out.print("Key is: "+me.getKey() + " & ");
                            //System.out.println("Value is: "+me.getValue());
                            final int serieIndex = calcMarker.getKey();

@@ -17,7 +17,7 @@ package net.tourbook.data;
 
 import java.io.Serializable;
 
-import net.tourbook.ui.UI;
+import net.tourbook.common.UI;
 
 public class MaintenanceEvent implements Cloneable, Serializable {
 

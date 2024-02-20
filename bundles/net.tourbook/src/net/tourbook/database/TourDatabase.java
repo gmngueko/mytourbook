@@ -59,6 +59,7 @@ import net.tourbook.Messages;
 import net.tourbook.application.SplashManager;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.NIO;
+import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
@@ -89,7 +90,6 @@ import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.SQLFilter;
 import net.tourbook.ui.TourTypeFilter;
 import net.tourbook.ui.TreeColumnFactory;
-import net.tourbook.ui.UI;
 import net.tourbook.ui.views.tourCustomFields.CustomFieldViewItem;
 import net.tourbook.ui.views.tourCustomTracks.DataSerieViewItem;
 
@@ -179,7 +179,7 @@ public class TourDatabase {
 
 //   private static final String SQL_STATE_XJ004_DATABASE_NOT_FOUND         = "XJ004";                                                 //$NON-NLS-1$
 
-   private static final String NL                                         = UI.NEW_LINE;
+   private static final char   NL                                         = UI.NEW_LINE;
 
    private static final int    MAX_TRIES_TO_PING_SERVER                   = 10;
 

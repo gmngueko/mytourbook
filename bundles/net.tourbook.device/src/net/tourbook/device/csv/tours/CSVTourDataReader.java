@@ -20,8 +20,6 @@ import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -39,6 +37,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.tourbook.common.UI;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.data.CustomField;
 import net.tourbook.data.CustomFieldType;
@@ -842,7 +841,7 @@ public class CSVTourDataReader extends TourbookDevice {
                            tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
                         }
                      } else {
-                        final String value = allToken[element].replace("\"", UI.SPACE).trim();
+                        final String value = allToken[element].replace('\"', UI.SPACE).trim();
                         if (!value.isBlank()) {
                            tourDescr += St3TagMapRev.get(element) + ":" + allToken[element] + "\n";
                         }

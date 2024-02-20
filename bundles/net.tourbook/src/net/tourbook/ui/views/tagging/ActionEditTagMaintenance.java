@@ -18,6 +18,7 @@ package net.tourbook.ui.views.tagging;
 import java.util.HashMap;
 
 import net.tourbook.Messages;
+import net.tourbook.common.UI;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.data.TourTag;
 import net.tourbook.database.TourDatabase;
@@ -25,7 +26,6 @@ import net.tourbook.tag.Dialog_TourTag_Maintenance;
 import net.tourbook.tag.TagMenuManager;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
-import net.tourbook.ui.UI;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.ColumnViewer;
@@ -33,7 +33,6 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
-
 /**
  * Action to edit maintennace {@link TourTag}
  */

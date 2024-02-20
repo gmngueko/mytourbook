@@ -15,14 +15,13 @@
  *******************************************************************************/
 package net.tourbook.ui.views.tourCustomFields;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.data.CustomField;
 import net.tourbook.data.CustomFieldType;
 import net.tourbook.data.CustomFieldValue;

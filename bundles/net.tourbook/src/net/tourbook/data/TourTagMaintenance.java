@@ -15,10 +15,10 @@
  *******************************************************************************/
 package net.tourbook.data;
 
-import de.byteholder.geoclipse.map.UI;
-
 import java.io.Serializable;
 import java.util.TreeMap;
+
+import net.tourbook.common.UI;
 
 public class TourTagMaintenance implements Cloneable, Serializable {
 
