@@ -3540,23 +3540,17 @@ public class TourDataEditorView extends ViewPart implements
 
    private Section createSection(final Composite parent,
                                  final FormToolkit tk,
-                                 final String title,
-                                 final boolean isGrabVertical,
-                                 final boolean isExpandable) {
+                                 final String title) {
 
-      final int style = isExpandable
-            ? Section.TWISTIE | Section.TITLE_BAR
-            : Section.TITLE_BAR;
-
-      final Section section = tk.createSection(parent, style);
+      final Section section = tk.createSection(parent, Section.TWISTIE | Section.TITLE_BAR);
 
       section.setText(title);
-      GridDataFactory.fillDefaults().grab(true, isGrabVertical).applyTo(section);
-
-      final Composite sectionContainer = tk.createComposite(section);
-      section.setClient(sectionContainer);
-
       section.addExpansionListener(IExpansionListener.expansionStateChangedAdapter(expansionEvent -> onExpandSection()));
+
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(section);
+
+      final Composite sectionInnerContainer = tk.createComposite(section);
+      section.setClient(sectionInnerContainer);
 
       return section;
    }
@@ -3641,7 +3635,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_110_Tour(final Composite parent) {
 
-      _sectionTitle = createSection(parent, _tk, Messages.tour_editor_section_tour, true, true);
+      _sectionTitle = createSection(parent, _tk, Messages.tour_editor_section_tour);
 
       final Composite sectionContainer = (Composite) _sectionTitle.getClient();
       GridLayoutFactory.fillDefaults().numColumns(2).applyTo(sectionContainer);
@@ -3858,7 +3852,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_120_DateTime(final Composite parent) {
 
-      _sectionDateTime = createSection(parent, _tk, Messages.tour_editor_section_date_time, false, true);
+      _sectionDateTime = createSection(parent, _tk, Messages.tour_editor_section_date_time);
 
       final Composite container = (Composite) _sectionDateTime.getClient();
       GridLayoutFactory.fillDefaults()
@@ -4198,7 +4192,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_130_Personal(final Composite parent) {
 
-      _sectionPersonal = createSection(parent, _tk, Messages.tour_editor_section_personal, false, true);
+      _sectionPersonal = createSection(parent, _tk, Messages.tour_editor_section_personal);
       final Composite container = (Composite) _sectionPersonal.getClient();
       GridLayoutFactory.fillDefaults()
             .numColumns(2)
@@ -4372,7 +4366,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_140_Weather(final Composite parent) {
 
-      _sectionWeather = createSection(parent, _tk, Messages.tour_editor_section_weather, false, true);
+      _sectionWeather = createSection(parent, _tk, Messages.tour_editor_section_weather);
       final Composite container = (Composite) _sectionWeather.getClient();
       GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
       GridLayoutFactory.fillDefaults()
@@ -5075,7 +5069,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_150_Characteristics(final Composite parent) {
 
-      _sectionCharacteristics = createSection(parent, _tk, Messages.tour_editor_section_characteristics, false, true);
+      _sectionCharacteristics = createSection(parent, _tk, Messages.tour_editor_section_characteristics);
       final Composite container = (Composite) _sectionCharacteristics.getClient();
       GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
 //    container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
@@ -8119,9 +8113,9 @@ public class TourDataEditorView extends ViewPart implements
 
    private void onExpandSection() {
 
-      onResize_Tab1();
+      updateUI_SectionExpansion();
 
-//    form.reflow(false);
+      onResize_Tab1();
    }
 
    /**
@@ -8805,6 +8799,8 @@ public class TourDataEditorView extends ViewPart implements
       _autocomplete_Location_End    .restoreState(_state, STATE_AUTOCOMPLETE_POPUP_HEIGHT_LOCATION_END);
 
 // SET_FORMATTING_ON
+
+      updateUI_SectionExpansion();
    }
 
    @PersistState
@@ -9963,6 +9959,17 @@ public class TourDataEditorView extends ViewPart implements
 
          _refTourRange = null;
       }
+   }
+
+   /**
+    * Grab vertical space in the title section but only when it is expanded
+    */
+   private void updateUI_SectionExpansion() {
+
+      final boolean isTitleExpanded = _sectionTitle.isExpanded();
+      final GridData titleGridData = (GridData) _sectionTitle.getLayoutData();
+
+      titleGridData.grabExcessVerticalSpace = isTitleExpanded;
    }
 
    private void updateUI_Tab_1_Tour() {

@@ -333,6 +333,30 @@ public class ColumnManager {
 
    }
 
+   void action_SetColumnAlignment(final ColumnDefinition colDef, final int style) {
+
+      /*
+       * Update model
+       */
+      colDef.setStyle(style);
+
+      final String columnId = colDef.getColumnId();
+      for (final ColumnProperties columnProperties : _activeProfile.columnProperties) {
+
+         if (columnId.equals(columnProperties.columnId)) {
+
+            columnProperties.alignment = style;
+
+            break;
+         }
+      }
+
+      /*
+       * Update UI
+       */
+      _tourViewer.recreateViewer(_tourViewer.getViewer());
+   }
+
    void action_SetValueFormatter(final ColumnDefinition colDef,
                                  final ValueFormat valueFormat,
                                  final boolean isDetailFormat) {
@@ -367,7 +391,6 @@ public class ColumnManager {
       /*
        * Update UI
        */
-
       if (isNatTableColumnManager()) {
 
          _natTablePropertiesProvider.getNatTable().redraw();
@@ -1259,7 +1282,12 @@ public class ColumnManager {
       final ValueFormat[] availableFormatter = colDef.getAvailableFormatter();
       final boolean isValueFormatterAvailable = availableFormatter != null && availableFormatter.length > 0;
 
-      if (!isValueFormatterAvailable && !canColumnBeSetToHidden) {
+      final int columnStyle = colDef.getColumnStyle();
+
+      if (isValueFormatterAvailable == false
+            && canColumnBeSetToHidden == false
+            && columnStyle == 0) {
+
          // nothing can be done
          return;
       }
@@ -1276,7 +1304,6 @@ public class ColumnManager {
          menuItem.setText(menuItemText);
          menuItem.setEnabled(false);
       }
-
       {
          /*
           * Action: Hide current column
@@ -1328,7 +1355,6 @@ public class ColumnManager {
             menuItem.setEnabled(areColumnFreezed());
          }
       }
-
       {
          /*
           * Actions: Value Formatter
@@ -1336,6 +1362,15 @@ public class ColumnManager {
          if (isValueFormatterAvailable) {
 
             new ColumnFormatSubMenu(contextMenu, colDef, this);
+         }
+      }
+      {
+         /*
+          * Actions: Column alignment
+          */
+         if (columnStyle != 0) {
+
+            new ColumnAlignmentSubMenu(contextMenu, colDef, this);
          }
       }
 
@@ -1797,7 +1832,9 @@ public class ColumnManager {
     *
     * @return
     */
-   private Menu getContextMenu(final boolean isHeaderHit, final Menu headerContextMenu, final IContextMenuProvider defaultContextMenuProvider) {
+   private Menu getContextMenu(final boolean isHeaderHit,
+                               final Menu headerContextMenu,
+                               final IContextMenuProvider defaultContextMenuProvider) {
 
       Menu contextMenu;
 
@@ -3400,4 +3437,5 @@ public class ColumnManager {
       recreateViewer();
 
    }
+
 }
