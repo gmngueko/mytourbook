@@ -5177,7 +5177,7 @@ public class TourDataEditorView extends ViewPart implements
 
    private void createUI_Section_160_CustomTracks(final Composite parent) {
 
-      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks, false, true);
+      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks);
       final Composite container = (Composite) _sectionCustomTracks.getClient();
       GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
 
