@@ -69,10 +69,12 @@ import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorValue;
+import net.tourbook.data.TourBeverageContainer;
 import net.tourbook.data.TourBike;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourLocation;
 import net.tourbook.data.TourMarker;
+import net.tourbook.data.TourNutritionProduct;
 import net.tourbook.data.TourPerson;
 import net.tourbook.data.TourPersonHRZone;
 import net.tourbook.data.TourPhoto;
@@ -122,7 +124,7 @@ public class TourDatabase {
     * <li>/net.tourbook.export/format-templates/mt-1.0.vm</li>
     * <li>net.tourbook.device.mt.MT_StAXHandler</li>
     */
-   private static final int TOURBOOK_DB_VERSION = 54;
+   private static final int TOURBOOK_DB_VERSION = 55;
 
 //   private static final int TOURBOOK_DB_VERSION = 55; // 24.x ??????
 
@@ -205,9 +207,11 @@ public class TourDatabase {
 
    public static final String  TABLE_DEVICE_SENSOR                        = "DeviceSensor";                                          //$NON-NLS-1$
    public static final String  TABLE_DEVICE_SENSOR_VALUE                  = "DeviceSensorValue";                                     //$NON-NLS-1$
+   public static final String  TABLE_TOUR_BEVERAGE_CONTAINER              = "TOURBEVERAGECONTAINER";                                 //$NON-NLS-1$
    public static final String  TABLE_TOUR_BIKE                            = "TOURBIKE";                                              //$NON-NLS-1$
    public static final String  TABLE_TOUR_COMPARED                        = "TOURCOMPARED";                                          //$NON-NLS-1$
    public static final String  TABLE_TOUR_DATA                            = "TOURDATA";                                              //$NON-NLS-1$
+   public static final String  TABLE_TOUR_NUTRITION_PRODUCT               = "TOURNUTRITIONPRODUCT";                                  //$NON-NLS-1$
    public static final String  TABLE_TOUR_GEO_PARTS                       = "TourGeoParts";                                          //$NON-NLS-1$
    public static final String  TABLE_TOUR_LOCATION                        = "TourLocation";                                          //$NON-NLS-1$
    public static final String  TABLE_TOUR_MARKER                          = "TOURMARKER";                                            //$NON-NLS-1$
@@ -248,6 +252,7 @@ public class TourDatabase {
    public static final String  ENTITY_ID_CUSTOM_FIELD_VALUE  = "FieldValueID";                              //$NON-NLS-1$
    public static final String  ENTITY_ID_DATA_SERIE          = "SerieID";                                   //$NON-NLS-1$
 
+   public static final String  ENTITY_ID_BEVERAGECONTAINER   = "ContainerID";                               //$NON-NLS-1$
    private static final String ENTITY_ID_BIKE                = "BikeID";                                    //$NON-NLS-1$
    private static final String ENTITY_ID_COMPARED            = "ComparedID";                                //$NON-NLS-1$
    private static final String ENTITY_ID_DEVICE_SENSOR       = "SensorId";                                  //$NON-NLS-1$
@@ -255,6 +260,7 @@ public class TourDatabase {
    private static final String ENTITY_ID_HR_ZONE             = "HrZoneID";                                  //$NON-NLS-1$
    private static final String ENTITY_ID_LOCATION            = "LocationID";                                //$NON-NLS-1$
    private static final String ENTITY_ID_MARKER              = "MarkerID";                                  //$NON-NLS-1$
+   private static final String ENTITY_ID_NUTRITIONPRODUCT    = "ProductID";                                 //$NON-NLS-1$
    private static final String ENTITY_ID_PERSON              = "PersonID";                                  //$NON-NLS-1$
    private static final String ENTITY_ID_PHOTO               = "PhotoID";                                   //$NON-NLS-1$
    private static final String ENTITY_ID_REF                 = "RefID";                                     //$NON-NLS-1$
@@ -267,16 +273,17 @@ public class TourDatabase {
 // SET_FORMATTING_OFF
 
    private static final String KEY_CUSTOM_FIELD                   = TABLE_CUSTOM_FIELD + "_" + ENTITY_ID_CUSTOM_FIELD;             //$NON-NLS-1$
-// private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
+   //private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
    private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;                 //$NON-NLS-1$
 
-   private static final String KEY_BIKE            = TABLE_TOUR_BIKE         + "_" + ENTITY_ID_BIKE;             //$NON-NLS-1$
-   private static final String KEY_DEVICE_SENSOR   = TABLE_DEVICE_SENSOR     + "_" + ENTITY_ID_DEVICE_SENSOR;    //$NON-NLS-1$
-   private static final String KEY_PERSON          = TABLE_TOUR_PERSON       + "_" + ENTITY_ID_PERSON;           //$NON-NLS-1$
-   public static final String  KEY_TAG             = TABLE_TOUR_TAG          + "_" + ENTITY_ID_TAG;              //$NON-NLS-1$
-   private static final String KEY_TAG_CATEGORY    = TABLE_TOUR_TAG_CATEGORY + "_" + ENTITY_ID_TAG_CATEGORY;     //$NON-NLS-1$
-   public static final String  KEY_TOUR            = TABLE_TOUR_DATA         + "_" + ENTITY_ID_TOUR;             //$NON-NLS-1$
-   private static final String KEY_TYPE            = TABLE_TOUR_TYPE         + "_" + ENTITY_ID_TYPE;             //$NON-NLS-1$
+   public  static final String KEY_BEVERAGE_CONTAINER        = TABLE_TOUR_BEVERAGE_CONTAINER + "_" + ENTITY_ID_BEVERAGECONTAINER; //$NON-NLS-1$
+   private static final String KEY_BIKE                      = TABLE_TOUR_BIKE               + "_" + ENTITY_ID_BIKE;                            //$NON-NLS-1$
+   private static final String KEY_DEVICE_SENSOR             = TABLE_DEVICE_SENSOR           + "_" + ENTITY_ID_DEVICE_SENSOR;               //$NON-NLS-1$
+   private static final String KEY_PERSON                    = TABLE_TOUR_PERSON             + "_" + ENTITY_ID_PERSON;                        //$NON-NLS-1$
+   public  static final String KEY_TAG                       = TABLE_TOUR_TAG                + "_" + ENTITY_ID_TAG;                              //$NON-NLS-1$
+   private static final String KEY_TAG_CATEGORY              = TABLE_TOUR_TAG_CATEGORY       + "_" + ENTITY_ID_TAG_CATEGORY;            //$NON-NLS-1$
+   public  static final String KEY_TOUR                      = TABLE_TOUR_DATA               + "_" + ENTITY_ID_TOUR;                            //$NON-NLS-1$
+   private static final String KEY_TYPE                      = TABLE_TOUR_TYPE               + "_" + ENTITY_ID_TYPE;                            //$NON-NLS-1$
 
 // SET_FORMATTING_ON
 
@@ -2004,8 +2011,7 @@ public class TourDatabase {
             final List<?> resultList = emQuery.getResultList();
             for (final Object result : resultList) {
 
-               if (result instanceof TourTagCategory) {
-                  final TourTagCategory tourTagCategory = (TourTagCategory) result;
+               if (result instanceof final TourTagCategory tourTagCategory) {
                   _allTourTagCategories.put(tourTagCategory.getCategoryId(), tourTagCategory);
                }
             }
@@ -2554,6 +2560,36 @@ public class TourDatabase {
       }
 
       return UI.EMPTY_STRING;
+   }
+
+   /**
+    * @return Returns all tour beverage containers in the db sorted by name
+    */
+   public static List<TourBeverageContainer> getTourBeverageContainers() {
+
+      final List<TourBeverageContainer> beverageContainersList = new ArrayList<>();
+
+      final EntityManager entityManager = TourDatabase.getInstance().getEntityManager();
+
+      if (entityManager != null) {
+
+         final Query query = entityManager.createQuery(UI.EMPTY_STRING
+
+               + "SELECT tourBeverageContainer" //$NON-NLS-1$
+               + " FROM TourBeverageContainer AS tourBeverageContainer " //$NON-NLS-1$
+               + " ORDER  BY tourBeverageContainer.name"); //$NON-NLS-1$
+
+         for (final Object element : query.getResultList()) {
+
+            if (element instanceof final TourBeverageContainer tourBeverageContainer) {
+               beverageContainersList.add(tourBeverageContainer);
+            }
+         }
+
+         entityManager.close();
+      }
+
+      return beverageContainersList;
    }
 
    /**
@@ -3202,9 +3238,7 @@ public class TourDatabase {
 
             for (final Object result : resultList) {
 
-               if (result instanceof DeviceSensor) {
-
-                  final DeviceSensor sensor = (DeviceSensor) result;
+               if (result instanceof final DeviceSensor sensor) {
 
                   allDbDeviceSensors_BySensorID.put(sensor.getSensorId(), sensor);
 
@@ -4840,15 +4874,11 @@ public class TourDatabase {
                Messages.Tour_Database_Update_TourWeek,
                new Object[] { tourIdx++, tourList.size() });
 
-         if (progress instanceof IProgressMonitor) {
-
-            final IProgressMonitor monitor = (IProgressMonitor) progress;
+         if (progress instanceof final IProgressMonitor monitor) {
 
             monitor.subTask(msg);
 
-         } else if (progress instanceof SplashManager) {
-
-            final SplashManager splashManager = (SplashManager) progress;
+         } else if (progress instanceof final SplashManager splashManager) {
 
             splashManager.setMessage(msg);
          }
@@ -5275,6 +5305,35 @@ public class TourDatabase {
       );
 
       SQL.CreateIndex_Combined(stmt, TABLE_DEVICE_SENSOR_VALUE, "TourStartTime"); //$NON-NLS-1$
+   }
+
+   /**
+    * Create table {@link #TABLE_TOUR_BEVERAGE_CONTAINER} for {@link TourBeverageContainer}.
+    *
+    * @param stmt
+    *
+    * @throws SQLException
+    */
+   private void createTable_TourBeverageContainer(final Statement stmt) throws SQLException {
+
+      /*
+       * CREATE TABLE TourBeverageContainer
+       */
+
+      exec(stmt,
+            "CREATE TABLE " + TABLE_TOUR_BEVERAGE_CONTAINER + "   (                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + SQL.CreateField_EntityId(ENTITY_ID_BEVERAGECONTAINER, true)
+
+                  // Version 55 - begin
+
+                  + "   name                VARCHAR(" + TourBeverageContainer.DB_LENGTH_NAME + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + "   capacity            FLOAT                                                       " + NL //$NON-NLS-1$
+
+                  // Version 55 - end
+
+                  + ")"); //$NON-NLS-1$
    }
 
    /**
@@ -5966,6 +6025,47 @@ public class TourDatabase {
             + "   labelXOffset               INTEGER,                                  " + NL //$NON-NLS-1$
             + "   labelYOffset               INTEGER,                                  " + NL //$NON-NLS-1$
             + "   markerType                 BIGINT                                    " + NL //$NON-NLS-1$
+
+            + ")"); //$NON-NLS-1$
+   }
+
+   /**
+    * Create table {@link #TABLE_TOUR_NUTRITION_PRODUCT} for {@link TourNutritionProduct}.
+    *
+    * @param stmt
+    *
+    * @throws SQLException
+    */
+   private void createTable_TourNutritionProduct(final Statement stmt) throws SQLException {
+
+      /*
+       * CREATE TABLE TourNutritionProduct
+       */
+      exec(stmt, "CREATE TABLE " + TABLE_TOUR_NUTRITION_PRODUCT + "   (                           " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.CreateField_EntityId(ENTITY_ID_NUTRITIONPRODUCT, true)
+
+            + "   " + KEY_TOUR + "           BIGINT,                                   " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   " + KEY_BEVERAGE_CONTAINER + "  BIGINT,                              " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // Version 55 - begin
+
+            + "   productCode              VARCHAR(" + TourNutritionProduct.DB_LENGTH_CODE + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   consumedQuantity         FLOAT,                                                " + NL //$NON-NLS-1$
+            + "   quantityType             VARCHAR(" + TourNutritionProduct.DB_LENGTH_NAME + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   brand                    VARCHAR(" + TourNutritionProduct.DB_LENGTH_NAME + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   name                     VARCHAR(" + TourNutritionProduct.DB_LENGTH_NAME + "), " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   calories                 INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   calories_Serving         INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   sodium                   INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   sodium_Serving           INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   isBeverage               BOOLEAN DEFAULT FALSE,                                " + NL //$NON-NLS-1$
+            + "   isCustomProduct          BOOLEAN DEFAULT FALSE,                                " + NL //$NON-NLS-1$
+            + "   beverageQuantity         INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   beverageQuantity_Serving INTEGER,                                              " + NL //$NON-NLS-1$
+            + "   containersConsumed       FLOAT                                                 " + NL //$NON-NLS-1$
+
+            // Version 55 - end
 
             + ")"); //$NON-NLS-1$
    }
@@ -7011,6 +7111,8 @@ public class TourDatabase {
             createTable_TourPerson(stmt);
             createTable_TourPersonHRZone(stmt);
             createTable_TourType(stmt);
+            createTable_TourBeverageContainer(stmt);
+            createTable_TourNutritionProduct(stmt);
             createTable_TourMarker(stmt);
             createTable_TourPhoto(stmt);
             createTable_TourReference(stmt);
@@ -7367,7 +7469,7 @@ public class TourDatabase {
       _dbDesignVersion_New = currentDbVersion;
       _dbDesignVersion_Old = currentDbVersion;
 
-      try (Connection conn = getConnection_Simple()) {
+      try (final Connection conn = getConnection_Simple()) {
 
          // 1 -> 2
          if (currentDbVersion == 1) {
@@ -7649,7 +7751,12 @@ public class TourDatabase {
 
          // 53 -> 54    24.1
          if (currentDbVersion == 53) {
-            currentDbVersion = _dbDesignVersion_New = updateDb_053_To_054(conn, splashManager);
+            currentDbVersion = _dbDesignVersion_New = updateDb_053_To_054(splashManager);
+         }
+
+// 54 -> 55 > 24.XX
+         if (currentDbVersion == 54) {
+            currentDbVersion = _dbDesignVersion_New = updateDb_054_To_055(conn, splashManager);
          }
 
          // update db design version number
@@ -9426,9 +9533,7 @@ public class TourDatabase {
          // loop: all tours
          for (final Long tourId : allTourIds) {
 
-            if (progress instanceof SplashManager) {
-
-               final SplashManager splashManager = (SplashManager) progress;
+            if (progress instanceof final SplashManager splashManager) {
 
                final long currentTime = System.currentTimeMillis();
                final float timeDiff = currentTime - lastUpdateTime;
@@ -11682,7 +11787,7 @@ public class TourDatabase {
     *
     * @throws SQLException
     */
-   private int updateDb_053_To_054(final Connection conn, final SplashManager splashManager) throws SQLException {
+   private int updateDb_053_To_054(final SplashManager splashManager) {
 
       final int newDbVersion = 54;
 
@@ -11696,40 +11801,63 @@ public class TourDatabase {
       return newDbVersion;
    }
 
-      /**
-       * Add CustomField on DB version xxxgmn
-       *
-       * @param conn
-       * @param splashManager
-       * @return
-       * @throws SQLException
-       */
-      private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
-            throws SQLException {
+      private int updateDb_054_To_055(final Connection conn, final SplashManager splashManager) throws SQLException {
 
-         final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
-         final String message_End = "CustomField and CustomFieldValue Table's has been added in DB"; //$NON-NLS-1$
-         logDbUpdate_Start(currentDbVersion);
-         logDbUpdate(message);
-         updateMonitor(splashManager, currentDbVersion);
+         final int newDbVersion = 55;
+
+         logDbUpdate_Start(newDbVersion);
+         updateMonitor(splashManager, newDbVersion);
 
          final Statement stmt = conn.createStatement();
          {
             // double check if db already exists
-            if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
-               createTable_CustomField(stmt);
-            }
+            if (isTableAvailable(conn, TABLE_TOUR_NUTRITION_PRODUCT) == false) {
 
-            if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
-               createTable_CustomFieldValues(stmt);
+               createTable_TourBeverageContainer(stmt);
+               createTable_TourNutritionProduct(stmt);
             }
-
          }
          stmt.close();
 
-         logDbUpdate(message_End);
-         logDbUpdate_End(currentDbVersion);
+         logDbUpdate_End(newDbVersion);
+
+         return newDbVersion;
       }
+
+   /**
+    * Add CustomField on DB version xxxgmn
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
+      final String message_End = "CustomField and CustomFieldValue Table's has been added in DB"; //$NON-NLS-1$
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate(message);
+      updateMonitor(splashManager, currentDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // double check if db already exists
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
+            createTable_CustomField(stmt);
+         }
+
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
+            createTable_CustomFieldValues(stmt);
+         }
+
+      }
+      stmt.close();
+
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
+   }
 
    /**
     * Add DataSerie on DB version xx

@@ -565,6 +565,8 @@ public class UI {
    public static final String          UNIT_DISTANCE_INCH         = "inch";                     //$NON-NLS-1$
    public static final String          UNIT_ELEVATION_M           = "m";                        //$NON-NLS-1$
    public static final String          UNIT_ELEVATION_FT          = "ft";                       //$NON-NLS-1$
+   public static final String          UNIT_FLUIDS_ML             = "mL";                       //$NON-NLS-1$
+   public static final String          UNIT_FLUIDS_L              = "L";                        //$NON-NLS-1$
    public static final String          UNIT_HEIGHT_FT             = "ft";                       //$NON-NLS-1$
    public static final String          UNIT_HEIGHT_IN             = "in";                       //$NON-NLS-1$
    public static final String          UNIT_JOULE                 = "J";                        //$NON-NLS-1$
@@ -592,6 +594,7 @@ public class UI {
    public static final String          UNIT_VOLTAGE               = "Volt";                     //$NON-NLS-1$
    public static final String          UNIT_WEIGHT_KG             = "kg";                       //$NON-NLS-1$
    public static final String          UNIT_WEIGHT_LBS            = "lbs";                      //$NON-NLS-1$
+   public static final String          UNIT_WEIGHT_MG             = "mg";                       //$NON-NLS-1$
 
    public static final PeriodFormatter DEFAULT_DURATION_FORMATTER;
    public static final PeriodFormatter DEFAULT_DURATION_FORMATTER_SHORT;
@@ -1568,6 +1571,36 @@ public class UI {
    }
 
    /**
+    * Creates a {@link Spinner} with minimum, maximum, increment, page increment, number of digits
+    *
+    * @param parent
+    * @param digits
+    * @param minimum
+    * @param maximum
+    * @param increment
+    * @param pageIncrement
+    *
+    * @return
+    */
+   public static Spinner createSpinner(final Composite parent,
+                                       final int digits,
+                                       final int minimum,
+                                       final int maximum,
+                                       final int increment,
+                                       final int pageIncrement) {
+
+      final Spinner spinner = new Spinner(parent, SWT.BORDER);
+
+      spinner.setDigits(digits);
+      spinner.setMinimum(minimum);
+      spinner.setMaximum(maximum);
+      spinner.setIncrement(increment);
+      spinner.setPageIncrement(pageIncrement);
+
+      return spinner;
+   }
+
+   /**
     * Creates one {@link Action} in it's own toolbar.
     *
     * @param parent
@@ -2438,7 +2471,7 @@ public class UI {
                                  final int alignment) {
 
       final Rectangle imageRect = image.getBounds();
-      
+
       final int imageWidth = imageRect.width;
       final int imageWidth2 = imageWidth / 2;
 
@@ -2446,12 +2479,17 @@ public class UI {
        * Horizontal alignment
        */
       int xOffset = 0;
+      final int horizontalOSOffset = UI.IS_WIN
+
+            // W$ has a horizontal ident which prevents to be exactly centered
+            ? 4
+            : 0;
 
 // SET_FORMATTING_OFF
 
       switch (alignment) {
 
-      case SWT.CENTER   -> {  xOffset = (availableWidth - imageWidth2) / 2;   }
+      case SWT.CENTER   -> {  xOffset = ((availableWidth - imageWidth2) / 2) - horizontalOSOffset;   }
       case SWT.RIGHT    -> {  xOffset = availableWidth - imageWidth;          }
       default           -> {  xOffset = 2;                                    }  // == left alignment
 
@@ -2467,7 +2505,12 @@ public class UI {
       final int devX = event.x + xOffset;
       final int devY = event.y + yOffset;
 
-      event.gc.drawImage(image, devX, devY);
+      final GC gc = event.gc;
+
+//    gc.setBackground(UI.SYS_COLOR_YELLOW);
+//    gc.fillRectangle(event.x, devY, availableWidth, imageRect.height);
+
+      gc.drawImage(image, devX, devY);
    }
 
    public static String replaceHTML_BackSlash(final String filePath) {
