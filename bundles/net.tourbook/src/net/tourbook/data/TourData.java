@@ -985,7 +985,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private Set<TourPhoto>              tourPhotos                          = new HashSet<>();
 
    /**
-    * Tour marker
+    * Tour markers
     */
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -994,13 +994,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @JsonProperty
    private Set<TourMarker>             tourMarkers                         = new HashSet<>();
 
-   /**
-    * Tour nutrition products
-    */
-   @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
-   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
-   @JsonProperty
-   private Set<TourNutritionProduct>             tourNutritionProducts                         = new HashSet<>();
+//   /**
+//    * Tour location points are wrapping {@link TourLocation}s with additional data
+//    */
+//   @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
+//   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+//   @JsonProperty
+//   private Set<TourLocationPoint>      tourLocationPoints                  = new HashSet<>();
 
    /**
     * Contains the tour way points
@@ -1009,6 +1009,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
    @JsonProperty
    private  Set<TourWayPoint>          tourWayPoints                       = new HashSet<>();
+
+   /**
+    * Tour nutrition products
+    */
+   @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
+   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+   @JsonProperty
+   private Set<TourNutritionProduct>             tourNutritionProducts                         = new HashSet<>();
 
    /**
     * Reference tours
@@ -11222,6 +11230,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       return tourLocationEnd;
    }
 
+//   public Set<TourLocationPoint> getTourLocationPoints() {
+//      return tourLocationPoints;
+//   }
+
    public TourLocation getTourLocationStart() {
       return tourLocationStart;
    }
@@ -14115,13 +14127,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @Override
    public String toString() {
 
-      return "TourData [" + NL //                                                                     //$NON-NLS-1$
+      return "TourData [" + NL //                                                                        //$NON-NLS-1$
 
-            + "start          = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //$NON-NLS-1$
+            + " start           = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //$NON-NLS-1$
             + startHour + UI.SYMBOL_COLON + startMinute + UI.SYMBOL_COLON + startSecond + NL
 
-            + "tourId         = " + tourId + NL //                                                    //$NON-NLS-1$
-            + "isMultipleTours= " + isMultipleTours + NL //                                           //$NON-NLS-1$
+            + " tourId          = " + tourId + NL //                                                     //$NON-NLS-1$
+            + " isMultipleTours = " + isMultipleTours + NL //                                            //$NON-NLS-1$
 
 //            + "object   = " + super.toString() + NL //                                              //$NON-NLS-1$
 //            + "identityHashCode=" + System.identityHashCode(this) + NL //                           //$NON-NLS-1$
