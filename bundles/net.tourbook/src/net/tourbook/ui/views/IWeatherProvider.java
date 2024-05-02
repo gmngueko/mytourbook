@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2022 Frédéric Bard
+ * Copyright (C) 2022, 2024 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,7 @@ public interface IWeatherProvider {
    public static final String WEATHER_PROVIDER_WORLDWEATHERONLINE_NAME = "World Weather Online"; //$NON-NLS-1$
 
    public static final String WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM    = "OpenWeatherMapCustom"; //$NON-NLS-1$
+   public static final int    DEFAULT_H_INDENT                         = 16;
 
    Composite createUI(WeatherProvidersUI weatherProvidersUI,
                       Composite parent,
