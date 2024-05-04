@@ -3046,7 +3046,7 @@ public class Messages extends NLS {
    public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourPerson;
    //GMN END
 
-   public static String        Tour_Book_Action_GoToLastTour_Tooltip;
+   public static String        Tour_Book_Action_GoToLastTour_Tooltip2;
    public static String        Tour_Book_Action_ToggleViewLayout_Tooltip;
    public static String        Tour_Book_Combo_statistic_tooltip;
    public static String        Tour_Book_Info_TourLocationIsAvailable;
