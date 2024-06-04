@@ -121,6 +121,7 @@ Import-Package: com.fasterxml.jackson.core.type,
  org.geotools.ows.wms.response,
  org.opengis.geometry,
  org.osgi.service.event,
+ particlelabeling,
  tourbook.search.nls
 Bundle-ClassPath: opencsv-5.3.jar,
  .
