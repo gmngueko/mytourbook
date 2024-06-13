@@ -2136,6 +2136,7 @@ public class ColumnManager {
             _allProfiles);
 
       if (_slideoutShell != null) {
+
          // prevent that the column dialog will freeze the app
          _slideoutShell.setIsAnotherDialogOpened(true);
       }
@@ -2143,6 +2144,7 @@ public class ColumnManager {
       columnDialog.open();
 
       if (_slideoutShell != null) {
+
          _slideoutShell.setIsAnotherDialogOpened(false);
       }
    }
