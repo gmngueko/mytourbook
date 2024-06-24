@@ -4600,6 +4600,14 @@ public class TourDatabase {
       tourData.setTourType(appliedType);
    }
 
+   public static void showTourSaveError(final TourData tourData) {
+
+      MessageDialog.openError(
+            Display.getDefault().getActiveShell(),
+            "Error", //$NON-NLS-1$
+            String.format("Error occurred when saving tour '%s'", TourManager.getTourTitleDetailed(tourData))); //$NON-NLS-1$
+   }
+
    public static void updateActiveTourTypeList(final TourTypeFilter tourTypeFilter) {
 
       switch (tourTypeFilter.getFilterType()) {
@@ -6758,14 +6766,6 @@ public class TourDatabase {
       } catch (final SQLException e) {
          UI.showSQLException(e);
       }
-   }
-
-   private void showTourSaveError(final TourData tourData) {
-
-      MessageDialog.openError(
-            Display.getDefault().getActiveShell(),
-            "Error", //$NON-NLS-1$
-            String.format("Error occurred when saving tour '%s'", TourManager.getTourTitleDetailed(tourData))); //$NON-NLS-1$
    }
 
    /**

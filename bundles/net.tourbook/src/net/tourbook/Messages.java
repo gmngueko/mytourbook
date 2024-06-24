@@ -2984,11 +2984,12 @@ public class Messages extends NLS {
    public static String        Tour_Action_Custom_Tracks;
    public static String        Tour_Action_Custom_Tracks_Tooltip_Prefix;
 
+   public static String        Tour_Action_ComputeTourBreakTimes;
+   public static String        Tour_Action_ComputeTourBreakTimes_Tooltip;
    public static String        Tour_Action_DuplicateTour;
    public static String        Tour_Action_EditChartPreferences;
    public static String        Tour_Action_EditSmoothingPreferences;
    public static String        Tour_Action_EditStatisticPreferences;
-
    public static String        Tour_Action_GeoCompare;
    public static String        Tour_Action_GeoCompare_Tooltip;
    public static String        Tour_Action_Graph_PaceInterval_Tooltip;
@@ -3009,7 +3010,6 @@ public class Messages extends NLS {
    public static String        Tour_Action_graph_speed_tooltip;
    public static String        Tour_Action_graph_temperature_tooltip;
    public static String        Tour_Action_graph_tour_compare_tooltip;
-
    public static String        Tour_Action_MapMarkerOptions_Tooltip;
    public static String        Tour_Action_MarkerOptions_Tooltip;
    public static String        Tour_Action_Marker_Delete;
@@ -3044,6 +3044,7 @@ public class Messages extends NLS {
    public static String        Tour_Action_SetMinMaxTemperature_Message;
    public static String        Tour_Action_SetMinMaxTemperature_Title;
    public static String        Tour_Action_SetTimeZone;
+   public static String        Tour_Action_SetTourPauseTimes;
    public static String        Tour_Action_SetWeatherConditions;
    public static String        Tour_Action_ShowBreaktimeValues;
    public static String        Tour_Action_ShowDistanceOnXAxis_Tooltip;
@@ -3051,7 +3052,6 @@ public class Messages extends NLS {
    public static String        Tour_Action_ShowTourPauses;
    public static String        Tour_Action_ShowTourPauses_Tooltip;
    public static String        Tour_Action_ShowValuePointValue;
-
    public static String        tour_action_show_srtm_data;
    public static String        Tour_Action_show_start_time_on_x_axis;
    public static String        Tour_Action_Swim_Strokes_Tooltip;
@@ -3179,6 +3179,8 @@ public class Messages extends NLS {
    public static String        Tour_Data_RetrievingWeatherData_Monitor_Subtask;
    public static String        Tour_Data_SaveTour_Monitor;
    public static String        Tour_Data_SaveTour_MonitorSubtask;
+   public static String        Tour_Data_Task_UpdateTours;
+   public static String        Tour_Data_Task_UpdateTours_Subtask;
    public static String        Tour_Data_Text_AltitudeValues;
    public static String        Tour_Data_Text_BatteryValues;
    public static String        Tour_Data_Text_CadenceValues;
