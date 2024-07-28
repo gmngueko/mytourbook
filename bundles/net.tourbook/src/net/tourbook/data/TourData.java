@@ -6565,7 +6565,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          if (galleryPhoto == null) {
 
             /*
-             * photo is not found in the photo cache, create a new photo
+             * Photo is not found in the photo cache, create a new photo
              */
 
             final File photoFile = new File(imageFilePathName);
@@ -6574,7 +6574,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          }
 
          /*
-          * when a photo is in the photo cache it is possible that the tour is from the file system,
+          * When a photo is in the photo cache it is possible that the tour is from the file system,
           * update tour relevant fields
           */
          galleryPhoto.isSavedInTour = true;
@@ -6584,6 +6584,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
          galleryPhoto.adjustedTime_Tour = tourPhoto.getAdjustedTime();
          galleryPhoto.imageExifTime = tourPhoto.getImageExifTime();
+
+         /*
+          * Set adjusted time with time zone
+          */
+         final ZoneId timeZone = getTourStartTime().getZone();
+         final long adjustedTime_Tour = galleryPhoto.adjustedTime_Tour;
+
+         final ZonedDateTime zonedDateTime = adjustedTime_Tour == Long.MIN_VALUE
+               ? TimeTools.getZonedDateTime(galleryPhoto.imageExifTime, timeZone)
+               : TimeTools.getZonedDateTime(adjustedTime_Tour, timeZone);
+
+         galleryPhoto.adjustedTime_Tour_WithZone = zonedDateTime;
 
          final double tourLatitude = tourPhoto.getLatitude();
 
