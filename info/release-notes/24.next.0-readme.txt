@@ -49,6 +49,12 @@ Experimental
 New
 ===
 
+* Beautified 4k Display
+  - Rescaled 500+ icons
+  - 2D Map
+    - Rescaled map legend
+    - Rescaled SRTM map color provider
+
 * Waypoints
   - Waypoints are now painted as map points
 
@@ -56,7 +62,11 @@ New
 Improvements
 ============
 
-* 
+* 2D Map
+  - Improved photo image quality
+
+* Tour Type Icon
+  - Customize image scaling
   
 
 Changes
