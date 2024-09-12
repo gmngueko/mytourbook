@@ -49,32 +49,19 @@ Experimental
 New
 ===
 
-* Beautified 4k Display
-  - Rescaled 500+ icons
-  - 2D Map
-    - Rescaled map legend
-    - Rescaled SRTM map color provider
-    - Support @2x map tiles
-
-* Waypoints
-  - Waypoints are now painted as map points
+* 
 
 
 Improvements
 ============
 
-* 2D Map
-  - Improved photo image quality
-
-* Tour Type Icon
-  - Customize image scaling
+* 
   
 
 Changes
 =======
 
-* Map2
-  - Show waypoints action in the context menu is moved into the map points slideout
+* 
 
 
 
@@ -87,7 +74,8 @@ Changes that require Tour Re-import
 Bugfix
 ======
 
-* 
+See milestone 24.x https://github.com/mytourbook/mytourbook/milestone/16?closed=1
+ 
 
 
 Translation    
