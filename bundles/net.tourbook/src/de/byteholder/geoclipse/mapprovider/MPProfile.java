@@ -352,7 +352,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
          return null;
       }
 
-      final ProfileTileImage parentImage = new ProfileTileImage();
+      final ProfileTileImage parentImage = new ProfileTileImage(parentTile);
 
       parentImage.setBackgroundColor(_backgroundColor);
 
@@ -431,11 +431,24 @@ public class MPProfile extends MP implements ITileChildrenCreator {
    @Override
    public IPath getTileOSPath(final String fullPath, final Tile tile) {
 
+      final float highDPIScaling = getHiDPI();
+
+      final String nameSuffix =
+
+            highDPIScaling == 2.0 ? UI.HIDPI_NAME_2x
+
+                  : highDPIScaling == 1.50 ? UI.HIDPI_NAME_15x
+
+                        : UI.EMPTY_STRING;
+
       final IPath filePath = new Path(fullPath)
+
             .append(getOfflineFolder())
+
             .append(Integer.toString(tile.getZoom()))
             .append(Integer.toString(tile.getX()))
-            .append(Integer.toString(tile.getY()))
+            .append(Integer.toString(tile.getY()) + nameSuffix)
+
             .addFileExtension(MapProviderManager.getImageFileExtension(getImageFormat()));
 
       return filePath;
