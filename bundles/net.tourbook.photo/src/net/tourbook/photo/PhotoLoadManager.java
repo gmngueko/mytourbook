@@ -80,15 +80,11 @@ public class PhotoLoadManager {
    private static final LinkedBlockingDeque<PhotoSqlLoader>   _waitingQueueSql      = new LinkedBlockingDeque<>();
 
    /*
-    * key is the photo image file path
+    * Key is the photo image file path
     */
    private static final ConcurrentHashMap<String, Object> _photoWithLoadingError   = new ConcurrentHashMap<>();
    private static final ConcurrentHashMap<String, Object> _photoWithThumbSaveError = new ConcurrentHashMap<>();
 
-   public static final String                             IMAGE_FRAMEWORK_SWT      = "SWT";                    //$NON-NLS-1$
-   public static final String                             IMAGE_FRAMEWORK_AWT      = "AWT";                    //$NON-NLS-1$
-
-   private static String                                  _imageFramework;
    private static int                                     _hqImageSize;
 
    static {
@@ -97,7 +93,6 @@ public class PhotoLoadManager {
 
       _prefStore = PhotoActivator.getPrefStore();
 
-      _imageFramework = _prefStore.getString(IPhotoPreferences.PHOTO_VIEWER_IMAGE_FRAMEWORK);
       _hqImageSize = _prefStore.getInt(IPhotoPreferences.PHOTO_VIEWER_HQ_IMAGE_SIZE);
 
       final int availableProcessors = Runtime.getRuntime().availableProcessors();
@@ -373,7 +368,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             _hqImageSize,
             loadCallBack));
 
@@ -395,13 +389,7 @@ public class PhotoLoadManager {
                return;
             }
 
-            imageLoader.loadImageHQ(
-
-                  _waitingQueueThumb,
-                  _waitingQueueExif,
-
-                  false // is SWT image
-            );
+            imageLoader.loadImageHQ(_waitingQueueThumb, _waitingQueueExif);
 
             checkLoadingState(photo, imageQuality);
          }
@@ -420,8 +408,7 @@ public class PhotoLoadManager {
     */
    public static void putImageInLoadingQueueHQ_Map(final Photo photo,
                                                    final ImageQuality imageQuality,
-                                                   final ILoadCallBack imageLoaderCallback,
-                                                   final boolean isAWTImage) {
+                                                   final ILoadCallBack imageLoaderCallback) {
 
       // set state
       photo.setLoadingState(PhotoLoadingState.IMAGE_IS_IN_LOADING_QUEUE, imageQuality);
@@ -431,7 +418,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             _hqImageSize,
             imageLoaderCallback));
 
@@ -454,7 +440,7 @@ public class PhotoLoadManager {
 
             } else {
 
-               imageLoader.loadImageHQ(_waitingQueueThumb, _waitingQueueExif, isAWTImage);
+               imageLoader.loadImageHQ(_waitingQueueThumb, _waitingQueueExif);
             }
 
             checkLoadingState(photo, imageQuality);
@@ -478,7 +464,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             thumbImageSize,
             imageLoaderCallback);
 
@@ -503,7 +488,7 @@ public class PhotoLoadManager {
 
             } else {
 
-               imageLoader.loadImageHQThumb_AWT(_waitingQueueThumb, _waitingQueueExif);
+               imageLoader.loadImageHQThumb(_waitingQueueThumb, _waitingQueueExif);
             }
 
             checkLoadingState(photo, imageQuality);
@@ -532,7 +517,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             _hqImageSize,
             imageLoadCallback));
 
@@ -615,7 +599,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             _hqImageSize,
             imageLoadCallback);
 
@@ -699,7 +682,6 @@ public class PhotoLoadManager {
             _display,
             photo,
             imageQuality,
-            _imageFramework,
             _hqImageSize,
             imageLoaderCallback));
 
@@ -799,10 +781,6 @@ public class PhotoLoadManager {
 
    public static void setFromPrefStore(final int hqImageSize) {
       _hqImageSize = hqImageSize;
-   }
-
-   public static void setFromPrefStore(final String imageFramework) {
-      _imageFramework = imageFramework;
    }
 
    /**
