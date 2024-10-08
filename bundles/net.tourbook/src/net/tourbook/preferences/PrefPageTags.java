@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -114,6 +114,9 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 
+/**
+ * Manage {@link TourTag} and {@link TourTagCategory}
+ */
 public class PrefPageTags extends PreferencePage implements IWorkbenchPreferencePage, ITourViewer, ITreeViewer {
 
    public static final String       ID            = "net.tourbook.preferences.PrefPageTags"; //$NON-NLS-1$
@@ -310,7 +313,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
          if (property.equals(ITourbookPreferences.VIEW_LAYOUT_CHANGED)) {
 
-            _tagViewer.getTree().setLinesVisible(getPreferenceStore().getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
+            _tagViewer.getTree().setLinesVisible(_prefStore.getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
 
             _tagViewer.refresh();
 
@@ -475,7 +478,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
          _isModified = true;
 
-         fireModifyEvent();
+         saveChanges();
       }
 
       setFocusToViewer();
@@ -535,7 +538,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       final Composite layoutContainer = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults()
             .grab(true, true)
-            .hint(400, 500)
+            .hint(300, 300)
             .applyTo(layoutContainer);
 
       final TreeColumnLayout treeLayout = new TreeColumnLayout();
@@ -550,7 +553,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
             | SWT.FULL_SELECTION);
 
       tree.setHeaderVisible(true);
-      tree.setLinesVisible(getPreferenceStore().getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
+      tree.setLinesVisible(_prefStore.getBoolean(ITourbookPreferences.VIEW_LAYOUT_DISPLAY_LINES));
 
       tree.addListener(SWT.MouseDoubleClick, this::onTagTree_DoubleClick);
 
@@ -906,7 +909,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
       _isModified = true;
 
-      fireModifyEvent();
+      saveChanges();
    }
 
    private void enableControls() {
@@ -999,24 +1002,6 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       tbm.update(true);
    }
 
-   private void fireModifyEvent() {
-
-      if (_isModified) {
-
-         _isModified = false;
-
-         // remove old tags from cached tours
-         TourDatabase.clearTourTags();
-
-         TagMenuManager.updateRecentTagNames();
-
-         TourManager.getInstance().clearTourDataCache();
-
-         // fire modify event
-         TourManager.fireEvent(TourEventId.TAG_STRUCTURE_CHANGED);
-      }
-   }
-
    @Override
    public ColumnManager getColumnManager() {
       return null;
@@ -1043,11 +1028,13 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    @Override
    public void init(final IWorkbench workbench) {
 
-      setPreferenceStore(_prefStore);
+      noDefaultButton();
    }
 
    @Override
-   public boolean isValid() {
+   public boolean okToLeave() {
+
+      saveChanges();
 
       return true;
    }
@@ -1571,7 +1558,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    @Override
    public boolean performCancel() {
 
-      fireModifyEvent();
+      saveChanges();
 
       return true;
    }
@@ -1579,7 +1566,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    @Override
    public boolean performOk() {
 
-      fireModifyEvent();
+      saveChanges();
 
       return true;
    }
@@ -1591,6 +1578,24 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
    @Override
    public void reloadViewer() {}
+
+   private void saveChanges() {
+
+      if (_isModified) {
+
+         _isModified = false;
+
+         // remove old tags from cached tours
+         TourDatabase.clearTourTags();
+
+         TagMenuManager.updateRecentTagNames();
+
+         TourManager.getInstance().clearTourDataCache();
+
+         // fire modify event
+         TourManager.fireEvent(TourEventId.TAG_STRUCTURE_CHANGED);
+      }
+   }
 
    private void setFocusToViewer() {
 
