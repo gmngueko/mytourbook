@@ -123,6 +123,14 @@ public class SlideoutTourInfoOptions extends ToolbarSlideout implements IColorSe
    }
 
    @Override
+   protected void beforeHideToolTip() {
+
+      // set state that this tooltip is now hidden
+
+      _tourInfoUI.setUICanBeClosed();
+   }
+
+   @Override
    public void colorDialogOpened(final boolean isDialogOpened) {
 
       setIsAnotherDialogOpened(isDialogOpened);

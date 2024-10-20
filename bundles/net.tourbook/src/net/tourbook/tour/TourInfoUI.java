@@ -35,6 +35,7 @@ import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.time.TourDateTime;
 import net.tourbook.common.tooltip.ActionToolbarSlideout;
+import net.tourbook.common.tooltip.ICanHideTooltip;
 import net.tourbook.common.tooltip.ToolbarSlideout;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.StringUtils;
@@ -90,7 +91,7 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.joda.time.Period;
 import org.joda.time.PeriodType;
 
-public class TourInfoUI {
+public class TourInfoUI implements ICanHideTooltip {
 
    private static final String            ID                  = "net.tourbook.tour.TourInfoUI";       //$NON-NLS-1$
 
@@ -161,6 +162,8 @@ public class TourInfoUI {
     */
    private IWorkbenchPart _part;
 
+   private boolean        _isTourInfoOptionOpen;
+
    /*
     * Actions
     */
@@ -192,7 +195,7 @@ public class TourInfoUI {
 
    private ArrayList<DeviceSensorValue>   _allSensorValuesWithData;
 
-   private String                         _noTourTooltip = Messages.Tour_Tooltip_Label_NoTour;
+   private String                         _noTourTooltipText = Messages.Tour_Tooltip_Label_NoTour;
 
    private PixelConverter                 _pc;
 
@@ -397,9 +400,12 @@ public class TourInfoUI {
 
       @Override
       protected void onBeforeOpenSlideout() {
-//         closeOpenedDialogs(this);
+
+         _isTourInfoOptionOpen = true;
       }
    }
+
+   public TourInfoUI() {}
 
    /**
     * Run tour action quick edit.
@@ -409,12 +415,23 @@ public class TourInfoUI {
       _actionEditQuick.run();
    }
 
+   @Override
+   public boolean canHideTooltip() {
+
+      return _isTourInfoOptionOpen == false;
+   }
+
    private void createActions() {
 
-      _actionCloseTooltip = new ActionCloseTooltip();
-      _actionEditTour = new ActionTourToolTip_EditTour(_tourToolTipProvider, _tourProvider);
-      _actionEditQuick = new ActionTourToolTip_EditQuick(_tourToolTipProvider, _tourProvider);
-      _actionTourInfoOptions = new ActionSlideout_TourInfoOptions();
+      if (_actionTourInfoOptions == null) {
+
+         // don't create multiple times, this happens on every hovered tour !!!
+
+         _actionCloseTooltip = new ActionCloseTooltip();
+         _actionEditTour = new ActionTourToolTip_EditTour(_tourToolTipProvider, _tourProvider);
+         _actionEditQuick = new ActionTourToolTip_EditQuick(_tourToolTipProvider, _tourProvider);
+         _actionTourInfoOptions = new ActionSlideout_TourInfoOptions();
+      }
    }
 
    /**
@@ -578,7 +595,6 @@ public class TourInfoUI {
       if (_isUIEmbedded) {
 
          tbm.add(_actionTourInfoOptions);
-         tbm.update(true);
 
       } else {
 
@@ -1665,7 +1681,7 @@ public class TourInfoUI {
                .applyTo(container);
          {
             final Label label = new Label(container, SWT.NONE);
-            label.setText(_noTourTooltip);
+            label.setText(_noTourTooltipText);
             label.setForeground(fgColor);
             label.setBackground(bgColor);
          }
@@ -1925,14 +1941,20 @@ public class TourInfoUI {
    /**
     * Set text for the tooltip which is displayed when a tour is not hovered.
     *
-    * @param noTourTooltip
+    * @param noTourTooltipText
     */
-   public void setNoTourTooltip(final String noTourTooltip) {
-      _noTourTooltip = noTourTooltip;
+   public void setNoTourTooltip(final String noTourTooltipText) {
+
+      _noTourTooltipText = noTourTooltipText;
    }
 
    public void setPart(final IWorkbenchPart part) {
       _part = part;
+   }
+
+   public void setUICanBeClosed() {
+
+      _isTourInfoOptionOpen = false;
    }
 
    public void setUIWidth_Pixel(final int uiWidth_Pixel) {
