@@ -211,6 +211,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private ITourEventListener                  _tourEventListener;
 
    private TagMenuManager                      _tagMenuManager;
+   private TourTypeMenuManager                 _tourTypeMenuManager;
    private MenuManager                         _viewerMenuManager;
    private IContextMenuProvider                _viewerContextMenuProvider               = new TreeContextMenuProvider();
 
@@ -258,6 +259,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private Composite _viewerContainer;
 
    private Menu      _treeContextMenu;
+
 
    private class Action_CollapseAll_WithoutSelection extends ActionCollapseAll {
 
@@ -705,6 +707,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
    private void createMenuManager() {
 
       _tagMenuManager = new TagMenuManager(this, true);
+      _tourTypeMenuManager = new TourTypeMenuManager(this);
 
       _viewerMenuManager = new MenuManager("#PopupMenu"); //$NON-NLS-1$
       _viewerMenuManager.setRemoveAllWhenShown(true);
@@ -1785,7 +1788,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
 
       _tagMenuManager.enableTagActions(isTourSelected, isOneTour, firstTour == null ? null : firstTour.tagIds);
 
-      TourTypeMenuManager.enableRecentTourTypeActions(isTourSelected,
+      _tourTypeMenuManager.enableTourTypeActions(isTourSelected,
             isOneTour
                   ? firstTour.tourTypeId
                   : TourDatabase.ENTITY_IS_NOT_SAVED);
@@ -1828,7 +1831,7 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
       // tour type actions
       menuMgr.add(new Separator());
       menuMgr.add(_actionContext_SetTourType);
-      TourTypeMenuManager.fillMenuWithRecentTourTypes(menuMgr, this, true);
+      _tourTypeMenuManager.fillMenuWithRecentTourTypes(menuMgr);
 
       menuMgr.add(new Separator());
       menuMgr.add(_actionContext_ExportTour);

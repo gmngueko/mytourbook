@@ -191,7 +191,7 @@ class DialogDeleteTourValues extends TitleAreaDialog {
       createUI(dlgContainer);
 
       // must be run async because the dark theme is overwriting colors after calling createDialogArea()
-      _parent.getDisplay().asyncExec(this::updateUI_LockUnlockButtons);
+      _parent.getDisplay().asyncExec(() -> updateUI_LockUnlockButtons());
 
       return dlgContainer;
    }
