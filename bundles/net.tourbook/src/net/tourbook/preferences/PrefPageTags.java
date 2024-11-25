@@ -806,7 +806,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
             // label
             final Label label = new Label(container, SWT.NONE);
-            label.setText("Tag &image size");
+            label.setText(Messages.Pref_TourTag_Lable_TagImageSize);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(label);
 
             // spinner
@@ -955,7 +955,7 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
 
          tvc = new TreeViewerColumn(_tagViewer, SWT.LEAD);
          tvcColumn = tvc.getColumn();
-         tvcColumn.setText("Image");
+         tvcColumn.setText(Messages.Pref_TourTag_Column_Image);
 
          columnIndex++;
          _columnIndexTagImage = columnIndex;
