@@ -16,7 +16,6 @@
 package net.tourbook.preferences;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +25,7 @@ import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.util.TableLayoutComposite;
 import net.tourbook.ui.action.TourAction;
+import net.tourbook.ui.action.TourActionCategory;
 import net.tourbook.ui.action.TourActionManager;
 
 import org.eclipse.jface.layout.GridDataFactory;
@@ -71,7 +71,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
    private static final IPreferenceStore _prefStore         = TourbookPlugin.getPrefStore();
 
-   private List<TourAction>              _allSortedActions  = new ArrayList<>();
+   private List<TourAction>              _allClonedActions  = new ArrayList<>();
    private Set<String>                   _allViewActionIDs;
 
    private CheckboxTableViewer           _tourActionViewer;
@@ -145,7 +145,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
       @Override
       public Object[] getElements(final Object inputElement) {
-         return _allSortedActions.toArray();
+         return _allClonedActions.toArray();
       }
 
       @Override
@@ -278,7 +278,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
              * Label: Viewer context
              */
             _lblViewerContext = new Label(contextContainer, SWT.WRAP);
-            _lblViewerContext.setText("Context:");
+            _lblViewerContext.setText(Messages.Pref_TourActions_Label_ViewerContext);
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(_lblViewerContext);
          }
          {
@@ -286,7 +286,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
              * Label: Context View
              */
             _lblContextView = new Label(contextContainer, SWT.WRAP);
-            _lblContextView.setText("This preferences dialog was not opened from a tour context menu");
+            _lblContextView.setText(Messages.Pref_TourActions_Label_ContextView);
             GridDataFactory.fillDefaults()
                   .grab(true, false)
                   .hint(_pc.convertWidthInCharsToPixels(40), SWT.DEFAULT)
@@ -572,6 +572,12 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
       _prefStore.removePropertyChangeListener(_prefChangeListener);
 
+      for (final TourAction tourAction : _allClonedActions) {
+
+         UI.disposeResource(tourAction.getImage());
+         UI.disposeResource(tourAction.getImageDisabled());
+      }
+
       super.dispose();
    }
 
@@ -604,7 +610,12 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
 // SET_FORMATTING_ON
 
-      if (isCustomizeActions && isActionCategory == false) {
+      if (isCustomizeActions && isActionCategory == false
+
+      /*
+       * When actions are filtered then it gets complicated with up/down actions -> disabled
+       */
+            && _chkShowOnlyAvailableActions.getSelection() == false) {
 
          enableUpDownActions();
 
@@ -616,33 +627,63 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
    }
 
    /**
-    * check if the up/down button are enabled
+    * Check selected action if it can be moved up/down
+    *
+    * @param selectedAction
     */
-
    private void enableUpDownActions() {
 
       final Table table = _tourActionViewer.getTable();
-      final TableItem[] items = table.getSelection();
+      final int selectionIndex = table.getSelectionIndex();
 
-      final boolean isValidSelection = items.length > 0;
+      boolean isEnableUp = false;
+      boolean isEnableDown = false;
 
-      boolean isEnableUp = isValidSelection;
-      boolean isEnableDown = isValidSelection;
+      final IStructuredSelection structuredSelection = _tourActionViewer.getStructuredSelection();
+      final TourAction selectedAction = (TourAction) structuredSelection.getFirstElement();
 
-      if (isValidSelection) {
+      final int numActions = _allClonedActions.size();
 
-         final int[] allIndices = table.getSelectionIndices();
-         final int numItems = table.getItemCount();
+      if (selectionIndex <= 1) {
 
-         isEnableUp = allIndices[0] != 0;
-         isEnableDown = allIndices[allIndices.length - 1] < numItems - 1;
+         // check top
+
+         isEnableDown = true;
+
+      } else if (selectionIndex >= numActions - 1) {
+
+         // check bottom
+
+         isEnableUp = true;
+
+      } else {
+
+         // check within a category
+
+         final TourActionCategory selectedCategory = selectedAction.actionCategory;
+
+         final TourAction previousAction = _allClonedActions.get(selectionIndex - 1);
+         final TourAction nextAction = _allClonedActions.get(selectionIndex + 1);
+
+         final TourActionCategory previousCategory = previousAction.actionCategory;
+         final TourActionCategory nextCategory = nextAction.actionCategory;
+
+         if (previousAction.isCategory == false && previousCategory == selectedCategory) {
+
+            isEnableUp = true;
+         }
+
+         if (nextAction.isCategory == false && nextCategory == selectedCategory) {
+
+            isEnableDown = true;
+         }
       }
 
       _btnUp.setEnabled(isEnableUp);
       _btnDown.setEnabled(isEnableDown);
    }
 
-   private Collection<? extends TourAction> getClonedActions(final List<TourAction> allActions) {
+   private List<TourAction> getClonedActions(final List<TourAction> allActions) {
 
       final List<TourAction> allClonedActions = new ArrayList<>();
 
@@ -676,7 +717,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
       if (allSelectedIndices.length > 0) {
 
          final int selectedIndex = allSelectedIndices[0];
-         Collections.swap(_allSortedActions, selectedIndex, selectedIndex + 1);
+         Collections.swap(_allClonedActions, selectedIndex, selectedIndex + 1);
 
          _tourActionViewer.refresh();
       }
@@ -694,7 +735,7 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
          final int selectedIndex = allSelectedIndices[0];
 
-         Collections.swap(_allSortedActions, selectedIndex, selectedIndex - 1);
+         Collections.swap(_allClonedActions, selectedIndex, selectedIndex - 1);
 
          _tourActionViewer.refresh();
       }
@@ -734,10 +775,8 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
    private void onCheckAll(final boolean isChecked) {
 
-      final List<TourAction> allActions = TourActionManager.getSortedActions();
-
       // update model
-      for (final TourAction tourAction : allActions) {
+      for (final TourAction tourAction : _allClonedActions) {
          tourAction.isChecked = isChecked;
       }
 
@@ -776,6 +815,8 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
    @Override
    public boolean performCancel() {
 
+      safePrefState();
+
       return super.performCancel();
    }
 
@@ -784,8 +825,8 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
       super.performDefaults();
 
-      _allSortedActions.clear();
-      _allSortedActions.addAll(TourActionManager.getDefinedActions());
+      _allClonedActions.clear();
+      _allClonedActions.addAll(getClonedActions(TourActionManager.getDefinedActions()));
 
       // load viewer
       _tourActionViewer.setInput(this);
@@ -795,6 +836,8 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
    @Override
    public boolean performOk() {
+
+      safePrefState();
 
       saveState();
 
@@ -811,8 +854,8 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
       _chkShowOnlyAvailableActions.setSelection(TourActionManager.isShowOnlyAvailableActions());
 
       // get viewer content
-      _allSortedActions.clear();
-      _allSortedActions.addAll(TourActionManager.getSortedActions());
+      _allClonedActions.clear();
+      _allClonedActions.addAll(getClonedActions(TourActionManager.getAllActions()));
 
       // load viewer
       _tourActionViewer.setInput(this);
@@ -820,7 +863,17 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
       updateUI_ActionFilter();
 
       // !!! VERY IMPORTANT:  Checking the actions must be async otherwise it is NOT working !!!
-      _parent.getDisplay().asyncExec(() -> updateUI_CheckedActions());
+      _parent.getDisplay().asyncExec(() -> {
+
+         // check visible actions
+         final List<TourAction> allVisibleActions = TourActionManager.getVisibleActions();
+         _tourActionViewer.setCheckedElements(allVisibleActions.toArray());
+      });
+   }
+
+   private void safePrefState() {
+
+      TourActionManager.savePrefState(_chkShowOnlyAvailableActions.getSelection());
    }
 
    private void saveState() {
@@ -846,26 +899,9 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
          }
       }
 
-      /*
-       * Get all checked actions
-       */
-      final Object[] allCheckedActions = _tourActionViewer.getCheckedElements();
-      final String[] stateAllCheckedActions = new String[allCheckedActions.length];
-
-      for (int actionIndex = 0; actionIndex < allCheckedActions.length; actionIndex++) {
-
-         final TourAction tourAction = (TourAction) allCheckedActions[actionIndex];
-
-         stateAllCheckedActions[actionIndex] = tourAction.actionClassName;
-      }
-
       TourActionManager.saveActions(
-
             _rdoShowCustomActions.getSelection(),
-            _chkShowOnlyAvailableActions.getSelection(),
-
-            stateAllSortedActions,
-            stateAllCheckedActions);
+            _allClonedActions);
    }
 
    private void updateUI_ActionFilter() {
@@ -878,16 +914,6 @@ public class PrefPageAppearance_TourActions extends PreferencePage implements IW
 
          _tourActionViewer.setFilters();
       }
-
-      updateUI_CheckedActions();
-   }
-
-   private void updateUI_CheckedActions() {
-
-      final List<TourAction> allVisibleActions = TourActionManager.getVisibleActions();
-
-      // check only the visible actions
-      _tourActionViewer.setCheckedElements(allVisibleActions.toArray());
    }
 
 }
