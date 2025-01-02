@@ -113,6 +113,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.PlatformUI;
+import org.hibernate.Hibernate;
 import org.osgi.framework.Bundle;
 
 public class TourDatabase {
@@ -3209,7 +3210,7 @@ public class TourDatabase {
             allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
 
             for (final DataSerie dataSerie : allDataSeries) {
-               //Hibernate.initialize(dataSerie.getTourData());
+               Hibernate.initialize(dataSerie.getTourData());
                allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
                allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
             }
