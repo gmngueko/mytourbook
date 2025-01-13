@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -50,9 +50,9 @@ import org.eclipse.jface.preference.IPreferenceStore;
  */
 public class FitData {
 
-   private static final Integer          DEFAULT_MESSAGE_INDEX  = Integer.valueOf(0);
+   private static final Integer          DEFAULT_MESSAGE_INDEX    = Integer.valueOf(0);
 
-   private IPreferenceStore              _prefStore             = Activator.getDefault().getPreferenceStore();
+   private IPreferenceStore              _prefStore               = Activator.getDefault().getPreferenceStore();
 
    private boolean                       _isIgnoreLastMarker;
    private boolean                       _isSetLastMarker;
@@ -68,7 +68,7 @@ public class FitData {
    private Map<Long, TourData>           _alreadyImportedTours;
    private Map<Long, TourData>           _newlyImportedTours;
 
-   private TourData                      _tourData              = new TourData();
+   private TourData                      _tourData                = new TourData();
 
    private String                        _deviceId;
    private String                        _manufacturer;
@@ -78,13 +78,14 @@ public class FitData {
    private String                        _sessionIndex;
    private ZonedDateTime                 _sessionStartTime;
 
-   private String                        _sportName             = UI.EMPTY_STRING;
-   private String                        _profileName           = UI.EMPTY_STRING;
+   private String                        _sessionSportProfileName = UI.EMPTY_STRING;
+   private String                        _sportName               = UI.EMPTY_STRING;
+   private String                        _profileName             = UI.EMPTY_STRING;
 
-   private final List<TimeData>          _allTimeData           = new ArrayList<>();
-   private final List<Long>              _pausedTime_Start      = new ArrayList<>();
-   private final List<Long>              _pausedTime_End        = new ArrayList<>();
-   private final List<Long>              _pausedTime_Data       = new ArrayList<>();
+   private final List<TimeData>          _allTimeData             = new ArrayList<>();
+   private final List<Long>              _pausedTime_Start        = new ArrayList<>();
+   private final List<Long>              _pausedTime_End          = new ArrayList<>();
+   private final List<Long>              _pausedTime_Data         = new ArrayList<>();
 
    /**
     * Key is the attribute RefId (UUID) of ST3
@@ -102,6 +103,7 @@ public class FitData {
    private final List<GearData>          _allGearData           = new ArrayList<>();
    private final List<SwimData>          _allSwimData           = new ArrayList<>();
    private final List<TourMarker>        _allTourMarker         = new ArrayList<>();
+
 
    private TourMarker             _current_TourMarker;
 
@@ -636,7 +638,7 @@ public class FitData {
             applyTour_Type(tourData, _profileName);
             break;
 
-         case IPreferences.FIT_IMPORT_TOURTYPE_MODE_TRYPROFILE:
+         case IPreferences.FIT_IMPORT_TOURTYPE_MODE_TRY_PROFILE:
 
             if (!UI.EMPTY_STRING.equals(_profileName)) {
                applyTour_Type(tourData, _profileName);
@@ -645,7 +647,7 @@ public class FitData {
             }
             break;
 
-         case IPreferences.FIT_IMPORT_TOURTYPE_MODE_SPORTANDPROFILE:
+         case IPreferences.FIT_IMPORT_TOURTYPE_MODE_SPORT_AND_PROFILE:
 
             String spacerText = UI.EMPTY_STRING;
 
@@ -656,6 +658,12 @@ public class FitData {
 
             applyTour_Type(tourData, _sportName + spacerText + _profileName);
             break;
+
+         case IPreferences.FIT_IMPORT_TOURTYPE_MODE_SESSION_SPORT_PROFILE_NAME:
+
+            applyTour_Type(tourData, _sessionSportProfileName);
+            break;
+
          }
       }
    }
@@ -902,6 +910,11 @@ public class FitData {
 
    public void setSportname(final String sportName) {
       _sportName = sportName;
+   }
+
+   public void setSportProfileName(final String sportProfileName) {
+
+      _sessionSportProfileName = sportProfileName;
    }
 
    public void setStrideSensorPresent(final boolean isStrideSensorPresent) {
