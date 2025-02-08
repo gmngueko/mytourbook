@@ -1,4 +1,4 @@
-25.next.0                                                 ?. September 2025
+25.next.0                                                 ?. February 2025
 
 
 TODO's
@@ -55,8 +55,7 @@ New
 Improvements
 ============
 
-* FIT Import
-  Set tour type from the session field sport_profile_name
+*
 
 
 Changes
