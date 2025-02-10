@@ -1537,6 +1537,10 @@ public class Messages extends NLS {
    public static String        Map_Points_LabelBackground_None;
    public static String        Map_Points_LabelBackground_RectangleBox;
    public static String        Map_Points_LabelBackground_Shadow;
+   public static String        Map_Points_LabelTime_Date;
+   public static String        Map_Points_LabelTime_DateTime;
+   public static String        Map_Points_LabelTime_None;
+   public static String        Map_Points_LabelTime_Time;
 
    public static String        Model_Player_Button_MapModel_Tooltip;
    public static String        Model_Player_Button_MapModelCursor_Tooltip;
@@ -2548,6 +2552,11 @@ public class Messages extends NLS {
    public static String        Slideout_MapPoints_Label_MapTransparencyColor_Tooltip;
    public static String        Slideout_MapPoints_Label_MarkerColor;
    public static String        Slideout_MapPoints_Label_MarkerColor_Tooltip;
+
+   public static String        Slideout_MapPoints_Label_MarkerTime;
+
+   public static String        Slideout_MapPoints_Label_MarkerTime_Tooltip;
+
    public static String        Slideout_MapPoints_Label_Stats_CommonLocations;
    public static String        Slideout_MapPoints_Label_Stats_TourLocations;
    public static String        Slideout_MapPoints_Label_Stats_TourMarkers;

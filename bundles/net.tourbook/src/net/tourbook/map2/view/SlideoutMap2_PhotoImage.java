@@ -815,7 +815,7 @@ public class SlideoutMap2_PhotoImage extends AdvancedSlideout implements IAction
 
    public void onDiscardImages() {
 
-      if (_containerPhotoOptions == null) {
+      if (_containerPhotoOptions == null || _containerPhotoOptions.isDisposed()) {
          return;
       }
 
@@ -833,6 +833,10 @@ public class SlideoutMap2_PhotoImage extends AdvancedSlideout implements IAction
    protected void onFocus() {}
 
    public void onImageIsLoaded() {
+
+      if (_containerPhotoOptions.isDisposed()) {
+         return;
+      }
 
       final PaintedMapPoint hoveredMapPoint = _hoveredMapPoint;
 

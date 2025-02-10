@@ -40,6 +40,7 @@ package de.byteholder.geoclipse.map;
 
 import de.byteholder.geoclipse.Messages;
 import de.byteholder.geoclipse.map.event.IBreadcrumbListener;
+import de.byteholder.geoclipse.map.event.IExternalAppListener;
 import de.byteholder.geoclipse.map.event.IGeoPositionListener;
 import de.byteholder.geoclipse.map.event.IHoveredTourListener;
 import de.byteholder.geoclipse.map.event.IMapGridListener;
@@ -122,6 +123,7 @@ import net.tourbook.map2.view.MapLabelLayout;
 import net.tourbook.map2.view.MapPointStatistics;
 import net.tourbook.map2.view.MapPointToolTip;
 import net.tourbook.map2.view.MapPointType;
+import net.tourbook.map2.view.MapTourMarkerTime;
 import net.tourbook.map2.view.SelectionMapSelection;
 import net.tourbook.map2.view.SlideoutMap2_PhotoHistogram;
 import net.tourbook.map2.view.SlideoutMap2_PhotoImage;
@@ -614,6 +616,7 @@ public class Map2 extends Canvas {
    private final ListenerList<IMapPositionListener>   _allMapPositionListener    = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IMapSelectionListener>  _allMapSelectionListener   = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IGeoPositionListener>   _allMousePositionListeners = new ListenerList<>(ListenerList.IDENTITY);
+   private final ListenerList<IExternalAppListener>   _allExternalAppListeners   = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IPOIListener>           _allPOIListeners           = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<ITourSelectionListener> _allTourSelectionListener  = new ListenerList<>(ListenerList.IDENTITY);
 
@@ -798,7 +801,7 @@ public class Map2 extends Canvas {
    private final int           MAX_RATING_STARS              = 5;
    public int                  MAX_RATING_STARS_WIDTH;
 
-   public int                  MAP_IMAGE_DEFAULT_SIZE_TINY   = 40;
+   public int                  MAP_IMAGE_DEFAULT_SIZE_TINY   = 50;
    public int                  MAP_IMAGE_DEFAULT_SIZE_SMALL  = 100;
    public int                  MAP_IMAGE_DEFAULT_SIZE_MEDIUM = 200;
    public int                  MAP_IMAGE_DEFAULT_SIZE_LARGE  = 300;
@@ -1147,6 +1150,10 @@ public class Map2 extends Canvas {
             _display.asyncExec(() -> onDropRunnable(event));
          }
       });
+   }
+
+   public void addExternalAppListener(final IExternalAppListener mapListener) {
+      _allExternalAppListeners.add(mapListener);
    }
 
    public void addHoveredTourListener(final IHoveredTourListener hoveredTourListener) {
@@ -1977,7 +1984,7 @@ public class Map2 extends Canvas {
          final int devX = markerWorldPixelX - worldPixel_Viewport.x;
          final int devY = markerWorldPixelY - worldPixel_Viewport.y;
 
-         String markerLabel = tourMarker.getMarkerMapLabel();
+         String markerText = tourMarker.getMarkerMapLabel();
          String groupKey = null;
 
          /*
@@ -1985,14 +1992,14 @@ public class Map2 extends Canvas {
           */
          if (isGroupDuplicatedMarkers && _allMapMarkerSkipLabels.size() > 0) {
 
-            if (_allMapMarkerSkipLabels.contains(markerLabel)) {
+            if (_allMapMarkerSkipLabels.contains(markerText)) {
 
                // this label is marked to be grouped
 
                final int groupX = devX / skipLabelGridSize;
                final int groupY = devY / skipLabelGridSize;
 
-               groupKey = markerLabel + UI.DASH + groupX + UI.DASH + groupY;
+               groupKey = markerText + UI.DASH + groupX + UI.DASH + groupY;
 
                final Map2Point groupedMarker = _allMapMarkerWithGroupedLabels.get(groupKey);
 
@@ -2008,25 +2015,48 @@ public class Map2 extends Canvas {
          }
 
          // create formatted label
-         if (isTruncateLabel && markerLabel.length() > labelTruncateLength) {
+         if (isTruncateLabel && markerText.length() > labelTruncateLength) {
 
             // keep star at the end
-            final String endSymbol = markerLabel.endsWith(UI.SYMBOL_STAR)
+            final String endSymbol = markerText.endsWith(UI.SYMBOL_STAR)
                   ? UI.SYMBOL_STAR
                   : UI.EMPTY_STRING;
 
             if (labelTruncateLength == 0) {
 
-               markerLabel = UI.SYMBOL_DOT + endSymbol;
+               markerText = UI.SYMBOL_DOT + endSymbol;
 
             } else {
 
-               markerLabel = markerLabel.substring(0, labelTruncateLength)
+               markerText = markerText.substring(0, labelTruncateLength)
 
                      + UI.SYMBOL_ELLIPSIS
 
                      + endSymbol;
             }
+         }
+
+         final MapTourMarkerTime tourMarkerDateTimeFormat = _mapConfig.tourMarkerDateTimeFormat;
+         if (tourMarkerDateTimeFormat.equals(MapTourMarkerTime.NONE) == false) {
+
+            // append time stamp
+
+            final TourData tourData = tourMarker.getTourData();
+            final ZonedDateTime tourStartTime = tourData.getTourStartTime();
+            final ZonedDateTime markerStartTime = TimeTools.getZonedDateTime(
+                  tourMarker.getTourTime(),
+                  tourStartTime.getZone());
+
+// SET_FORMATTING_OFF
+
+            switch (tourMarkerDateTimeFormat) {
+            case DATE:        markerText += UI.SPACE + TimeTools.Formatter_Date_S.format(markerStartTime);     break;
+            case TIME:        markerText += UI.SPACE + TimeTools.Formatter_Time_S.format(markerStartTime);     break;
+            case DATE_TIME:   markerText += UI.SPACE + TimeTools.Formatter_DateTime_S.format(markerStartTime); break;
+            case NONE:
+            default:
+            }
+// SET_FORMATTING_ON
          }
 
          /*
@@ -2041,7 +2071,7 @@ public class Map2 extends Canvas {
 
          mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
          mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
-         mapPoint.setFormattedLabel(markerLabel);
+         mapPoint.setFormattedLabel(markerText);
 
          if (groupKey != null) {
 
@@ -2608,6 +2638,15 @@ public class Map2 extends Canvas {
       final Object[] listeners = _allPOIListeners.getListeners();
       for (final Object listener : listeners) {
          ((IPOIListener) listener).setPOI(event);
+      }
+   }
+
+   private void fireEvent_RunExternalApp(final int numberOfExternalApp, final Photo photo) {
+
+      final Object[] listeners = _allExternalAppListeners.getListeners();
+
+      for (final Object listener : listeners) {
+         ((IExternalAppListener) listener).runExternalApp(numberOfExternalApp, photo);
       }
    }
 
@@ -4394,10 +4433,23 @@ public class Map2 extends Canvas {
 
    private void onMouse_DoubleClick(final MouseEvent mouseEvent) {
 
-      if (mouseEvent.button == 1) {
+      if (mouseEvent.button != 1) {
+         return;
+      }
+
+      if (_hoveredMapPoint != null && _hoveredMapPoint.mapPoint.photo != null) {
+
+         // run external app 1
+
+         // prevent map panning, this is happening
+         _canPanMap = false;
+
+         fireEvent_RunExternalApp(1, _hoveredMapPoint.mapPoint.photo);
+
+      } else {
 
          /*
-          * set new map center
+          * Set new map center
           */
          final double x = _worldPixel_TopLeft_Viewport.x + mouseEvent.x;
          final double y = _worldPixel_TopLeft_Viewport.y + mouseEvent.y;
@@ -4581,7 +4633,6 @@ public class Map2 extends Canvas {
 
                   selectPhoto(photo, _hoveredMapPoint);
                }
-
 
                isCanPanMap = true;
             }
