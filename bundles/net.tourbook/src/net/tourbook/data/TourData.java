@@ -5704,7 +5704,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
          final int currentTime = timeSerie[serieIndex];
          final float tourDistance = distanceSerie2[serieIndex];
-         final boolean isBreak = breakTimeSerie[serieIndex];
+         final boolean isBreak = breakTimeSerie == null ? true : breakTimeSerie[serieIndex];
 
          final int sliceTime = currentTime - prevTime;
 
@@ -5798,7 +5798,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
          final int currentTime = timeSerie[serieIndex];
          final float tourDistance = distance[serieIndex];
-         final boolean isBreak = breakTimeSerie[serieIndex];
+         final boolean isBreak = breakTimeSerie == null ? true : breakTimeSerie[serieIndex];
 
          final int timeDiff = currentTime - prevTime;
 
