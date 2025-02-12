@@ -1522,6 +1522,10 @@ public class Messages extends NLS {
    public static String        Photo_Filter_Operator_IsEqual_Tooltip;
    public static String        Photo_Filter_Operator_IsLess;
    public static String        Photo_Filter_Operator_IsLess_Tooltip;
+   public static String        Photo_Filter_Operator_IsLessOrEqual;
+   public static String        Photo_Filter_Operator_IsLessOrEqual_Tooltip;
+   public static String        Photo_Filter_Operator_IsMoreOrEqual;
+   public static String        Photo_Filter_Operator_IsMoreOrEqual_Tooltip;
    public static String        Photo_Filter_Operator_IsMore;
    public static String        Photo_Filter_Operator_IsMore_Tooltip;
    public static String        Photo_Filter_Operator_IsMoreOrNone;
