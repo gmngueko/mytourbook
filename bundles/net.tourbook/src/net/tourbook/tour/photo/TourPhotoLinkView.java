@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2012, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,6 +18,8 @@ package net.tourbook.tour.photo;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,6 +59,9 @@ import net.tourbook.tour.TourManager;
 import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.ITourProvider;
 import net.tourbook.ui.TableColumnFactory;
+import net.tourbook.ui.action.ActionEditTour;
+import net.tourbook.ui.views.tourDataEditor.NewTourContext;
+import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 
 import org.eclipse.core.commands.Command;
 import org.eclipse.core.commands.State;
@@ -158,6 +163,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
    //
    private ArrayList<TourPhotoLink>           _allVisibleTourPhotoLinks       = new ArrayList<>();
    private ArrayList<Photo>                   _allPhotos                      = new ArrayList<>();
+   private ArrayList<Photo>                   _allPrevPhotos;
 
    /**
     * Contains all cameras which are used in all displayed tours.
@@ -170,9 +176,9 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
    private Camera[]                           _allTourCamerasSorted;
 
    /**
-    * Tour photo link which is currently selected in the tour viewer.
+    * Tour photo link which is currently selected in the tour/history viewer
     */
-   private ArrayList<TourPhotoLink>           _selectedPhotoLinks             = new ArrayList<>();
+   private ArrayList<TourPhotoLink>           _allSelectedPhotoLinks          = new ArrayList<>();
 
    /**
     * Contains only tour photo links with real tours and which contain geo positions.
@@ -189,9 +195,11 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
    private ISelectionListener                 _postSelectionListener;
    private ITourEventListener                 _tourEventListener;
    //
-   private ActionFilterTourWithoutSavedPhotos _actionFilterTourWithoutSavedPhotos;
-   private ActionFilterTourWithPhotos         _actionFilterTourWithPhotos;
+   private ActionCreatePhotoTour              _actionCreatePhotoTour;
+   private ActionEditTour                     _actionEditTour;
    private ActionFilterOneHistoryTour         _actionFilterOneHistory;
+   private ActionFilterTourWithPhotos         _actionFilterTourWithPhotos;
+   private ActionFilterTourWithoutSavedPhotos _actionFilterTourWithoutSavedPhotos;
    private ActionSavePhotosInTour             _actionSavePhotoInTour;
    private ActionSetToSavedAdjustment         _actionSetToSavedAdjustment;
    //
@@ -256,6 +264,36 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
    private Label     _lblAdjustTime;
 
+   private class ActionCreatePhotoTour extends Action {
+
+      public ActionCreatePhotoTour() {
+
+         super("Create &photo tour");
+
+         setToolTipText("Creates a tour which contains a timerange of all photos");
+
+         setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.TourNew));
+      }
+
+      @Override
+      public void run() {
+         actionCreatePhotoTour();
+      }
+   }
+
+   private class ActionSavePhotosInTour extends Action {
+
+      public ActionSavePhotosInTour() {
+
+         super(Messages.Action_PhotosAndTours_SaveAllPhotos, AS_PUSH_BUTTON);
+      }
+
+      @Override
+      public void run() {
+         actionSaveAllPhotosInTour();
+      }
+   }
+
    private class ActionSetToSavedAdjustment extends Action {
 
       /**
@@ -275,9 +313,8 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
       @Override
       public void run() {
-         action_SetToSavedAdjustment();
+         actionSetTimeToSavedAdjustment();
       }
-
    }
 
    private static class ContentComparator extends ViewerComparator {
@@ -354,31 +391,36 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       super();
    }
 
-   private void action_SetToSavedAdjustment() {
+   private void actionCreatePhotoTour() {
 
-      final TourPhotoLink photoLink = _selectedPhotoLinks.get(0);
-
-      /*
-       * Set time adjustment into the selected camera
-       */
-      final Camera camera = getSelectedCamera();
-      if (camera == null) {
+      if (TourManager.isTourEditorModified()) {
          return;
       }
 
-      camera.setTimeAdjustment(photoLink.photoTimeAdjustment * 1000);
+      final TourPhotoLink selectedPhotoLink = _allSelectedPhotoLinks.get(0);
 
-      updateUI();
+      final TourDataEditorView tourEditor = TourManager.openTourEditor(true);
+
+      if (tourEditor != null) {
+
+         final NewTourContext newTourContext = new NewTourContext();
+
+         newTourContext.title = "Photo Tour";
+         newTourContext.tourStartTime = selectedPhotoLink.historyStartTime - 1000;
+         newTourContext.tourEndTime = selectedPhotoLink.historyEndTime + 1000;
+
+         tourEditor.actionCreateTour(null, newTourContext);
+      }
    }
 
-   void actionFilterNotSavedPhotos() {
+   void actionFilter_NotSavedPhotos() {
 
       _isShowToursWithoutSavedPhotos = _actionFilterTourWithoutSavedPhotos.isChecked();
 
       updateUI();
    }
 
-   void actionFilterOneHistoryTour() {
+   void actionFilter_OneHistoryTour() {
 
       _isFilterOneHistoryTour = _actionFilterOneHistory.isChecked();
 
@@ -417,14 +459,14 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       }
    }
 
-   void actionFilterPhotos() {
+   void actionFilter_Photos() {
 
       _isShowToursWithPhotos = _actionFilterTourWithPhotos.isChecked();
 
       updateUI();
    }
 
-   void actionSaveAllPhotosInTour() {
+   private void actionSaveAllPhotosInTour() {
 
       if (TourManager.isTourEditorModified()) {
          return;
@@ -561,6 +603,21 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
             new ArrayList<>(allPhotos));
    }
 
+   private void actionSetTimeToSavedAdjustment() {
+
+      // set time adjustment into the selected camera
+      final Camera camera = getSelectedCamera();
+      if (camera == null) {
+         return;
+      }
+
+      final TourPhotoLink selectedPhotoLink = _allSelectedPhotoLinks.get(0);
+
+      camera.setTimeAdjustment(selectedPhotoLink.photoTimeAdjustment * 1000);
+
+      updateUI();
+   }
+
    private void addPartListener() {
 
       _partListener = new IPartListener2() {
@@ -687,18 +744,27 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
                return;
             }
 
-            if (eventId == TourEventId.TOUR_CHANGED && eventData instanceof TourEvent) {
+            if (part instanceof TourDataEditorView) {
 
-               // get modified tours
-               final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
-               if (modifiedTours != null) {
+               // a tour date/time could be changed -> recomputed view
 
-                  onTourChanged(modifiedTours);
+               showPhotosAndTours(_allPrevPhotos);
+
+            } else {
+
+               if (eventId == TourEventId.TOUR_CHANGED && eventData instanceof TourEvent) {
+
+                  // get modified tours
+                  final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
+                  if (modifiedTours != null) {
+
+                     onTourChanged(modifiedTours);
+                  }
+
+               } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+
+                  clearView();
                }
-
-            } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
-
-               clearView();
             }
          }
       };
@@ -714,7 +780,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
       _allVisibleTourPhotoLinks.clear();
       _allPhotos.clear();
-      _selectedPhotoLinks.clear();
+      _allSelectedPhotoLinks.clear();
       _selectedTourPhotoLinksWithGps.clear();
       _tourPhotoLinkSelection = null;
 
@@ -727,11 +793,17 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
    private void createActions() {
 
-      _actionFilterOneHistory = new ActionFilterOneHistoryTour(this);
+// SET_FORMATTING_OFF
+
+      _actionCreatePhotoTour              = new ActionCreatePhotoTour();
+      _actionEditTour                     = new ActionEditTour(this);
+      _actionFilterOneHistory             = new ActionFilterOneHistoryTour(this);
       _actionFilterTourWithoutSavedPhotos = new ActionFilterTourWithoutSavedPhotos(this);
-      _actionFilterTourWithPhotos = new ActionFilterTourWithPhotos(this);
-      _actionSavePhotoInTour = new ActionSavePhotosInTour(this);
-      _actionSetToSavedAdjustment = new ActionSetToSavedAdjustment();
+      _actionFilterTourWithPhotos         = new ActionFilterTourWithPhotos(this);
+      _actionSavePhotoInTour              = new ActionSavePhotosInTour();
+      _actionSetToSavedAdjustment         = new ActionSetToSavedAdjustment();
+
+// SET_FORMATTING_ON
    }
 
    private void createMenuManager() {
@@ -1084,7 +1156,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
          public void update(final ViewerCell cell) {
 
             final TourPhotoLink photoLink = (TourPhotoLink) cell.getElement();
-            final int numberOfNoGPSPhotos = photoLink.numbNoGPSPhotos;
+            final int numberOfNoGPSPhotos = photoLink.numNoGPSPhotos;
 
             cell.setText(numberOfNoGPSPhotos == 0 ? UI.EMPTY_STRING : Long.toString(numberOfNoGPSPhotos));
 
@@ -1207,9 +1279,27 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
             final TourPhotoLink photoLink = (TourPhotoLink) cell.getElement();
             final long historyTime = photoLink.historyEndTime;
 
-            cell.setText(historyTime == Long.MIN_VALUE
-                  ? TimeTools.getZonedDateTime(photoLink.tourEndTime).format(TimeTools.Formatter_Date_S)
-                  : TimeTools.getZonedDateTime(historyTime).format(TimeTools.Formatter_Date_S));
+            ZonedDateTime zonedDateTime;
+
+            if (historyTime != Long.MIN_VALUE) {
+
+               // this is a history tour
+
+               zonedDateTime = TimeTools.getZonedDateTime(historyTime);
+
+            } else {
+
+               // this is a real tour
+
+               final ZonedDateTime tourEndDateTime_WithZoneID = photoLink.getTourEndDateTime_WithZoneID();
+
+               zonedDateTime = tourEndDateTime_WithZoneID != null
+
+                     ? tourEndDateTime_WithZoneID
+                     : TimeTools.getZonedDateTime(photoLink.tourEndTime);
+            }
+
+            cell.setText(zonedDateTime.format(TimeTools.Formatter_Date_S));
 
             setBgColor(cell, photoLink);
          }
@@ -1229,9 +1319,27 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
             final TourPhotoLink photoLink = (TourPhotoLink) cell.getElement();
             final long historyTime = photoLink.historyEndTime;
 
-            cell.setText(historyTime == Long.MIN_VALUE
-                  ? TimeTools.getZonedDateTime(photoLink.tourEndTime).format(TimeTools.Formatter_Time_M)
-                  : TimeTools.getZonedDateTime(historyTime).format(TimeTools.Formatter_Time_M));
+            ZonedDateTime zonedDateTime;
+
+            if (historyTime != Long.MIN_VALUE) {
+
+               // this is a history tour
+
+               zonedDateTime = TimeTools.getZonedDateTime(historyTime);
+
+            } else {
+
+               // this is a real tour
+
+               final ZonedDateTime tourEndDateTime_WithZoneID = photoLink.getTourEndDateTime_WithZoneID();
+
+               zonedDateTime = tourEndDateTime_WithZoneID != null
+
+                     ? tourEndDateTime_WithZoneID
+                     : TimeTools.getZonedDateTime(photoLink.tourEndTime);
+            }
+
+            cell.setText(zonedDateTime.format(TimeTools.Formatter_Time_M));
 
             setBgColor(cell, photoLink);
          }
@@ -1253,9 +1361,27 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
             final TourPhotoLink photoLink = (TourPhotoLink) cell.getElement();
             final long historyTime = photoLink.historyStartTime;
 
-            cell.setText(historyTime == Long.MIN_VALUE
-                  ? TimeTools.getZonedDateTime(photoLink.tourStartTime).format(TimeTools.Formatter_Date_S)
-                  : TimeTools.getZonedDateTime(historyTime).format(TimeTools.Formatter_Date_S));
+            ZonedDateTime zonedDateTime;
+
+            if (historyTime != Long.MIN_VALUE) {
+
+               // this is a history tour
+
+               zonedDateTime = TimeTools.getZonedDateTime(historyTime);
+
+            } else {
+
+               // this is a real tour
+
+               final ZonedDateTime tourStartDateTime_WithZoneID = photoLink.getTourStartDateTime_WithZoneID();
+
+               zonedDateTime = tourStartDateTime_WithZoneID != null
+
+                     ? tourStartDateTime_WithZoneID
+                     : TimeTools.getZonedDateTime(photoLink.tourStartTime);
+            }
+
+            cell.setText(zonedDateTime.format(TimeTools.Formatter_Date_S));
 
             setBgColor(cell, photoLink);
          }
@@ -1275,9 +1401,27 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
             final TourPhotoLink photoLink = (TourPhotoLink) cell.getElement();
             final long historyTime = photoLink.historyStartTime;
 
-            cell.setText(historyTime == Long.MIN_VALUE
-                  ? TimeTools.getZonedDateTime(photoLink.tourStartTime).format(TimeTools.Formatter_Time_M)
-                  : TimeTools.getZonedDateTime(historyTime).format(TimeTools.Formatter_Time_M));
+            ZonedDateTime zonedDateTime;
+
+            if (historyTime != Long.MIN_VALUE) {
+
+               // this is a history tour
+
+               zonedDateTime = TimeTools.getZonedDateTime(historyTime);
+
+            } else {
+
+               // this is a real tour
+
+               final ZonedDateTime tourStartDateTime_WithZoneID = photoLink.getTourStartDateTime_WithZoneID();
+
+               zonedDateTime = tourStartDateTime_WithZoneID != null
+
+                     ? tourStartDateTime_WithZoneID
+                     : TimeTools.getZonedDateTime(photoLink.tourStartTime);
+            }
+
+            cell.setText(zonedDateTime.format(TimeTools.Formatter_Time_M));
 
             setBgColor(cell, photoLink);
          }
@@ -1375,35 +1519,103 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       super.dispose();
    }
 
+   private void dumpPhotos() {
+
+      System.out.println();
+      System.out.println();
+      System.out.println();
+
+      for (final Photo photo : _allPhotos) {
+
+//         final LocalDateTime exifDateTime = photo.getExifDateTime();
+         final LocalDateTime exifDateTime = photo.getOriginalDateTime();
+
+         final long imageExifTime = photo.imageExifTime;
+
+         final long adjustedTime_Camera = photo.adjustedTime_Camera;
+
+         final ZonedDateTime zonedAdjustedTime = TimeTools.getZonedDateTime(adjustedTime_Camera);
+         final ZonedDateTime zonedImageExif = TimeTools.getZonedDateTime(imageExifTime);
+
+         final int month = exifDateTime.getMonthValue();
+         final int day = exifDateTime.getDayOfMonth();
+         final int hour = exifDateTime.getHour();
+
+         if (true
+
+               && month == 9
+               && day == 27
+               && hour < 12
+
+         ) {
+
+            System.out.println("%s   %4d.%2d.%2d   %2d:%2d:%2d    %d   %s   %d   %s".formatted(
+
+                  photo.imageFileName,
+
+                  exifDateTime.getYear(),
+                  month,
+                  day,
+
+                  hour,
+                  exifDateTime.getMinute(),
+                  exifDateTime.getSecond(),
+
+                  adjustedTime_Camera,
+                  TimeTools.Formatter_Time_M.format(zonedAdjustedTime),
+
+                  imageExifTime,
+                  TimeTools.Formatter_Time_M.format(zonedImageExif)
+
+            ));
+         }
+      }
+   }
+
    private void enableControls() {
 
-      final boolean isPhotoAvailable = _allPhotos.size() > 0;
-      final boolean isOneHistory = _actionFilterOneHistory.isChecked();
-      final boolean isNoHistory = !isOneHistory;
-      final boolean isPhotoWithRealTour = isPhotoAvailable && isNoHistory;
-      final boolean isSelectedOneRealTour = _selectedPhotoLinks.size() == 1 && _selectedPhotoLinks.get(0).isHistoryTour() == false;
+// SET_FORMATTING_OFF
 
-      final boolean canSelectTime = getSelectedTimeAdjustmentType().equals(TimeAdjustmentType.SELECT_AJUSTMENT);
+      final boolean isPhotoAvailable            = _allPhotos.size() > 0;
+      final boolean isOneHistoryFilter          = _actionFilterOneHistory.isChecked();
+      final boolean isNoHistoryFilter           = !isOneHistoryFilter;
+      final boolean isPhotoWithRealTour         = isPhotoAvailable && isNoHistoryFilter;
+      final boolean isOneLinkSelected           = _allSelectedPhotoLinks.size() == 1;
+      final boolean isSelectedOneRealTour       = isOneLinkSelected && _allSelectedPhotoLinks.get(0).isHistoryTour() == false;
+      final boolean isSelectedOneHistoryTour    = isOneLinkSelected && _allSelectedPhotoLinks.get(0).isHistoryTour() ;
 
-      _comboAdjustTime.setEnabled(isPhotoWithRealTour);
-      _comboCamera.setEnabled(isPhotoWithRealTour && canSelectTime);
+      boolean canSelectTime               = getSelectedTimeAdjustmentType().equals(TimeAdjustmentType.SELECT_AJUSTMENT);
 
-      _lblAdjustTime.setEnabled(isPhotoWithRealTour);
+      canSelectTime = true;
 
-      _spinnerHours.setEnabled(isPhotoWithRealTour && canSelectTime);
-      _spinnerMinutes.setEnabled(isPhotoWithRealTour && canSelectTime);
-      _spinnerSeconds.setEnabled(isPhotoWithRealTour && canSelectTime);
+      _comboAdjustTime                    .setEnabled(isPhotoWithRealTour);
+      _comboCamera                        .setEnabled(isPhotoWithRealTour && canSelectTime);
 
-      _actionFilterTourWithPhotos.setEnabled(isPhotoWithRealTour && _isShowToursWithoutSavedPhotos == false);
-      _actionFilterTourWithoutSavedPhotos.setEnabled(isPhotoWithRealTour);
-      _actionFilterOneHistory.setEnabled(isPhotoAvailable);
-      _actionSavePhotoInTour.setEnabled(isPhotoAvailable);
-      _actionSetToSavedAdjustment.setEnabled(isPhotoWithRealTour && isSelectedOneRealTour && canSelectTime);
+      _lblAdjustTime                      .setEnabled(isPhotoWithRealTour);
+
+      _spinnerHours                       .setEnabled(isPhotoWithRealTour && canSelectTime);
+      _spinnerMinutes                     .setEnabled(isPhotoWithRealTour && canSelectTime);
+      _spinnerSeconds                     .setEnabled(isPhotoWithRealTour && canSelectTime);
+
+      _actionCreatePhotoTour              .setEnabled(isSelectedOneHistoryTour);
+      _actionEditTour                     .setEnabled(isPhotoWithRealTour && isSelectedOneRealTour);
+      _actionFilterTourWithPhotos         .setEnabled(isPhotoWithRealTour && _isShowToursWithoutSavedPhotos == false);
+      _actionFilterTourWithoutSavedPhotos .setEnabled(isPhotoWithRealTour);
+      _actionFilterOneHistory             .setEnabled(isPhotoAvailable);
+      _actionSavePhotoInTour              .setEnabled(isPhotoAvailable);
+      _actionSetToSavedAdjustment         .setEnabled(isPhotoWithRealTour && isSelectedOneRealTour && canSelectTime);
+
+// SET_FORMATTING_ON
    }
 
    private void fillContextMenu(final IMenuManager menuMgr) {
 
       menuMgr.add(_actionSavePhotoInTour);
+
+      menuMgr.add(new Separator());
+
+      menuMgr.add(_actionEditTour);
+      menuMgr.add(_actionCreatePhotoTour);
    }
 
    private void fillToolbar() {
@@ -1460,7 +1672,21 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
    @Override
    public ArrayList<TourData> getSelectedTours() {
-      return new ArrayList<>();
+
+      final ArrayList<TourData> allSelectedTours = new ArrayList<>();
+
+      final boolean isOneLinkSelected = _allSelectedPhotoLinks.size() == 1;
+      final boolean isSelectedOneRealTour = isOneLinkSelected && _allSelectedPhotoLinks.get(0).isHistoryTour() == false;
+
+      if (isSelectedOneRealTour) {
+
+         final long tourId = _allSelectedPhotoLinks.get(0).tourId;
+         final TourData tourData = TourManager.getInstance().getTourData(tourId);
+
+         allSelectedTours.add(tourData);
+      }
+
+      return allSelectedTours;
    }
 
    private int getTimeAdjustmentTypeIndex(final Enum<TimeAdjustmentType> timeAdjustmentType) {
@@ -1557,7 +1783,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
    private void onSelectTimeAdjustment() {
 
-      if (_selectedPhotoLinks.isEmpty()) {
+      if (_allSelectedPhotoLinks.isEmpty()) {
          // a tour is not selected
          return;
       }
@@ -1590,9 +1816,9 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       _selectedTourPhotoLinksWithGps.clear();
 
       // contains tour id's for all real tours
-      final ArrayList<Long> selectedTourIds = new ArrayList<>();
+      final ArrayList<Long> allSelectedTourIds = new ArrayList<>();
 
-      final ArrayList<TourPhotoLink> selectedLinks = new ArrayList<>();
+      final ArrayList<TourPhotoLink> allSelectedPhotoLinks = new ArrayList<>();
 
       String firstLinkCamera = null;
 
@@ -1602,12 +1828,12 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
             final TourPhotoLink selectedLink = (TourPhotoLink) linkElement;
 
-            selectedLinks.add(selectedLink);
+            allSelectedPhotoLinks.add(selectedLink);
 
             final boolean isRealTour = selectedLink.tourId != Long.MIN_VALUE;
 
             if (isRealTour) {
-               selectedTourIds.add(selectedLink.tourId);
+               allSelectedTourIds.add(selectedLink.tourId);
             }
 
             if (selectedLink.linkPhotos.size() > 0) {
@@ -1638,7 +1864,8 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
          }
       }
 
-      if (_selectedPhotoLinks.equals(selectedLinks)) {
+      if (_allSelectedPhotoLinks.equals(allSelectedPhotoLinks)) {
+
          // currently selected tour is already selected and selection is fired
          return;
       }
@@ -1662,13 +1889,13 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
          }
       }
 
-      _selectedPhotoLinks.clear();
-      _selectedPhotoLinks.addAll(selectedLinks);
+      _allSelectedPhotoLinks.clear();
+      _allSelectedPhotoLinks.addAll(allSelectedPhotoLinks);
 
       enableControls();
 
       // create tour selection
-      _tourPhotoLinkSelection = new TourPhotoLinkSelection(_selectedPhotoLinks, selectedTourIds);
+      _tourPhotoLinkSelection = new TourPhotoLinkSelection(_allSelectedPhotoLinks, allSelectedTourIds);
 
       PhotoManager.firePhotoEvent(this, PhotoEventId.PHOTO_SELECTION, _tourPhotoLinkSelection);
    }
@@ -1731,6 +1958,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
    @Override
    public void reloadViewer() {
+
       _tourViewer.setInput(new Object[0]);
    }
 
@@ -1932,21 +2160,29 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
 
          photo.adjustedTime_Camera = exifTime + cameraTimeAdjustment;
 
-         // force that the position are updated
+         // force that the position is updated
          photo.resetLinkWorldPosition();
       }
 
       Collections.sort(_allPhotos, TourPhotoManager.AdjustTimeComparatorLink);
+
+//    dumpPhotos();
    }
 
    /**
-    * Entry point in this view to show tours for the provided photos.
+    * Entry point in this view to show tours for the provided photos
     *
-    * @param tourPhotos
+    * @param allPhotos
     */
-   void showPhotosAndTours(final ArrayList<Photo> tourPhotos) {
+   void showPhotosAndTours(final ArrayList<Photo> allPhotos) {
 
-      final int numPhotos = tourPhotos.size();
+      _allPrevPhotos = allPhotos;
+
+      if (allPhotos == null) {
+         return;
+      }
+
+      final int numPhotos = allPhotos.size();
 
       if (numPhotos == 0) {
          clearView();
@@ -1954,7 +2190,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       }
 
       _allPhotos.clear();
-      _allPhotos.addAll(tourPhotos);
+      _allPhotos.addAll(allPhotos);
 
       _allTourCameras.clear();
 
@@ -1988,7 +2224,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
     */
    private void updateUI() {
 
-      updateUI(_selectedPhotoLinks, null);
+      updateUI(_allSelectedPhotoLinks, null);
    }
 
    private void updateUI(final ArrayList<TourPhotoLink> tourPhotoLinksWhichShouldBeSelected,
@@ -2010,7 +2246,7 @@ public class TourPhotoLinkView extends ViewPart implements ITourProvider, ITourV
       setPhotoTimeAdjustment();
 
       _allVisibleTourPhotoLinks.clear();
-      _selectedPhotoLinks.clear();
+      _allSelectedPhotoLinks.clear();
       _selectedTourPhotoLinksWithGps.clear();
 
       if (_isFilterOneHistoryTour) {
