@@ -1012,7 +1012,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 //   @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
 //   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
 //   @JsonProperty
-//   private Set<TourLocationPoint>      tourLocationPoints                  = new HashSet<>();
+//   private Set<TourLocationPoint>      tourLocationPoints                = new HashSet<>();
 
    /**
     * Contains the tour way points
@@ -1028,7 +1028,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
    @JsonProperty
-   private Set<TourNutritionProduct>             tourNutritionProducts                         = new HashSet<>();
+   private Set<TourNutritionProduct>             tourNutritionProducts     = new HashSet<>();
 
    /**
     * Reference tours
