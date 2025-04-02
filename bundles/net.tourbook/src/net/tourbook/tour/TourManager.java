@@ -3225,7 +3225,7 @@ public class TourManager {
       final ArrayList<TourData> modifiedTours = new ArrayList<>();
       modifiedTours.add(tourData);
 
-      final ArrayList<TourData> savedTourData = saveModifiedTours(modifiedTours, isFireNotification);
+      final ArrayList<TourData> savedTourData = saveModifiedTours(modifiedTours, isFireNotification, null);
 
       if (savedTourData.isEmpty()) {
          return null;
@@ -3247,7 +3247,8 @@ public class TourManager {
     * @return Returns a list with all persisted {@link TourData}
     */
    public static ArrayList<TourData> saveModifiedTours(final List<TourData> modifiedTours) {
-      return saveModifiedTours(modifiedTours, true);
+      
+      return saveModifiedTours(modifiedTours, true, null);
    }
 
    /**
@@ -3265,7 +3266,8 @@ public class TourManager {
     * @return a list with all persisted {@link TourData}
     */
    private static ArrayList<TourData> saveModifiedTours(final List<TourData> modifiedTours,
-                                                        final boolean canFireNotification) {
+                                                        final boolean canFireNotification,
+                                                        final List<Long> oldTourIDs) {
 
       // reset multiple tour data cache
       _joined_TourData = null;
@@ -3335,6 +3337,7 @@ public class TourManager {
 
          final TourEvent tourEvent = new TourEvent(savedTours);
          tourEvent.tourDataEditorSavedTour = tourDataEditorSavedTour[0];
+         tourEvent.oldTourIDs = oldTourIDs;
 
          fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
 
@@ -3343,6 +3346,25 @@ public class TourManager {
       }
 
       return savedTours;
+   }
+
+   /**
+    * Saves tours which have been modified and updates the tour data editor, fires a
+    * {@link TourEventId#TOUR_CHANGED} event.<br>
+    * <br>
+    * If a tour is opened in the {@link TourDataEditorView}, the tour will be saved only when the
+    * tour is not dirty, if the tour is dirty, saving is not done. The change event is always fired.
+    *
+    * @param modifiedTours
+    *           modified tours
+    * @param oldTourIDs
+    *
+    * @return Returns a list with all persisted {@link TourData}
+    */
+   public static ArrayList<TourData> saveModifiedTours(final List<TourData> modifiedTours,
+                                                       final List<Long> oldTourIDs) {
+
+      return saveModifiedTours(modifiedTours, true, oldTourIDs);
    }
 
    private static void saveModifiedTours_OneTour(final ArrayList<TourData> savedTours,
