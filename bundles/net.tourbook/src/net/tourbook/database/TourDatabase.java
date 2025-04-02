@@ -380,11 +380,6 @@ public class TourDatabase {
     */
    private static Map<Long, TourMarkerType>               _allDbTourMarkerTypes_ById;
 
-   /**
-    * Key is the UPPERCASE tour marker type name
-    */
-   private static Map<String, TourMarkerType>             _allDbTourMarkerTypes_ByName;
-
    /*
     * Cached distinct fields
     */
@@ -927,11 +922,9 @@ public class TourDatabase {
       if (_allDbTourMarkerTypes != null) {
 
          _allDbTourMarkerTypes.clear();
-         _allDbTourMarkerTypes_ByName.clear();
          _allDbTourMarkerTypes_ById.clear();
 
          _allDbTourMarkerTypes = null;
-         _allDbTourMarkerTypes_ByName = null;
          _allDbTourMarkerTypes_ById = null;
       }
    }
@@ -1467,6 +1460,7 @@ public class TourDatabase {
     *         display tours.<br>
     */
    public static ArrayList<TourType> getActiveTourTypes() {
+
       return _activeTourTypes;
    }
 
@@ -1615,7 +1609,8 @@ public class TourDatabase {
    }
 
    /**
-    * @return Returns the backend of all tour types which are stored in the database sorted by name.
+    * @return Returns the backend of all tour marker types which are stored in the database sorted
+    *         by name.
     */
    public static List<TourMarkerType> getAllTourMarkerTypes() {
 
@@ -1626,6 +1621,11 @@ public class TourDatabase {
       loadAllTourMarkerTypes();
 
       return _allDbTourMarkerTypes;
+   }
+
+   public static Map<Long, TourMarkerType> getAllTourMarkerTypes_ById() {
+
+      return _allDbTourMarkerTypes_ById;
    }
 
    /**
@@ -2786,7 +2786,7 @@ public class TourDatabase {
 
                   + "SELECT TourMarkerType" + NL //                     //$NON-NLS-1$
 
-                  + " FROM " + TourMarkerType.class.getSimpleName() + " AS tourMarkerType" + NL //    //$NON-NLS-1$
+                  + " FROM " + TourMarkerType.class.getSimpleName() + " AS tourMarkerType" + NL //    //$NON-NLS-1$ //$NON-NLS-2$
 
                   // sort by name
                   + " ORDER  BY tourMarkerType.name" + NL //            //$NON-NLS-1$
@@ -2805,7 +2805,6 @@ public class TourDatabase {
 
          _allDbTourMarkerTypes = allDbTourMarkerTypes;
          _allDbTourMarkerTypes_ById = allDbTourMarkerTypes_ById;
-         _allDbTourMarkerTypes_ByName = allDbTourMarkerTypes_ByName;
       }
    }
 
@@ -4973,32 +4972,6 @@ public class TourDatabase {
       );
    }
 
-//   /**
-//    * Create table {@link #TABLE_TOUR_LOCATION_POINT}
-//    *
-//    * @param stmt
-//    *
-//    * @throws SQLException
-//    */
-//   private void createTable_TourLocationPoint(final Statement stmt) throws SQLException {
-//
-//      exec(stmt, "CREATE TABLE " + TABLE_TOUR_LOCATION_POINT + "   (                   " + NL //$NON-NLS-1$ //$NON-NLS-2$
-//      //
-//            + SQL.CreateField_EntityId(ENTITY_ID_LOCATION_POINT, true)
-//
-//            + "   TourData_TourID            BIGINT,                                   " + NL //$NON-NLS-1$
-//            + "   TourLocation_LocationID    BIGINT,                                   " + NL //$NON-NLS-1$
-//
-//            + "   serieIndex                 INTEGER NOT NULL,                         " + NL //$NON-NLS-1$
-//            + "   tourTime                   BIGINT NOT NULL,                          " + NL //$NON-NLS-1$
-//
-//            + "   latitudeE6                 INTEGER DEFAULT 0,                        " + NL //$NON-NLS-1$
-//            + "   longitudeE6                INTEGER DEFAULT 0                         " + NL //$NON-NLS-1$
-//
-//            + ")" //                                                                         //$NON-NLS-1$
-//      );
-//   }
-
    /**
     * Create table {@link #TABLE_TOUR_MARKER} for {@link TourMarker}.
     *
@@ -5279,6 +5252,12 @@ public class TourDatabase {
             + "   photoAdjustmentsJSON       VARCHAR(" + VARCHAR_MAX_LENGTH + ")       " + NL //$NON-NLS-1$ //$NON-NLS-2$
 
             // version 56 end
+
+            // version 57 start
+
+            + "   photoLabel                 VARCHAR(" + VARCHAR_MAX_LENGTH + ")       " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version 57 end
 
             + ")" //                                                                          //$NON-NLS-1$
       );
@@ -10941,6 +10920,8 @@ public class TourDatabase {
          SQL.AddColumn_BigInt(stmt, TABLE_TOUR_MARKER, KEY_MARKER_TYPE, null);
 
          createTable_TourMarkerType(stmt);
+
+         SQL.AddColumn_VarCar(stmt, TABLE_TOUR_PHOTO, "photoLabel", VARCHAR_MAX_LENGTH); //$NON-NLS-1$
       }
 
       logDbUpdate_End(newDbVersion);

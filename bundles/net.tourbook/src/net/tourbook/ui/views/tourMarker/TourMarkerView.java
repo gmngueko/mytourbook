@@ -20,6 +20,7 @@ import static org.eclipse.swt.events.KeyListener.keyPressedAdapter;
 import java.text.NumberFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import net.tourbook.Messages;
@@ -319,10 +320,21 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
                   // The view contains multiple tours
                   if (_tourData.isMultipleTours()) {
 
-                     final List<Long> tourIds = new ArrayList<>();
+                     final List<Long> allTourIds = new ArrayList<>();
+                     final List<Long> oldTourIDs = tourEvent.oldTourIDs;
 
-                     modifiedTours.forEach(tour -> tourIds.add(tour.getTourId()));
-                     _tourData = TourManager.createJoinedTourData(tourIds);
+                     if (oldTourIDs != null) {
+
+                        // tour is saved but use the old tours to update the UI
+
+                        allTourIds.addAll(oldTourIDs);
+
+                     } else {
+
+                        modifiedTours.forEach(tour -> allTourIds.add(tour.getTourId()));
+                     }
+
+                     _tourData = TourManager.createJoinedTourData(allTourIds);
                      _isMultipleTours = true;
 
                      updateUI_MarkerViewer();
@@ -1170,7 +1182,9 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
 
       _actionDeleteTourMarkers.setTourMarkers(allTourMarker);
       _actionEditTourMarkers.setTourMarker(firstMarker);
+
       _actionSubMenu_SetTourMarkerType.setTourMarker(allTourMarker);
+      _actionSubMenu_SetTourMarkerType.setOldTourIDs(getOldTourIDs());
 
       menuMgr.add(_actionEditTourMarkers);
       menuMgr.add(_actionSubMenu_SetTourMarkerType);
@@ -1242,6 +1256,24 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
          multiTourSerieIndex = result.getMultiTourSerieIndex();
       }
       return multiTourSerieIndex;
+   }
+
+   private List<Long> getOldTourIDs() {
+
+      if (_tourData.isMultipleTours()) {
+
+         final Long[] multipleTourIds = _tourData.multipleTourIds;
+
+         return Arrays.asList(multipleTourIds);
+
+      } else {
+
+         final List<Long> allOldTourIDs = new ArrayList<>();
+
+         allOldTourIDs.add(_tourData.getTourId());
+
+         return allOldTourIDs;
+      }
    }
 
    /**
@@ -1316,7 +1348,7 @@ public class TourMarkerView extends ViewPart implements ITourProvider, ITourView
          selectedTourMarker.add((TourMarker) name);
       }
 
-      TourManager.fireEventWithCustomData(//
+      TourManager.fireEventWithCustomData(
             TourEventId.MARKER_SELECTION,
             new SelectionTourMarker(_tourData, selectedTourMarker),
             getSite().getPart());
