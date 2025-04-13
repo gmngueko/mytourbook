@@ -36,6 +36,7 @@ import net.tourbook.training.TrainingManager;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Draws background color into the graph, e.g. HR zone, swim style, interpolated values
