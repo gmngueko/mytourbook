@@ -283,7 +283,8 @@ public class FitData {
          _tourData.customTracksDefinition.put(idNew, customTrackDefinition);
       }
 
-      _tourData.createTimeSeries(_allTimeData, false);
+      _tourData.createTimeSeries(_allTimeData, false, _importState_Process);
+
 
       _tourData.finalizeTour_TimerPauses(_pausedTime_Start, _pausedTime_End, _pausedTime_Data);
 
