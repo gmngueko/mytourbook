@@ -2167,7 +2167,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    public Double rrAvg_ms_Raw = null;
 
    /**
-    * When a value is <code>true</code> then this value is interpolated
+    * When this is not <code>null</code> then the background graph of this tour is displayed differently.
+    *
+    * When an array value is <code>true</code> then this value was interpolated
     */
    @Transient
    public boolean[]            interpolatedValueSerie;
@@ -7972,11 +7974,15 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       if (importState_Process != null && importState_Process.isSkipGeoInterpolation()) {
 
-         // skip lat/lon interpolation
+         // skip lat/lon interpolation but import interpolated flags
+         
+         // the lat values will be interpolated but afterwards they are not used
+
+         createTimeSeries_20_InterpolateMissingValues(latitudeSerie, timeSerie, true);
 
       } else {
 
-         createTimeSeries_20_InterpolateMissingValues(latitudeSerie, timeSerie, true);
+         createTimeSeries_20_InterpolateMissingValues(latitudeSerie, timeSerie, false);
          createTimeSeries_20_InterpolateMissingValues(longitudeSerie, timeSerie, false);
       }
 
@@ -8085,7 +8091,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
                double lastValidValue;
                if (serieIndex - 1 < 0) {
-                  // ??????????????????
                   lastValidValue = 0;
                } else {
                   lastValidValue = allTourValues[serieIndex - 1];
