@@ -627,6 +627,7 @@ public class UI {
    public static final String          UNIT_TEMPERATURE_F         = "\u00B0F";                  //$NON-NLS-1$
    public static final String          UNIT_VOLT                  = "V";                        //$NON-NLS-1$
    public static final String          UNIT_VOLTAGE               = "Volt";                     //$NON-NLS-1$
+   public static final String          UNIT_WEIGHT_G              = "g";                        //$NON-NLS-1$
    public static final String          UNIT_WEIGHT_KG             = "kg";                       //$NON-NLS-1$
    public static final String          UNIT_WEIGHT_LBS            = "lbs";                      //$NON-NLS-1$
    public static final String          UNIT_WEIGHT_MG             = "mg";                       //$NON-NLS-1$
@@ -1591,13 +1592,9 @@ public class UI {
     */
    public static Cursor createCursorFromImage(final ImageDescriptor imageDescriptor) {
 
-      Cursor cursor;
+      final ImageData imageData = imageDescriptor.getImageData(100);
 
-      final Image cursorImage = imageDescriptor.createImage();
-      {
-         cursor = new Cursor(Display.getDefault(), cursorImage.getImageData(), 0, 0);
-      }
-      cursorImage.dispose();
+      final Cursor cursor = new Cursor(Display.getDefault(), imageData, 0, 0);
 
       return cursor;
    }
