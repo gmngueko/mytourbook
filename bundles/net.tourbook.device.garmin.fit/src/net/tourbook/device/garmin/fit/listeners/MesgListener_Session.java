@@ -17,6 +17,7 @@ package net.tourbook.device.garmin.fit.listeners;
 
 import com.garmin.fit.DateTime;
 import com.garmin.fit.DeveloperField;
+import com.garmin.fit.DisplayMeasure;
 import com.garmin.fit.SessionMesg;
 import com.garmin.fit.SessionMesgListener;
 import com.garmin.fit.Sport;
@@ -539,6 +540,24 @@ public class MesgListener_Session extends AbstractMesgListener implements Sessio
          staticFieldString = "Static Field(s)\n====================\n" + staticFieldString; //$NON-NLS-1$
          final String note = tourData.getTourDescription();
          tourData.setTourDescription(note + UI.NEW_LINE2 + staticFieldString);
+      }
+      // ----------------------- SWIMMING -----------------------
+
+      final Float poolLength = mesg.getPoolLength();
+      final DisplayMeasure poolLengthUnit = mesg.getPoolLengthUnit();
+
+      if (poolLength != null && poolLengthUnit != null) {
+
+         if (poolLengthUnit.equals(DisplayMeasure.METRIC)) {
+
+            tourData.setPoolLength((int) (poolLength * 1000));
+
+         } else if (poolLengthUnit.equals(DisplayMeasure.STATUTE)) {
+
+            // mile/feet
+
+            // we need a .fit file to test mile/feet
+         }
       }
 
       fitData.onSetup_Session_20_Finalize();
