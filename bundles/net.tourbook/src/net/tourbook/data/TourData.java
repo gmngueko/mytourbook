@@ -1732,6 +1732,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    public TourPhotoLink          tourPhotoLink;
 
    /**
+    * Contains {@link TourPhoto} ID's which geo position was set
+    */
+   @Transient
+   private Set<Long>             tourPhotosWithPositionedGeo;
+
+   /**
     * Contains photos which are displayed in photo galleries.
     */
    @Transient
@@ -2439,11 +2445,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       if (isLatitudeValid == false) {
-         latitudeSerie = null;
-         longitudeSerie = null;
-         _rasterizedLatLon = null;
-         geoGrid = null;
-         hasGeoData = false;
+         cleanupGeoPositions();
       }
 
       if (sumRunDyn_StanceTime == 0) {
@@ -2501,6 +2503,20 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       if (_customTracksStatistics != null) {
          _customTracksStatistics.remove(idx);
       }
+   }
+
+   /**
+    * Remove all geo position values
+    */
+   private void cleanupGeoPositions() {
+
+      latitudeSerie = null;
+      longitudeSerie = null;
+
+      _rasterizedLatLon = null;
+
+      geoGrid = null;
+      hasGeoData = false;
    }
 
    public void clear_RunDyn_StanceTime() {
@@ -5258,6 +5274,179 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
+    * Interpolate geo positions
+    */
+   public void computeGeo_Photos() {
+
+      if (isPhotoTour() == false || latitudeSerie == null) {
+
+         return;
+      }
+
+      // sort photos by time
+      final List<TourPhoto> allSortedPhotos = new ArrayList<>(tourPhotos);
+      Collections.sort(allSortedPhotos, (tourPhoto1, tourPhoto2) -> {
+
+         return Long.compare(tourPhoto1.getImageExifTime(), tourPhoto2.getImageExifTime());
+      });
+
+      final int numTimeSlices = timeSerie.length;
+
+      final boolean[] allIsGeoPositioned = new boolean[numTimeSlices];
+
+      boolean isGeoPositioned = false;
+
+      for (int serieIndex = 0; serieIndex < numTimeSlices; serieIndex++) {
+
+         TourPhoto tourPhoto = null;
+
+         if (tourPhotosWithPositionedGeo == null || tourPhotosWithPositionedGeo.size() == 0) {
+
+            // there are no applied geo positions for photos
+
+            continue;
+         }
+
+         tourPhoto = allSortedPhotos.get(serieIndex);
+
+         final boolean isPhotoWithPositionedGeo = tourPhotosWithPositionedGeo.contains(tourPhoto.getPhotoId());
+
+         if (isPhotoWithPositionedGeo) {
+
+            allIsGeoPositioned[serieIndex] = true;
+
+            isGeoPositioned = true;
+         }
+      }
+
+      if (isGeoPositioned == false) {
+
+         // there are no geo positions -> remove all existing geo positions
+
+         cleanupGeoPositions();
+
+         // num photos can be different than num time slices, this happened during debugging
+         final int numPhotos = tourPhotos.size();
+
+         for (int serieIndex = 0; serieIndex < numPhotos; serieIndex++) {
+
+            final TourPhoto tourPhoto = allSortedPhotos.get(serieIndex);
+
+            tourPhoto.setGeoLocation(0, 0);
+         }
+
+         return;
+      }
+
+      int lastIndexWithGeo = 0;
+      int nextIndexWithGeo = -1;
+
+      for (int serieIndex = 0; serieIndex < numTimeSlices; serieIndex++) {
+
+         if (allIsGeoPositioned[serieIndex]) {
+
+            nextIndexWithGeo = serieIndex;
+
+            computeGeo_Photos_Interpolate(serieIndex, lastIndexWithGeo, nextIndexWithGeo - 1, allSortedPhotos);
+
+            lastIndexWithGeo = serieIndex + 1;
+         }
+      }
+
+      computeGeo_Photos_Interpolate(lastIndexWithGeo - 1, lastIndexWithGeo + 0, numTimeSlices - 1, allSortedPhotos);
+
+      TourManager.computeDistanceValuesFromGeoPosition(this);
+   }
+
+   private void computeGeo_Photos_Interpolate(
+                                              final int fromIndex,
+                                              final int firstIndex,
+                                              final int lastIndex,
+                                              final List<TourPhoto> allSortedPhotos) {
+
+      if (lastIndex < firstIndex) {
+
+         // this happens when only the first slice is set
+
+         return;
+      }
+
+      final int numTimeSlices = timeSerie.length;
+
+      final int lastTimeSliceIndex = numTimeSlices - 1;
+
+      final boolean isOnlyFirstIndex = fromIndex == 0 && firstIndex == 1 && lastIndex == lastTimeSliceIndex;
+      final boolean isOnlyLastIndex = fromIndex == lastTimeSliceIndex && firstIndex == 0 && lastIndex == lastTimeSliceIndex - 1;
+
+      if (
+      // only the first or last time slice has a position
+      isOnlyFirstIndex || isOnlyLastIndex
+
+      // there is no position from the start to x or from x to the last
+            || firstIndex == 0 || lastIndex == lastTimeSliceIndex) {
+
+         // there is no interpolation between 2 slices
+
+         final double fromLatitude = latitudeSerie[fromIndex];
+         final double fromLongitude = longitudeSerie[fromIndex];
+
+         for (int timeIndex = firstIndex; timeIndex <= lastIndex; timeIndex++) {
+
+            latitudeSerie[timeIndex] = fromLatitude;
+            longitudeSerie[timeIndex] = fromLongitude;
+
+            final TourPhoto tourPhoto = allSortedPhotos.get(timeIndex);
+
+            tourPhoto.setGeoLocation(fromLatitude, fromLongitude);
+         }
+
+      } else {
+
+         // these are all other cases which have slices with lat/lon -> interpolate it
+
+         final int beforeIndex = firstIndex - 1;
+         final int afterIndex = lastIndex + 1;
+
+         final int timeBefore = timeSerie[beforeIndex];
+         final int timeAfter = timeSerie[afterIndex];
+
+         final int timeDiff = timeAfter - timeBefore;
+
+         final double latBeforeNormalized = latitudeSerie[beforeIndex] + 90;
+         final double latAfterNormalized = latitudeSerie[afterIndex] + 90;
+         final double lonBeforeNormalized = longitudeSerie[beforeIndex] + 180;
+         final double lonAfterNormalized = longitudeSerie[afterIndex] + 180;
+
+         final double latDiff = latAfterNormalized - latBeforeNormalized;
+         final double lonDiff = lonAfterNormalized - lonBeforeNormalized;
+
+         for (int timeIndex = firstIndex; timeIndex <= lastIndex; timeIndex++) {
+
+            final float sliceTime = timeSerie[timeIndex];
+
+            final float sliceDiff = sliceTime - timeBefore;
+            final float proportionalDiff = sliceDiff / timeDiff;
+
+            final double latSliceDiff = latDiff * proportionalDiff;
+            final double lonSliceDiff = lonDiff * proportionalDiff;
+
+            final double sliceLatitudeNormalized = latBeforeNormalized + latSliceDiff;
+            final double sliceLongitudeNormalized = lonBeforeNormalized + lonSliceDiff;
+
+            final double sliceLatitude = sliceLatitudeNormalized - 90;
+            final double sliceLongitude = sliceLongitudeNormalized - 180;
+
+            latitudeSerie[timeIndex] = sliceLatitude;
+            longitudeSerie[timeIndex] = sliceLongitude;
+
+            final TourPhoto tourPhoto = allSortedPhotos.get(timeIndex);
+
+            tourPhoto.setGeoLocation(sliceLatitude, sliceLongitude);
+         }
+      }
+   }
+
+   /**
     * Computes seconds for each hr zone and sets the number of available HR zones in
     * {@link #numberOfHrZones}.
     */
@@ -6936,7 +7125,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          _galleryPhotos.add(galleryPhoto);
       }
 
-      Collections.sort(_galleryPhotos, TourPhotoManager.AdjustTimeComparatorTour);
+      Collections.sort(_galleryPhotos, TourPhotoManager.AdjustTimeComparator_Tour);
    }
 
    public void createHistoryTimeSerie(final ArrayList<HistoryData> historySlices) {
@@ -11752,6 +11941,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       return tourPhotos;
    }
 
+   /**
+    * @return Returns {@link TourPhoto} ID's which geo position was set
+    */
+   public Set<Long> getTourPhotosWithPositionedGeo() {
+
+      return tourPhotosWithPositionedGeo;
+   }
+
    public Collection<TourReference> getTourReferences() {
       return tourReferences;
    }
@@ -12458,6 +12655,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          latitudeSerie        = Util.convertDoubleSeries_FromE6(serieData.latitudeE6);
          longitudeSerie       = Util.convertDoubleSeries_FromE6(serieData.longitudeE6);
       }
+
       computeGeo_Grid();
 
       gearSerie               = serieData.gears;
@@ -12484,26 +12682,30 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _customTracksIsActiveSettings = serieData.customTracksIsActiveSettings;
 
       // running dynamics
-      runDyn_StanceTime          = serieData.runDyn_StanceTime;
-      runDyn_StanceTimeBalance   = serieData.runDyn_StanceTimeBalance;
-      runDyn_StepLength          = serieData.runDyn_StepLength;
-      runDyn_VerticalOscillation = serieData.runDyn_VerticalOscillation;
-      runDyn_VerticalRatio       = serieData.runDyn_VerticalRatio;
+      runDyn_StanceTime             = serieData.runDyn_StanceTime;
+      runDyn_StanceTimeBalance      = serieData.runDyn_StanceTimeBalance;
+      runDyn_StepLength             = serieData.runDyn_StepLength;
+      runDyn_VerticalOscillation    = serieData.runDyn_VerticalOscillation;
+      runDyn_VerticalRatio          = serieData.runDyn_VerticalRatio;
 
       // swimming
-      swim_LengthType            = serieData.swim_LengthType;
-      swim_Cadence               = serieData.swim_Cadence;
-      swim_Strokes               = serieData.swim_Strokes;
-      swim_StrokeStyle           = serieData.swim_StrokeStyle;
-      swim_Time                  = serieData.swim_Time;
-      isSwimCadence              = swim_Cadence != null;
+      swim_LengthType               = serieData.swim_LengthType;
+      swim_Cadence                  = serieData.swim_Cadence;
+      swim_Strokes                  = serieData.swim_Strokes;
+      swim_StrokeStyle              = serieData.swim_StrokeStyle;
+      swim_Time                     = serieData.swim_Time;
+      isSwimCadence                 = swim_Cadence != null;
 
       // currently only surfing data can be made visible/hidden
-      visibleDataPointSerie      = serieData.visiblePoints_Surfing;
+      visibleDataPointSerie         = serieData.visiblePoints_Surfing;
 
       // battery
-      battery_Percentage         = serieData.battery_Percentage;
-      battery_Time               = serieData.battery_Time;
+      battery_Percentage            = serieData.battery_Percentage;
+      battery_Time                  = serieData.battery_Time;
+
+      // photo
+      tourPhotosWithPositionedGeo   = serieData.getTourPhotosWithPositionedGeo();
+      computeGeo_Photos();
 
 // SET_FORMATTING_ON
 
@@ -12557,13 +12759,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          serieData.powerSerie20 = powerSerie;
       }
 
-      serieData.latitudeE6          = Util.convertDoubleSeries_ToE6(latitudeSerie);
-      serieData.longitudeE6         = Util.convertDoubleSeries_ToE6(longitudeSerie);
+      serieData.latitudeE6                      = Util.convertDoubleSeries_ToE6(latitudeSerie);
+      serieData.longitudeE6                     = Util.convertDoubleSeries_ToE6(longitudeSerie);
 
-      serieData.gears               = gearSerie;
+      serieData.gears                           = gearSerie;
 
-      serieData.pulseTimes          = pulseTime_Milliseconds;
-      serieData.pulseTime_TimeIndex = pulseTime_TimeIndex;
+      serieData.pulseTimes                      = pulseTime_Milliseconds;
+      serieData.pulseTime_TimeIndex             = pulseTime_TimeIndex;
 
       serieData.customTracks = _customTracks;
       serieData.customTracksStatistics = _customTracksStatistics;
@@ -12571,18 +12773,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       serieData.customTracksIsActiveSettings = _customTracksIsActiveSettings;
 
       // running dynamics
-      serieData.runDyn_StanceTime            = runDyn_StanceTime;
-      serieData.runDyn_StanceTimeBalance     = runDyn_StanceTimeBalance;
-      serieData.runDyn_StepLength            = runDyn_StepLength;
-      serieData.runDyn_VerticalRatio         = runDyn_VerticalRatio;
-      serieData.runDyn_VerticalOscillation   = runDyn_VerticalOscillation;
+      serieData.runDyn_StanceTime               = runDyn_StanceTime;
+      serieData.runDyn_StanceTimeBalance        = runDyn_StanceTimeBalance;
+      serieData.runDyn_StepLength               = runDyn_StepLength;
+      serieData.runDyn_VerticalRatio            = runDyn_VerticalRatio;
+      serieData.runDyn_VerticalOscillation      = runDyn_VerticalOscillation;
 
       // swimming
-      serieData.swim_LengthType              = swim_LengthType;
-      serieData.swim_Cadence                 = swim_Cadence;
-      serieData.swim_Strokes                 = swim_Strokes;
-      serieData.swim_StrokeStyle             = swim_StrokeStyle;
-      serieData.swim_Time                    = swim_Time;
+      serieData.swim_LengthType                 = swim_LengthType;
+      serieData.swim_Cadence                    = swim_Cadence;
+      serieData.swim_Strokes                    = swim_Strokes;
+      serieData.swim_StrokeStyle                = swim_StrokeStyle;
+      serieData.swim_Time                       = swim_Time;
 
       if (isSwimCadence) {
          // cadence is computed from cadence swim data
@@ -12590,13 +12792,16 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       // surfing
-      serieData.visiblePoints_Surfing        = visiblePoints_ForSurfing;
+      serieData.visiblePoints_Surfing           = visiblePoints_ForSurfing;
 
       // battery
-      serieData.battery_Percentage           = battery_Percentage;
-      serieData.battery_Time                 = battery_Time;
+      serieData.battery_Percentage              = battery_Percentage;
+      serieData.battery_Time                    = battery_Time;
 
 // SET_FORMATTING_ON
+
+      // photo
+      serieData.setTourPhotosWithPositionedGeo(tourPhotosWithPositionedGeo);
 
       // time serie size
       numberOfTimeSlices = timeSerie == null ? 0 : timeSerie.length;
@@ -14722,18 +14927,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @Override
    public String toString() {
 
-      return "TourData [" + NL //                                                                        //$NON-NLS-1$
+      return "TourData [" + NL //                                                                           //$NON-NLS-1$
 
-            + " start           = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //$NON-NLS-1$
-            + startHour + UI.SYMBOL_COLON + startMinute + UI.SYMBOL_COLON + startSecond + NL
+//            + " start            = " + startYear + UI.DASH + startMonth + UI.DASH + startDay + UI.SPACE //  //$NON-NLS-1$
+//            + startHour + UI.SYMBOL_COLON + startMinute + UI.SYMBOL_COLON + startSecond + NL
 
-            + " tourId          = " + tourId + NL //                                                     //$NON-NLS-1$
-            + " isMultipleTours = " + isMultipleTours + NL //                                            //$NON-NLS-1$
+            + " tourId           = " + tourId + NL //                                                       //$NON-NLS-1$
+//            + " isMultipleTours  = " + isMultipleTours + NL //                                              //$NON-NLS-1$
 
-//            + "object   = " + super.toString() + NL //                                              //$NON-NLS-1$
-//            + "identityHashCode=" + System.identityHashCode(this) + NL //                           //$NON-NLS-1$
+//          + " object           = " + super.toString() + NL //                                             //$NON-NLS-1$
+            + " identityHashCode = " + System.identityHashCode(this) + NL //                                //$NON-NLS-1$
 
-//            + "marker size:" + tourMarkers.size() + " " + tourMarkers + NL //                       //$NON-NLS-1$
+//          + "marker size       = " + tourMarkers.size() + " " + tourMarkers + NL //                       //$NON-NLS-1$
 
             + "]"; //$NON-NLS-1$
    }

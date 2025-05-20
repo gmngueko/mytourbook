@@ -96,6 +96,8 @@ public class Images {
    public static final String ConconiChart                               = "conconi-chart.png";                                   //$NON-NLS-1$
    public static final String CSVFormat                                  = "app-csv-format.png";                                  //$NON-NLS-1$
    public static final String CSVFormat_Disabled                         = "app-csv-format-disabled.png";                         //$NON-NLS-1$
+   public static final String Cursor_Photo_Move                          = "cursor-photo-move.png";                               //$NON-NLS-1$
+   public static final String Cursor_Photo_Select                        = "cursor-photo-select.png";                             //$NON-NLS-1$
    public static final String Cursor_Select                              = "cursor-select.png";                                   //$NON-NLS-1$
    public static final String EasyImport_Harddrive                       = "hard-drive.png";                                      //$NON-NLS-1$
    public static final String EditRow                                    = "edit-row.png";                                        //$NON-NLS-1$
