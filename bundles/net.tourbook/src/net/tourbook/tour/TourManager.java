@@ -3333,10 +3333,26 @@ public class TourManager {
 
          savedTours.add(savedTour);
 
+         /*
+          * Preserve transient values
+          */
+
          // keep the current map position that a saved tour is not centered with default size
          savedTour.mapZoomLevel = tourData.mapZoomLevel;
          savedTour.mapCenterPositionLatitude = tourData.mapCenterPositionLatitude;
          savedTour.mapCenterPositionLongitude = tourData.mapCenterPositionLongitude;
+
+//         System.out.println(UI.timeStamp()
+//
+//               + UI.NEW_LINE
+//               + "   tourData Before Save " + System.identityHashCode(tourData)
+//
+//               + UI.NEW_LINE
+//               + "   tourData Saved       " + System.identityHashCode(savedTour)
+//
+//               + UI.NEW_LINE
+//
+//         );
       }
    }
 

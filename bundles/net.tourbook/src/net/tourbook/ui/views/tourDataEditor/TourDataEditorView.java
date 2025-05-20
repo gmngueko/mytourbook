@@ -74,6 +74,7 @@ import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourPerson;
+import net.tourbook.data.TourPhoto;
 import net.tourbook.data.TourReference;
 import net.tourbook.data.TourTag;
 import net.tourbook.data.TourType;
@@ -164,6 +165,7 @@ import org.eclipse.jface.viewers.ComboBoxCellEditor;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
@@ -424,135 +426,136 @@ public class TourDataEditorView extends ViewPart implements
       _nf3NoGroup.setGroupingUsed(false);
    }
    //
-   private long                               _timeSlice_ViewerTourId = -1;
-   private long                               _swimSlice_ViewerTourId = -1;
+   private long                             _timeSlice_ViewerTourId = -1;
+   private long                             _swimSlice_ViewerTourId = -1;
    //
    /**
     * <code>true</code>: rows can be selected in the viewer<br>
     * <code>false</code>: cell can be selected in the viewer
     */
-   private boolean                            _isRowEditMode          = true;
-   private boolean                            _isEditMode;
-   private boolean                            _isTourDirty;
-   private boolean                            _isTourWithSwimData;
+   private boolean                          _isRowEditMode          = true;
+   private boolean                          _isEditMode;
+   private boolean                          _isTourDirty;
+   private boolean                          _isTourWithSwimData;
    //
-   private boolean                            _canScrollFieldContent;
-   private ScrollFieldContent                 _scrollFieldContent;
+   private boolean                          _canScrollFieldContent;
+   private ScrollFieldContent               _scrollFieldContent;
    //
    /**
     * Is <code>true</code> when the tour is currently being saved to prevent a modify event or the
     * onSelectionChanged event
     */
-   private boolean                            _isSavingInProgress;
+   private boolean                          _isSavingInProgress;
 
    /**
     * When <code>true</code> then data are loaded into fields
     */
-   private boolean                            _isSetField;
+   private boolean                          _isSetField;
 
    /**
     * Contains the tour id from the last selection event
     */
-   private Long                               _selectionTourId;
+   private Long                             _selectionTourId;
    //
-   private FocusListener                      _focusListener_ScrollField;
-   private ModifyListener                     _modifyListener;
-   private ModifyListener                     _modifyListener_Temperature;
-   private MouseWheelListener                 _mouseWheelListener;
-   private Listener                           _mouseWheelListener_ScrollField;
-   private MouseWheelListener                 _mouseWheelListener_Temperature;
-   private SelectionListener                  _selectionListener;
-   private SelectionListener                  _selectionListener_Temperature;
-   private SelectionListener                  _columnSortListener;
-   private SelectionListener                  _tourTimeListener;
-   private ModifyListener                     _verifyFloatValue;
-   private ModifyListener                     _verifyIntValue;
+   private FocusListener                    _focusListener_ScrollField;
+   private ModifyListener                   _modifyListener;
+   private ModifyListener                   _modifyListener_Temperature;
+   private MouseWheelListener               _mouseWheelListener;
+   private Listener                         _mouseWheelListener_ScrollField;
+   private MouseWheelListener               _mouseWheelListener_Temperature;
+   private SelectionListener                _selectionListener;
+   private SelectionListener                _selectionListener_Temperature;
+   private SelectionListener                _columnSortListener;
+   private SelectionListener                _tourTimeListener;
+   private ModifyListener                   _verifyFloatValue;
+   private ModifyListener                   _verifyIntValue;
    //
-   private PixelConverter                     _pc;
-   private int                                _hintValueFieldWidth;
-   private int                                _hintDefaultSpinnerWidth;
+   private PixelConverter                   _pc;
+   private int                              _hintValueFieldWidth;
+   private int                              _hintDefaultSpinnerWidth;
 
    /**
     * is <code>true</code> when {@link #_tourChart} contains reference tours
     */
-   private boolean                            _isReferenceTourAvailable;
+   private boolean                          _isReferenceTourAvailable;
 
    /**
     * range for the reference tours, is <code>null</code> when reference tours are not available<br>
     * 1st index = ref tour<br>
     * 2nd index: 0:start, 1:end
     */
-   private int[][]                            _refTourRange;
+   private int[][]                          _refTourRange;
 
-   private boolean                            _isPartVisible;
+   private boolean                          _isPartVisible;
 
    /**
     * when <code>true</code> additional info is displayed in the title area
     */
-   private boolean                            _isInfoInTitle;
+   private boolean                          _isInfoInTitle;
 
    /**
     * Is <code>true</code> when a cell editor is active, otherwise <code>false</code>
     */
-   private boolean                            _isCellEditorActive;
+   private boolean                          _isCellEditorActive;
 
    /**
     * Current combobox cell editor or <code>null</code> when a cell editor is not active.
     */
-   private CellEditor_ComboBox_Customized     _currentComboBox_CellEditor;
+   private CellEditor_ComboBox_Customized   _currentComboBox_CellEditor;
 
    /**
     * Current text cell editor or <code>null</code> when a cell editor is not active.
     */
-   private CellEditor_Text_Customized         _currentTextEditor_CellEditor;
+   private CellEditor_Text_Customized       _currentTextEditor_CellEditor;
 
    /**
     * every requested UI update increased this counter
     */
-   private int                                _uiUpdateCounter;
+   private int                              _uiUpdateCounter;
 
    /**
     * counter when the UI update runnable is run, this will optimize performance to not update the
     * UI when the part is hidden
     */
-   private int                                _uiRunnableCounter      = 0;
-   private int                                _uiUpdateTitleCounter   = 0;
-   private TourData                           _uiRunnableTourData;
-   private boolean                            _uiRunnableForce_TimeSliceReload;
-   private boolean                            _uiRunnableForce_SwimSliceReload;
-   private boolean                            _uiRunnableIsDirtyDisabled;
+   private int                              _uiRunnableCounter      = 0;
+   private int                              _uiUpdateTitleCounter   = 0;
+   private TourData                         _uiRunnableTourData;
+   private boolean                          _uiRunnableForce_TimeSliceReload;
+   private boolean                          _uiRunnableForce_SwimSliceReload;
+   private boolean                          _uiRunnableIsDirtyDisabled;
    //
-   private SliceEditingSupport_Float          _timeSlice_AltitudeEditingSupport;
-   private SliceEditingSupport_Float          _timeSlice_PulseEditingSupport;
-   private SliceEditingSupport_Float          _timeSlice_TemperatureEditingSupport;
-   private SliceEditingSupport_Float          _timeSlice_CadenceEditingSupport;
-   private SliceEditingSupport_Double         _timeSlice_LatitudeEditingSupport;
-   private SliceEditingSupport_Double         _timeSlice_LongitudeEditingSupport;
+   private SliceEditingSupport_Float        _timeSlice_AltitudeEditingSupport;
+   private SliceEditingSupport_Float        _timeSlice_PulseEditingSupport;
+   private SliceEditingSupport_Float        _timeSlice_TemperatureEditingSupport;
+   private SliceEditingSupport_Float        _timeSlice_CadenceEditingSupport;
+   private SliceEditingSupport_Double       _timeSlice_LatitudeEditingSupport;
+   private SliceEditingSupport_Double       _timeSlice_LongitudeEditingSupport;
    //
-   private SliceEditingSupport_Short          _swimSlice_StrokeRateEditingSupport;
-   private SliceEditingSupport_Short          _swimSlice_StrokesEditingSupport;
-   private SliceEditor_ComboBox_StrokeStyle   _swimSlice_StrokeStyleEditingSupport;
+   private SliceEditingSupport_Short        _swimSlice_StrokeRateEditingSupport;
+   private SliceEditingSupport_Short        _swimSlice_StrokesEditingSupport;
+   private SliceEditor_ComboBox_StrokeStyle _swimSlice_StrokeStyleEditingSupport;
    //
-   private int                                _enableActionCounter    = 0;
+   private int                              _enableActionCounter    = 0;
 
    /**
-    * contains all markers with the data serie index as key
+    * Contains all markers with the data serie index as key
     */
-   private final HashMap<Integer, TourMarker> _markerMap              = new HashMap<>();
+   private final Map<Integer, TourMarker>   _markerMap              = new HashMap<>();
+   private final Map<Integer, TourPhoto>    _allPositionedPhotos    = new HashMap<>();
 
    /**
     * When <code>true</code> the tour is created with the tour editor
     */
-   private boolean                            _isManualTour;
-   private boolean                            _isPhotoTour;
-   private boolean                            _isTitleModified;
-   private boolean                            _isAltitudeManuallyModified;
-   private boolean                            _isDistManuallyModified;
-   private boolean                            _isLocationStartModified;
-   private boolean                            _isLocationEndModified;
-   private boolean                            _isTimeZoneManuallyModified;
-   private boolean                            _isTemperatureManuallyModified;
-   private boolean                            _isWindSpeedManuallyModified;
+   private boolean                          _isManualTour;
+   private boolean                          _isPhotoTour;
+   private boolean                          _isTitleModified;
+   private boolean                          _isAltitudeManuallyModified;
+   private boolean                          _isDistManuallyModified;
+   private boolean                          _isLocationStartModified;
+   private boolean                          _isLocationEndModified;
+   private boolean                          _isTimeZoneManuallyModified;
+   private boolean                          _isTemperatureManuallyModified;
+   private boolean                          _isWindSpeedManuallyModified;
 
    /*
     * Measurement unit values
@@ -566,8 +569,6 @@ public class TourDataEditorView extends ViewPart implements
    private IContextMenuProvider                       _swimViewer_ContextMenuProvider = new SwimSlice_ViewerContextMenuProvider();
    private IContextMenuProvider                       _timeViewer_ContextMenuProvider = new TimeSlice_ViewerContextMenuProvider();
    //
-   private Action_RemoveSwimStyle                     _action_RemoveSwimStyle;
-   private Action_SetSwimStyle_Header                 _action_SetSwimStyle_Header;
    private ActionComputeDistanceValues                _actionComputeDistanceValues;
    private ActionCreateTourMarker                     _actionCreateTourMarker;
    private ActionCSVTimeSliceExport                   _actionCsvTimeSliceExport;
@@ -581,7 +582,10 @@ public class TourDataEditorView extends ViewPart implements
    private ActionExtractTour                          _actionExtractTour;
    private ActionOpenAdjustAltitudeDialog             _actionOpenAdjustAltitudeDialog;
    private ActionOpenMarkerDialog                     _actionOpenMarkerDialog;
+   private ActionRemovePhotoPosition                  _actionRemovePhotoPosition;
+   private ActionRemoveSwimStyle                      _action_RemoveSwimStyle;
    private ActionSetStartDistanceTo0                  _actionSetStartDistanceTo_0;
+   private ActionSetSwimStyle_Header                  _action_SetSwimStyle_Header;
    private ActionSplitTour                            _actionSplitTour;
    private ActionTourStartEndLocation                 _actionStartLocation;
    private ActionTourStartEndLocation                 _actionEndLocation;
@@ -777,9 +781,27 @@ public class TourDataEditorView extends ViewPart implements
 
    private Widget                    _focusField;
 
-   private class Action_RemoveSwimStyle extends Action {
+   private class ActionRemovePhotoPosition extends Action {
 
-      public Action_RemoveSwimStyle() {
+      public ActionRemovePhotoPosition() {
+
+         super("Remove p&hoto position");
+
+         setToolTipText("This removes the association between the photo and it geo position");
+
+         setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Remove));
+         setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Remove_Disabled));
+      }
+
+      @Override
+      public void run() {
+         actionRemovePhotoPosition();
+      }
+   }
+
+   private class ActionRemoveSwimStyle extends Action {
+
+      public ActionRemoveSwimStyle() {
 
          super(Messages.TourEditor_Action_RemoveSwimStyle);
 
@@ -796,9 +818,9 @@ public class TourDataEditorView extends ViewPart implements
    /**
     * Swim style menu header item without action
     */
-   private class Action_SetSwimStyle_Header extends Action {
+   private class ActionSetSwimStyle_Header extends Action {
 
-      public Action_SetSwimStyle_Header() {
+      public ActionSetSwimStyle_Header() {
 
          super(Messages.TourEditor_Action_SetSwimStyle, AS_PUSH_BUTTON);
          setEnabled(false);
@@ -2169,23 +2191,20 @@ public class TourDataEditorView extends ViewPart implements
             // set tour start/end date/time
             final long tourStartTime = newTourContext.tourStartTime;
             final long tourEndTime = newTourContext.tourEndTime;
+
             final long elapsedTime = tourEndTime - tourStartTime;
-
             final long elapsedTimeSeconds = elapsedTime / 1000;
-
-            newTourData.timeSerie = new int[] {
-
-                  0,
-                  (int) (elapsedTimeSeconds / 2),
-                  (int) elapsedTimeSeconds,
-            };
 
             newTourData.setTourTitle(newTourContext.title);
             newTourData.setTourStartTime(TimeTools.getZonedDateTime(tourStartTime));
             newTourData.setTourDeviceTime_Elapsed(elapsedTimeSeconds);
+            newTourData.timeSerie = newTourContext.timeSerie;
 
-            // prevent that this is a manual tour
+            // prevent that this is a manual tour and to identify it as a photo tour
             newTourData.setDeviceId(TourData.DEVICE_ID_FOR_PHOTO_TOUR);
+
+            // return the created tour
+            newTourContext.newTourData = newTourData;
 
          } else {
 
@@ -2480,7 +2499,9 @@ public class TourDataEditorView extends ViewPart implements
     * @param isRemoveDistance
     * @param isAdjustTourStartTime
     */
-   void actionDelete_TimeSlices(final boolean isRemoveTime, final boolean isRemoveDistance, final boolean isAdjustTourStartTime) {
+   void actionDelete_TimeSlices(final boolean isRemoveTime,
+                                final boolean isRemoveDistance,
+                                final boolean isAdjustTourStartTime) {
 
       // a tour with reference tours is currently not supported
       if (_isReferenceTourAvailable) {
@@ -2568,7 +2589,14 @@ public class TourDataEditorView extends ViewPart implements
       Arrays.sort(selectionIndices);
       final int lastTopIndex = selectionIndices[0];
 
-      TourManager.removeTimeSlices(_tourData, firstIndex, lastIndex, isRemoveTime, isRemoveDistance, isAdjustTourStartTime);
+      TourManager.removeTimeSlices(
+
+            _tourData,
+            firstIndex,
+            lastIndex,
+            isRemoveTime,
+            isRemoveDistance,
+            isAdjustTourStartTime);
 
       getDataSeriesFromTourData();
 
@@ -2618,6 +2646,31 @@ public class TourDataEditorView extends ViewPart implements
          // fire selection position
          _timeSlice_Viewer.setSelection(_timeSlice_Viewer.getSelection());
       }
+   }
+
+   private void actionRemovePhotoPosition() {
+
+      final IStructuredSelection sliceSelection = _timeSlice_Viewer.getStructuredSelection();
+      final TimeSlice timeSlice = (TimeSlice) sliceSelection.getFirstElement();
+
+      final int serieIndex = timeSlice.serieIndex;
+      final TourPhoto tourPhoto = _allPositionedPhotos.get(serieIndex);
+
+      if (tourPhoto != null) {
+
+         final Set<Long> allTourPhotosWithGeoPosition = _tourData.getTourPhotosWithPositionedGeo();
+
+         allTourPhotosWithGeoPosition.remove(tourPhoto.getPhotoId());
+      }
+
+      updatePositionedPhotos();
+
+      // recompute geo positions
+      _tourData.computeGeo_Photos();
+
+      _timeSlice_Viewer.refresh();
+
+      setTourDirty();
    }
 
    void actionSetStartDistanceTo_0000() {
@@ -3210,23 +3263,20 @@ public class TourDataEditorView extends ViewPart implements
 
 // SET_FORMATTING_OFF
 
-      _actionEditTimeSlicesValues      = new ActionEditTimeSlicesValues(this);
-
-      _actionDeleteDistanceValues      = new ActionDeleteDistanceValues(this);
       _actionComputeDistanceValues     = new ActionComputeDistanceValues(this);
-      _actionToggleRowSelectMode       = new ActionToggleRowSelectMode(this);
-      _actionToggleReadEditMode        = new ActionToggleReadEditMode(this);
-      _actionSetStartDistanceTo_0      = new ActionSetStartDistanceTo0(this);
-
+      _actionCreateTourMarker          = new ActionCreateTourMarker(this);
+      _actionCsvTimeSliceExport        = new ActionCSVTimeSliceExport(this);
+      _actionDeleteDistanceValues      = new ActionDeleteDistanceValues(this);
+      _actionEditTimeSlicesValues      = new ActionEditTimeSlicesValues(this);
+      _actionExtractTour               = new ActionExtractTour(this);
+      _actionExportTour                = new ActionExport(this);
       _actionOpenAdjustAltitudeDialog  = new ActionOpenAdjustAltitudeDialog(this, true);
       _actionOpenMarkerDialog          = new ActionOpenMarkerDialog(this, false);
-
-      _actionCreateTourMarker          = new ActionCreateTourMarker(this);
-      _actionExportTour                = new ActionExport(this);
-      _actionCsvTimeSliceExport        = new ActionCSVTimeSliceExport(this);
+      _actionRemovePhotoPosition       = new ActionRemovePhotoPosition();
+      _actionSetStartDistanceTo_0      = new ActionSetStartDistanceTo0(this);
       _actionSplitTour                 = new ActionSplitTour(this);
-      _actionExtractTour               = new ActionExtractTour(this);
-
+      _actionToggleReadEditMode        = new ActionToggleReadEditMode(this);
+      _actionToggleRowSelectMode       = new ActionToggleRowSelectMode(this);
       _actionViewSettings              = new ActionViewSettings();
 
       _actionDeleteTimeSlices_AdjustTourStartTime  = new ActionDeleteTimeSlices_AdjustTourStartTime(this);
@@ -3239,12 +3289,12 @@ public class TourDataEditorView extends ViewPart implements
       _tagMenuMgr = new TagMenuManager(this, false);
 
       // swim style actions
-      _action_SetSwimStyle_Header = new Action_SetSwimStyle_Header();
+      _action_SetSwimStyle_Header = new ActionSetSwimStyle_Header();
       _allSwimStyleActions = new ArrayList<>();
       for (final StrokeStyle strokeStyle : SwimStrokeManager.DEFAULT_STROKE_STYLES) {
          _allSwimStyleActions.add(new Action_SetSwimStyle(this, strokeStyle));
       }
-      _action_RemoveSwimStyle = new Action_RemoveSwimStyle();
+      _action_RemoveSwimStyle = new ActionRemoveSwimStyle();
 
    }
 
@@ -5624,6 +5674,7 @@ public class TourDataEditorView extends ViewPart implements
       defineColumn_TimeSlice_Body_Heartbeat_RR_Index();
 
       defineColumn_TimeSlice_Tour_Marker();
+      defineColumn_TimeSlice_Tour_Photo();
 
       defineColumn_TimeSlice_Weather_Temperature();
 
@@ -6617,7 +6668,7 @@ public class TourDataEditorView extends ViewPart implements
    }
 
    /**
-    * column: marker
+    * Column: Tour marker
     */
    private void defineColumn_TimeSlice_Tour_Marker() {
 
@@ -6642,6 +6693,47 @@ public class TourDataEditorView extends ViewPart implements
 
             } else {
                cell.setText(UI.EMPTY_STRING);
+            }
+         }
+      });
+   }
+
+   /**
+    * Column: Tour photo
+    */
+   private void defineColumn_TimeSlice_Tour_Photo() {
+
+      ColumnDefinition colDef;
+      colDef = TableColumnFactory.TOUR_POSITIONED_PHOTO.createColumn(_timeSlice_ColumnManager, _pc);
+
+      colDef.setIsDefaultColumn();
+      colDef.setLabelProvider(new CellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final TimeSlice timeSlice = (TimeSlice) cell.getElement();
+
+            final int serieIndex = timeSlice.serieIndex;
+
+            final TourPhoto tourPhoto = _allPositionedPhotos.get(serieIndex);
+
+            if (tourPhoto != null) {
+
+               cell.setText(tourPhoto.getImageFileName());
+
+            } else {
+
+               final int lastIndex = _tourData.timeSerie.length - 1;
+
+               if (serieIndex == 0 && _allPositionedPhotos.containsKey(Integer.MIN_VALUE)
+                     || serieIndex == lastIndex && _allPositionedPhotos.containsKey(Integer.MAX_VALUE)) {
+
+                  cell.setText(UI.SYMBOL_FULL_BLOCK);
+
+               } else {
+
+                  cell.setText(UI.EMPTY_STRING);
+               }
             }
          }
       });
@@ -7143,16 +7235,18 @@ public class TourDataEditorView extends ViewPart implements
    }
 
    /**
-    * enable actions
+    * Enable actions
     */
    private void enableActions_TimeSlices() {
 
-      final StructuredSelection sliceSelection = (StructuredSelection) _timeSlice_Viewer.getSelection();
+      final IStructuredSelection sliceSelection = _timeSlice_Viewer.getStructuredSelection();
+      final TimeSlice oneTimeSlice = (TimeSlice) sliceSelection.getFirstElement();
 
-      final int numberOfSelectedSlices = sliceSelection.size();
+      final int numSelectedSlices = sliceSelection.size();
 
-      final boolean isSliceSelected = numberOfSelectedSlices > 0;
-      final boolean isOneSliceSelected = numberOfSelectedSlices == 1;
+      final boolean isSliceSelected = numSelectedSlices > 0;
+      final boolean isOneSliceSelected = numSelectedSlices == 1;
+      final boolean isPhotoTour = _tourData.isPhotoTour();
       final boolean isTourInDb = isTourInDb();
 
       // deleting time slices with swim data is very complex
@@ -7161,9 +7255,19 @@ public class TourDataEditorView extends ViewPart implements
       // check if a marker can be created
       boolean canCreateMarker = false;
       if (isOneSliceSelected) {
-         final TimeSlice oneTimeSlice = (TimeSlice) sliceSelection.getFirstElement();
+
          canCreateMarker = _markerMap.containsKey(oneTimeSlice.serieIndex) == false;
       }
+
+      // remove photo position
+      boolean canRemovePhotoPosition = false;
+      if (isOneSliceSelected && isPhotoTour) {
+
+         final TourPhoto tourPhoto = _allPositionedPhotos.get(oneTimeSlice.serieIndex);
+
+         canRemovePhotoPosition = tourPhoto != null;
+      }
+
       // get selected Marker
       TourMarker selectedMarker = null;
       for (final Object name : sliceSelection) {
@@ -7174,7 +7278,9 @@ public class TourDataEditorView extends ViewPart implements
          }
       }
 
-      final boolean canDeleteTimeSliced = _isEditMode && isTourInDb && isSliceSelected && isNoSwimData;
+      final boolean isNoPhotoTour = _tourData.isPhotoTour() == false;
+
+      final boolean canDeleteTimeSliced = _isEditMode && isTourInDb && isSliceSelected && isNoSwimData && isNoPhotoTour;
 
       _actionCreateTourMarker.setEnabled(_isEditMode && isTourInDb && isOneSliceSelected && canCreateMarker);
       _actionOpenMarkerDialog.setEnabled(_isEditMode && isTourInDb && isOneSliceSelected && selectedMarker != null);
@@ -7184,20 +7290,22 @@ public class TourDataEditorView extends ViewPart implements
 
 // SET_FORMATTING_OFF
 
-      _actionDeleteTimeSlices_AdjustTourStartTime  .setEnabled(canDeleteTimeSliced);
-      _actionDeleteTimeSlices_KeepTime             .setEnabled(canDeleteTimeSliced);
-      _actionDeleteTimeSlices_KeepTimeAndDistance  .setEnabled(canDeleteTimeSliced);
-      _actionDeleteTimeSlices_RemoveTime           .setEnabled(canDeleteTimeSliced);
+      _actionRemovePhotoPosition .setEnabled(canRemovePhotoPosition);
 
       _actionExportTour          .setEnabled(true);
       _actionCsvTimeSliceExport  .setEnabled(isSliceSelected);
 
       _actionSplitTour           .setEnabled(isOneSliceSelected);
-      _actionExtractTour         .setEnabled(numberOfSelectedSlices >= 2);
+      _actionExtractTour         .setEnabled(numSelectedSlices >= 2);
+
+      _actionDeleteTimeSlices_AdjustTourStartTime  .setEnabled(canDeleteTimeSliced);
+      _actionDeleteTimeSlices_KeepTime             .setEnabled(canDeleteTimeSliced);
+      _actionDeleteTimeSlices_KeepTimeAndDistance  .setEnabled(canDeleteTimeSliced);
+      _actionDeleteTimeSlices_RemoveTime           .setEnabled(canDeleteTimeSliced);
 
 // SET_FORMATTING_ON
 
-      // set start/end position into the actions
+      // set start/end positions into the actions
       if (isSliceSelected) {
 
          final Object[] selectedSliceArray = sliceSelection.toArray();
@@ -7409,6 +7517,7 @@ public class TourDataEditorView extends ViewPart implements
       menuManager.add(_actionDeleteTimeSlices_KeepTime);
       menuManager.add(_actionDeleteTimeSlices_KeepTimeAndDistance);
       menuManager.add(_actionDeleteTimeSlices_AdjustTourStartTime);
+      menuManager.add(_actionRemovePhotoPosition);
 
       menuManager.add(new Separator());
       menuManager.add(_actionSetStartDistanceTo_0);
@@ -9034,6 +9143,7 @@ public class TourDataEditorView extends ViewPart implements
          setupTourData(TourDatabase.saveTour(_tourData, true));
 
          updateMarkerMap();
+         updatePositionedPhotos();
 
          // refresh combos
 
@@ -9522,6 +9632,7 @@ public class TourDataEditorView extends ViewPart implements
       for (final TourMarker tourMarker : tourMarkers) {
          _markerMap.put(tourMarker.getSerieIndex(), tourMarker);
       }
+
    }
 
    /**
@@ -9683,17 +9794,17 @@ public class TourDataEditorView extends ViewPart implements
          if (_isManualTour || _isPhotoTour) {
 
 // SET_FORMATTING_OFF
-            
+
             _tourData.setTourDeviceTime_Elapsed    (_deviceTime_Elapsed.getTime());
             _tourData.setTourDeviceTime_Recorded   (_deviceTime_Recorded.getTime());
             _tourData.setTourDeviceTime_Paused     (_deviceTime_Paused.getTime());
             _tourData.setTourComputedTime_Moving   (_computedTime_Moving.getTime());
-            
+
 // SET_FORMATTING_ON
          }
 
-         if (_isPhotoTour) {
-            
+         if (_isPhotoTour && _tourData.timeSerie == null) {
+
             // create a time serie
 
             final long elapsedTime = _tourData.getTourDeviceTime_Elapsed();
@@ -9730,6 +9841,43 @@ public class TourDataEditorView extends ViewPart implements
          MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", e.getLocalizedMessage());//$NON-NLS-1$
 
          StatusUtil.log(e);
+      }
+   }
+
+   private void updatePositionedPhotos() {
+
+      _allPositionedPhotos.clear();
+
+      final Set<Long> allTourPhotosWithGeoPosition = _tourData.getTourPhotosWithPositionedGeo();
+
+      if (allTourPhotosWithGeoPosition == null) {
+         return;
+      }
+
+      // sort photos by time
+      final Set<TourPhoto> allTourPhotos = _tourData.getTourPhotos();
+      final ArrayList<TourPhoto> allSortedPhotos = new ArrayList<>(allTourPhotos);
+      Collections.sort(allSortedPhotos, (tourPhoto1, tourPhoto2) -> {
+
+         return Long.compare(tourPhoto1.getImageExifTime(), tourPhoto2.getImageExifTime());
+      });
+
+      final int numPhotos = allSortedPhotos.size();
+
+      for (int photoIndex = 0; photoIndex < numPhotos; photoIndex++) {
+
+         final TourPhoto tourPhoto = allSortedPhotos.get(photoIndex);
+
+         if (tourPhoto == null) {
+            continue;
+         }
+
+         final long photoId = tourPhoto.getPhotoId();
+
+         if (allTourPhotosWithGeoPosition.contains(photoId)) {
+
+            _allPositionedPhotos.put(photoIndex, tourPhoto);
+         }
       }
    }
 
@@ -9905,6 +10053,7 @@ public class TourDataEditorView extends ViewPart implements
       _isPhotoTour = tourData.isPhotoTour();
 
       updateMarkerMap();
+      updatePositionedPhotos();
 
       Display.getDefault().asyncExec(new Runnable() {
 
@@ -9959,6 +10108,7 @@ public class TourDataEditorView extends ViewPart implements
       _isTourWithSwimData = _tourData.swim_Time != null;
 
       updateMarkerMap();
+      updatePositionedPhotos();
 
       // a tour which is not saved has no tour references
       _isReferenceTourAvailable = _tourData.isContainReferenceTour();
