@@ -580,12 +580,14 @@ public class Messages extends NLS {
    public static String        Dialog_EditTimeslicesValues_Checkbox_Altitude_Tooltip;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Cadence;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Cadence_Tooltip;
+   public static String        Dialog_EditTimeslicesValues_Checkbox_Power;
+   public static String        Dialog_EditTimeslicesValues_Checkbox_Power_Tooltip;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Pulse;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Pulse_Tooltip;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Temperature;
    public static String        Dialog_EditTimeslicesValues_Checkbox_Temperature_Tooltip;
-   public static String        Dialog_EditTimeslicesValues_Label_NewValues;
    public static String        Dialog_EditTimeslicesValues_Label_OffsetValues;
+   public static String        Dialog_EditTimeslicesValues_Label_ReplaceValues;
    public static String        Dialog_EditTimeslicesValues_Title;
 
    public static String        dialog_export_btn_export;
