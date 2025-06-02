@@ -2537,6 +2537,9 @@ public class TourManager {
                                        final boolean isRemoveDistance,
                                        final boolean isAdjustTourStartTime) {
 
+      // this must be done before the time series are modified
+      tourData.removePhotos(firstIndex, lastIndex);
+
       // this must be done with the original timeSerie
       removeTourPauses(tourData, firstIndex, lastIndex, isRemoveTime);
 
@@ -2654,7 +2657,7 @@ public class TourManager {
       tourData.segmentSerieIndex = null;
       tourData.segmentSerieIndex2nd = null;
 
-      removeTourMarkers(tourData, firstIndex, lastIndex, isRemoveTime);
+      removeTimeSlices_TourMarkers(tourData, firstIndex, lastIndex, isRemoveTime);
    }
 
    private static double[] removeTimeSlices_Double(final double[] dataSerie,
@@ -2848,11 +2851,16 @@ public class TourManager {
          return;
       }
 
+      // it is complicate to remove time slices and/or adjust tour start time
+      final boolean isRemovePhotoSlices = isAdjustTourStartTime && firstIndex == 0;
+
+      final boolean isRemoveTimeValues = isRemoveTime || isRemovePhotoSlices;
+
       final int timeFirstIndex = timeSerie[firstIndex];
       final int timeNextIndex = timeSerie[lastIndex + 1];
 
       int timeDiff = 0;
-      if (isRemoveTime) {
+      if (isRemoveTimeValues) {
          timeDiff = timeNextIndex - timeFirstIndex;
       }
 
@@ -2864,7 +2872,7 @@ public class TourManager {
       // update remaining time and distance data series
       for (int serieIndex = lastIndex + 1; serieIndex < timeSerie.length; serieIndex++) {
 
-         if (isRemoveTime) {
+         if (isRemoveTimeValues) {
             timeSerie[serieIndex] = timeSerie[serieIndex] - timeDiff;
          }
 
@@ -2873,7 +2881,7 @@ public class TourManager {
          }
       }
 
-      if (isRemoveTime && isAdjustTourStartTime) {
+      if (isRemoveTimeValues && isAdjustTourStartTime || isRemovePhotoSlices) {
 
          final ZonedDateTime tourStartTime = tourData.getTourStartTime();
          final ZonedDateTime newTourStartTime = tourStartTime.plusSeconds(timeDiff);
@@ -2891,10 +2899,10 @@ public class TourManager {
     * @param lastSerieIndex
     * @param isRemoveTime
     */
-   private static void removeTourMarkers(final TourData tourData,
-                                         final int firstSerieIndex,
-                                         final int lastSerieIndex,
-                                         final boolean isRemoveTime) {
+   private static void removeTimeSlices_TourMarkers(final TourData tourData,
+                                                    final int firstSerieIndex,
+                                                    final int lastSerieIndex,
+                                                    final boolean isRemoveTime) {
 
       // check if markers are available
       final Set<TourMarker> allTourMarkers = tourData.getTourMarkers();

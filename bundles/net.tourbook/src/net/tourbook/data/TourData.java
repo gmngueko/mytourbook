@@ -860,7 +860,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private int                   numberOfPhotos;
 
    /**
-    * Time adjustment in seconds, this is an average value for all photos.
+    * Time adjustment in seconds, this is an average value for all photos
     */
    private int                   photoTimeAdjustment;
 
@@ -5635,6 +5635,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
    }
 
+   /**
+    * Time adjustment in seconds, this is an average value for all photos
+    */
    private void computePhotoTimeAdjustment() {
 
       _allPhotoTimeAdjustments = new HashMap<>();
@@ -12826,6 +12829,51 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          currentTourPhotos.removeAll(allRemovedTourPhotos);
 
          saveTourPhotos(currentTourPhotos);
+      }
+   }
+
+   public void removePhotos(final int firstSerieIndex,
+                            final int lastSerieIndex) {
+
+      final long tourStartTimeMS = tourStartTime;
+
+      /*
+       * 1000L ist VERY important otherwise the value is truncated to an integer :-(((
+       */
+      final long firstTimeMS = tourStartTimeMS + (timeSerie[firstSerieIndex] * 1000L);
+      final long lastTimeMS = tourStartTimeMS + (timeSerie[lastSerieIndex] * 1000L);
+
+      final Set<TourPhoto> allTourPhotos = tourPhotos;
+      final ArrayList<TourPhoto> allSortedPhotos = new ArrayList<>(allTourPhotos);
+      Collections.sort(allSortedPhotos, (tourPhoto1, tourPhoto2) -> {
+
+         return Long.compare(tourPhoto1.getImageExifTime(), tourPhoto2.getImageExifTime());
+      });
+
+      final Collection<TourPhoto> allRemovedPhotos = new ArrayList<>();
+
+      for (final TourPhoto tourPhoto : allSortedPhotos) {
+
+         final long photoTimeMS = tourPhoto.getAdjustedTime();
+
+         final boolean isInRange_Begin = photoTimeMS >= firstTimeMS;
+         final boolean isInRange_End = photoTimeMS <= lastTimeMS;
+
+         if (isInRange_Begin && isInRange_End) {
+
+            allRemovedPhotos.add(tourPhoto);
+         }
+      }
+
+      final int numRemovedPhotos = allRemovedPhotos.size();
+
+      if (numRemovedPhotos > 0) {
+
+         tourPhotos.removeAll(allRemovedPhotos);
+
+         numberOfPhotos = tourPhotos.size();
+
+         computePhotoTimeAdjustment();
       }
    }
 
