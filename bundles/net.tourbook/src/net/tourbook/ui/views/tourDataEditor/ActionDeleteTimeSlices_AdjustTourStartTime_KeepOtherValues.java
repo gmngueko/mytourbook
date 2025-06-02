@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2023, 2025 Wolfgang Schramm and Contributors
+ * Copyright (C) 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,16 +18,20 @@ package net.tourbook.ui.views.tourDataEditor;
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 
 import org.eclipse.jface.action.Action;
 
-class ActionDeleteTimeSlices_KeepTimeAndDistance extends Action {
+class ActionDeleteTimeSlices_AdjustTourStartTime_KeepOtherValues extends Action {
 
    private final TourDataEditorView _tourDataEditorView;
 
-   public ActionDeleteTimeSlices_KeepTimeAndDistance(final TourDataEditorView tourDataEditorView) {
+   public ActionDeleteTimeSlices_AdjustTourStartTime_KeepOtherValues(final TourDataEditorView tourDataEditorView) {
 
-      super(Messages.Tour_Editor_Action_DeleteTimeSlices_KeepTimeAndDistance, AS_PUSH_BUTTON);
+      super(UI.EMPTY_STRING, AS_PUSH_BUTTON);
+
+      setText(Messages.Tour_Editor_Action_DeleteTimeSlices_AdjustTourStartTime_KeepOtherValues);
+      setToolTipText(Messages.Tour_Editor_Action_DeleteTimeSlices_AdjustTourStartTime_KeepOtherValues_Tooltip);
 
       setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete));
       setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete_Disabled));
@@ -38,6 +42,6 @@ class ActionDeleteTimeSlices_KeepTimeAndDistance extends Action {
    @Override
    public void run() {
 
-      _tourDataEditorView.actionDelete_TimeSlices(false, false, false);
+      _tourDataEditorView.actionDelete_TimeSlices(false, false, true);
    }
 }
