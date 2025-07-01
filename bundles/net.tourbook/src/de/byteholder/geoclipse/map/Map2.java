@@ -3122,7 +3122,7 @@ public class Map2 extends Canvas {
       }
 
       final MP mp = getMapProvider();
-      final int zoomLevel = getZoom();
+      final int zoomLevel = getZoomLevel();
 
       // paint with much less points to speed it up
       final int numMaxSegments = 1000;
@@ -3239,7 +3239,7 @@ public class Map2 extends Canvas {
     *
     * @return Returns the current zoom level of the map
     */
-   public int getZoom() {
+   public int getZoomLevel() {
       return _mapZoomLevel;
    }
 
@@ -4751,7 +4751,7 @@ public class Map2 extends Canvas {
          setCursorOptimized(_cursorDefault);
 
          _geoGrid_TourGeoFilter.mapGeoCenter = _geoGrid_MapGeoCenter = getMapGeoCenter();
-         _geoGrid_TourGeoFilter.mapZoomLevel = _geoGrid_MapZoomLevel = getZoom();
+         _geoGrid_TourGeoFilter.mapZoomLevel = _geoGrid_MapZoomLevel = getZoomLevel();
 
       } else if (_allHoveredTourIds.size() > 0) {
 
@@ -6984,7 +6984,7 @@ public class Map2 extends Canvas {
       gc.setAntialias(SWT.ON);
 
       final MP mp = getMapProvider();
-      final int zoomLevel = getZoom();
+      final int zoomLevel = getZoomLevel();
 
       final double[] latitudeSerie = tourData.latitudeSerie;
       final double[] longitudeSerie = tourData.longitudeSerie;
@@ -9619,17 +9619,21 @@ public class Map2 extends Canvas {
 
       boolean isOverlayPainted = false;
 
-      // create 1 part image/gc
-      final ImageData transparentImageData = MapUtils.createTransparentImageData(_tilePixelSize);
+      final float scaledTilePixelSize = _tilePixelSize * UI.HIDPI_SCALING * 2;
+      final ImageData transparentImageData = MapUtils.createTransparentImageData((int) scaledTilePixelSize);
 
-      final Image overlayImage = new Image(_display, transparentImageData);
+      final NoAutoScalingImageDataProvider imageDataProvider = new NoAutoScalingImageDataProvider(transparentImageData);
+
+      final Image overlayImage = new Image(_display, imageDataProvider);
       final GC gcTile = new GC(overlayImage);
       {
          /*
           * Ubuntu 12.04 fails, when background is not filled, it draws a black background
           */
+         final Rectangle bounds = overlayImage.getBounds();
+
          gcTile.setBackground(_mapTransparentColor);
-         gcTile.fillRectangle(overlayImage.getBounds());
+         gcTile.fillRectangle(0, 0, bounds.width, bounds.height);
 
          // paint all overlays for the current tile
          final boolean isPainted = _mapPainter.doPaint(
@@ -9639,6 +9643,10 @@ public class Map2 extends Canvas {
                1,
                _isFastMapPainting && _isFastMapPainting_Active,
                _fastMapPainting_skippedValues);
+
+         final ImageData imageDataAfterPainting = overlayImage.getImageData();
+
+         imageDataProvider.setImageData(imageDataAfterPainting);
 
          isOverlayPainted = isOverlayPainted || isPainted;
       }
@@ -10123,7 +10131,7 @@ public class Map2 extends Canvas {
 
       // create dimmed image
       final Rectangle imageBounds = tileImage.getBounds();
-      final Image dimmedImage = new Image(_display, imageBounds);
+      final Image dimmedImage = new Image(_display, imageBounds.width, imageBounds.height);
 
       final GC gcDimmedImage = new GC(dimmedImage);
       {

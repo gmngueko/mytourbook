@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -122,7 +122,7 @@ public class UI {
     * Date subcategory, e.g. month
     */
    public static final String            VIEW_COLOR_DATE_SUB_CATEGORY    = "VIEW_COLOR_DATE_SUB_CATEGORY";    //$NON-NLS-1$
-   
+
    /**
     * Color for disabled items
     */
@@ -713,6 +713,7 @@ public class UI {
    }
 
    public static Font getLogFont() {
+
       return _fontForLogging;
    }
 
@@ -913,7 +914,7 @@ public class UI {
                 */
                final Font oldFont = _fontForLogging;
 
-               display.timerExec(10_000, oldFont::dispose);
+               display.timerExec(10_000, () -> oldFont.dispose());
 
                _fontForLogging = null;
             }
@@ -1086,13 +1087,17 @@ public class UI {
    }
 
    /**
-    * Update properties for the chart from the pref store.
+    * Update properties for the chart from the pref store
     *
     * @param chart
     * @param gridPrefix
-    *           Pref store prefix for grid preferences.
+    *           Pref store prefix for grid preferences
+    * @param layoutPrefix
+    *           Pref store prefix for layout preferences
     */
-   public static void updateChartProperties(final Chart chart, final String gridPrefix) {
+   public static void updateChartProperties(final Chart chart,
+                                            final String gridPrefix,
+                                            final String layoutPrefix) {
 
       if (chart == null) {
          return;
@@ -1108,7 +1113,9 @@ public class UI {
 
             _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SEGMENT_ALTERNATE_COLOR),
             PreferenceConverter.getColor(_prefStore, ITourbookPreferences.GRAPH_SEGMENT_ALTERNATE_COLOR),
-            PreferenceConverter.getColor(_prefStore, ITourbookPreferences.GRAPH_SEGMENT_ALTERNATE_COLOR_DARK)
+            PreferenceConverter.getColor(_prefStore, ITourbookPreferences.GRAPH_SEGMENT_ALTERNATE_COLOR_DARK),
+
+            Util.getPrefixPref_Int(_prefStore, layoutPrefix, ITourbookPreferences.CHART_Y_AXIS_WIDTH)
 
       );
    }
