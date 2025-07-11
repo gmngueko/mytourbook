@@ -293,7 +293,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_ALTITUDE,
                GRAPH_LABEL_ALTITUDE,
                Images.Graph_Elevation,
-               Images.Graph_Elevation_Disabled,
+               //Images.Graph_Elevation_Disabled,
                altitudeEnabled);
          _chkShowInChartToolbar_Elevation = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_ALTITUDE);
 
@@ -306,7 +306,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_PULSE,
                GRAPH_LABEL_HEARTBEAT,
                Images.Graph_Heartbeat,
-               Images.Graph_Heartbeat_Disabled,
+               //Images.Graph_Heartbeat_Disabled,
                heartrateEnabled);
          _chkShowInChartToolbar_Pulse = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_HEARTBEAT);
 
@@ -319,7 +319,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_SPEED,
                GRAPH_LABEL_SPEED,
                Images.Graph_Speed,
-               Images.Graph_Speed_Disabled,
+               //Images.Graph_Speed_Disabled,
                speedEnabled);
          _chkShowInChartToolbar_Speed = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SPEED);
 
@@ -332,7 +332,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_SPEED_INTERVAL,
                GRAPH_LABEL_SPEED_INTERVAL,
                Images.Graph_Speed_Interval,
-               Images.Graph_Speed_Interval_Disabled,
+               //Images.Graph_Speed_Interval_Disabled,
                speedIntervalEnabled);
          _chkShowInChartToolbar_Speed_Interval = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SPEED_INTERVAL);
 
@@ -345,7 +345,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_SPEED_SUMMARIZED,
                GRAPH_LABEL_SPEED_SUMMARIZED,
                Images.Graph_Speed_Summarized,
-               Images.Graph_Speed_Summarized_Disabled,
+               //Images.Graph_Speed_Summarized_Disabled,
                speedSummarizedEnabled);
          _chkShowInChartToolbar_Speed_Summarized = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SPEED_SUMMARIZED);
 
@@ -358,7 +358,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_PACE,
                GRAPH_LABEL_PACE,
                Images.Graph_Pace,
-               Images.Graph_Pace_Disabled,
+               //Images.Graph_Pace_Disabled,
                paceEnabled);
          _chkShowInChartToolbar_Pace = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_PACE);
 
@@ -371,7 +371,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_PACE_INTERVAL,
                GRAPH_LABEL_PACE_INTERVAL,
                Images.Graph_Pace_Interval,
-               Images.Graph_Pace_Interval_Disabled,
+               //Images.Graph_Pace_Interval_Disabled,
                paceIntervalEnabled);
          _chkShowInChartToolbar_Pace_Interval = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_PACE_INTERVAL);
 
@@ -384,7 +384,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_PACE_SUMMARIZED,
                GRAPH_LABEL_PACE_SUMMARIZED,
                Images.Graph_Pace_Summarized,
-               Images.Graph_Pace_Summarized_Disabled,
+               //Images.Graph_Pace_Summarized_Disabled,
                paceSummarizedEnabled);
          _chkShowInChartToolbar_Pace_Summarized = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_PACE_SUMMARIZED);
 
@@ -397,7 +397,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_POWER,
                GRAPH_LABEL_POWER,
                Images.Graph_Power,
-               Images.Graph_Power_Disabled,
+               //Images.Graph_Power_Disabled,
                powerEnabled);
          _chkShowInChartToolbar_Power = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_POWER);
 
@@ -410,7 +410,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_TEMPERATURE,
                GRAPH_LABEL_TEMPERATURE,
                Images.Graph_Temperature,
-               Images.Graph_Temperature_Disabled,
+               //Images.Graph_Temperature_Disabled,
                temperatureEnabled);
          _chkShowInChartToolbar_Temperature = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_TEMPERATURE);
 
@@ -423,7 +423,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_GRADIENT,
                GRAPH_LABEL_GRADIENT,
                Images.Graph_Gradient,
-               Images.Graph_Gradient_Disabled,
+               //Images.Graph_Gradient_Disabled,
                gradientEnabled);
          _chkShowInChartToolbar_Gradient = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_GRADIENT);
 
@@ -436,7 +436,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_ALTIMETER,
                GRAPH_LABEL_ALTIMETER,
                Images.Graph_Altimeter,
-               Images.Graph_Altimeter_Disabled,
+               //Images.Graph_Altimeter_Disabled,
                altimeterEnabled);
          _chkShowInChartToolbar_Altimeter = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_ALTIMETER);
 
@@ -449,7 +449,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_CADENCE,
                GRAPH_LABEL_CADENCE,
                Images.Graph_Cadence,
-               Images.Graph_Cadence_Disabled,
+               //Images.Graph_Cadence_Disabled,
                cadenceEnabled);
          _chkShowInChartToolbar_Cadence = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_CADENCE);
 
@@ -462,7 +462,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_GEARS,
                GRAPH_LABEL_GEARS,
                Images.Graph_Gears,
-               Images.Graph_Gears_Disabled,
+               //Images.Graph_Gears_Disabled,
                gearsEnabled);
          _chkShowInChartToolbar_Gears = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_GEARS);
 
@@ -475,7 +475,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_RUN_DYN_STANCE_TIME,
                GRAPH_LABEL_RUNDYN_STANCETIME,
                Images.Graph_RunDyn_StanceTime,
-               Images.Graph_RunDyn_StanceTime_Disabled,
+               //Images.Graph_RunDyn_StanceTime_Disabled,
                runDynStanceTimeEnabled);
          _chkShowInChartToolbar_RunDyn_StanceTime = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STANCETIME);
@@ -489,7 +489,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_RUN_DYN_STANCE_TIME_BALANCED,
                GRAPH_LABEL_RUNDYN_STANCETIMEBALANCE,
                Images.Graph_RunDyn_StanceTimeBalance,
-               Images.Graph_RunDyn_StanceTimeBalance_Disabled,
+               //Images.Graph_RunDyn_StanceTimeBalance_Disabled,
                runDynStanceTimeBalanceEnabled);
          _chkShowInChartToolbar_RunDyn_StanceTimeBalance = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STANCETIMEBALANCE);
@@ -503,7 +503,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_RUN_DYN_STEP_LENGTH,
                GRAPH_LABEL_RUNDYN_STEPLENGTH,
                Images.Graph_RunDyn_StepLength,
-               Images.Graph_RunDyn_StepLength_Disabled,
+               //Images.Graph_RunDyn_StepLength_Disabled,
                runDynStepLengthEnabled);
          _chkShowInChartToolbar_RunDyn_StepLength = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_STEPLENGTH);
@@ -517,7 +517,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_RUN_DYN_VERTICAL_OSCILLATION,
                GRAPH_LABEL_RUNDYN_VERTICALOSCILLATION,
                Images.Graph_RunDyn_VerticalOscillation,
-               Images.Graph_RunDyn_VerticalOscillation_Disabled,
+               //Images.Graph_RunDyn_VerticalOscillation_Disabled,
                runDynVerticalOscEnabled);
          _chkShowInChartToolbar_RunDyn_VerticalOscillation = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_VERTICALOSCILLATION);
@@ -531,7 +531,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_RUN_DYN_VERTICAL_RATIO,
                GRAPH_LABEL_RUNDYN_VERTICALRATIO,
                Images.Graph_RunDyn_VerticalRatio,
-               Images.Graph_RunDyn_VerticalRatio_Disabled,
+               //Images.Graph_RunDyn_VerticalRatio_Disabled,
                runDynVerticalRatioEnabled);
          _chkShowInChartToolbar_RunDyn_VerticalRatio = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_RUNDYN_VERTICALRATIO);
@@ -545,7 +545,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_SWIM_STROKES,
                GRAPH_LABEL_SWIM_STROKES,
                Images.Graph_Swim_Strokes,
-               Images.Graph_Swim_Strokes_Disabled,
+               //Images.Graph_Swim_Strokes_Disabled,
                swimStrokesEnabled);
          _chkShowInChartToolbar_Swim_Strokes = createUI_GraphCheckbox_CustomTracks(_container,
                GRAPH_LABEL_SWIM_STROKES);
@@ -559,7 +559,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                TourManager.GRAPH_SWIM_SWOLF,
                GRAPH_LABEL_SWIM_SWOLF,
                Images.Graph_Swim_Swolf,
-               Images.Graph_Swim_Swolf_Disabled,
+               //Images.Graph_Swim_Swolf_Disabled,
                swimSwolfEnabled);
          _chkShowInChartToolbar_Swim_Swolf = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_SWIM_SWOLF);
 
@@ -755,18 +755,19 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
                                                                          final int graphId,
                                                                          final String text,
                                                                          final String image,
-                                                                         final String imageDisabled,
+                                                                         //final String imageDisabled,
                                                                          final boolean isEnabled) {
 
-      final Button btngraph = new Button(parent, SWT.PUSH);
+      //final Button btngraph = new Button(parent, SWT.PUSH);
+      final Button btngraph = new Button(parent, SWT.TOGGLE);//no need of disabled image since it is a toggle button
 
       btngraph.setEnabled(isEnabled);
       btngraph.setVisible(true);
-      if (isEnabled) {
+      //if (isEnabled) {
          btngraph.setImage(TourbookPlugin.getImageDescriptor(image).createImage());
-      } else {
-         btngraph.setImage(TourbookPlugin.getImageDescriptor(imageDisabled).createImage());
-      }
+      //} else {
+      //btngraph.setImage(TourbookPlugin.getImageDescriptor(imageDisabled).createImage());
+      //}
       //btngraph.setText(text);
       btngraph.setToolTipText(Messages.Slideout_TourChartGraph_Checkbox_ShowHideGraph_Tooltip_Custom_Tracks + UI.SYMBOL_COLON + UI.SPACE + text);
       GridDataFactory
@@ -789,7 +790,8 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
 
    private Button createUI_GraphAction_CustomTracks_wText(final Composite parent, final int graphId, final String text) {
 
-      final Button btngraph = new Button(parent, SWT.PUSH);
+      //final Button btngraph = new Button(parent, SWT.PUSH);
+      final Button btngraph = new Button(parent, SWT.TOGGLE);
 
       btngraph.setEnabled(true);
       btngraph.setVisible(true);
