@@ -646,7 +646,7 @@ public class Map2View extends ViewPart implements
       public ActionMap2_Graphs() {
 
          super(TourbookPlugin.getImageDescriptor(Images.Graph),
-               TourbookPlugin.getImageDescriptor(Images.Graph_Disabled));
+               null);
 
          setId(GRAPH_CONTRIBUTION_ID_SLIDEOUT);
       }
@@ -705,8 +705,7 @@ public class Map2View extends ViewPart implements
 
       public ActionMap2_Options() {
 
-         super(TourbookPlugin.getThemedImageDescriptor(Images.MapOptions),
-               TourbookPlugin.getImageDescriptor(Images.MapOptions_Disabled));
+         super(TourbookPlugin.getThemedImageDescriptor(Images.MapOptions), null);
       }
 
       @Override
@@ -725,8 +724,7 @@ public class Map2View extends ViewPart implements
 
       public ActionMap2_PhotoOptions() {
 
-         super(TourbookPlugin.getThemedImageDescriptor(Images.ShowPhotos_InMap),
-               TourbookPlugin.getThemedImageDescriptor(Images.ShowPhotos_InMap_Disabled));
+         super(TourbookPlugin.getThemedImageDescriptor(Images.ShowPhotos_InMap));
 
          isToggleAction = true;
          notSelectedTooltip = Messages.Map_Action_ShowPhotos_Tooltip;
@@ -777,7 +775,6 @@ public class Map2View extends ViewPart implements
          setText(Messages.Map_Action_EditTourMarker);
 
          setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_Edit));
-         setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_Edit_Disabled));
       }
 
       @Override
@@ -824,7 +821,6 @@ public class Map2View extends ViewPart implements
          super(Messages.Map_Action_EditPhotoLabel, Action.AS_PUSH_BUTTON);
 
          setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_Edit));
-         setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_Edit_Disabled));
       }
 
       @Override
@@ -1056,8 +1052,7 @@ public class Map2View extends ViewPart implements
 
       public ActionShowTour() {
 
-         super(TourbookPlugin.getThemedImageDescriptor(Images.TourChart),
-               TourbookPlugin.getThemedImageDescriptor(Images.TourChart_Disabled));
+         super(TourbookPlugin.getThemedImageDescriptor(Images.TourChart), null);
 
          isToggleAction = true;
          notSelectedTooltip = Messages.map_action_show_tour_in_map;
@@ -2651,57 +2646,49 @@ public class Map2View extends ViewPart implements
             this,
             MapGraphId.Altitude,
             Messages.map_action_tour_color_altitude_tooltip,
-            Images.Graph_Elevation,
-            Images.Graph_Elevation_Disabled);
+            Images.Graph_Elevation);
 
       _actionTourColor_Gradient = new ActionTourColor(
             this,
             MapGraphId.Gradient,
             Messages.map_action_tour_color_gradient_tooltip,
-            Images.Graph_Gradient,
-            Images.Graph_Gradient_Disabled);
+            Images.Graph_Gradient);
 
       _actionTourColor_Power = new ActionTourColor(
             this,
             MapGraphId.Power,
             Messages.map_action_tour_color_power_tooltip,
-            Images.Graph_Power,
-            Images.Graph_Power_Disabled);
+            Images.Graph_Power);
 
       _actionTourColor_Pulse = new ActionTourColor(
             this,
             MapGraphId.Pulse,
             Messages.map_action_tour_color_pulse_tooltip,
-            Images.Graph_Heartbeat,
-            Images.Graph_Heartbeat_Disabled);
+            Images.Graph_Heartbeat);
 
       _actionTourColor_Speed = new ActionTourColor(
             this,
             MapGraphId.Speed,
             Messages.map_action_tour_color_speed_tooltip,
-            Images.Graph_Speed,
-            Images.Graph_Speed_Disabled);
+            Images.Graph_Speed);
 
       _actionTourColor_Pace = new ActionTourColor(
             this,
             MapGraphId.Pace,
             Messages.map_action_tour_color_pace_tooltip,
-            Images.Graph_Pace,
-            Images.Graph_Pace_Disabled);
+            Images.Graph_Pace);
 
       _actionTourColor_RunDyn_StepLength = new ActionTourColor(
             this,
             MapGraphId.RunDyn_StepLength,
             Messages.Tour_Action_RunDyn_StepLength_Tooltip,
-            Images.Graph_RunDyn_StepLength,
-            Images.Graph_RunDyn_StepLength_Disabled);
+            Images.Graph_RunDyn_StepLength);
 
       _actionTourColor_HrZone = new ActionTourColor(
             this,
             MapGraphId.HrZone,
             Messages.Tour_Action_ShowHrZones_Tooltip,
-            Images.PulseZones,
-            Images.PulseZones_Disabled);
+            Images.PulseZones);
 
 // SET_FORMATTING_OFF
 

@@ -458,7 +458,6 @@ public class TourBookView extends ViewPart implements
          super(Messages.Tour_Action_CreateTourMarkers, AS_PUSH_BUTTON);
 
          setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.TourMarker_New));
-         setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.TourMarker_New_Disabled));
       }
 
       @Override
