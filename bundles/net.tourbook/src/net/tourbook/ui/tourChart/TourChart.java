@@ -474,8 +474,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       public Action_TourChart_Smoothing() {
 
-         super(TourbookPlugin.getThemedImageDescriptor(Images.Smoothing),
-               TourbookPlugin.getImageDescriptor(Images.Smoothing_Disabled));
+         super(TourbookPlugin.getThemedImageDescriptor(Images.Smoothing));
       }
 
       @Override
@@ -497,7 +496,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          super(Messages.Tour_Action_GeoCompare_Tooltip, AS_CHECK_BOX);
 
          setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.TourCompare_GeoCompare_Tool));
-         setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.TourCompare_GeoCompare_Tool_Disabled));
       }
 
       @Override
@@ -525,8 +523,7 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
 
       public ActionGraphMinMax() {
 
-         super(TourbookPlugin.getThemedImageDescriptor(Images.GraphMinMax),
-               TourbookPlugin.getImageDescriptor(Images.GraphMinMax_Disabled));
+         super(TourbookPlugin.getThemedImageDescriptor(Images.GraphMinMax));
       }
 
       @Override
