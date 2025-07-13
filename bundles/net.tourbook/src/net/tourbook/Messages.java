@@ -2149,6 +2149,11 @@ public class Messages extends NLS {
    public static String        Pref_WeatherOwm_Label_ApiKey_Tooltip;
    public static String        Pref_WeatherOwm_Button_TestHTTPConnection;
    //GMN END
+   public static String        Pref_Workspace_Check_FixViewCloseButton;
+   public static String        Pref_Workspace_Check_FixViewIconImage;
+   public static String        Pref_Workspace_Label_FixViewCloseButton;
+   public static String        Pref_Workspace_Label_FixViewIconImage;
+   public static String        Pref_Workspace_Label_Info;
 
    public static String        Reference_Timeline_Action_ShowAllValues_Tooltip;
    public static String        Reference_Timeline_Action_SyncMinMaxValues_Tooltip;
