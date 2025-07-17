@@ -1276,7 +1276,7 @@ public class RawDataManager {
          final boolean hasSubCategory = StringUtils.hasContent(importSubCategory) && StringUtils.hasContent(ttSubCategory);
 
          if (hasCategory == false && hasSubCategory == false) {
-            
+
             // skip tour types without category
             continue;
          }
@@ -3844,11 +3844,20 @@ public class RawDataManager {
 
          // re-import only swimming
 
-         oldTourData.swim_LengthType = reimportedTourData.swim_LengthType;
-         oldTourData.swim_Cadence = reimportedTourData.swim_Cadence;
-         oldTourData.swim_Strokes = reimportedTourData.swim_Strokes;
-         oldTourData.swim_StrokeStyle = reimportedTourData.swim_StrokeStyle;
-         oldTourData.swim_Time = reimportedTourData.swim_Time;
+// SET_FORMATTING_OFF
+
+         oldTourData.swim_LengthType      = reimportedTourData.swim_LengthType;
+         oldTourData.swim_Cadence         = reimportedTourData.swim_Cadence;
+         oldTourData.swim_Strokes         = reimportedTourData.swim_Strokes;
+         oldTourData.swim_StrokeStyle     = reimportedTourData.swim_StrokeStyle;
+         oldTourData.swim_Time            = reimportedTourData.swim_Time;
+
+         oldTourData.distanceSerie        = reimportedTourData.distanceSerie;
+
+         oldTourData.setPoolLength        (reimportedTourData.getPoolLength());
+         oldTourData.setTourDistance      (reimportedTourData.getTourDistance());
+
+// SET_FORMATTING_ON
       }
 
       // Temperature from device
