@@ -44,6 +44,11 @@ New / Improvements
 
 * All Charts
   - Customize y-axis width
+
+* Tour Markers
+  - Create or remove tour marker label numbering
+    https://github.com/mytourbook/mytourbook/issues/1496
+
   
 * workbench.xmi
   - Fix 2 issues in workbench.xmi
@@ -69,7 +74,9 @@ Changes that require Tour Re-import
 Bugfix
 ======
   
-* 
+* Swimming
+  - Fixed slider position issues in the swim slices in the tour editor and tour chart
+ 
 
 
 See also milestone 25.x https://github.com/mytourbook/mytourbook/milestone/16?closed=1
