@@ -45,6 +45,10 @@ New / Improvements
 * All Charts
   - Customize y-axis width
 
+* Tour Chart
+  - Display values since the last tour marker in the value tooltip
+    https://github.com/mytourbook/mytourbook/issues/1473
+
 * Tour Markers
   - Create or remove tour marker label numbering
     https://github.com/mytourbook/mytourbook/issues/1496
@@ -68,7 +72,8 @@ Changes
 Changes that require Tour Re-import
 ===================================
 
-*  
+* Fit Import
+  Swimming tours should be re-imported that fixes are applied to already saved tours.
 
 
 Bugfix
