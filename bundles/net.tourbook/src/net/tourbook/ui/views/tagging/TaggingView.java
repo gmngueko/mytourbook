@@ -292,7 +292,6 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
          super(Messages.Action_Tag_Delete, AS_PUSH_BUTTON);
 
          setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete));
-         setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete_Disabled));
       }
 
       @Override
@@ -308,7 +307,6 @@ public class TaggingView extends ViewPart implements ITourProvider, ITourViewer,
          super(Messages.Action_Tag_DeleteCategory, AS_PUSH_BUTTON);
 
          setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete));
-         setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete_Disabled));
       }
 
       @Override
