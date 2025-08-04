@@ -1038,7 +1038,7 @@
       
             <command
                   commandId   ="command.net.tourbook.PhotoFilter"
-                  icon        ="icons/tour-filter-tour-with-photos.png" 
+                  icon        ="icons/tour-filter-tour-with-photos.svg" 
                   style       ="toggle"
                   tooltip     ="%Action_TourPhotoFilter_Tooltip"/>
       
