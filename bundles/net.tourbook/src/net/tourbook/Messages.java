@@ -113,9 +113,11 @@ public class Messages extends NLS {
    public static String        Adjust_Altitude_Group_GeoPosition;
    public static String        adjust_altitude_label_adjustment_type;
    public static String        Adjust_Altitude_Label_GeoPosition_Slices;
+
    public static String        adjust_altitude_type_adjust_end;
    public static String        adjust_altitude_type_adjust_height;
    public static String        adjust_altitude_type_adjust_whole_tour;
+   public static String        Adjust_Altitude_Type_ElevationSmoothing;
    public static String        Adjust_Altitude_Type_HorizontalGeoPosition;
    public static String        adjust_altitude_type_srtm;
    public static String        adjust_altitude_type_srtm_spline;
@@ -1889,6 +1891,8 @@ public class Messages extends NLS {
    public static String        Pref_People_Column_height;
    public static String        Pref_People_Column_last_name;
    public static String        Pref_People_Dialog_ComputeHrZonesForAllToursIsCanceled_Message;
+   public static String        Pref_People_Dialog_ComputeHrZonesForAllToursIsCanceled_Message_Cancel;
+   public static String        Pref_People_Dialog_ComputeHrZonesForAllToursIsCanceled_Message_OK;
    public static String        Pref_People_Dialog_ComputeHrZonesForAllTours_Message;
    public static String        Pref_People_Dialog_SaveModifiedPerson_Message;
    public static String        Pref_People_Dialog_SaveModifiedPerson_Title;

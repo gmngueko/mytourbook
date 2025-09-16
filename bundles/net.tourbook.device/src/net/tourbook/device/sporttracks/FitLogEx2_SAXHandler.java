@@ -672,8 +672,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          tourData.setTourDeviceTime_Elapsed(_currentActivity.duration);
          tourData.setTourComputedTime_Moving(_currentActivity.duration);
 
-         tourData.setTourAltUp(_currentActivity.elevationUp);
-         tourData.setTourAltDown(_currentActivity.elevationDown);
+         //tourData.setTourAltUp(_currentActivity.elevationUp);
+         //tourData.setTourAltDown(_currentActivity.elevationDown);
 
          // We set the tour as manual since it was a manual tour created in SportTracks in the first place.
          tourData.setDeviceId(TourData.DEVICE_ID_FOR_MANUAL_TOUR);

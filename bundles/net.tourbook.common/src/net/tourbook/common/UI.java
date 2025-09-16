@@ -772,6 +772,7 @@ public class UI {
    public static Color           SYS_COLOR_DARK_GRAY;
    public static Color           SYS_COLOR_DARK_GREEN;
    public static Color           SYS_COLOR_DARK_RED;
+   public static Color           SYS_COLOR_DARK_YELLOW;
 
    public static Color           SYS_COLOR_LIST_BACKGROUND;
 
@@ -862,6 +863,7 @@ public class UI {
       SYS_COLOR_DARK_GRAY           = display.getSystemColor(SWT.COLOR_DARK_GRAY);
       SYS_COLOR_DARK_GREEN          = display.getSystemColor(SWT.COLOR_DARK_GREEN);
       SYS_COLOR_DARK_RED            = display.getSystemColor(SWT.COLOR_DARK_RED);
+      SYS_COLOR_DARK_YELLOW         = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
 
       SYS_COLOR_LIST_BACKGROUND     = display.getSystemColor(SWT.COLOR_LIST_BACKGROUND);
       SYS_COLOR_WIDGET_BACKGROUND   = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
@@ -3328,7 +3330,39 @@ public class UI {
     * @param backgroundColor
     *           Background color
     */
-   public static void setColorForAllChildren(final Control parent, final Color foregroundColor, final Color backgroundColor) {
+   public static void setColorForAllChildren(final Control parent,
+                                             final Color foregroundColor,
+                                             final Color backgroundColor) {
+
+      setColorForAllChildren(parent, foregroundColor, backgroundColor, null);
+   }
+
+   /**
+    * Set color for all children controls of the parent.
+    *
+    * @param parent
+    * @param foregroundColor
+    *           Foreground color
+    * @param backgroundColor
+    *           Background color
+    * @param allSkippedControls
+    *           Contains all controls which must be skipped
+    *
+    */
+   public static void setColorForAllChildren(final Control parent,
+                                             final Color foregroundColor,
+                                             final Color backgroundColor,
+                                             final Object[] allSkippedControls) {
+
+      if (allSkippedControls != null) {
+
+         for (final Object skippedControl : allSkippedControls) {
+
+            if (parent == skippedControl) {
+               return;
+            }
+         }
+      }
 
       parent.setForeground(foregroundColor);
       parent.setBackground(backgroundColor);
@@ -3340,15 +3374,15 @@ public class UI {
          for (final Control child : children) {
 
             if (child != null
-                  && child.isDisposed() == false //
+                  && child.isDisposed() == false
 
                   // exclude controls which look ugly
                   && !child.getClass().equals(Combo.class)
                   && !child.getClass().equals(Spinner.class)
-            //
+
             ) {
 
-               setColorForAllChildren(child, foregroundColor, backgroundColor);
+               setColorForAllChildren(child, foregroundColor, backgroundColor, allSkippedControls);
             }
          }
       }
