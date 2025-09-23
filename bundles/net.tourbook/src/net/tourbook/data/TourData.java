@@ -1054,7 +1054,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private Set<TourTag>                tourTags                            = new HashSet<>();
 
    /**
-    * Sensors
+    * Sensor values
     */
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
@@ -2048,7 +2048,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private long[]       pausedTime_Data;
 
    /**
-    * Containing the battery time in seconds, relative to the tour start time
+    * Containing the recording device battery SoC time in seconds, relative to the tour start time
     *
     * @since after 21.6
     */
@@ -2057,7 +2057,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private int[]        battery_Time;
 
    /**
-    * Containing the battery percentage values
+    * Containing the recording device battery SoC percentage values
     *
     * @since after 21.6
     */
