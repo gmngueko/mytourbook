@@ -130,6 +130,7 @@ import net.tourbook.ui.views.referenceTour.TVIElevationCompareResult_ComparedTou
 import net.tourbook.ui.views.referenceTour.TVIRefTour_ComparedTour;
 import net.tourbook.ui.views.referenceTour.TVIRefTour_RefTourItem;
 import net.tourbook.ui.views.tourSegmenter.SelectedTourSegmenterSegments;
+import net.tourbook.weather.WeatherUtils;
 
 import org.eclipse.core.databinding.conversion.text.StringToNumberConverter;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -723,6 +724,7 @@ public class TourDataEditorView extends ViewPart implements
    private Label                     _lblStartTime;
    private Label                     _lblTags;
    private Label                     _lblTimeZone;
+   private Label                     _lblWeather_AirQuality;
    private Label                     _lblWeather_PrecipitationUnit;
    private Label                     _lblWeather_PressureUnit;
    private Label                     _lblWeather_SnowfallUnit;
@@ -4445,7 +4447,86 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_140_Weather(final Composite parent) {
+//   private void createUI_Section_160_CustomTracks(final Composite parent) {
+//
+//      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks);
+//      final Composite container = (Composite) _sectionCustomTracks.getClient();
+//      GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
+//
+//      final Label label = new Label(parent, SWT.NONE);
+//      final FontDescriptor boldDescriptor = FontDescriptor.createFrom(label.getFont()).setStyle(SWT.BOLD);
+//      final Font boldFont = boldDescriptor.createFont(label.getDisplay());
+//      /*
+//       * Nr
+//       */
+//      final Label labelnr = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Number);
+//      labelnr.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Number_Tooltip);
+//      labelnr.setFont(boldFont);
+//      _firstColumnControls.add(labelnr);
+//
+//      /*
+//       * Id
+//       */
+//      final Label labelId = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Id);
+//      labelId.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Id_Tooltip);
+//      labelId.setFont(boldFont);
+//      _secondColumnControls.add(labelId);
+//
+//      /*
+//       * Name
+//       */
+//      final Label labelName = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Name);
+//      labelName.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Name_Tooltip);
+//      labelName.setFont(boldFont);
+//      //_secondColumnControls.add(labelName);
+//      /*
+//       * Unit
+//       */
+//      final Label labelUnit = _tk.createLabel(container,
+//            Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit);
+//      labelUnit.setToolTipText(Messages.Tour_Editor_Label_Custom_Tracks_Column_Unit_Tooltip);
+//      labelUnit.setFont(boldFont);
+//
+//   }
+
+   private void createUI_Section_170_OtherInfos(final Composite parent) {
+
+      _sectionOtherInfos = createSection(parent, _tk, "Other Infos");
+      final Composite container = (Composite) _sectionOtherInfos.getClient();
+      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
+
+      {
+         /*
+          * Import File location
+          */
+         // label
+         final Label labelImportFile = _tk.createLabel(container,
+               "Import File");
+         GridDataFactory.swtDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(labelImportFile);
+         labelImportFile.setToolTipText("File used for Importing this Tour");
+         _firstColumnControls.add(labelImportFile);
+
+         _txtImportFile = _tk.createText(
+               container, //
+               UI.EMPTY_STRING,
+               SWT.BORDER | SWT.WRAP | SWT.H_SCROLL//
+         );
+         _txtImportFile.addModifyListener(_modifyListener);
+
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               //
+               // SWT.DEFAULT causes lots of problems with the layout therefore the hint is set
+               //
+               .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(2))
+               .applyTo(_txtImportFile);
+      }
+   }
+
+   private void createUI_Section_400_Weather(final Composite parent) {
 
       _sectionWeather = createSection(parent, _tk, Messages.tour_editor_section_weather);
       final Composite container = (Composite) _sectionWeather.getClient();
@@ -4456,22 +4537,23 @@ public class TourDataEditorView extends ViewPart implements
             .applyTo(container);
 //      container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
       {
-         createUI_Section_141_Weather_Description(container);
+         createUI_Section_410_Weather_Description(container);
 
-         createUI_Section_142_Weather_Wind_Col1(container);
-         createUI_Section_143_Weather_Wind_Col2(container);
+         createUI_Section_420_Weather_Wind_Col1(container);
+         createUI_Section_430_Weather_Wind_Col2(container);
 
-         createUI_Section_144_Weather_Temperature_Col1(container);
-         createUI_Section_144_Weather_Temperature_Col2_Device(container);
+         createUI_Section_440_Weather_Temperature_Col1(container);
+         createUI_Section_442_Weather_Temperature_Col2_Device(container);
 
-         createUI_Section_147_Weather_Other_Col1(container);
-         createUI_Section_148_Weather_Other_Col2(container);
+         createUI_Section_470_Weather_Other_Col1(container);
+         createUI_Section_472_Weather_Other_Col2(container);
 
-         createUI_Section_149_Weather_Other_Col1(container);
+         createUI_Section_490_Weather_Other_Col1(container);
+         createUI_Section_492_Weather_Other_Col2(container);
       }
    }
 
-   private void createUI_Section_141_Weather_Description(final Composite parent) {
+   private void createUI_Section_410_Weather_Description(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridDataFactory.fillDefaults().span(2, 1).grab(true, false).applyTo(container);
@@ -4569,7 +4651,7 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_142_Weather_Wind_Col1(final Composite parent) {
+   private void createUI_Section_420_Weather_Wind_Col1(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridLayoutFactory.fillDefaults().numColumns(3).applyTo(container);
@@ -4678,7 +4760,7 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_143_Weather_Wind_Col2(final Composite parent) {
+   private void createUI_Section_430_Weather_Wind_Col2(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridDataFactory.fillDefaults().applyTo(container);
@@ -4776,7 +4858,7 @@ public class TourDataEditorView extends ViewPart implements
    /**
     * Weather from device
     */
-   private void createUI_Section_144_Weather_Temperature_Col1(final Composite parent) {
+   private void createUI_Section_440_Weather_Temperature_Col1(final Composite parent) {
 
       Label label;
 
@@ -4916,7 +4998,7 @@ public class TourDataEditorView extends ViewPart implements
    /**
     * weather
     */
-   private void createUI_Section_144_Weather_Temperature_Col2_Device(final Composite parent) {
+   private void createUI_Section_442_Weather_Temperature_Col2_Device(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridDataFactory.fillDefaults().applyTo(container);
@@ -4979,7 +5061,7 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_147_Weather_Other_Col1(final Composite parent) {
+   private void createUI_Section_470_Weather_Other_Col1(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
@@ -5049,7 +5131,7 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_148_Weather_Other_Col2(final Composite parent) {
+   private void createUI_Section_472_Weather_Other_Col2(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridLayoutFactory.fillDefaults().numColumns(3).applyTo(container);
@@ -5109,14 +5191,14 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_149_Weather_Other_Col1(final Composite parent) {
+   private void createUI_Section_490_Weather_Other_Col1(final Composite parent) {
 
       final Composite container = _tk.createComposite(parent);
       GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
       _firstColumnContainerControls.add(container);
       {
          /*
-          * Air Quality
+          * Air quality combo
           */
 
          // label
@@ -5148,7 +5230,27 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_150_Characteristics(final Composite parent) {
+   private void createUI_Section_492_Weather_Other_Col2(final Composite parent) {
+
+      {
+         /**
+          * Air quality label
+          * <p>
+          * Sometime the combo is loosing the background color which is the reason why this label is
+          * additionally displayed
+          */
+
+         _lblWeather_AirQuality = _tk.createLabel(parent, UI.EMPTY_STRING);
+         GridDataFactory.fillDefaults().grab(true, false).applyTo(_lblWeather_AirQuality);
+
+         // do not fill the full cell with the background color
+         final GridData gd = (GridData) _lblWeather_AirQuality.getLayoutData();
+         gd.horizontalAlignment = SWT.BEGINNING;
+         gd.verticalAlignment = SWT.CENTER;
+      }
+   }
+
+   private void createUI_Section_500_Characteristics(final Composite parent) {
 
       _sectionCharacteristics = createSection(parent, _tk, Messages.tour_editor_section_characteristics);
       final Composite container = (Composite) _sectionCharacteristics.getClient();
@@ -5257,40 +5359,6 @@ public class TourDataEditorView extends ViewPart implements
       }
    }
 
-   private void createUI_Section_170_OtherInfos(final Composite parent) {
-
-      _sectionOtherInfos = createSection(parent, _tk, "Other Infos");
-      final Composite container = (Composite) _sectionOtherInfos.getClient();
-      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
-
-      {
-         /*
-          * Import File location
-          */
-         // label
-         final Label labelImportFile = _tk.createLabel(container,
-               "Import File");
-         GridDataFactory.swtDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(labelImportFile);
-         labelImportFile.setToolTipText("File used for Importing this Tour");
-         _firstColumnControls.add(labelImportFile);
-
-         _txtImportFile = _tk.createText(
-               container, //
-               UI.EMPTY_STRING,
-               SWT.BORDER | SWT.WRAP | SWT.H_SCROLL//
-         );
-         _txtImportFile.addModifyListener(_modifyListener);
-
-         GridDataFactory.fillDefaults()
-               .grab(true, true)
-               //
-               // SWT.DEFAULT causes lots of problems with the layout therefore the hint is set
-               //
-               .hint(_hintTextColumnWidth, _pc.convertHeightInCharsToPixels(2))
-               .applyTo(_txtImportFile);
-      }
-   }
-
 //   private void createUI_Section_160_CustomTracks(final Composite parent) {
 //
 //      _sectionCustomTracks = createSection(parent, _tk, Messages.tour_editor_section_custom_tracks);
@@ -5364,8 +5432,8 @@ public class TourDataEditorView extends ViewPart implements
             createUI_Section_110_Tour(_tourContainer);
             createUI_Section_120_DateTime(_tourContainer);
             createUI_Section_130_Personal(_tourContainer);
-            createUI_Section_140_Weather(_tourContainer);
-            createUI_Section_150_Characteristics(_tourContainer);
+            createUI_Section_400_Weather(_tourContainer);
+            createUI_Section_500_Characteristics(_tourContainer);
 
             createUI_SectionSeparator(_tourContainer);
             createUI_Section_170_OtherInfos(_tourContainer);
@@ -9860,6 +9928,7 @@ public class TourDataEditorView extends ViewPart implements
          final int airQualityIndex = _tableComboWeather_AirQuality.getSelectionIndex();
          final String airQualityId = IWeather.AIR_QUALITY_IDS[airQualityIndex];
          _tourData.setWeather_AirQuality(airQualityId);
+         updateUI_BackgroundColor_AirQuality();
 
          /*
           * Time
@@ -9923,8 +9992,7 @@ public class TourDataEditorView extends ViewPart implements
                altitudeDownValue = Math.round(noneMetricValue * _unitValueElevation);
             }
 
-            _tourData.setTourAltUp((int) altitudeUpValue);
-            _tourData.setTourAltDown((int) altitudeDownValue);
+            _tourData.setElevationGainLoss((int) altitudeUpValue, (int) altitudeDownValue);
          }
 
          // manual/photo tour
@@ -10135,15 +10203,50 @@ public class TourDataEditorView extends ViewPart implements
       }
 
 
+      final Object[] allSkippedControls = new Object[] {
+
+            _tableComboWeather_AirQuality,
+            _lblWeather_AirQuality
+
+      };
+
       // fixing https://github.com/mytourbook/mytourbook/issues/1532
       UI.setColorForAllChildren(_sectionTitle,           _foregroundColor_Default, _backgroundColor_Default);
       UI.setColorForAllChildren(_sectionDateTime,        _foregroundColor_Default, _backgroundColor_Default);
       UI.setColorForAllChildren(_sectionCharacteristics, _foregroundColor_Default, _backgroundColor_Default);
-      UI.setColorForAllChildren(_sectionWeather,         _foregroundColor_Default, _backgroundColor_Default);
+      UI.setColorForAllChildren(_sectionWeather,         _foregroundColor_Default, _backgroundColor_Default, allSkippedControls);
 
-      // SET_FORMATTING_ON
+// SET_FORMATTING_ON
+
+      updateUI_BackgroundColor_AirQuality();
 
       _parent.setRedraw(true);
+   }
+
+   private void updateUI_BackgroundColor_AirQuality() {
+
+      final int airQualityIndex = _tableComboWeather_AirQuality.getSelectionIndex();
+      final String airQualityId = IWeather.AIR_QUALITY_IDS[airQualityIndex];
+      final int airQualityTextIndex = WeatherUtils.getWeather_AirQuality_TextIndex(airQualityId);
+
+      if (airQualityTextIndex >= 0) {
+
+         _lblWeather_AirQuality.setText(UI.SPACE + IWeather.AIR_QUALITY_TEXT[airQualityTextIndex] + UI.SPACE);
+         _lblWeather_AirQuality.getParent().layout(true, true);
+
+         final int colorIndex = airQualityTextIndex * 2;
+
+         if (UI.IS_DARK_THEME) {
+
+            _lblWeather_AirQuality.setForeground(IWeather.AIR_QUALITY_COLORS_DARK_THEME[colorIndex]);
+            _lblWeather_AirQuality.setBackground(IWeather.AIR_QUALITY_COLORS_DARK_THEME[colorIndex + 1]);
+
+         } else {
+
+            _lblWeather_AirQuality.setForeground(IWeather.AIR_QUALITY_COLORS_BRIGHT_THEME[colorIndex]);
+            _lblWeather_AirQuality.setBackground(IWeather.AIR_QUALITY_COLORS_BRIGHT_THEME[colorIndex + 1]);
+         }
+      }
    }
 
    void updateUI_DescriptionNumLines(final int numTourDescriptionLines,

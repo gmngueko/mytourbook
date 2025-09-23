@@ -1413,8 +1413,7 @@ public class TourManager {
       joinedTourData.setTourDistance(tourDistance);
 
       // computing these values is VERY CPU intensive because of the DP algorithm
-      joinedTourData.setTourAltUp(tourAltUp);
-      joinedTourData.setTourAltDown(tourAltDown);
+      joinedTourData.setElevationGainLoss(tourAltUp, tourAltDown);
 
       joinedTourData.computeTourMovingTime();
       joinedTourData.computeComputedValues();
@@ -3559,7 +3558,7 @@ public class TourManager {
 
             TourLogManager.subLog_OK(TourManager.getTourDateTimeShort(tourData));
 
-            final boolean isReplaced = tourData.replaceAltitudeWithSRTM(true);
+            final boolean isReplaced = tourData.replaceElevationWithSRTM(true);
 
             RawDataManager.displayTourModifiedDataDifferences(
                   TourValueType.TIME_SLICES__ELEVATION,
@@ -5376,7 +5375,7 @@ public class TourManager {
                                                      final TourChartConfiguration tcc) {
       ChartDataYSerie yDataElevation = null;
 
-      final float[] altitudeSerie = tourData.getAltitudeSmoothedSerie(true);
+      final float[] altitudeSerie = tourData.getAltitudeSmoothedSerie();
       if (altitudeSerie != null) {
 
          if (tourData.isSRTMAvailable()) {

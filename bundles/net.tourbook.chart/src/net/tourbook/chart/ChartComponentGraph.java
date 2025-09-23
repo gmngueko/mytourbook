@@ -3564,12 +3564,21 @@ public class ChartComponentGraph extends Canvas {
             }
 
             final float valueYHigh = yHighValues[valueIndex];
-            final float barHeight = (Math.max(valueYHigh, valueYLow) - Math.min(valueYHigh, valueYLow));
+            float barHeight = (Math.max(valueYHigh, valueYLow) - Math.min(valueYHigh, valueYLow));
 
-// DISABLED, that these bars are not totally hidden
-// Reverted, otherwise a line is painted when a bar is not available
             if (barHeight == 0) {
-               continue;
+
+               if (valueYHigh != 0) {
+
+                  // min and max values are the same but the value is not 0 -> make bar visible
+
+                  // use a value > 1 that it is not (int) clipped to 0
+                  barHeight = (float) (1.1 / scaleY);
+
+               } else {
+
+                  continue;
+               }
             }
 
             int devBarHeight = (int) (barHeight * scaleY);
@@ -7548,7 +7557,7 @@ public class ChartComponentGraph extends Canvas {
       /*
        * adjust left slider
        */
-      final long xxDevLeftPosition = _xxDevViewPortLeftBorder + 2;
+      final long xxDevLeftPosition = _xxDevViewPortLeftBorder;
 
       setXSliderValue_FromHoveredValuePoint(leftSlider);
       leftSlider.moveToXXDevPosition(xxDevLeftPosition, true, true, false);
@@ -7556,7 +7565,7 @@ public class ChartComponentGraph extends Canvas {
       /*
        * adjust right slider
        */
-      final long xxDevRightPosition = _xxDevViewPortLeftBorder + getDevVisibleChartWidth() - 2;
+      final long xxDevRightPosition = _xxDevViewPortLeftBorder + getDevVisibleChartWidth() - 1;
 
       setXSliderValue_FromHoveredValuePoint(rightSlider);
       rightSlider.moveToXXDevPosition(xxDevRightPosition, true, true, false);

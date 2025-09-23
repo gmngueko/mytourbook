@@ -1886,9 +1886,9 @@ public class RawDataManager {
 
             if (isEntireTour_OR_AllTimeSlices || tourValueType == TourValueType.TIME_SLICES__ELEVATION) {
 
-               tourDataDummyClone.setTourAltDown(oldTourData.getTourAltDown());
-               tourDataDummyClone.setTourAltUp(oldTourData.getTourAltUp());
-
+               final int elevationGain = oldTourData.getTourAltUp();
+               final int elevationLoss = oldTourData.getTourAltDown();
+               tourDataDummyClone.setElevationGainLoss(elevationGain, elevationLoss);
             }
 
             if (isEntireTour_OR_AllTimeSlices || tourValueType == TourValueType.TIME_SLICES__GEAR) {
@@ -2192,12 +2192,12 @@ public class RawDataManager {
 
             case TIME_SLICES__ELEVATION:
 
-               clonedTourData.setTourAltDown(tourData.getTourAltDown());
-               clonedTourData.setTourAltUp(tourData.getTourAltUp());
+               final int elevationGain = tourData.getTourAltUp();
+               final int elevationLoss = tourData.getTourAltDown();
+               clonedTourData.setElevationGainLoss(elevationGain, elevationLoss);
 
                tourData.altitudeSerie = null;
-               tourData.setTourAltUp(0);
-               tourData.setTourAltDown(0);
+               tourData.setElevationGainLoss(0, 0);
                break;
 
             case TIME_SLICES__GEAR:
@@ -2530,12 +2530,12 @@ public class RawDataManager {
 
          final List<ImportFile> allImportFilePaths = new ArrayList<>();
 
-         final List<OSFile> notSkipedFiles = skipFitLogFiles(allImportFiles);
+         final List<OSFile> notSkippedFiles = skipFitLogFiles(allImportFiles);
 
          /*
           * Convert to IPath because NIO Path DO NOT SUPPORT EXTENSIONS :-(((
           */
-         for (final OSFile osFile : notSkipedFiles) {
+         for (final OSFile osFile : notSkippedFiles) {
 
             final String absolutePath = osFile.getPath().toString();
             final org.eclipse.core.runtime.Path iPath = new org.eclipse.core.runtime.Path(absolutePath);
@@ -4003,9 +4003,11 @@ public class RawDataManager {
 
          // re-import elevation only
 
+         final int elevationGain = reimportedTourData.getTourAltUp();
+         final int elevationLoss = reimportedTourData.getTourAltDown();
+
          oldTourData.altitudeSerie = reimportedTourData.altitudeSerie;
-         oldTourData.setTourAltUp(reimportedTourData.getTourAltUp());
-         oldTourData.setTourAltDown(reimportedTourData.getTourAltDown());
+         oldTourData.setElevationGainLoss(elevationGain, elevationLoss);
       }
 
       // Gear

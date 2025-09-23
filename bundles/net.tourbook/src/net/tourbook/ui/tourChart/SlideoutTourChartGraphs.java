@@ -285,7 +285,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          }
 
          boolean altitudeEnabled = true;
-         if (tourData != null && tourData.getAltitudeSmoothedSerie(true) == null) {
+         if (tourData != null && tourData.getAltitudeSmoothedSerie() == null) {
             altitudeEnabled = false;
          }
          _chkShowInChartToolbar_Elevation_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
