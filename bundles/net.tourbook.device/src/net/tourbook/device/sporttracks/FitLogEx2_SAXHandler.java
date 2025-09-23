@@ -672,6 +672,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          tourData.setTourDeviceTime_Elapsed(_currentActivity.duration);
          tourData.setTourComputedTime_Moving(_currentActivity.duration);
 
+         tourData.setElevationGainLoss(_currentActivity.elevationUp, _currentActivity.elevationDown);
          //tourData.setTourAltUp(_currentActivity.elevationUp);
          //tourData.setTourAltDown(_currentActivity.elevationDown);
 
