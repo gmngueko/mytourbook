@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -353,6 +353,7 @@ public class FitDataReader extends TourbookDevice {
     * Set fields which should NOT be displayed in the log
     *
     * @param fieldName
+    *
     * @return
     */
    private boolean isFieldSkipped(final String fieldName) {
@@ -709,7 +710,7 @@ public class FitDataReader extends TourbookDevice {
     * @param fitData
     */
    @SuppressWarnings("unused")
-   private void onMesg_104_DeviceBattery_Field0(final Mesg mesg, final FitData fitData) {
+   private void onMesg_104_DeviceBattery_Field_0(final Mesg mesg, final FitData fitData) {
 
       final Field fieldTime = mesg.getField(253);
       final Field field_0 = mesg.getField(0);
@@ -733,7 +734,13 @@ public class FitDataReader extends TourbookDevice {
       }
    }
 
-   private void onMesg_104_DeviceBattery_Field2(final Mesg mesg, final FitData fitData) {
+   /**
+    * Set battery values for the recording device
+    *
+    * @param mesg
+    * @param fitData
+    */
+   private void onMesg_104_DeviceBattery_Field_2(final Mesg mesg, final FitData fitData) {
 
       final Field fieldTime = mesg.getField(253);
       final Field fieldPercentage = mesg.getField(2);
@@ -1051,7 +1058,7 @@ public class FitDataReader extends TourbookDevice {
 
       switch (mesgNum) {
       case 104:
-         onMesg_104_DeviceBattery_Field2(mesg, fitData);
+         onMesg_104_DeviceBattery_Field_2(mesg, fitData);
          break;
 
       case 140:
