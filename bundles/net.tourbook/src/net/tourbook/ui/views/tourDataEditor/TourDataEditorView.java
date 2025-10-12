@@ -69,11 +69,8 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.TableColumnDefinition;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
-<<<<<<< HEAD
 import net.tourbook.data.CustomTrackDefinition;
-=======
 import net.tourbook.data.GearDataType;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourPerson;
@@ -410,14 +407,6 @@ public class TourDataEditorView extends ViewPart implements
    private ITourEventListener             _tourEventListener;
    private ITourSaveListener              _tourSaveListener;
    //
-<<<<<<< HEAD
-   private final NumberFormat             _nf1                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf1NoGroup            = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf2                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf3                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf6                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf3NoGroup            = NumberFormat.getNumberInstance();
-=======
    private final NumberFormat      _nf0        = NumberFormat.getNumberInstance();
    private final NumberFormat      _nf1        = NumberFormat.getNumberInstance();
    private final NumberFormat      _nf1NoGroup = NumberFormat.getNumberInstance();
@@ -425,7 +414,7 @@ public class TourDataEditorView extends ViewPart implements
    private final NumberFormat      _nf3        = NumberFormat.getNumberInstance();
    private final NumberFormat      _nf6        = NumberFormat.getNumberInstance();
    private final NumberFormat      _nf3NoGroup = NumberFormat.getNumberInstance();
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
+
    {
       _nf0.setMinimumFractionDigits(0);
       _nf0.setMaximumFractionDigits(0);

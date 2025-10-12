@@ -147,20 +147,11 @@ public class SerieData implements Serializable {
     *
     * @since Version 18.10
     */
-<<<<<<< HEAD
-   public short[]                                    swim_LengthType;                     // e.g. active, idle
-
-   public short[]                                    swim_Cadence;                        // strokes/min
-   public short[]                                    swim_Strokes;                        // strokes/length
-   public short[]                                    swim_StrokeStyle;                    // e.g. freestyle, breaststroke
-   public int[]                                      swim_Time;                           // relative time to the start time
-=======
    public short[]              swim_LengthType;                     // e.g. active, idle
    public short[]              swim_Cadence;                        // strokes/min
    public short[]              swim_Strokes;                        // strokes/length
    public short[]              swim_StrokeStyle;                    // e.g. freestyle, breaststroke
    public int[]                swim_Time;                           // relative time to the start time
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
    /**
     * Is <code>true</code> when a time slice in a data serie is visible.

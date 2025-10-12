@@ -6363,7 +6363,6 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       /*
        * all graph actions
        */
-<<<<<<< HEAD
       int[] allGraphIds = TourManager.getAllGraphIDs();
       //custom tracks
       if (_tourData != null && _tourData.getCustomTracks() != null && _tourData.getCustomTracks().size() > 0) {
@@ -6382,13 +6381,8 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
          allGraphIds = allGraphIdsAndCustomTracksIds.stream().mapToInt(Integer::intValue).toArray();
       }
 
-      final ArrayList<Integer> visibleGraphIds = _tcc.getVisibleGraphs();
-      final ArrayList<Integer> enabledGraphIds = new ArrayList<>();
-=======
-      final int[] allGraphIds = TourManager.getAllGraphIDs();
       final List<Integer> allVisibleGraphIds = _tcc.getVisibleGraphs();
       final List<Integer> allEnabledGraphIds = new ArrayList<>();
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
       // get all graph ids which can be displayed
       final List<ChartDataSerie> allXYData = getChartDataModel().getXyData();
@@ -6407,17 +6401,12 @@ public class TourChart extends Chart implements ITourProvider, ITourMarkerUpdate
       for (final int graphId : allGraphIds) {
 
          tourAction = _allTourChartActions.get(getGraphActionId(graphId));
-<<<<<<< HEAD
          if (tourAction == null) {
             continue;
          }
-         tourAction.setChecked(visibleGraphIds.contains(graphId));
-         tourAction.setEnabled(enabledGraphIds.contains(graphId));
-=======
 
          tourAction.setChecked(allVisibleGraphIds.contains(graphId));
          tourAction.setEnabled(allEnabledGraphIds.contains(graphId));
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
       }
 
       /*

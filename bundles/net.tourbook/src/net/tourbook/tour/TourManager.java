@@ -67,11 +67,8 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringToArrayConverter;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
-<<<<<<< HEAD
 import net.tourbook.data.CustomTrackDefinition;
-=======
 import net.tourbook.data.GearDataType;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourPhoto;
@@ -236,14 +233,12 @@ public class TourManager {
    public static final int     GRAPH_TRAINING_EFFECT_ANAEROB                   = 1301;
    public static final int     GRAPH_TRAINING_PERFORMANCE                      = 1302;
 
-<<<<<<< HEAD
    public static final int     GRAPH_CUSTOM_TRACKS                             = 1400;
-=======
+
    public static final int     GRAPH_RADAR_PASSED_VEHICLES                     = 1400;
    public static final int     GRAPH_RADAR_DISTANCE_TO_VEHICLE                 = 1401;
    public static final int     GRAPH_RADAR_PASSING_SPEED_ABSOLUTE              = 1402;
    public static final int     GRAPH_RADAR_PASSING_SPEED_RELATIVE              = 1403;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
    public static final int     GRAPH_TOUR_COMPARE                              = 2000;
    public static final int     GRAPH_TOUR_COMPARE_REF_TOUR                     = 2001;
@@ -960,23 +955,15 @@ public class TourManager {
       final float[] toPulseSerie_FromTime          = joinedTourData.pulseSerie_FromTime               = new float[numTimeSlices];
       final float[] toTemperaturSerie              = joinedTourData.temperatureSerie                  = new float[numTimeSlices];
 
-<<<<<<< HEAD
       final HashMap<String, float[]> toCustomTracks = new HashMap<>();
       for (final String customTrackDefinitionName : toCustomTracksDefinition.keySet()) {
          toCustomTracks.put(customTrackDefinitionName, new float[numTimeSlices]);
       }
 
-      final short[] toRunDyn_StanceTime         = joinedTourData.runDyn_StanceTime                 = new short[numTimeSlices];
-      final short[] toRunDyn_StanceTimeBalance  = joinedTourData.runDyn_StanceTimeBalance          = new short[numTimeSlices];
-      final short[] toRunDyn_StepLength         = joinedTourData.runDyn_StepLength                 = new short[numTimeSlices];
-      final short[] toRunDyn_VertOscillation    = joinedTourData.runDyn_VerticalOscillation        = new short[numTimeSlices];
-      final short[] toRunDyn_VertRatio          = joinedTourData.runDyn_VerticalRatio              = new short[numTimeSlices];
-=======
       final int[]   toRadar_PassedVehicles         = joinedTourData.radar_PassedVehicles              = new int[numTimeSlices];
       final short[] toRadar_DistanceToVehicle      = joinedTourData.radar_DistanceToVehicle           = new short[numTimeSlices];
       final short[] toRadar_PassingSpeed_Absolute  = joinedTourData.radar_PassingSpeed_Absolute       = new short[numTimeSlices];
       final short[] toRadar_PassingSpeed_Relative  = joinedTourData.radar_PassingSpeed_Relative       = new short[numTimeSlices];
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
       final short[] toRunDyn_StanceTime            = joinedTourData.runDyn_StanceTime                 = new short[numTimeSlices];
       final short[] toRunDyn_StanceTimeBalance     = joinedTourData.runDyn_StanceTimeBalance          = new short[numTimeSlices];
@@ -4854,16 +4841,11 @@ public class TourManager {
       final ChartDataYSerie yData_RunDyn_VerticalOscillation   = createModelData_RunDyn_VerticalOscillation(   tourData, chartDataModel, chartType, useCustomBackground);
       final ChartDataYSerie yData_RunDyn_VerticalRatio         = createModelData_RunDyn_VerticalRatio(         tourData, chartDataModel, chartType, useCustomBackground);
 
-<<<<<<< HEAD
-      final ChartDataYSerie yData_Swim_Strokes                  = createModelData_Swim_Strokes(               tourData, chartDataModel, chartType, useCustomBackground);
-      final ChartDataYSerie yData_Swim_Swolf                    = createModelData_Swim_Swolf(                  tourData, chartDataModel, chartType, useCustomBackground);
-=======
       final ChartDataYSerie yData_Swim_Strokes                 = createModelData_Swim_Strokes(                 tourData, chartDataModel, chartType, useCustomBackground);
       final ChartDataYSerie yData_Swim_Swolf                   = createModelData_Swim_Swolf(                   tourData, chartDataModel, chartType, useCustomBackground);
 
       final ChartDataYSerie yDataTourCompare                   = createModelData_TourCompare(                  tourData, chartDataModel, chartType, tcc);
       final ChartDataYSerie yDataTourCompare_RefTour           = createModelData_TourCompareRefTour(           tourData, chartDataModel, chartType, tcc);
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
 // SET_FORMATTING_ON
 

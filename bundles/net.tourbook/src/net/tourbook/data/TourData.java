@@ -2496,7 +2496,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       hasGeoData = false;
    }
 
-<<<<<<< HEAD
    public void clear_CustomTracks(final String idx) {
 
       if (_customTracks == null) {
@@ -2505,7 +2504,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _customTracks.remove(idx);
       _customTracks_UI.remove(idx);
       _customTracksStatistics.remove(idx);
-=======
+   }
+
    public void clear_Radar_DistanceToVehicle() {
 
       _radar_DistanceToVehicle_Meter = null;
@@ -2533,7 +2533,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _radar_PassingSpeed_Relative_Kilometer = null;
       _radar_PassingSpeed_Relative_Mile = null;
       _radar_PassingSpeed_Relative_NauticalMile = null;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
    }
 
    public void clear_RunDyn_StanceTime() {
@@ -2692,11 +2691,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       cadenceSerieWithMultiplier = null;
 
-<<<<<<< HEAD
       if (_customTracks_UI != null) {
          _customTracks_UI.clear();
       }
-=======
+
       _radar_VehicleStates = null;
       _radar_PassedVehicles_UI = null;
 
@@ -2710,7 +2708,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _radar_PassingSpeed_Relative_Kilometer = null;
       _radar_PassingSpeed_Relative_Mile = null;
       _radar_PassingSpeed_Relative_NauticalMile = null;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
       _runDyn_StanceTime_UI = null;
       _runDyn_StanceTimeBalance_UI = null;
@@ -7987,7 +7984,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       final boolean isRadar_PassingSpeed_Absolute  = setupStartingValues_Radar_PassingSpeedAbsolute(allTimeData);
       final boolean isRadar_PassingSpeed_Relative  = setupStartingValues_Radar_PassingSpeedRelative(allTimeData);
 
-      final boolean isCustomTracks                 = setupStartingValues_CustomTracks(timeDataSerie);
+      final boolean isCustomTracks                 = setupStartingValues_CustomTracks(allTimeData);
 
 // SET_FORMATTING_ON
 

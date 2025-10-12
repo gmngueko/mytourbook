@@ -18,13 +18,10 @@ package net.tourbook.ui.tourChart;
 import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.util.ArrayList;
-<<<<<<< HEAD
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.Map;
-=======
 import java.util.List;
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
+import java.util.Map;
 
 import net.tourbook.Images;
 import net.tourbook.Messages;
@@ -205,11 +202,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          GridLayoutFactory.fillDefaults()
                .numColumns(2)
                .applyTo(container);
-<<<<<<< HEAD
-//       container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
-=======
 //         container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
          {
             createUI_10_Title(container);
             createUI_12_Actions(container);
@@ -248,26 +241,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
    }
 
    private void createUI_20_Graphs(final Composite parent) {
-      HashMap<String, float[]> customTracks = null;
-      final TourData tourData = TourManager.getInstance().getActiveTourChart().getTourData();
-      if (tourData != null) {
-         customTracks = tourData.getCustomTracks();
-      }
 
-<<<<<<< HEAD
-      int numCustomTracks = 0;
-      final HashMap<String, CustomTrackDefinition> customTrackDefinitions =
-            tourData.getCustomTracksDefinition();
-      ArrayList<CustomTrackDefinition> listCustomTrackDefinition = null;
-      if (customTrackDefinitions != null && customTrackDefinitions.size() > 0 && customTracks != null && customTracks.size() > 0) {
-         listCustomTrackDefinition = new ArrayList<>(customTrackDefinitions.values());
-         for (final CustomTrackDefinition customTrackDefinition : listCustomTrackDefinition) {
-            final String customTrackDefinitionId = customTrackDefinition.getId();
-            if (customTracks.get(customTrackDefinitionId) == null || customTracks.get(customTrackDefinitionId).length == 0) {
-               continue;
-            }
-            numCustomTracks++;
-=======
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
       GridLayoutFactory.fillDefaults().numColumns(15).applyTo(container);
@@ -283,16 +257,24 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
 
    private void createUI_22_Graphs(final Composite parent) {
 
-      {
-// SET_FORMATTING_OFF
-         /*
-          * Checkbox: Selected graphs will be displayed when a tour is opened
-          */
-         final Label label = new Label(parent, SWT.NONE);
-         label.setText(Messages.Slideout_TourChartGraph_Label_DefaultWhenOpened);
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
+      HashMap<String, float[]> customTracks = null;
+      final TourData tourData = TourManager.getInstance().getActiveTourChart().getTourData();
+      if (tourData != null) {
+         customTracks = tourData.getCustomTracks();
+      }
 
-<<<<<<< HEAD
+      int numCustomTracks = 0;
+      final HashMap<String, CustomTrackDefinition> customTrackDefinitions =
+            tourData.getCustomTracksDefinition();
+      ArrayList<CustomTrackDefinition> listCustomTrackDefinition = null;
+      if (customTrackDefinitions != null && customTrackDefinitions.size() > 0 && customTracks != null && customTracks.size() > 0) {
+         listCustomTrackDefinition = new ArrayList<>(customTrackDefinitions.values());
+         for (final CustomTrackDefinition customTrackDefinition : listCustomTrackDefinition) {
+            final String customTrackDefinitionId = customTrackDefinition.getId();
+            if (customTracks.get(customTrackDefinitionId) == null || customTracks.get(customTrackDefinitionId).length == 0) {
+               continue;
+            }
+            numCustomTracks++;
          }
          java.util.Collections.sort(listCustomTrackDefinition);
       }
@@ -495,7 +477,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          _chkShowInChartToolbar_Cadence = createUI_GraphCheckbox_CustomTracks(_container, GRAPH_LABEL_CADENCE);
 
          boolean gearsEnabled = true;
-         if (tourData != null && tourData.getGears() == null) {
+         if (tourData != null && tourData.getGearValues() == null) {
             gearsEnabled = false;
          }
          _chkShowInChartToolbar_Gears_DefaultWhenOpened = createUI_DefaulWhenOpened_CustomTracks(_container);
@@ -746,70 +728,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
             }
             // SET_FORMATTING_ON
          }
-=======
-         _chkShowInChartToolbar_Elevation_DefaultWhenOpened                   = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Pulse_DefaultWhenOpened                       = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Speed_DefaultWhenOpened                       = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Speed_Interval_DefaultWhenOpened              = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Speed_Summarized_DefaultWhenOpened            = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Pace_DefaultWhenOpened                        = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Pace_Interval_DefaultWhenOpened               = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Pace_Summarized_DefaultWhenOpened             = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Power_DefaultWhenOpened                       = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Temperature_DefaultWhenOpened                 = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Gradient_DefaultWhenOpened                    = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Altimeter_DefaultWhenOpened                   = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Cadence_DefaultWhenOpened                     = createUI_DefaulWhenOpened(parent);
-         _chkShowInChartToolbar_Gears_DefaultWhenOpened                       = createUI_DefaulWhenOpened(parent);
-// SET_FORMATTING_ON
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
       }
-      {
-         /*
-          * Actions: chart graphs
-          */
-         final Label label = new Label(parent, SWT.NONE);
-         label.setText(Messages.Slideout_TourChartGraph_Label_ShowGraph);
-
-         createUI_GraphAction(parent, TourManager.GRAPH_ALTITUDE);
-         createUI_GraphAction(parent, TourManager.GRAPH_PULSE);
-         createUI_GraphAction(parent, TourManager.GRAPH_SPEED);
-         createUI_GraphAction(parent, TourManager.GRAPH_SPEED_INTERVAL);
-         createUI_GraphAction(parent, TourManager.GRAPH_SPEED_SUMMARIZED);
-         createUI_GraphAction(parent, TourManager.GRAPH_PACE);
-         createUI_GraphAction(parent, TourManager.GRAPH_PACE_INTERVAL);
-         createUI_GraphAction(parent, TourManager.GRAPH_PACE_SUMMARIZED);
-         createUI_GraphAction(parent, TourManager.GRAPH_POWER);
-         createUI_GraphAction(parent, TourManager.GRAPH_TEMPERATURE);
-         createUI_GraphAction(parent, TourManager.GRAPH_GRADIENT);
-         createUI_GraphAction(parent, TourManager.GRAPH_ALTIMETER);
-         createUI_GraphAction(parent, TourManager.GRAPH_CADENCE);
-         createUI_GraphAction(parent, TourManager.GRAPH_GEARS);
-      }
-      {
-// SET_FORMATTING_OFF
-         /*
-          * Checkbox: Show/hide action in the chart toolbar
-          */
-         final Label label = new Label(parent, SWT.NONE);
-         label.setText(Messages.Slideout_TourChartGraph_Label_ShowActionInToolbar);
-
-         _chkShowInChartToolbar_Elevation             = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Pulse                 = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Speed                 = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Speed_Interval        = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Speed_Summarized      = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Pace                  = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Pace_Interval         = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Pace_Summarized       = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Power                 = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Temperature           = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Gradient              = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Altimeter             = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Cadence               = createUI_ShowActionInToolbar(parent);
-         _chkShowInChartToolbar_Gears                 = createUI_ShowActionInToolbar(parent);
-      }
-// SET_FORMATTING_ON
    }
 
    private void createUI_24_Graphs(final Composite parent) {
@@ -1079,15 +998,12 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_ABSOLUTE,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_ABSOLUTE_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_RELATIVE,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_RELATIVE_DEFAULT);
 
-<<<<<<< HEAD
-=======
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME,            TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_BALANCED,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_BALANCED_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STEP_LENGTH,            TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STEP_LENGTH_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_OSCILLATION,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_OSCILLATION_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_RATIO,         TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_RATIO_DEFAULT);
 
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_STROKES,                   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_STROKES_DEFAULT);
       _state.put(TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_SWOLF,                     TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_SWOLF_DEFAULT);
 
@@ -1125,15 +1041,12 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
       _chkShowInChartToolbar_Radar_PassingSpeed_Absolute.setSelection(  Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_ABSOLUTE,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_ABSOLUTE_DEFAULT));
       _chkShowInChartToolbar_Radar_PassingSpeed_Relative.setSelection(  Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_RELATIVE,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RADAR_PASSING_SPEED_RELATIVE_DEFAULT));
 
-<<<<<<< HEAD
-=======
       _chkShowInChartToolbar_RunDyn_StanceTime.setSelection(            Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME,            TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_DEFAULT));
       _chkShowInChartToolbar_RunDyn_StanceTimeBalance.setSelection(     Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_BALANCED,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STANCE_TIME_BALANCED_DEFAULT));
       _chkShowInChartToolbar_RunDyn_StepLength.setSelection(            Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STEP_LENGTH,            TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_STEP_LENGTH_DEFAULT));
       _chkShowInChartToolbar_RunDyn_VerticalOscillation.setSelection(   Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_OSCILLATION,   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_OSCILLATION_DEFAULT));
       _chkShowInChartToolbar_RunDyn_VerticalRatio.setSelection(         Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_RATIO,         TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_RUN_DYN_VERTICAL_RATIO_DEFAULT));
 
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
       _chkShowInChartToolbar_Swim_Strokes.setSelection(                 Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_STROKES,                   TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_STROKES_DEFAULT));
       _chkShowInChartToolbar_Swim_Swolf.setSelection(                   Util.getStateBoolean(_state, TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_SWOLF,                     TourChart.STATE_IS_SHOW_IN_CHART_TOOLBAR_SWIM_SWOLF_DEFAULT));
 
@@ -1313,7 +1226,6 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
 
 // SET_FORMATTING_ON
 
-<<<<<<< HEAD
       final TourData tourData = TourManager.getInstance().getActiveTourChart().getTourData();
       int numDisplayCustomTracks = 0;
       final HashMap<String, CustomTrackDefinition> customTracksDefinitions =
@@ -1337,10 +1249,7 @@ public class SlideoutTourChartGraphs extends ToolbarSlideout implements IActionR
          numDisplayCustomTracks++;
       }
 
-      final ArrayList<String> allDefaultGraphs = new ArrayList<>();
-=======
       final List<String> allDefaultGraphs = new ArrayList<>();
->>>>>>> branch 'main' of git@github.com:wolfgang-ch/mytourbook.git
 
       /*
        * Add all visible graphs in the chart
