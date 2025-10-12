@@ -971,6 +971,7 @@ public class RawDataManager {
       final Integer  manufacturerNumber      = importedSensor.manufacturerNumber;
       final String   manufacturerName        = importedSensor.getManufacturerName();
       final Short    deviceType              = importedSensor.deviceType;
+      final String   deviceName              = importedSensor.getDeviceName();
       final String   serialNumber            = importedSensor.serialNumber;
 
 // SET_FORMATTING_ON
@@ -1037,6 +1038,8 @@ public class RawDataManager {
 
             serialNumber,
             deviceType == null ? -1 : deviceType);
+
+      newSensor.setDeviceName(deviceName);
 
       _allImported_NewDeviceSensors.put(sensorKey_WithDevType, newSensor);
 
@@ -3966,7 +3969,7 @@ public class RawDataManager {
       if (isAllTimeSlices || allTourValueTypes.contains(TourValueType.TIME_SLICES__GEAR)) {
 
          // re-import gear only
-         oldTourData.gearSerie = reimportedTourData.gearSerie;
+         oldTourData.gearSerieCombined = reimportedTourData.gearSerieCombined;
          oldTourData.setFrontShiftCount(reimportedTourData.getFrontShiftCount());
          oldTourData.setRearShiftCount(reimportedTourData.getRearShiftCount());
       }
@@ -4477,8 +4480,7 @@ public class RawDataManager {
       // wait until all re-imports are performed
       _loadingTour_CountDownLatch.await();
 
-      TourDatabase.saveTour_PostSaveActions_Concurrent_2_ForAllTours(
-            allSavedTourIds.stream().toList());
+      TourDatabase.saveTour_PostSaveActions_Concurrent_2_ForAllTours(allSavedTourIds.stream().toList());
 
       // prevent async error
       Display.getDefault().syncExec(() -> TourManager.fireEvent(TourEventId.CLEAR_DISPLAYED_TOUR, null, null));

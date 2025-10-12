@@ -70,6 +70,7 @@ import net.tourbook.common.util.TableColumnDefinition;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
 import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.GearDataType;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourPerson;
@@ -369,7 +370,7 @@ public class TourDataEditorView extends ViewPart implements
    private int[]                   _seriePulse_RR_Index;
    private double[]                _serieLatitude;
    private double[]                _serieLongitude;
-   private float[][]               _serieGears;
+   private float[][]               _serieGearValues;
    private boolean[]               _serieBreakTime;
    private boolean[]               _seriePausedTime;
    //
@@ -405,13 +406,17 @@ public class TourDataEditorView extends ViewPart implements
    private ITourEventListener             _tourEventListener;
    private ITourSaveListener              _tourSaveListener;
    //
-   private final NumberFormat             _nf1                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf1NoGroup            = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf2                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf3                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf6                   = NumberFormat.getNumberInstance();
-   private final NumberFormat             _nf3NoGroup            = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf0        = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf1        = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf1NoGroup = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf2        = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf3        = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf6        = NumberFormat.getNumberInstance();
+   private final NumberFormat      _nf3NoGroup = NumberFormat.getNumberInstance();
+
    {
+      _nf0.setMinimumFractionDigits(0);
+      _nf0.setMaximumFractionDigits(0);
       _nf1.setMinimumFractionDigits(1);
       _nf1.setMaximumFractionDigits(1);
       _nf2.setMinimumFractionDigits(2);
@@ -617,6 +622,7 @@ public class TourDataEditorView extends ViewPart implements
    private final NumberFormat                                         _nfLatLon                       = NumberFormat.getNumberInstance();
    //
    private TourData                                                   _tourData;
+   private boolean                                                    _isOneGearValue;
    //
    private Color                                                      _foregroundColor_Default;
    private Color                                                      _backgroundColor_Default;
@@ -6592,16 +6598,23 @@ public class TourDataEditorView extends ViewPart implements
          @Override
          public void update(final ViewerCell cell) {
 
-            if (_serieGears == null) {
+            if (_serieGearValues == null) {
 
                cell.setText(UI.EMPTY_STRING);
 
             } else {
 
                final int serieIndex = ((TimeSlice) cell.getElement()).serieIndex;
-               final float gearRatio = _serieGears[0][serieIndex];
+               final float gearRatio = _serieGearValues[0][serieIndex];
 
-               cell.setText(_nf2.format(gearRatio));
+               if (_isOneGearValue) {
+
+                  cell.setText(_nf0.format(gearRatio));
+
+               } else {
+
+                  cell.setText(_nf2.format(gearRatio));
+               }
             }
          }
       });
@@ -6618,7 +6631,7 @@ public class TourDataEditorView extends ViewPart implements
          @Override
          public void update(final ViewerCell cell) {
 
-            if (_serieGears == null) {
+            if (_serieGearValues == null) {
 
                cell.setText(UI.EMPTY_STRING);
 
@@ -6626,8 +6639,8 @@ public class TourDataEditorView extends ViewPart implements
 
                final int serieIndex = ((TimeSlice) cell.getElement()).serieIndex;
 
-               final long frontTeeth = (long) _serieGears[1][serieIndex];
-               final long rearTeeth = (long) _serieGears[2][serieIndex];
+               final long frontTeeth = (long) _serieGearValues[1][serieIndex];
+               final long rearTeeth = (long) _serieGearValues[2][serieIndex];
 
                cell.setText(String.format(TourManager.GEAR_TEETH_FORMAT, frontTeeth, rearTeeth));
             }
@@ -7914,7 +7927,7 @@ public class TourDataEditorView extends ViewPart implements
       _serieAltitude                = _tourData.altitudeSerie;
 
       _serieCadence                 = _tourData.getCadenceSerie();
-      _serieGears                   = _tourData.getGears();
+      _serieGearValues              = _tourData.getGearValues();
       _seriePulse                   = _tourData.pulseSerie;
 
       _seriePulse_RR_Bpm            = _tourData.getPulse_AvgBpmFromRRIntervals();
@@ -9787,6 +9800,8 @@ public class TourDataEditorView extends ViewPart implements
 
          _actionStartLocation.setupTourData(_tourData);
          _actionEndLocation.setupTourData(_tourData);
+
+         _isOneGearValue = _tourData.getGearType().equals(GearDataType.REAR_GEAR);
       }
    }
 

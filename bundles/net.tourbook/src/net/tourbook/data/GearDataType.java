@@ -13,41 +13,16 @@
  * this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
-package net.tourbook.chart;
+package net.tourbook.data;
 
-public enum ChartType {
+public enum GearDataType {
 
-   BAR,
+// final long frontTeeth   = gearRaw >> 24 & 0xff;
+// final long frontGear    = gearRaw >> 16 & 0xff;
+// final long rearTeeth    = gearRaw >> 8 & 0xff;
+// final long rearGear     = gearRaw >> 0 & 0xff;
 
-   DOT,
+   FRONT_GEAR_TEETH__REAR_GEAR_TEETH,
 
-   HISTORY,
-
-   HORIZONTAL_BAR,
-
-   LINE,
-
-   LINE_WITH_BARS,
-
-   LINE_WITH_GAPS,
-
-   XY_SCATTER,
-
-   /**
-    * R-R intervals can contain multiple values (>100) in one time slice -> x-axis must be
-    * calculated differently
-    */
-   VARIABLE_X_AXIS,
-
-   /**
-    *
-    */
-   VARIABLE_X_AXIS_WITH_2ND_LINE,
-
-   /**
-    * Show a symbol at the x/y position
-    */
-   SYMBOL,
-
-
+   REAR_GEAR
 }
