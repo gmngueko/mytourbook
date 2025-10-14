@@ -453,7 +453,7 @@ public class TourBookView extends ViewPart implements
       }
    }
 
-   private class ActionCreateTourMarkers extends Action {
+   public class ActionCreateTourMarkers extends Action {
 
       public ActionCreateTourMarkers() {
 
