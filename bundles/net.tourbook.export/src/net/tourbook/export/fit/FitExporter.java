@@ -315,21 +315,58 @@ public class FitExporter {
 
    private int createLapMessage(int markerIndex) {
 
-      final List<TourMarker> markers = _tourData.getTourMarkersSorted();
-      if (markers == null || markers.isEmpty() ||
-            markers.size() == markerIndex) {
+      final List<TourMarker> allMarkers = _tourData.getTourMarkersSorted();
+
+      if (allMarkers == null
+            || allMarkers.isEmpty()
+            || allMarkers.size() == markerIndex) {
+
          return markerIndex;
       }
 
-      final float previousTotalDistance = markerIndex == 0 ? 0 : markers.get(markerIndex - 1).getDistance();
-      final TourMarker tourMarker = markers.get(markerIndex);
-      final float lapDistance = tourMarker.getDistance() - previousTotalDistance;
-      final DateTime timestamp = new DateTime(Date.from(Instant.ofEpochMilli(tourMarker.getDeviceLapTime())));
-      final int pausedTime = _tourData.getPausedTime(0, tourMarker.getSerieIndex());
-      final float totalTimerTime = (float) tourMarker.getTime() - pausedTime;
-      final float totalElapsedTime = tourMarker.getTime();
+      final TourMarker tourMarker = allMarkers.get(markerIndex);
 
-      final LapMesg lapMessage = createLapMessage(markerIndex, lapDistance, timestamp, totalTimerTime, totalElapsedTime);
+      long previousTotalTime_MS = _tourData.getTourStartTimeMS();
+      int markerPausedTime = 0;
+      float previousRelativeTime_Sec = 0;
+      float previousTotalDistance = 0;
+
+      if (markerIndex > 0) {
+
+         final TourMarker prevTourMarker = allMarkers.get(markerIndex - 1);
+
+         previousTotalTime_MS = prevTourMarker.getDeviceLapTime();
+         previousRelativeTime_Sec = prevTourMarker.getTime();
+         previousTotalDistance = prevTourMarker.getDistance();
+
+         final int startIndex = prevTourMarker.getSerieIndex();
+         final int endIndex = tourMarker.getSerieIndex();
+
+         markerPausedTime = _tourData.getPausedTime(startIndex, endIndex);
+      }
+
+      final long markerTotalTime_MS = tourMarker.getDeviceLapTime();
+      final int markerRelativeTime_Sec = tourMarker.getTime();
+      final float markerTotalDistance = tourMarker.getDistance();
+
+      final DateTime garminStartTimestamp = new DateTime(Date.from(Instant.ofEpochMilli(previousTotalTime_MS)));
+      final DateTime garminEndTimestamp = new DateTime(Date.from(Instant.ofEpochMilli(markerTotalTime_MS)));
+
+      final float lapTime_Sec = markerRelativeTime_Sec - previousRelativeTime_Sec;
+      final float lapTime_NoPauses_Sec = lapTime_Sec - markerPausedTime;
+      final float lapDistance = markerTotalDistance - previousTotalDistance;
+
+      final LapMesg lapMessage = createLapMessage(
+
+            markerIndex,
+
+            garminStartTimestamp,
+            garminEndTimestamp,
+
+            lapTime_NoPauses_Sec,
+            lapTime_Sec,
+
+            lapDistance);
 
       _messages.add(lapMessage);
 
@@ -337,19 +374,24 @@ public class FitExporter {
    }
 
    private LapMesg createLapMessage(final int markerIndex,
-                                    final float lapDistance,
                                     final DateTime startTime,
+                                    final DateTime endTime,
                                     final float totalTimerTime,
-                                    final float totalElapsedTime) {
+                                    final float totalElapsedTime,
+                                    final float lapDistance) {
 
       final LapMesg lapMessage = new LapMesg();
+
       lapMessage.setMessageIndex(markerIndex);
+
       lapMessage.setStartTime(startTime);
-      lapMessage.setTimestamp(startTime);
+      lapMessage.setTimestamp(endTime);
+
+      lapMessage.setTotalTimerTime(totalTimerTime); //  (excludes pauses)
+      lapMessage.setTotalElapsedTime(totalElapsedTime); //  (includes pauses)
+
       lapMessage.setTotalDistance(lapDistance);
-      lapMessage.setTotalTimerTime(totalTimerTime);
-      lapMessage.setTotalElapsedTime(totalElapsedTime);
-      lapMessage.setEvent(Event.LAP);
+
       return lapMessage;
    }
 
@@ -419,10 +461,10 @@ public class FitExporter {
       _messages.clear();
 
       // The starting timestamp for the activity
-      final DateTime startTime = new DateTime(Date.from(_tourData.getTourStartTime().toInstant()));
+      final DateTime garminStartTime = new DateTime(Date.from(_tourData.getTourStartTime().toInstant()));
 
       // Timer Events are a BEST PRACTICE for FIT ACTIVITY files
-      addStartEventMessage(startTime);
+      addStartEventMessage(garminStartTime);
 
       // Create the Developer Id message for the developer data fields.
       final DeveloperDataIdMesg developerIdMesg = new DeveloperDataIdMesg();
@@ -441,7 +483,6 @@ public class FitExporter {
 
       // Every FIT ACTIVITY file MUST contain Record messages
 
-      final DateTime timestamp = new DateTime(startTime);
       final int[] timeSerie = _tourData.timeSerie;
       if (timeSerie != null) {
 
@@ -456,11 +497,11 @@ public class FitExporter {
 
             final int currentTimeSerieValue = _tourData.timeSerie[index];
 
-            timestamp.add((long) currentTimeSerieValue - previousTimeSerieValue);
+            garminStartTime.add((long) currentTimeSerieValue - previousTimeSerieValue);
 
             // Create a new Record message and set the timestamp
             final RecordMesg recordMesg = new RecordMesg();
-            recordMesg.setTimestamp(timestamp);
+            recordMesg.setTimestamp(garminStartTime);
 
             setDataSerieValue(index, recordMesg);
 
@@ -469,9 +510,9 @@ public class FitExporter {
 
             pulseSerieIndex = createHrvMessage(pulseSerieIndex, index);
 
-            previousGearData = createGearEvent(timestamp, previousGearData, index);
+            previousGearData = createGearEvent(garminStartTime, previousGearData, index);
 
-            batteryTimeIndex = createBatteryEvent(timestamp, batteryTimeIndex, currentTimeSerieValue);
+            batteryTimeIndex = createBatteryEvent(garminStartTime, batteryTimeIndex, currentTimeSerieValue);
 
             createPauseEvent(pauseTimeIndices, currentTimeSerieValue);
 
@@ -487,16 +528,24 @@ public class FitExporter {
       final List<TourMarker> markers = _tourData.getTourMarkersSorted();
       if (markers == null || markers.isEmpty()) {
 
-         final LapMesg lapMessage = createLapMessage(0,
-               _tourData.getTourDistance(),
-               startTime,
+         final DateTime garminEndTime = new DateTime(Date.from(_tourData.getTourEndTime().toInstant()));
+
+         final LapMesg lapMessage = createLapMessage(
+
+               0, // marker index
+
+               garminStartTime,
+               garminEndTime,
+
                _tourData.getTourDeviceTime_Recorded(),
-               _tourData.getTourDeviceTime_Elapsed());
+               _tourData.getTourDeviceTime_Elapsed(),
+
+               _tourData.getTourDistance());
 
          _messages.add(lapMessage);
       }
 
-      addFinalEventMessage(timestamp);
+      addFinalEventMessage(garminStartTime);
 
       final Date creationTime_Date = Date.from(Instant.now());
       final DateTime creationTime_Timestamp = new DateTime(creationTime_Date);
@@ -505,7 +554,7 @@ public class FitExporter {
       // Every FIT ACTIVITY file MUST contain at least one Session message
       final SessionMesg sessionMesg = new SessionMesg();
       sessionMesg.setMessageIndex(0);
-      sessionMesg.setStartTime(startTime);
+      sessionMesg.setStartTime(garminStartTime);
       sessionMesg.setTotalElapsedTime((float) _tourData.getTourDeviceTime_Elapsed());
       sessionMesg.setTotalTimerTime((float) _tourData.getTourDeviceTime_Recorded());
       sessionMesg.setFirstLapIndex(0);
@@ -527,10 +576,10 @@ public class FitExporter {
 
          for (final DeviceSensorValue deviceSensorValue : deviceSensorValues) {
 
-            final DeviceInfoMesg deviceInfoMesgStart = createDeviceInfoMesgStart(startTime, deviceSensorValue);
+            final DeviceInfoMesg deviceInfoMesgStart = createDeviceInfoMesgStart(garminStartTime, deviceSensorValue);
             _messages.add(deviceInfoMesgStart);
 
-            final DeviceInfoMesg deviceInfoMesgEnd = createDeviceInfoMesgEnd(timestamp, deviceSensorValue);
+            final DeviceInfoMesg deviceInfoMesgEnd = createDeviceInfoMesgEnd(garminStartTime, deviceSensorValue);
             _messages.add(deviceInfoMesgEnd);
          }
       }
