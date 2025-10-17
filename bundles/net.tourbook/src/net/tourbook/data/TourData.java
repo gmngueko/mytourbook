@@ -2041,17 +2041,16 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private float[]      _swim_Cadence_UI;
 
    /**
-    * Is <code>true</code> when {@link #cadenceSerie} is computed from swimming cadence
-    * {@link #swim_Cadence} values.
-    */
-   @Transient
-   public boolean       isSwimCadence;
-
-   /**
     * Computed swim data serie
     */
    @Transient
    private float[]      _swim_Swolf;
+
+   /**
+    * -1 indicates that this value is not yet set
+    */
+   @Transient
+   private long         _swim_TotalStrokes   = -1;
 
    /**
     * When values are <code>true</code>, then the data are visible, otherwise they are hidden. This
@@ -2806,8 +2805,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _swim_StrokeStyle_UI = null;
       _swim_Swolf = null;
 
-      if (isSwimCadence) {
-         // cadence is from swim cadence
+      if (swim_Cadence != null) {
+
+         // cadence is from swim_Cadence
          cadenceSerie = null;
       }
 
@@ -9497,11 +9497,11 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    public float[] getCadenceSerie() {
 
-      if (isSwimCadence) {
+      if (swim_Cadence != null) {
 
          // cadence is computed from swim cadence, these cadence values are not saved
 
-         return getSwim_Cadence();
+         return getSwim_Cadence_UI();
 
       } else {
 
@@ -9514,9 +9514,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     */
    public float[] getCadenceSerieWithMuliplier() {
 
-      if (isSwimCadence) {
+      if (swim_Cadence != null) {
 
-         return getSwim_Cadence();
+         return getSwim_Cadence_UI();
 
       } else {
 
@@ -10702,6 +10702,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       return _allPhotoTimeAdjustments;
    }
 
+   /**
+    * @return Returns the swim pool length in mm that a length in feets can also be saved correctly.
+    *         When this value is not 0 then there should also be swimming data
+    */
    public int getPoolLength() {
       return poolLength;
    }
@@ -11999,9 +12003,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * @return Returns the UI values for cadence.
+    * @return Returns the UI values for cadence
     */
-   public float[] getSwim_Cadence() {
+   private float[] getSwim_Cadence_UI() {
 
       if (_swim_Cadence_UI == null) {
          _swim_Cadence_UI = createSwimUI_DataSerie(swim_Cadence);
@@ -12030,7 +12034,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * @return Returns the UI values for number of strokes.
+    * @return Returns the UI values for number of strokes
     */
    public float[] getSwim_Strokes() {
 
@@ -12042,7 +12046,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * @return Returns the UI values for number of strokes.
+    * @return Returns the UI values for number of strokes
     */
    public float[] getSwim_StrokeStyle() {
 
@@ -12054,7 +12058,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * @return Returns the UI values for number of strokes.
+    * @return Returns the UI values for Swolf
     */
    public float[] getSwim_Swolf() {
 
@@ -12242,6 +12246,27 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       final ZoneId tzId = ZoneId.of(zoneIdRaw);
 
       return tzId;
+   }
+
+   public long getTotalStrokes() {
+
+      if (swim_Strokes == null) {
+         return 0;
+      }
+
+      if (_swim_TotalStrokes >= 0) {
+         return _swim_TotalStrokes;
+      }
+
+      int numAllStrokes = 0;
+
+      for (final short swimStroke : swim_Strokes) {
+         numAllStrokes += swimStroke;
+      }
+
+      _swim_TotalStrokes = numAllStrokes;
+
+      return _swim_TotalStrokes;
    }
 
    private long getTotalTourTimerPauses() {
@@ -13280,7 +13305,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       swim_Strokes                  = serieData.swim_Strokes;
       swim_StrokeStyle              = serieData.swim_StrokeStyle;
       swim_Time                     = serieData.swim_Time;
-      isSwimCadence                 = swim_Cadence != null;
 
       // currently only surfing data can be made visible/hidden
       visibleDataPointSerie         = serieData.visiblePoints_Surfing;
@@ -13379,7 +13403,8 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       serieData.swim_StrokeStyle                = swim_StrokeStyle;
       serieData.swim_Time                       = swim_Time;
 
-      if (isSwimCadence) {
+      if (swim_Cadence != null) {
+
          // cadence is computed from cadence swim data
          serieData.cadenceSerie20 = null;
       }

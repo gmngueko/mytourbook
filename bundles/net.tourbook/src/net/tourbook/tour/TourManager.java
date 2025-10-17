@@ -5374,8 +5374,10 @@ public class TourManager {
                                                    final ChartType chartType,
                                                    final boolean useGraphBgStyle) {
 
-      final float[] cadenceSerie = tourData.getCadenceSerieWithMuliplier();
       ChartDataYSerie yDataCadence = null;
+
+      final float[] cadenceSerie = tourData.getCadenceSerieWithMuliplier();
+
       if (cadenceSerie != null) {
 
          final String cadenceUnit;
@@ -5427,6 +5429,7 @@ public class TourManager {
                ITourbookPreferences.GRAPH_CADENCE_MIN_VALUE,
                ITourbookPreferences.GRAPH_CADENCE_MAX_VALUE);
       }
+
       return yDataCadence;
    }
 
