@@ -67,34 +67,32 @@ public class CommonActivator extends AbstractUIPlugin {
       return imageDescriptor.isPresent() ? imageDescriptor.get() : null;
    }
 
-   public static IPreferenceStore getPrefStore() {
-      return getDefault().getPreferenceStore();
-   }
-
-   /**
-    * @param sectionName
-    *
-    * @return Returns the dialog setting section for the sectionName, a section is always returned
-    *         even when it's empty
-    */
-   public static IDialogSettings getState(final String sectionName) {
-
-      final IDialogSettings dialogSettings = getDefault().getDialogSettings();
-      IDialogSettings section = dialogSettings.getSection(sectionName);
-
-      if (section == null) {
-         section = dialogSettings.addNewSection(sectionName);
-      }
-
-      return section;
-   }
-
    /**
     * @param imageName
     *
-    * @return Returns the themed image descriptor from {@link TourbookPlugin} plugin images
+    * @return Returns the dark themed image descriptor from {@link CommonActivator} plugin images.
+    *         This is used for photo slideouts because they always have a dark UI.
     */
-   public static ImageDescriptor getThemedImageDescriptor(final String imageName) {
+   public static ImageDescriptor getImageDescriptor_Dark(final String imageName) {
+
+      if (UI.IS_USE_HDR_IMAGES) {
+
+         // display HDR image which is created for the dark theme
+
+         final ImageDescriptor hdrImageDescriptor = getImageDescriptor(ThemeUtil.getThemedImageName_HDR(imageName));
+
+         if (hdrImageDescriptor != null) {
+
+            return hdrImageDescriptor;
+         }
+      }
+
+      // display dark theme image
+
+      return getImageDescriptor(ThemeUtil.getThemedImageName_Dark(imageName));
+   }
+
+   private static ImageDescriptor getImageDescriptor_Dark_Win(final String imageName) {
 
       if (UI.IS_DARK_THEME && UI.IS_WIN) {
 
@@ -122,18 +120,29 @@ public class CommonActivator extends AbstractUIPlugin {
          return getImageDescriptor(imageName);
       }
 
-      return getImageDescriptor(ThemeUtil.getThemedImageName(imageName));
+      return null;
+   }
+
+   public static IPreferenceStore getPrefStore() {
+      return getDefault().getPreferenceStore();
    }
 
    /**
-    * @param imageName
+    * @param sectionName
     *
-    * @return Returns the dark themed image descriptor from {@link CommonActivator} plugin images.
-    *         This is used for photo slideouts because they always have a dark UI.
+    * @return Returns the dialog setting section for the sectionName, a section is always returned
+    *         even when it's empty
     */
-   public static ImageDescriptor getThemedImageDescriptor_Dark(final String imageName) {
+   public static IDialogSettings getState(final String sectionName) {
 
-      return getImageDescriptor(ThemeUtil.getThemedImageName_Dark(imageName));
+      final IDialogSettings dialogSettings = getDefault().getDialogSettings();
+      IDialogSettings section = dialogSettings.getSection(sectionName);
+
+      if (section == null) {
+         section = dialogSettings.addNewSection(sectionName);
+      }
+
+      return section;
    }
 
    /**
@@ -141,7 +150,13 @@ public class CommonActivator extends AbstractUIPlugin {
     *
     * @return Returns the themed image descriptor from {@link CommonActivator} plugin images
     */
-   public static ImageDescriptor getThemedImageDescriptor_OLD(final String imageName) {
+   public static ImageDescriptor getThemedImageDescriptor(final String imageName) {
+
+      final ImageDescriptor winDarkImageDescriptor = getImageDescriptor_Dark_Win(imageName);
+
+      if (winDarkImageDescriptor != null) {
+         return winDarkImageDescriptor;
+      }
 
       return getImageDescriptor(ThemeUtil.getThemedImageName(imageName));
    }
