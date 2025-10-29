@@ -5,7 +5,7 @@ New / Improvements
 
 * Radar values
     https://github.com/mytourbook/mytourbook/issues/1561
-  - Import values from .fit files
+  - Import or re-Import values from .fit files
   - Display values in 
     - Tour book view
     - Tour chart
@@ -34,6 +34,10 @@ New / Improvements
 
 Changes
 =======
+
+* Fit import
+  - The import of swim values could create wrong tour distance values, mostly when a time slice was larger than 1 second.
+    This can be fixed by reimporting swim values.
 
 * Map properties view
   - This view is removed, its options are now available directly in the 2D map options slideout

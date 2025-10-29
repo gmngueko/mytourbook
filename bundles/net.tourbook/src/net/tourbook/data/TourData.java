@@ -1950,6 +1950,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    public short[]       runDyn_VerticalRatio;
    @Transient
    private float[]      _runDyn_VerticalRatio_UI;
+
    /**
     * Swimming data has a different number of time slices than the other data series !!!
     *
@@ -2143,7 +2144,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    public boolean[]           interpolatedValueSerie;
 
    /**
-    * "Vehicle Count" - Number of passed vehicles, fit field: <code>radar_current</code>
+    * "Vehicle Count" - Number of passed vehicles, fit field: <code>radar_current</code>.
+    * <p>
+    * This value is saved in {@link SerieData}
     */
    @Transient
    public int[]               radar_PassedVehicles;
@@ -8862,7 +8865,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
-    * Fill swim data into {@link TourData}
+    * Fill/merge swim data into {@link TourData}
     *
     * @param tourData
     * @param allTourSwimData
@@ -8870,7 +8873,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    public void finalizeTour_SwimData(final TourData tourData, final List<SwimData> allTourSwimData) {
 
       // check if swim data are available
-      if (allTourSwimData == null || allTourSwimData.size() < 2) {
+      if (allTourSwimData == null || allTourSwimData.size() == 0) {
          return;
       }
 
@@ -8995,12 +8998,25 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
        */
       if (isSwimming()) {
 
+         if (numSwimValues > 0
+
+               // it is possible that each fit record has exactly one length (swim) record
+               && distanceSerie != null
+               && distanceSerie.length == numSwimValues
+
+               && tourDistance > 0
+
+         ) {
+
+            return;
+         }
+
          final float poolLengthMeters = poolLength / 1000f;
 
          int swimIndex = 0;
 
          int swimTimeSec_Prev = 0;
-         int swimTimeSec_Next = numSwimValues > 0 ? allSwimTimes[++swimIndex] : 0;
+         int swimTimeSec_Next = numSwimValues > 1 ? allSwimTimes[++swimIndex] : 0;
          int swimTimePoolLengthSec = swimTimeSec_Next - swimTimeSec_Prev;
 
          float oneSecondDistance = 0;
@@ -9012,21 +9028,25 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
             oneSecondDistance = poolLengthMeters / swimTimePoolLengthSec;
          }
 
-         float serieDistance = 0;
          final int numTimeSlices = timeSerie.length;
-         int prevTimeSliceSec = 0;
+
+         int tourTimeSec = numTimeSlices > 1 ? timeSerie[1] : 0;
+
+         int timeSliceSec = tourTimeSec;
+         int timeSliceSec_Prev = 0;
+
+         float oneSliceDistance = oneSecondDistance * timeSliceSec;
+         float serieDistance = oneSliceDistance;
 
          tourDistance = getSwim_Distance(allLengthTypes, poolLengthMeters);
          distanceSerie = new float[numTimeSlices];
 
-         for (int timeSerieIndex = 0; timeSerieIndex < numTimeSlices; timeSerieIndex++) {
+         for (int timeSerieIndex = 1; timeSerieIndex < numTimeSlices; timeSerieIndex++) {
 
-            final int tourTimeSec = timeSerie[timeSerieIndex];
+            tourTimeSec = timeSerie[timeSerieIndex];
 
-            final int timeSliceSec = tourTimeSec - prevTimeSliceSec;
-            prevTimeSliceSec = tourTimeSec;
-
-            float oneSliceDistance = 0;
+            timeSliceSec = tourTimeSec - timeSliceSec_Prev;
+            timeSliceSec_Prev = tourTimeSec;
 
             if (tourTimeSec > swimTimeSec_Next && swimIndex < numSwimValues) {
 
@@ -9072,7 +9092,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
             distanceSerie[timeSerieIndex] = serieDistance;
 
             oneSliceDistance = oneSecondDistance * timeSliceSec;
-
             serieDistance += oneSliceDistance;
          }
       }
@@ -14122,7 +14141,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       this.isPowerSerieFromDevice = true;
    }
 
-   private void setRadarValues() {
+   /**
+    * Set number of passed vehicles or 0 when not available
+    */
+   public void setRadarValues() {
+
+      numberOfPassedVehicles = 0;
 
       if (radar_PassedVehicles != null && radar_PassedVehicles.length > 0) {
 
