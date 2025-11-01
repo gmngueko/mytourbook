@@ -860,7 +860,6 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    /**
     * Number of passed vehicles detected by the radar
     */
-   @SuppressWarnings("unused") // this field is read with sql
    private int                   numberOfPassedVehicles;
 
    /**
@@ -10314,6 +10313,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       return numberOfHrZones;
+   }
+
+   public int getNumberOfPassedVehicles() {
+      return numberOfPassedVehicles;
    }
 
    /**
