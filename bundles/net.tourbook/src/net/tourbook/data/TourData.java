@@ -4285,6 +4285,12 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
    }
 
+   /**
+    * @param startIndex
+    * @param endIndex
+    *
+    * @return Returns the break time in seconds between start and end index
+    */
    private int computeBreakTime(final int startIndex, int endIndex) {
 
       int totalBreakTime = 0;
@@ -13471,7 +13477,26 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    public void setBreakTimeSerie(final boolean[] breakTimeSerie) {
+
       this.breakTimeSerie = breakTimeSerie;
+   }
+
+   /**
+    * @param breakTimeSerie
+    * @param tourBreakTime
+    *           Break time in seconds for the whole tour
+    */
+   public void setBreakTimeSerie(final boolean[] breakTimeSerie, final long tourBreakTime) {
+
+      this.breakTimeSerie = breakTimeSerie;
+
+      // update moving time
+      if (timeSerie != null && timeSerie.length > 0) {
+
+         final int tourMovingTime = (int) (timeSerie[timeSerie.length - 1] - tourBreakTime);
+
+         tourComputedTime_Moving = Math.max(0, tourMovingTime);
+      }
    }
 
    public void setCadenceMultiplier(final float cadenceMultiplier) {
