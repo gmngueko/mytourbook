@@ -1,4 +1,4 @@
-25.next.0                                                 ?. February 2025
+26.next.0                                                 ?. February 2025
 
 
 TODO's
@@ -39,9 +39,6 @@ New / Improvements
   - Export swim values
     https://github.com/mytourbook/mytourbook/issues/1581
   
-* Tour Blog
-  - Display time for each tour blog entry
-    https://github.com/mytourbook/mytourbook/issues/1602
 
 Changes
 =======
@@ -52,7 +49,6 @@ Changes
 Changes that require Tour Re-import
 ===================================
 
-* 
 
 
 Bugfix
