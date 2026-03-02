@@ -379,7 +379,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private float                 startDistance;
 
    /**
-    * total distance of the tour in meters (metric system), this value is computed from the
+    * Total distance of the tour in meters (metric system), this value is computed from the
     * distance data serie
     */
    @XmlElement
@@ -1043,14 +1043,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
    @JsonProperty
-   private Set<TourNutritionProduct>             tourNutritionProducts     = new HashSet<>();
+   private Set<TourNutritionProduct>   tourNutritionProducts               = new HashSet<>();
 
    /**
     * Reference tours
     */
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
-   private  Set<TourReference>         tourReferences                     = new HashSet<>();
+   private  Set<TourReference>         tourReferences                      = new HashSet<>();
 
    /**
     * Tags
@@ -1059,6 +1059,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @JoinTable(inverseJoinColumns = @JoinColumn(name = "TOURTAG_TagID", referencedColumnName = "TagID"))
    @JsonProperty
    private Set<TourTag>                tourTags                            = new HashSet<>();
+
+   /**
+    * Equipment
+    */
+   @ManyToMany(fetch = EAGER)
+   @JoinTable(inverseJoinColumns = @JoinColumn(name = "Equipment_EquipmentId", referencedColumnName = "EquipmentId"))
+   @JsonProperty
+   private Set<Equipment>              equipment                          = new HashSet<>();
 
    /**
     * Sensor values
@@ -7013,6 +7021,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       tourTags_Clone.addAll(tourData_DeepCopy.tourTags);
       tourData_DeepCopy.tourTags = tourTags_Clone;
 
+      final Set<Equipment> equipment_Clone = new HashSet<>();
+      equipment_Clone.addAll(tourData_DeepCopy.equipment);
+      tourData_DeepCopy.equipment = equipment_Clone;
+
       final Set<DeviceSensorValue> deviceSensor_Clone = new HashSet<>();
       deviceSensor_Clone.addAll(tourData_DeepCopy.deviceSensorValues);
       tourData_DeepCopy.deviceSensorValues = deviceSensor_Clone;
@@ -9772,6 +9784,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    }
 
    /**
+    * @return Returns all {@link #equipment} which are defined for this tour
+    */
+   public Set<Equipment> getEquipment() {
+      return equipment;
+   }
+
+   /**
     * @param values
     *
     * @return Returns first value which is not 0
@@ -12097,7 +12116,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
     */
    public ZoneId getTimeZoneIdWithDefault() {
 
-      final String zoneIdRaw = timeZoneId == null //
+      final String zoneIdRaw = timeZoneId == null
 
             ? TimeTools.getDefaultTimeZoneId()
             : timeZoneId;
@@ -13616,6 +13635,15 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       // We update the average elevation change
       computeAvg_AltitudeChange();
+   }
+
+   /**
+    * Set all equipment for this tour into {@link #equipment}
+    *
+    * @param equipment
+    */
+   public void setEquipment(final Set<Equipment> equipment) {
+      this.equipment = equipment;
    }
 
    public void setFrontShiftCount(final int frontShiftCount) {
