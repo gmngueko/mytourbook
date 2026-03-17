@@ -1232,14 +1232,6 @@
             label			="%Action_PhotoDirectory_LinkPhotoWithTourInFolder"
             mnemonic		="%Action_PhotoDirectory_LinkPhotoWithTourInFolder_Mnemonic"/>
 
-         <!-- 
-         <command
-            commandId="command.net.tourbook.sign.ImportTourSignsFromFolder"
-            icon="icons/tour-sign-import.png"
-            label="%Action_TourSign_ImportTourSignsFromFolder"
-            mnemonic="%Action_TourSign_ImportTourSignsFromFolder_Mnemonic"/>
-         -->
-
       </menuContribution>
 
       <!--
@@ -1260,14 +1252,6 @@
             label       ="%Action_PhotoDirectory_LinkPhotoWithTourInGallerySelected"
             mnemonic    ="%Action_PhotoDirectory_LinkPhotoWithTourInGallerySelected_Mnemonic"/>
             
-         <!--
-         <command
-            commandId="command.net.tourbook.sign.ImportTourSigns"
-            icon="icons/tour-sign-import.png"
-            label="%Action_TourSign_ImportTourSigns"
-            mnemonic="%Action_TourSign_ImportTourSigns_Mnemonic"/>
-         -->
-
       </menuContribution>
 
    </extension>
