@@ -1983,14 +1983,14 @@
                category    ="net.tourbook.category.system"
                id          ="org.eclipse.ui.views.ProgressView"
                class       ="org.eclipse.ui.ExtensionFactory:progressView"
-               icon        ="icons/pview.gif"
+               icon        ="icons/pview.svg"
                name        ="Progress View"/>
 
          <view
                category    ="net.tourbook.category.system"
                id          ="net.tourbook.views.TourChartPropertyView"
                class       ="net.tourbook.ui.views.TourChartPropertyView"
-               icon        ="icons/tourchart-properties.gif"
+               icon        ="icons/tourchart-properties.svg"
                name        ="%view_name_ChartProperty"/>
 
    </extension>
