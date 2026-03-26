@@ -983,6 +983,9 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
 // SET_FORMATTING_OFF
 
+      final float distance          = _spinDistance.getSelection() * UI.UNIT_VALUE_DISTANCE;
+      final float weight            = _spinWeight.getSelection() / UI.UNIT_VALUE_WEIGHT / 1000f;
+
       final LocalDate dateUsed      = LocalDate.of(_dateUsed.getYear(),    _dateUsed.getMonth() + 1,     _dateUsed.getDay());
       final LocalDate dateBuilt     = LocalDate.of(_dateBuilt.getYear(),   _dateBuilt.getMonth() + 1,    _dateBuilt.getDay());
       final LocalDate dateRetired   = LocalDate.of(_dateRetired.getYear(), _dateRetired.getMonth() + 1,  _dateRetired.getDay());
@@ -1001,11 +1004,11 @@ public class DialogEquipmentPart extends TitleAreaDialog {
                                        ? EquipmentPart.COLLATED_WITH_NEXT
                                        : EquipmentPart.COLLATED_WITH_PREVIOUS);
 
-      _part.setDistanceFirstUse( _spinDistance.getSelection());
+      _part.setDistanceFirstUse( distance);
       _part.setPrice(            _spinPrice.getSelection() / 100f);
       _part.setPriceUnit(        _comboPriceUnit.getText());
       _part.setSize(             _comboSize.getText().trim());
-      _part.setWeight(           _spinWeight.getSelection() / 1000f);
+      _part.setWeight(           weight);
 
       _part.setDateUsed(         TimeTools.toEpochMilli(dateUsed));
       _part.setDateBuilt(        TimeTools.toEpochMilli(dateBuilt));
@@ -1090,9 +1093,11 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       }
 
       if (dateRetiredMS == 0) {
-         dateRetired = LocalDateTime.of(2099,1,1,0,0);
+         dateRetired = LocalDateTime.of(2099, 1, 1, 0, 0);
       }
 
+      final float distance       = _part.getDistanceFirstUse() / UI.UNIT_VALUE_DISTANCE;
+      final float weight         = _part.getWeight() * UI.UNIT_VALUE_WEIGHT * 1000;
       final int collateWith      = _part.getCollateBetween();
 
       _chkCollate                .setSelection(_part.isCollate());
@@ -1109,9 +1114,9 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _rdoCollateWith_Next       .setSelection(collateWith == EquipmentPart.COLLATED_WITH_NEXT);
       _rdoCollateWith_Previous   .setSelection(collateWith == EquipmentPart.COLLATED_WITH_PREVIOUS);
 
-      _spinDistance              .setSelection((int) (_part.getDistanceFirstUse()));
+      _spinDistance              .setSelection((int) distance);
       _spinPrice                 .setSelection((int) (_part.getPrice()  * 100));
-      _spinWeight                .setSelection((int) (_part.getWeight() * 1000));
+      _spinWeight                .setSelection((int) weight);
 
       _txtDescription            .setText(_part.getDescription());
       _txtUrlAddress             .setText(_part.getUrlAddress());
