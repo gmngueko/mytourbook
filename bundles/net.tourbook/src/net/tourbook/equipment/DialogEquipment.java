@@ -818,20 +818,16 @@ public class DialogEquipment extends TitleAreaDialog {
 
    private void onImage_Select() {
 
-      String lastSelectedPath;
+      String lastSelectedPath = null;
 
       if (StringUtils.hasContent(_imageFilePath)) {
 
-         final Path pathParent = Paths.get(_imageFilePath).getParent();
+         if (Files.exists(Paths.get(_imageFilePath))) {
 
-         if (pathParent == null) {
+            final Path pathParent = Paths.get(_imageFilePath).getParent();
 
-            // this can happen when the path is e.g. from Windows and was used in Linux
-
-            return;
+            lastSelectedPath = pathParent.toString();
          }
-
-         lastSelectedPath = pathParent.toString();
 
       } else {
 
