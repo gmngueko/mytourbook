@@ -17,6 +17,7 @@ package net.tourbook.equipment;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -821,7 +822,16 @@ public class DialogEquipment extends TitleAreaDialog {
 
       if (StringUtils.hasContent(_imageFilePath)) {
 
-         lastSelectedPath = Paths.get(_imageFilePath).getParent().toString();
+         final Path pathParent = Paths.get(_imageFilePath).getParent();
+
+         if (pathParent == null) {
+
+            // this can happen when the path is e.g. from Windows and was used in Linux
+
+            return;
+         }
+
+         lastSelectedPath = pathParent.toString();
 
       } else {
 
@@ -1039,7 +1049,7 @@ public class DialogEquipment extends TitleAreaDialog {
       if (dateRetiredMS == 0) {
          dateRetired = LocalDateTime.of(2099, 1, 1, 0, 0);
       }
-      
+
       final float distance    = _equipment.getDistanceFirstUse() / UI.UNIT_VALUE_DISTANCE;
       final float weight      = _equipment.getWeight() * UI.UNIT_VALUE_WEIGHT * 1000;
 
