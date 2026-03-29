@@ -28,6 +28,9 @@ import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.autocomplete.AutoComplete_ComboInputMT;
+import net.tourbook.common.measurement_system.MeasurementSystem;
+import net.tourbook.common.measurement_system.MeasurementSystem_Manager;
+import net.tourbook.common.measurement_system.Unit_Weight;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.ImageUtils;
 import net.tourbook.common.util.StringUtils;
@@ -130,6 +133,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
    private Combo                     _comboPriceUnit;
    private Combo                     _comboSize;
    private Combo                     _comboType;
+   private Combo                     _comboWeightUnit;
 
    private DateTime                  _dateUsed;
    private DateTime                  _dateBuilt;
@@ -256,7 +260,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
       fillUI();
 
-      updateUIFromModel();
+      updateUI_FromModel();
 
       resoreState();
 
@@ -454,8 +458,14 @@ public class DialogEquipmentPart extends TitleAreaDialog {
             _spinWeight.addMouseWheelListener(_defaultMouseWheelListener);
             _spinWeight.addSelectionListener(_defaultSelectionListener);
 
-            // label: kg
-            UI.createLabel(_container, UI.UNIT_LABEL_WEIGHT);
+            // combo: weight kg/g - lbs/oz
+            _comboWeightUnit = new Combo(_container, SWT.BORDER | SWT.READ_ONLY);
+            _comboWeightUnit.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_WeightUnit()));
+
+            GridDataFactory.fillDefaults()
+                  .align(SWT.BEGINNING, SWT.FILL)
+                  .hint(currencyWidth, SWT.DEFAULT)
+                  .applyTo(_comboWeightUnit);
          }
          {
             /*
@@ -653,6 +663,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
             _spinPrice,
             _comboPriceUnit,
             _spinWeight,
+            _comboWeightUnit,
             _spinDistance,
 
             _chkCollate,
@@ -716,6 +727,9 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       UI.fillUI_Combobox(_comboType,      EquipmentManager.getCachedFields_AllTypes());
 
 // SET_FORMATTING_ON
+
+      _comboWeightUnit.add(UI.UNIT_LABEL_WEIGHT);
+      _comboWeightUnit.add(UI.UNIT_LABEL_WEIGHT_SMALL);
    }
 
    @Override
@@ -733,6 +747,108 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _part.updateUntilDate();
 
       return _part;
+   }
+
+   private int getWeight_FromModel(final EquipmentPart part) {
+
+      final float weightKG = part.getWeight();
+      final short weightUnit = part.getWeightUnit();
+
+      final MeasurementSystem activeSystem = MeasurementSystem_Manager.getActiveMeasurementSystem();
+
+      if (Unit_Weight.POUND.equals(activeSystem.getWeight())) {
+
+         // imperial system
+
+         if (weightUnit == 1) {
+
+            // oz
+
+            final float weightPound = weightKG * UI.UNIT_VALUE_WEIGHT;
+            final float weightOz = weightPound * UI.UNIT_OZ_TO_POUND;
+
+            return (int) weightOz;
+
+         } else {
+
+            // lbs
+
+            final float weightPound = weightKG * UI.UNIT_VALUE_WEIGHT;
+            final float weightPoundUI = weightPound * 1000f;
+
+            return Math.round(weightPoundUI);
+         }
+
+      } else {
+
+         // metric system
+
+         if (weightUnit == 1) {
+
+            // g
+
+            return (int) (weightKG * 1000f);
+
+         } else {
+
+            // kg
+
+            return Math.round(weightKG * 1000);
+         }
+      }
+   }
+
+   /**
+    * @return Returns the selected weight in kg
+    */
+   private float getWeight_FromUI() {
+
+      final float selectedWeight_kg_g_lbs_oz = _spinWeight.getSelection();
+
+      final int selectionUnitIndex = _comboWeightUnit.getSelectionIndex();
+
+      final MeasurementSystem activeSystem = MeasurementSystem_Manager.getActiveMeasurementSystem();
+
+      if (Unit_Weight.POUND.equals(activeSystem.getWeight())) {
+
+         // imperial system
+
+         float selectedWeightPound;
+
+         if (selectionUnitIndex == 1) {
+
+            // oz
+
+            selectedWeightPound = selectedWeight_kg_g_lbs_oz / UI.UNIT_OZ_TO_POUND;
+
+         } else {
+
+            // lbs
+
+            selectedWeightPound = selectedWeight_kg_g_lbs_oz / 1000;
+         }
+
+         final float selectedWeightKG = selectedWeightPound / UI.UNIT_VALUE_WEIGHT;
+
+         return selectedWeightKG;
+
+      } else {
+
+         // metric system
+
+         if (selectionUnitIndex == 1) {
+
+            // g
+
+            return selectedWeight_kg_g_lbs_oz / 1000f;
+
+         } else {
+
+            // kg
+
+            return selectedWeight_kg_g_lbs_oz / 1000f;
+         }
+      }
    }
 
    private void initUI() {
@@ -951,6 +1067,51 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       enableControls();
    }
 
+   private void onSelect_WeightUnit() {
+
+      final float selectedWeight = _spinWeight.getSelection() / 1000f;
+      final int selectionUnitIndex = _comboWeightUnit.getSelectionIndex();
+
+      final MeasurementSystem activeSystem = MeasurementSystem_Manager.getActiveMeasurementSystem();
+
+      if (Unit_Weight.POUND.equals(activeSystem.getWeight())) {
+
+         // imperial system
+
+         if (selectionUnitIndex == 1) {
+
+            // lbs ->  oz
+
+            _spinWeight.setSelection((int) (selectedWeight * UI.UNIT_OZ_TO_POUND * 1000f));
+
+         } else {
+
+            // oz -> lbs
+
+            _spinWeight.setSelection(Math.round(selectedWeight / UI.UNIT_OZ_TO_POUND * 1000f));
+         }
+
+      } else {
+
+         // metric system
+
+         if (selectionUnitIndex == 1) {
+
+            // kg -> g
+
+            _spinWeight.setSelection((int) (selectedWeight * 1000 * 1000));
+
+         } else {
+
+            // g -> kg
+
+            _spinWeight.setSelection(Math.round(selectedWeight));
+         }
+      }
+
+      updateUI_WeightUnits();
+   }
+
    private void resoreState() {
 
       _isInUIUpdate = true;
@@ -999,7 +1160,6 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 // SET_FORMATTING_OFF
 
       final float distance          = _spinDistance.getSelection() * UI.UNIT_VALUE_DISTANCE;
-      final float weight            = _spinWeight.getSelection() / UI.UNIT_VALUE_WEIGHT / 1000f;
 
       final LocalDate dateUsed      = LocalDate.of(_dateUsed.getYear(),    _dateUsed.getMonth() + 1,     _dateUsed.getDay());
       final LocalDate dateBuilt     = LocalDate.of(_dateBuilt.getYear(),   _dateBuilt.getMonth() + 1,    _dateBuilt.getDay());
@@ -1023,7 +1183,8 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _part.setPrice(            _spinPrice.getSelection() / 100f);
       _part.setPriceUnit(        _comboPriceUnit.getText());
       _part.setSize(             _comboSize.getText().trim());
-      _part.setWeight(           weight);
+      _part.setWeight(           getWeight_FromUI());
+      _part.setWeightUnit(       (short) _comboWeightUnit.getSelectionIndex());
 
       _part.setDateUsed(         TimeTools.toEpochMilli(dateUsed));
       _part.setDateBuilt(        TimeTools.toEpochMilli(dateBuilt));
@@ -1082,7 +1243,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _container.layout(true, true);
    }
 
-   private void updateUIFromModel() {
+   private void updateUI_FromModel() {
 
       _isInUIUpdate = true;
 
@@ -1112,7 +1273,6 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       }
 
       final float distance       = _part.getDistanceFirstUse() / UI.UNIT_VALUE_DISTANCE;
-      final float weight         = _part.getWeight() * UI.UNIT_VALUE_WEIGHT * 1000;
       final int collateWith      = _part.getCollateBetween();
 
       _chkCollate                .setSelection(_part.isCollate());
@@ -1121,6 +1281,8 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _comboModel                .setText(_part.getModel());
       _comboSize                 .setText(_part.getSize());
       _comboType                 .setText(_part.getPartType());
+
+      _comboWeightUnit           .select(_part.getWeightUnit());
 
       _dateUsed                  .setDate(dateUsed.getYear(),     dateUsed.getMonthValue() - 1,    dateUsed.getDayOfMonth());
       _dateBuilt                 .setDate(dateBuilt.getYear(),    dateBuilt.getMonthValue() - 1,   dateBuilt.getDayOfMonth());
@@ -1131,7 +1293,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
       _spinDistance              .setSelection((int) distance);
       _spinPrice                 .setSelection((int) (_part.getPrice()  * 100));
-      _spinWeight                .setSelection((int) weight);
+      _spinWeight                .setSelection(getWeight_FromModel(_part));
 
       _txtDescription            .setText(_part.getDescription());
       _txtUrlAddress             .setText(_part.getUrlAddress());
@@ -1146,7 +1308,63 @@ public class DialogEquipmentPart extends TitleAreaDialog {
          _comboPriceUnit.setText(priceUnit);
       }
 
+      updateUI_WeightUnits();
+
       _isInUIUpdate = false;
    }
 
+   private void updateUI_WeightUnits() {
+
+      final int selectedUnitIndex = _comboWeightUnit.getSelectionIndex();
+
+      final MeasurementSystem activeSystem = MeasurementSystem_Manager.getActiveMeasurementSystem();
+
+      if (Unit_Weight.POUND.equals(activeSystem.getWeight())) {
+
+         // imperial system
+
+         if (selectedUnitIndex == 1) {
+
+            // lbs ->  oz
+
+            _spinWeight.setDigits(0);
+
+            _spinWeight.setIncrement(10);
+            _spinWeight.setPageIncrement(100);
+
+         } else {
+
+            // oz -> lbs
+
+            _spinWeight.setDigits(3);
+
+            _spinWeight.setIncrement(100);
+            _spinWeight.setPageIncrement(1000);
+
+         }
+
+      } else {
+
+         // metric system
+
+         if (selectedUnitIndex == 1) {
+
+            // kg -> g
+
+            _spinWeight.setDigits(0);
+
+            _spinWeight.setIncrement(10);
+            _spinWeight.setPageIncrement(100);
+
+         } else {
+
+            // g -> kg
+
+            _spinWeight.setDigits(3);
+
+            _spinWeight.setIncrement(100);
+            _spinWeight.setPageIncrement(1000);
+         }
+      }
+   }
 }

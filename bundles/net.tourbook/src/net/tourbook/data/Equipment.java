@@ -98,6 +98,14 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    private float                      weight;
 
    /**
+    * This is just the unit how the weight is displayed in the UI, the weight is always saved in kg
+    * <p>
+    * 0 ... kg/lbs<br>
+    * 1 ... g/oz
+    */
+   private short                      weightUnit;
+
+   /**
     * Price
     */
    private float                      price;
@@ -482,6 +490,13 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       return weight;
    }
 
+   /**
+    * @return Returns {@link #weightUnit}
+    */
+   public short getWeightUnit() {
+      return weightUnit;
+   }
+
    @Override
    public int hashCode() {
 
@@ -644,6 +659,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       this.weight = weight;
    }
 
+   public void setWeightUnit(final short weightUnit) {
+      this.weightUnit = weightUnit;
+   }
+
    @Override
    public String toString() {
 
@@ -715,6 +734,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       setPriceUnit         (otherEquipment.getPriceUnit());
       setSize              (otherEquipment.getSize());
       setWeight            (otherEquipment.getWeight());
+      setWeightUnit        (otherEquipment.getWeightUnit());
 
       setDateUsed          (otherEquipment.getDateUsed());
       setDateBuilt         (otherEquipment.getDateBuilt());

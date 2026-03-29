@@ -160,6 +160,12 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
    private float                      weight;
 
    /**
+    * 0 ... kg/lbs<br>
+    * 1 ... g/oz
+    */
+   private short                      weightUnit;
+
+   /**
     * Price
     */
    private float                      price;
@@ -563,6 +569,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       return weight;
    }
 
+   public short getWeightUnit() {
+      return weightUnit;
+   }
+
    @Override
    public int hashCode() {
 
@@ -763,6 +773,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       this.weight = weight;
    }
 
+   public void setWeightUnit(final short weightUnit) {
+      this.weightUnit = weightUnit;
+   }
+
    @Override
    public String toString() {
 
@@ -822,6 +836,7 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       setPriceUnit         (otherPart.getPriceUnit());
       setSize              (otherPart.getSize());
       setWeight            (otherPart.getWeight());
+      setWeightUnit        (otherPart.getWeightUnit());
 
       setDateUsed          (otherPart.getDateUsed());
       setDateBuilt         (otherPart.getDateBuilt());

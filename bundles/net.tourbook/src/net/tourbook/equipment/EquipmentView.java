@@ -2256,20 +2256,20 @@ public class EquipmentView extends ViewPart implements
 
             final Object element = cell.getElement();
 
-            float weight = 0;
+            float weightKg = 0;
 
             if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
 
-               weight = equipmentItem.getEquipment().getWeight();
+               weightKg = equipmentItem.getEquipment().getWeight();
 
             } else if (element instanceof final TVIEquipmentView_Part partItem) {
 
-               weight = partItem.getPart().getWeight();
+               weightKg = partItem.getPart().getWeight();
             }
 
-            if (weight != 0) {
+            if (weightKg != 0) {
 
-               weight = weight * UI.UNIT_VALUE_WEIGHT;
+               final float weight = weightKg * UI.UNIT_VALUE_WEIGHT;
 
                colDef.printDoubleValue(cell, weight, true);
                setCellColor(cell, element);

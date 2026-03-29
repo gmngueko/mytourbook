@@ -121,7 +121,9 @@ public class TourDatabase {
     * <li>/net.tourbook.export/format-templates/mt-1.0.vm</li>
     * <li>net.tourbook.device.mt.MT_StAXHandler</li>
     */
-   private static final int TOURBOOK_DB_VERSION = 60;
+   private static final int TOURBOOK_DB_VERSION = 61;
+
+//   private static final int TOURBOOK_DB_VERSION = 61; // 26.3+
 
 //   private static final int TOURBOOK_DB_VERSION = 60; // 26.3
 //   private static final int TOURBOOK_DB_VERSION = 59; // 25.11
@@ -4589,7 +4591,13 @@ public class TourDatabase {
                   + "   DateBuilt               BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
                   + "   DateRetired             BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
                   + "   DateCollateFrom         BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
-                  + "   DateCollateUntil        BIGINT DEFAULT 0                          " + NL //$NON-NLS-1$
+                  + "   DateCollateUntil        BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
+
+                  // version 61 start
+
+                  + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
+
+                  // version 61 end
 
                   + ")" //                                                                       //$NON-NLS-1$
       );
@@ -4677,7 +4685,13 @@ public class TourDatabase {
                   + "   DateBuilt               BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
                   + "   DateRetired             BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
                   + "   DateCollateFrom         BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
-                  + "   DateCollateUntil        BIGINT DEFAULT 0                          " + NL //$NON-NLS-1$
+                  + "   DateCollateUntil        BIGINT DEFAULT 0,                         " + NL //$NON-NLS-1$
+
+                  // version 61 start
+
+                  + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
+
+                  // version 61 end
 
                   + ")" //                                                                       //$NON-NLS-1$
       );
@@ -7232,9 +7246,14 @@ public class TourDatabase {
             currentDbVersion = _dbDesignVersion_New = updateDb_058_To_059(conn, splashManager);
          }
 
-         // 59 -> 60    25.11+++
+         // 59 -> 60    26.3
          if (currentDbVersion == 59) {
             currentDbVersion = _dbDesignVersion_New = updateDb_059_To_060(conn, splashManager);
+         }
+
+         // 60 -> 61    26.3+++
+         if (currentDbVersion == 60) {
+            currentDbVersion = _dbDesignVersion_New = updateDb_060_To_061(conn, splashManager);
          }
 
          // update db design version number
@@ -11564,6 +11583,33 @@ public class TourDatabase {
          if (isTableAvailable(conn, TABLE_EQUIPMENT_PART) == false) {
             createTable_EquipmentPart(stmt);
          }
+      }
+      stmt.close();
+
+      logDbUpdate_End(newDbVersion);
+
+      return newDbVersion;
+   }
+
+   private int updateDb_060_To_061(final Connection conn, final SplashManager splashManager) throws SQLException {
+
+      final int newDbVersion = 61;
+
+      logDbUpdate_Start(newDbVersion);
+      updateMonitor(splashManager, newDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // alter columns
+
+// SET_FORMATTING_OFF
+
+         SQL.addColumn_SmallInt(stmt, TABLE_EQUIPMENT,         "WeightUnit",     DEFAULT_0);    //$NON-NLS-1$
+
+         SQL.addColumn_SmallInt(stmt, TABLE_EQUIPMENT_PART,    "WeightUnit",     DEFAULT_0);    //$NON-NLS-1$
+
+// SET_FORMATTING_ON
+
       }
       stmt.close();
 
