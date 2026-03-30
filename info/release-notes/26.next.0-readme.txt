@@ -43,7 +43,8 @@ New / Improvements
 Changes
 =======
 
-*  
+* Equipment
+  - Multiple equipment with an empty type are not collated any more, each equipment with an empty type can now collate tours for itself
 
 
 Changes that require Tour Re-import

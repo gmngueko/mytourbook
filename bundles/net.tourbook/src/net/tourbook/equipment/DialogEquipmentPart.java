@@ -1157,6 +1157,12 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
    private void updateModelFromUI() {
 
+      String type = _comboType.getText().trim();
+
+      if (type.length() == 0) {
+         type = EquipmentManager.createEmptyEquipmentType();
+      }
+
 // SET_FORMATTING_OFF
 
       final float distance          = _spinDistance.getSelection() * UI.UNIT_VALUE_DISTANCE;
@@ -1169,7 +1175,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
       _part.setBrand(            _comboBrand.getText().trim());
       _part.setModel(            _comboModel.getText().trim());
-      _part.setPartType(         _comboType.getText().trim());
+      _part.setPartType(         type);
       _part.setDescription(      _txtDescription.getText().trim());
       _part.setUrlAddress(       _txtUrlAddress.getText().trim());
       _part.setImageFilePath(    _lblImageFilePath.getText().trim());
@@ -1247,6 +1253,12 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
       _isInUIUpdate = true;
 
+      String type = _part.getPartType();
+
+      if (EquipmentManager.isEmptyEquipmentType(type)) {
+         type = UI.EMPTY_STRING;
+      }
+
 // SET_FORMATTING_OFF
 
       /*
@@ -1280,7 +1292,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _comboBrand                .setText(_part.getBrand());
       _comboModel                .setText(_part.getModel());
       _comboSize                 .setText(_part.getSize());
-      _comboType                 .setText(_part.getPartType());
+      _comboType                 .setText(type);
 
       _comboWeightUnit           .select(_part.getWeightUnit());
 

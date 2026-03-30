@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutorService;
@@ -88,6 +89,12 @@ public class EquipmentManager {
    private static final char                 NL                          = UI.NEW_LINE;
 
    private static final Object               DB_LOCK                     = new Object();
+
+   /**
+    * To identify an empty equipment type, they are not empty but filled with a random UUID. To
+    * identify an UUID type from a real type, the UUID type has this prefix
+    */
+   public static final String                EMPTY_TYPE_PREFIX           = "v4a1n9---"; //$NON-NLS-1$
 
    public static final short                 EXPAND_TYPE_FLAT            = 0;
    public static final short                 EXPAND_TYPE_YEAR_TOUR       = 1;
@@ -255,6 +262,17 @@ public class EquipmentManager {
          _allTypes.clear();
          _allTypes = null;
       }
+   }
+
+   /**
+    * @return To identify an empty equipment type, they are not empty but filled with a random
+    *         UUID. To identify an UUID type from a real type, the UUID type has this prefix.
+    *
+    *         Empty types can be tested with {@link #isEmptyEquipmentType(String)}
+    */
+   public static String createEmptyEquipmentType() {
+
+      return EMPTY_TYPE_PREFIX + UUID.randomUUID();
    }
 
    private static SQLData createSQLEquipmentParameters(final Set<Equipment> allEquipment) {
@@ -1009,9 +1027,11 @@ public class EquipmentManager {
             // recheck again, another thread could have it created
             if (_allTypes == null) {
 
-               _allTypes = TourDatabase.getDistinctValues(
+               _allTypes = TourDatabase.getDistinctValuesWithExclude(
 
                      "type", //$NON-NLS-1$
+
+                     EMPTY_TYPE_PREFIX, // exclude all which start with this value
 
                      TourDatabase.TABLE_EQUIPMENT,
                      TourDatabase.TABLE_EQUIPMENT_PART);
@@ -1295,6 +1315,17 @@ public class EquipmentManager {
       }
 
       return allTourIds;
+   }
+
+   /**
+    * @param type
+    *
+    * @return Returns <code>true</code> when the provided type is an empty type which is starting
+    *         with {@value #EMPTY_TYPE_PREFIX}
+    */
+   public static boolean isEmptyEquipmentType(final String type) {
+
+      return type != null && type.trim().startsWith(EMPTY_TYPE_PREFIX);
    }
 
    private static void loadEquipment() {

@@ -1100,6 +1100,12 @@ public class DialogEquipment extends TitleAreaDialog {
 
    private void updateModelFromUI() {
 
+      String type = _comboType.getText().trim();
+
+      if (type.length() == 0) {
+         type = EquipmentManager.createEmptyEquipmentType();
+      }
+
 // SET_FORMATTING_OFF
 
       final float distance          = _spinDistance.getSelection() * UI.UNIT_VALUE_DISTANCE;
@@ -1110,7 +1116,7 @@ public class DialogEquipment extends TitleAreaDialog {
 
       _equipment.setBrand(             _comboBrand.getText().trim());
       _equipment.setModel(             _comboModel.getText().trim());
-      _equipment.setType(              _comboType.getText().trim());
+      _equipment.setType(              type);
       _equipment.setDescription(       _txtDescription.getText().trim());
       _equipment.setIsCollate(         _chkCollate.getSelection());
       _equipment.setUrlAddress(        _txtUrlAddress.getText().trim());
@@ -1185,6 +1191,12 @@ public class DialogEquipment extends TitleAreaDialog {
 
       _isInUIUpdate = true;
 
+      String type = _equipment.getType();
+
+      if (EquipmentManager.isEmptyEquipmentType(type)) {
+         type = UI.EMPTY_STRING;
+      }
+
 // SET_FORMATTING_OFF
 
       LocalDateTime dateUsed        = _equipment.getDateUsed_Local();
@@ -1214,8 +1226,8 @@ public class DialogEquipment extends TitleAreaDialog {
       _comboBrand       .setText(_equipment.getBrand());
       _comboModel       .setText(_equipment.getModel());
       _comboSize        .setText(_equipment.getSize());
-      _comboType        .setText(_equipment.getType());
-      
+      _comboType        .setText(type);
+
       _comboWeightUnit  .select( _equipment.getWeightUnit());
 
       _dateUsed         .setDate(dateUsed.getYear(),     dateUsed.getMonthValue() - 1,    dateUsed.getDayOfMonth());

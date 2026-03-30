@@ -50,16 +50,20 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
 
       super(equipViewer, equipmentType);
 
-      _equipment = equipment;
-      _equipmentID = equipment.getEquipmentId();
+// SET_FORMATTING_OFF
 
-      firstColumn = equipment.getName();
+      _equipment     = equipment;
+      _equipmentID   = equipment.getEquipmentId();
 
-      type = equipment.getType();
-      dateUsed = equipment.getDateUsed_Local();
+      firstColumn    = equipment.getName();
 
-      price = equipment.getPrice();
-      priceUnit = equipment.getPriceUnit();
+      type           = equipment.getType();
+      dateUsed       = equipment.getDateUsed_Local();
+
+      price          = equipment.getPrice();
+      priceUnit      = equipment.getPriceUnit();
+
+// SET_FORMATTING_ON
 
       if (UI.IS_SCRAMBLE_DATA) {
          firstColumn = UI.scrambleText(firstColumn);

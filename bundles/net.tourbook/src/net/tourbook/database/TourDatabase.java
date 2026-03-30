@@ -2089,6 +2089,89 @@ public class TourDatabase {
       return allSortedValues;
    }
 
+   /**
+    * Getting one row from multiple databases sorted by alphabet and without any double entries
+    *
+    * @param fieldname
+    *           DB field name
+    * @param exclude
+    *           Startstring which excluded
+    * @param allDBNames
+    *           Database tables
+    *
+    * @return Returns a sorted list with unique db field contents
+    */
+   public static ConcurrentSkipListSet<String> getDistinctValuesWithExclude(final String fieldname,
+                                                                            final String exclude,
+                                                                            final String... allDBNames) {
+
+      final ConcurrentSkipListSet<String> allSortedValues = new ConcurrentSkipListSet<>((text1, text2) -> {
+         {
+            // sort without case
+            return text1.compareToIgnoreCase(text2);
+         }
+      });
+
+      /*
+       * Run in UI thread otherwise the busyindicator fails
+       */
+      final Display display = Display.getDefault();
+
+      display.syncExec(() -> BusyIndicator.showWhile(display, () -> {
+
+         String sql = UI.EMPTY_STRING;
+
+         try (Connection conn = getInstance().getConnection();
+               Statement stmt = conn.createStatement()) {
+
+            final StringBuilder sb = new StringBuilder();
+
+            for (int dbIndex = 0; dbIndex < allDBNames.length; dbIndex++) {
+
+               final String dbName = allDBNames[dbIndex];
+
+               if (dbIndex > 0) {
+                  sb.append("UNION" + NL); //$NON-NLS-1$
+               }
+
+               sb.append(UI.EMPTY_STRING
+
+                     + "SELECT " + fieldname //                                           //$NON-NLS-1$
+                     + " FROM " + dbName //                                               //$NON-NLS-1$
+
+               // % is a placeholder in SQL for 0..n characters
+                     + " WHERE " + fieldname + " NOT LIKE '" + exclude + "%'" + NL); //   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+            }
+
+            sb.append("ORDER BY " + fieldname + NL); //$NON-NLS-1$
+
+            sql = sb.toString();
+
+            final ResultSet result = stmt.executeQuery(sql);
+
+            while (result.next()) {
+
+               String dbValue = result.getString(1);
+               if (dbValue != null) {
+
+                  dbValue = dbValue.trim();
+
+                  if (dbValue.length() > 0) {
+                     allSortedValues.add(dbValue);
+                  }
+               }
+            }
+
+         } catch (final SQLException e) {
+
+            StatusUtil.logError(NL + sql);
+            UI.showSQLException(e);
+         }
+      }));
+
+      return allSortedValues;
+   }
+
    public static TourDatabase getInstance() {
 
       if (_instance != null) {

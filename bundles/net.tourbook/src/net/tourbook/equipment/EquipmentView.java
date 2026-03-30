@@ -2232,7 +2232,7 @@ public class EquipmentView extends ViewPart implements
 
                final String type = viewItem.type;
 
-               if (type != null) {
+               if (EquipmentManager.isEmptyEquipmentType(type) == false) {
 
                   cell.setText(type);
                   setCellColor(cell, element);
