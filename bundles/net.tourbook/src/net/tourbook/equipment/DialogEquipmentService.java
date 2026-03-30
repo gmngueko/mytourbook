@@ -34,6 +34,7 @@ import net.tourbook.common.util.Util;
 import net.tourbook.data.Equipment;
 import net.tourbook.data.EquipmentPart;
 import net.tourbook.tag.TagManager;
+import net.tourbook.web.WEB;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
@@ -58,6 +59,7 @@ import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
@@ -130,6 +132,8 @@ public class DialogEquipmentService extends TitleAreaDialog {
    private Label                     _lblCollateWith;
    private Label                     _lblImage;
    private Label                     _lblImageFilePath;
+
+   private Link                      _linkWebsite;
 
    private Spinner                   _spinPrice;
 
@@ -446,8 +450,9 @@ public class DialogEquipmentService extends TitleAreaDialog {
             /*
              * Website
              */
-            final Label label = UI.createLabel(_container, Messages.Dialog_Equipment_Label_Website);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.BEGINNING).applyTo(label);
+            _linkWebsite = new Link(_container, SWT.NONE);
+            _linkWebsite.setText(Messages.Dialog_Equipment_Link_Website);
+            _linkWebsite.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_Website()));
 
             _txtUrlAddress = new Text(_container, SWT.BORDER);
             _txtUrlAddress.addModifyListener(e -> onModify());
@@ -783,7 +788,19 @@ public class DialogEquipmentService extends TitleAreaDialog {
 
       _isModified = true;
 
+      _linkWebsite.setToolTipText(_txtUrlAddress.getText());
+
       enableControls();
+   }
+
+   private void onSelect_Website() {
+
+      final String url = _txtUrlAddress.getText().trim();
+
+      if (url.length() > 0) {
+
+         WEB.openUrl(url);
+      }
    }
 
    private void resoreState() {
@@ -904,6 +921,7 @@ public class DialogEquipmentService extends TitleAreaDialog {
 // SET_FORMATTING_OFF
 
       final int collateWith      = _service.getCollateBetween();
+      final String urlAddress    = _service.getUrlAddress();
 
       _chkCollate                .setSelection(_service.isCollate());
 
@@ -919,7 +937,9 @@ public class DialogEquipmentService extends TitleAreaDialog {
       _spinPrice                 .setSelection((int) (_service.getPrice()  * 100));
 
       _txtDescription            .setText(_service.getDescription());
-      _txtUrlAddress             .setText(_service.getUrlAddress());
+      _txtUrlAddress             .setText(urlAddress);
+
+      _linkWebsite               .setToolTipText(urlAddress);
 
 // SET_FORMATTING_ON
 

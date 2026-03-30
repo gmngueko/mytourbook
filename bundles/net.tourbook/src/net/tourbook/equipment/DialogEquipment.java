@@ -37,6 +37,7 @@ import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.Equipment;
 import net.tourbook.tag.TagManager;
+import net.tourbook.web.WEB;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
@@ -62,6 +63,7 @@ import org.eclipse.swt.widgets.DateTime;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
@@ -140,6 +142,8 @@ public class DialogEquipment extends TitleAreaDialog {
    private Label                     _lblImageFilePath;
 
    private Label                     _canvasEquipmentImage;
+
+   private Link                      _linkWebsite;
 
    private Spinner                   _spinDistance;
    private Spinner                   _spinPrice;
@@ -521,7 +525,9 @@ public class DialogEquipment extends TitleAreaDialog {
             /*
              * Website
              */
-            UI.createLabel(_container, Messages.Dialog_Equipment_Label_Website);
+            _linkWebsite = new Link(_container, SWT.NONE);
+            _linkWebsite.setText(Messages.Dialog_Equipment_Link_Website);
+            _linkWebsite.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_Website()));
 
             _txtUrlAddress = new Text(_container, SWT.BORDER);
             _txtUrlAddress.addModifyListener(e -> onModify());
@@ -620,6 +626,7 @@ public class DialogEquipment extends TitleAreaDialog {
             _spinDistance,
 
             _chkCollate,
+            _linkWebsite,
             _txtUrlAddress,
             _txtDescription,
             _lblImage,
@@ -989,6 +996,8 @@ public class DialogEquipment extends TitleAreaDialog {
 
       _isModified = true;
 
+      _linkWebsite.setToolTipText(_txtUrlAddress.getText());
+
       final boolean isSyncDates = _chkSyncDates.getSelection();
 
       if (isSyncDates) {
@@ -1008,6 +1017,16 @@ public class DialogEquipment extends TitleAreaDialog {
       _dateRetired.setDate(now.getYear(), now.getMonthValue() - 1, now.getDayOfMonth());
 
       enableControls();
+   }
+
+   private void onSelect_Website() {
+
+      final String url = _txtUrlAddress.getText().trim();
+
+      if (url.length() > 0) {
+
+         WEB.openUrl(url);
+      }
    }
 
    private void onSelect_WeightUnit() {
@@ -1220,6 +1239,7 @@ public class DialogEquipment extends TitleAreaDialog {
       }
 
       final float distance    = _equipment.getDistanceFirstUse() / UI.UNIT_VALUE_DISTANCE;
+      final String urlAddress = _equipment.getUrlAddress();
 
       _chkCollate       .setSelection(_equipment.isCollate());
 
@@ -1239,8 +1259,9 @@ public class DialogEquipment extends TitleAreaDialog {
       _spinWeight       .setSelection(getWeight_FromModel(_equipment));
 
       _txtDescription   .setText(_equipment.getDescription());
-      _txtUrlAddress    .setText(_equipment.getUrlAddress());
+      _txtUrlAddress    .setText(urlAddress);
 
+      _linkWebsite      .setToolTipText(urlAddress);
 
 // SET_FORMATTING_ON
 
