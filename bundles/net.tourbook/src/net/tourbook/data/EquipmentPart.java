@@ -106,6 +106,11 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
    private String                     size;
 
    /**
+    * Purchase location
+    */
+   private String                     purchaseLocation;
+
+   /**
     * Description/notes for the equipment
     */
    private String                     description;
@@ -547,6 +552,15 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       return priceUnit;
    }
 
+   public String getPurchaseLocation() {
+
+      if (purchaseLocation == null) {
+         return UI.EMPTY_STRING;
+      }
+
+      return purchaseLocation;
+   }
+
    public String getSize() {
 
       if (size == null) {
@@ -760,6 +774,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       this.priceUnit = priceUnit;
    }
 
+   public void setPurchaseLocation(final String purchaseLocation) {
+      this.purchaseLocation = purchaseLocation;
+   }
+
    public void setSize(final String size) {
       this.size = size;
    }
@@ -822,6 +840,7 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       setModel             (otherPart.getModel());
       setDescription       (otherPart.getDescription());
       setImageFilePath     (otherPart.getImageFilePath());
+      setPurchaseLocation  (otherPart.getPurchaseLocation());
       setUrlAddress        (otherPart.getUrlAddress());
 
       setCompany           (otherPart.getCompany());

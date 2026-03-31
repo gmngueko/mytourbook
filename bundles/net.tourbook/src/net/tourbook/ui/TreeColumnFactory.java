@@ -87,6 +87,10 @@ public abstract class TreeColumnFactory {
    public static final String            EQUIPMENT_IMAGE_ID               = "EQUIPMENT_IMAGE_id";               //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_IMAGE_FILE_PATH;
    public static final String            EQUIPMENT_IMAGE_FILE_PATH_ID     = "EQUIPMENT_IMAGE_FILE_PATH_ID";     //$NON-NLS-1$
+   public static final TreeColumnFactory EQUIPMENT_WEBSITE;
+   public static final String            EQUIPMENT_WEBSITE_ID             = "EQUIPMENT_WEBSITE_ID";             //$NON-NLS-1$
+   public static final TreeColumnFactory EQUIPMENT_PURCHASE_LOCATION;
+   public static final String            EQUIPMENT_PURCHASE_LOCATION_ID   = "EQUIPMENT_PURCHASE_LOCATION_ID";   //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_INITIAL_DISTANCE;
    public static final String            EQUIPMENT_INITIAL_DISTANCE_ID    = "EQUIPMENT_INITIAL_DISTANCE";       //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_MODEL;
@@ -1118,6 +1122,25 @@ public abstract class TreeColumnFactory {
          }
       };
 
+
+      EQUIPMENT_PURCHASE_LOCATION = new TreeColumnFactory() {
+         @Override
+         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
+                                                  final PixelConverter pixelConverter) {
+
+            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_PURCHASE_LOCATION_ID, SWT.LEAD);
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
+
+            colDef.setColumnLabel(              "Purchase Location");
+            colDef.setColumnHeaderText(         "Location");
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(25));
+
+            return colDef;
+         }
+      };
+
       EQUIPMENT_SIZE = new TreeColumnFactory() {
          @Override
          public TreeColumnDefinition createColumn(final ColumnManager columnManager,
@@ -1156,6 +1179,24 @@ public abstract class TreeColumnFactory {
          }
       };
 
+      EQUIPMENT_WEBSITE = new TreeColumnFactory() {
+         @Override
+         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
+                                                  final PixelConverter pixelConverter) {
+
+            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_WEBSITE_ID, SWT.LEAD);
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
+
+            colDef.setColumnLabel(              "Website");
+            colDef.setColumnHeaderText(         "Website");
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(25));
+
+            return colDef;
+         }
+      };
+
       EQUIPMENT_WEIGHT = new TreeColumnFactory() {
          @Override
          public TreeColumnDefinition createColumn(final ColumnManager columnManager,
@@ -1178,7 +1219,6 @@ public abstract class TreeColumnFactory {
             return colDef;
          }
       };
-
 
       /*
        * Motion

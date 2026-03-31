@@ -4678,6 +4678,7 @@ public class TourDatabase {
 
                   // version 61 start
 
+                  + "   PurchaseLocation        VARCHAR(" + DB_LENGTH_NAME + "),          " + NL //$NON-NLS-1$ //$NON-NLS-2$
                   + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
 
                   // version 61 end
@@ -4772,6 +4773,7 @@ public class TourDatabase {
 
                   // version 61 start
 
+                  + "   PurchaseLocation        VARCHAR(" + DB_LENGTH_NAME + "),          " + NL //$NON-NLS-1$ //$NON-NLS-2$
                   + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
 
                   // version 61 end
@@ -11687,9 +11689,11 @@ public class TourDatabase {
 
 // SET_FORMATTING_OFF
 
-         SQL.addColumn_SmallInt(stmt, TABLE_EQUIPMENT,         "WeightUnit",     DEFAULT_0);    //$NON-NLS-1$
+         SQL.addColumn_VarCar    (stmt, TABLE_EQUIPMENT,       "PurchaseLocation",  DB_LENGTH_NAME);     //$NON-NLS-1$
+         SQL.addColumn_SmallInt  (stmt, TABLE_EQUIPMENT,       "WeightUnit",        DEFAULT_0);          //$NON-NLS-1$
 
-         SQL.addColumn_SmallInt(stmt, TABLE_EQUIPMENT_PART,    "WeightUnit",     DEFAULT_0);    //$NON-NLS-1$
+         SQL.addColumn_VarCar    (stmt, TABLE_EQUIPMENT_PART,  "PurchaseLocation",  DB_LENGTH_NAME);     //$NON-NLS-1$
+         SQL.addColumn_SmallInt  (stmt, TABLE_EQUIPMENT_PART,  "WeightUnit",        DEFAULT_0);          //$NON-NLS-1$
 
 // SET_FORMATTING_ON
 

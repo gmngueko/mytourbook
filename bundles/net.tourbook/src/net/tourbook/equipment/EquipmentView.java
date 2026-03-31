@@ -1261,6 +1261,8 @@ public class EquipmentView extends ViewPart implements
       defineColumn_Equipment_Size();
       defineColumn_Equipment_Weight();
       defineColumn_Equipment_InitialDistance();
+      defineColumn_Equipment_Website();
+      defineColumn_Equipment_PurchaseLocation();
 
       defineColumn_Time_ElapsedTime();
       defineColumn_Time_MovingTime();
@@ -2180,6 +2182,40 @@ public class EquipmentView extends ViewPart implements
    }
 
    /**
+    * Column: Purchase location
+    */
+   private void defineColumn_Equipment_PurchaseLocation() {
+
+      final TreeColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_PURCHASE_LOCATION.createColumn(_columnManager, _pc);
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final Object element = cell.getElement();
+
+            String purchaseLocation = null;
+
+            if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
+
+               purchaseLocation = equipmentItem.getEquipment().getPurchaseLocation();
+
+            } else if (element instanceof final TVIEquipmentView_Part partItem) {
+
+               purchaseLocation = partItem.getPart().getPurchaseLocation();
+            }
+
+            if (purchaseLocation != null && purchaseLocation.length() > 0) {
+
+               cell.setText(purchaseLocation);
+               setCellColor(cell, element);
+            }
+         }
+      });
+   }
+
+   /**
     * Column: Size
     */
    private void defineColumn_Equipment_Size() {
@@ -2237,6 +2273,40 @@ public class EquipmentView extends ViewPart implements
                   cell.setText(type);
                   setCellColor(cell, element);
                }
+            }
+         }
+      });
+   }
+
+   /**
+    * Column: Website
+    */
+   private void defineColumn_Equipment_Website() {
+
+      final TreeColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_WEBSITE.createColumn(_columnManager, _pc);
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final Object element = cell.getElement();
+
+            String website = null;
+
+            if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
+
+               website = equipmentItem.getEquipment().getUrlAddress();
+
+            } else if (element instanceof final TVIEquipmentView_Part partItem) {
+
+               website = partItem.getPart().getUrlAddress();
+            }
+
+            if (website != null && website.length() > 0) {
+
+               cell.setText(website);
+               setCellColor(cell, element);
             }
          }
       });

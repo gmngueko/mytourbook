@@ -138,6 +138,7 @@ public class DialogEquipmentService extends TitleAreaDialog {
    private Spinner                   _spinPrice;
 
    private Text                      _txtDescription;
+   private Text                      _txtPurchaseLocation;
    private Text                      _txtUrlAddress;
 
    private AutoComplete_ComboInputMT _autocomplete_Company;
@@ -148,6 +149,7 @@ public class DialogEquipmentService extends TitleAreaDialog {
    private ControlDecoration         _comboDecorator_Collate;
    private ControlDecoration         _comboDecorator_DateFrom;
    private ControlDecoration         _comboDecorator_Type;
+
 
    public DialogEquipmentService(final Shell parentShell,
                                  final Equipment equipment,
@@ -445,6 +447,20 @@ public class DialogEquipmentService extends TitleAreaDialog {
                _rdoCollateWith_Next.setToolTipText(collateWithTooltip);
                _rdoCollateWith_Next.addSelectionListener(_defaultSelectionListener);
             }
+         }
+         {
+            /*
+             * Purchase location
+             */
+            UI.createLabel(_container, "Pur&chase location");
+
+            _txtPurchaseLocation = new Text(_container, SWT.BORDER);
+            _txtPurchaseLocation.addModifyListener(e -> onModify());
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .hint(defaultWidth, SWT.DEFAULT)
+                  .span(2, 1)
+                  .applyTo(_txtPurchaseLocation);
          }
          {
             /*
@@ -838,6 +854,7 @@ public class DialogEquipmentService extends TitleAreaDialog {
       _service.setCompany(          _comboCompany.getText().trim());
       _service.setName_Service(     _comboName.getText().trim());
       _service.setPartType(         _comboType.getText().trim());
+      _service.setPurchaseLocation( _txtPurchaseLocation.getText().trim());
       _service.setDescription(      _txtDescription.getText().trim());
       _service.setUrlAddress(       _txtUrlAddress.getText().trim());
 
@@ -937,6 +954,7 @@ public class DialogEquipmentService extends TitleAreaDialog {
       _spinPrice                 .setSelection((int) (_service.getPrice()  * 100));
 
       _txtDescription            .setText(_service.getDescription());
+      _txtPurchaseLocation       .setText(_service.getPurchaseLocation());
       _txtUrlAddress             .setText(urlAddress);
 
       _linkWebsite               .setToolTipText(urlAddress);

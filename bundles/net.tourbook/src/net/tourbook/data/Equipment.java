@@ -73,6 +73,11 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    private String                     type;
 
    /**
+    * Purchase location
+    */
+   private String                     purchaseLocation;
+
+   /**
     * Description/notes for the equipment
     */
    private String                     description;
@@ -456,6 +461,15 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       return priceUnit;
    }
 
+   public String getPurchaseLocation() {
+
+      if (purchaseLocation == null) {
+         return UI.EMPTY_STRING;
+      }
+
+      return purchaseLocation;
+   }
+
    public String getSize() {
 
       if (size == null) {
@@ -642,6 +656,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       this.priceUnit = priceUnit;
    }
 
+   public void setPurchaseLocation(final String purchaseLocation) {
+      this.purchaseLocation = purchaseLocation;
+   }
+
    public void setSize(final String size) {
       this.size = size;
    }
@@ -724,6 +742,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       setModel             (otherEquipment.getModel());
       setDescription       (otherEquipment.getDescription());
       setImageFilePath     (otherEquipment.getImageFilePath());
+      setPurchaseLocation  (otherEquipment.getPurchaseLocation());
       setUrlAddress        (otherEquipment.getUrlAddress());
 
       setIsCollate         (otherEquipment.isCollate());

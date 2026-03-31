@@ -150,6 +150,7 @@ public class DialogEquipment extends TitleAreaDialog {
    private Spinner                   _spinWeight;
 
    private Text                      _txtDescription;
+   private Text                      _txtPurchaseLocation;
    private Text                      _txtUrlAddress;
 
    private AutoComplete_ComboInputMT _autocomplete_Brand;
@@ -523,6 +524,20 @@ public class DialogEquipment extends TitleAreaDialog {
          }
          {
             /*
+             * Purchase location
+             */
+            UI.createLabel(_container, "Pur&chase location");
+
+            _txtPurchaseLocation = new Text(_container, SWT.BORDER);
+            _txtPurchaseLocation.addModifyListener(e -> onModify());
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .hint(defaultWidth, SWT.DEFAULT)
+                  .span(6, 1)
+                  .applyTo(_txtPurchaseLocation);
+         }
+         {
+            /*
              * Website
              */
             _linkWebsite = new Link(_container, SWT.NONE);
@@ -626,6 +641,7 @@ public class DialogEquipment extends TitleAreaDialog {
             _spinDistance,
 
             _chkCollate,
+            _txtPurchaseLocation,
             _linkWebsite,
             _txtUrlAddress,
             _txtDescription,
@@ -1136,6 +1152,7 @@ public class DialogEquipment extends TitleAreaDialog {
       _equipment.setBrand(             _comboBrand.getText().trim());
       _equipment.setModel(             _comboModel.getText().trim());
       _equipment.setType(              type);
+      _equipment.setPurchaseLocation(  _txtPurchaseLocation.getText().trim());
       _equipment.setDescription(       _txtDescription.getText().trim());
       _equipment.setIsCollate(         _chkCollate.getSelection());
       _equipment.setUrlAddress(        _txtUrlAddress.getText().trim());
@@ -1241,27 +1258,28 @@ public class DialogEquipment extends TitleAreaDialog {
       final float distance    = _equipment.getDistanceFirstUse() / UI.UNIT_VALUE_DISTANCE;
       final String urlAddress = _equipment.getUrlAddress();
 
-      _chkCollate       .setSelection(_equipment.isCollate());
+      _chkCollate             .setSelection(_equipment.isCollate());
 
-      _comboBrand       .setText(_equipment.getBrand());
-      _comboModel       .setText(_equipment.getModel());
-      _comboSize        .setText(_equipment.getSize());
-      _comboType        .setText(type);
+      _comboBrand             .setText(_equipment.getBrand());
+      _comboModel             .setText(_equipment.getModel());
+      _comboSize              .setText(_equipment.getSize());
+      _comboType              .setText(type);
 
-      _comboWeightUnit  .select( _equipment.getWeightUnit());
+      _comboWeightUnit        .select( _equipment.getWeightUnit());
 
-      _dateUsed         .setDate(dateUsed.getYear(),     dateUsed.getMonthValue() - 1,    dateUsed.getDayOfMonth());
-      _dateBuilt        .setDate(dateBuilt.getYear(),    dateBuilt.getMonthValue() - 1,   dateBuilt.getDayOfMonth());
-      _dateRetired      .setDate(dateRetired.getYear(),  dateRetired.getMonthValue() - 1, dateRetired.getDayOfMonth());
+      _dateUsed               .setDate(dateUsed.getYear(),     dateUsed.getMonthValue() - 1,    dateUsed.getDayOfMonth());
+      _dateBuilt              .setDate(dateBuilt.getYear(),    dateBuilt.getMonthValue() - 1,   dateBuilt.getDayOfMonth());
+      _dateRetired            .setDate(dateRetired.getYear(),  dateRetired.getMonthValue() - 1, dateRetired.getDayOfMonth());
 
-      _spinDistance     .setSelection((int) distance);
-      _spinPrice        .setSelection((int) (_equipment.getPrice()  * 100));
-      _spinWeight       .setSelection(getWeight_FromModel(_equipment));
+      _spinDistance           .setSelection((int) distance);
+      _spinPrice              .setSelection((int) (_equipment.getPrice()  * 100));
+      _spinWeight             .setSelection(getWeight_FromModel(_equipment));
 
-      _txtDescription   .setText(_equipment.getDescription());
-      _txtUrlAddress    .setText(urlAddress);
+      _txtDescription         .setText(_equipment.getDescription());
+      _txtPurchaseLocation    .setText(_equipment.getPurchaseLocation());
+      _txtUrlAddress          .setText(urlAddress);
 
-      _linkWebsite      .setToolTipText(urlAddress);
+      _linkWebsite            .setToolTipText(urlAddress);
 
 // SET_FORMATTING_ON
 

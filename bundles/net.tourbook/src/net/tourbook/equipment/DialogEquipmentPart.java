@@ -155,6 +155,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
    private Spinner                   _spinWeight;
 
    private Text                      _txtDescription;
+   private Text                      _txtPurchaseLocation;
    private Text                      _txtUrlAddress;
 
    private AutoComplete_ComboInputMT _autocomplete_Brand;
@@ -569,6 +570,20 @@ public class DialogEquipmentPart extends TitleAreaDialog {
          }
          {
             /*
+             * Purchase location
+             */
+            UI.createLabel(_container, "Pur&chase location");
+
+            _txtPurchaseLocation = new Text(_container, SWT.BORDER);
+            _txtPurchaseLocation.addModifyListener(e -> onModify());
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .hint(defaultWidth, SWT.DEFAULT)
+                  .span(6, 1)
+                  .applyTo(_txtPurchaseLocation);
+         }
+         {
+            /*
              * Website
              */
             _linkWebsite = new Link(_container, SWT.NONE);
@@ -672,6 +687,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
             _spinDistance,
 
             _chkCollate,
+            _txtPurchaseLocation,
             _linkWebsite,
             _txtUrlAddress,
             _txtDescription,
@@ -1194,6 +1210,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _part.setBrand(            _comboBrand.getText().trim());
       _part.setModel(            _comboModel.getText().trim());
       _part.setPartType(         type);
+      _part.setPurchaseLocation( _txtPurchaseLocation.getText().trim());
       _part.setDescription(      _txtDescription.getText().trim());
       _part.setUrlAddress(       _txtUrlAddress.getText().trim());
       _part.setImageFilePath(    _lblImageFilePath.getText().trim());
@@ -1327,6 +1344,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _spinWeight                .setSelection(getWeight_FromModel(_part));
 
       _txtDescription            .setText(_part.getDescription());
+      _txtPurchaseLocation       .setText(_part.getPurchaseLocation());
       _txtUrlAddress             .setText(urlAddress);
 
       _linkWebsite               .setToolTipText(urlAddress);
@@ -1345,6 +1363,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 
       _isInUIUpdate = false;
    }
+
    private void updateUI_WeightUnits() {
 
       final int selectedUnitIndex = _comboWeightUnit.getSelectionIndex();
