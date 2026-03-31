@@ -1284,7 +1284,9 @@ public class EquipmentView extends ViewPart implements
 
       defineColumn_Powertrain_AvgCadence();
 
+      // system columns
       defineColumn_Equipment_ID();
+      defineColumn_Equipment_TypeRaw();
       defineColumn_Equipment_ExpandType();
    }
 
@@ -2273,6 +2275,33 @@ public class EquipmentView extends ViewPart implements
                   cell.setText(type);
                   setCellColor(cell, element);
                }
+            }
+         }
+      });
+   }
+
+   /**
+    * Column: Type raw
+    */
+   private void defineColumn_Equipment_TypeRaw() {
+
+      final ColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_TYPE_RAW.createColumn(_columnManager, _pc);
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final Object element = cell.getElement();
+
+            if (element instanceof final TVIEquipmentView_Item viewItem) {
+
+               final String type = viewItem.type;
+
+               cell.setText(type);
+               setCellColor(cell, element);
             }
          }
       });

@@ -103,6 +103,8 @@ public abstract class TreeColumnFactory {
    public static final String            EQUIPMENT_SIZE_ID                = "EQUIPMENT_SIZE";                   //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_TYPE;
    public static final String            EQUIPMENT_TYPE_ID                = "EQUIPMENT_TYPE";                   //$NON-NLS-1$
+   public static final TreeColumnFactory EQUIPMENT_TYPE_RAW;
+   public static final String            EQUIPMENT_TYPE_RAW_ID            = "EQUIPMENT_TYPE_RAW";               //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_WEIGHT;
    public static final String            EQUIPMENT_WEIGHT_ID              = "EQUIPMENT_WEIGHT";                 //$NON-NLS-1$
 
@@ -1174,6 +1176,24 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(15));
 
+
+            return colDef;
+         }
+      };
+
+      EQUIPMENT_TYPE_RAW = new TreeColumnFactory() {
+         @Override
+         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
+                                                  final PixelConverter pixelConverter) {
+
+            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_TYPE_RAW_ID, SWT.LEAD);
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
+
+            colDef.setColumnLabel(              "Type (saved)");
+            colDef.setColumnHeaderText(         "Type (saved)");
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(15));
 
             return colDef;
          }

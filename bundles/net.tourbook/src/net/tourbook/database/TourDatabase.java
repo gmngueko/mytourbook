@@ -7406,8 +7406,8 @@ public class TourDatabase {
          updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_057_to_058()); //     58 - 25.6
 
          // this must be run BEFORE the subsequent update
-         updateDb_058_To_059_DataUpdate(conn, splashManager); //                                   59 - 25.??? after 25.6
-         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_058_to_059()); //     59 - 25.??? after 25.6
+         updateDb_058_To_059_DataUpdate(conn, splashManager); //                                   59 - 25.11
+         updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_058_to_059()); //     59 - 25.11
 
       } catch (final SQLException e) {
 
@@ -7420,6 +7420,15 @@ public class TourDatabase {
       return true;
    }
 
+   /**
+    * This is updating {@link TourData} concurrently
+    *
+    * @param connection
+    * @param splashManager
+    * @param tourDataUpdater
+    *
+    * @throws SQLException
+    */
    private void updateDb__3_Data_Concurrent(final Connection connection,
                                             final SplashManager splashManager,
                                             final ITourDataUpdate tourDataUpdater) throws SQLException {
