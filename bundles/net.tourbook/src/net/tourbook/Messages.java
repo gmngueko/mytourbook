@@ -1170,7 +1170,6 @@ public class Messages extends NLS {
    public static String        Equipment_Action_EditEquipment;
    public static String        Equipment_Action_EditPart;
    public static String        Equipment_Action_EditService;
-   public static String        Equipment_Action_EquipmentFilter_Tooltip;
    public static String        Equipment_Action_EquipmentFilterInfo_Tooltip;
    public static String        Equipment_Action_EquipmentPreferences;
    public static String        Equipment_Action_ManageEquipment;

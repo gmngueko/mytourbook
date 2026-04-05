@@ -38,11 +38,13 @@ import org.eclipse.jface.viewers.TreeViewer;
 
 public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
 
-   private Equipment _equipment;
+   private static final String TEXT_FORMATTING = "%s"; //$NON-NLS-1$
 
-   private long      _equipmentID;
+   private Equipment           _equipment;
 
-   private boolean   _isMonthCategory;
+   private long                _equipmentID;
+
+   private boolean             _isMonthCategory;
 
    public TVIEquipmentView_Equipment(final TreeViewer equipViewer,
                                      final Equipment equipment,
@@ -64,6 +66,22 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
       priceUnit      = equipment.getPriceUnit();
 
 // SET_FORMATTING_ON
+
+      long durationMS = equipment.getDuration();
+      String durationText = TEXT_FORMATTING;
+
+      final long dateCollateUntil = equipment.getDateCollateUntil();
+
+      if (dateCollateUntil == TimeTools.MAX_TIME_IN_EPOCH_MILLI) {
+
+         // this is the last collated equipment
+
+         durationMS = TimeTools.nowInMilliseconds() - equipment.getDateUsed();
+         durationText = Messages.Equipment_View_Label_UntilNow;
+      }
+
+      usageDurationMS = durationMS;
+      usageDurationText = durationText;
 
       if (UI.IS_SCRAMBLE_DATA) {
          firstColumn = UI.scrambleText(firstColumn);
@@ -162,14 +180,16 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
       for (final EquipmentPart part : allParts) {
 
          long durationMS = part.getDuration();
-         String durationLastText = UI.EMPTY_STRING;
+         String durationText = TEXT_FORMATTING;
 
-         if (part.getDateCollateUntil() == TimeTools.MAX_TIME_IN_EPOCH_MILLI) {
+         final long dateCollateUntil = part.getDateCollateUntil();
+
+         if (dateCollateUntil == TimeTools.MAX_TIME_IN_EPOCH_MILLI) {
 
             // this is the last collated part
 
             durationMS = TimeTools.nowInMilliseconds() - part.getDateUsed();
-            durationLastText = Messages.Equipment_View_Label_UntilNow;
+            durationText = Messages.Equipment_View_Label_UntilNow;
          }
 
          final TVIEquipmentView_Part partItem = new TVIEquipmentView_Part(
@@ -189,8 +209,8 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
          partItem.price                = part.getPrice();
          partItem.priceUnit            = part.getPriceUnit();
 
-         partItem.usageDuration        = durationMS;
-         partItem.usageDurationLast    = durationLastText;
+         partItem.usageDurationMS      = durationMS;
+         partItem.usageDurationText    = durationText;
 
 // SET_FORMATTING_ON
 
