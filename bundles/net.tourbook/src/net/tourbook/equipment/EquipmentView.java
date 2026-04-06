@@ -1842,20 +1842,17 @@ public class EquipmentView extends ViewPart implements
 
             final Object element = cell.getElement();
 
+            long durationMS = 0;
+            String durationText = null;
+
             if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
 
                final boolean isCollate = equipmentItem.getEquipment().isCollate();
 
                if (isCollate) {
 
-                  final long durationMS = equipmentItem.usageDurationMS;
-                  final String durationText = equipmentItem.usageDurationText;
-
-                  final Period durationPeriod = new Period(0, durationMS, _tourPeriodTemplate);
-                  final String formattedDuration = durationPeriod.toString(UI.DURATION_FORMATTER_YEAR_MONTH_DAY);
-
-                  cell.setText(durationText.formatted(formattedDuration));
-                  setCellColor(cell, element);
+                  durationMS = equipmentItem.usageDurationMS;
+                  durationText = equipmentItem.usageDurationText;
                }
 
             } else if (element instanceof final TVIEquipmentView_Part partItem) {
@@ -1864,15 +1861,35 @@ public class EquipmentView extends ViewPart implements
 
                if (isCollate) {
 
-                  final long durationMS = partItem.usageDurationMS;
-                  final String durationText = partItem.usageDurationText;
+                  durationMS = partItem.usageDurationMS;
+                  durationText = partItem.usageDurationText;
+               }
+            }
+
+            if (durationMS != 0) {
+
+               String formattedText;
+
+               final ValueFormat valueFormatter = colDef.getValueFormat_Detail();
+
+               if (valueFormatter.equals(ValueFormat.PERIOD_DAY)) {
+
+                  final float days = durationMS / 1000f / 3600 / 24;
+
+                  final String formattedDuration = Long.toString(Math.round(days));
+
+                  formattedText = durationText.formatted(formattedDuration);
+
+               } else {
 
                   final Period durationPeriod = new Period(0, durationMS, _tourPeriodTemplate);
                   final String formattedDuration = durationPeriod.toString(UI.DURATION_FORMATTER_YEAR_MONTH_DAY);
 
-                  cell.setText(durationText.formatted(formattedDuration));
-                  setCellColor(cell, element);
+                  formattedText = durationText.formatted(formattedDuration);
                }
+
+               cell.setText(formattedText);
+               setCellColor(cell, element);
             }
          }
       });

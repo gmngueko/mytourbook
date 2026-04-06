@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2016, 2025 Wolfgang Schramm and Contributors
+ * Copyright (C) 2016, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -47,6 +47,12 @@ public class ValueFormatSet {
 
          ValueFormat.DATE_TIME,
          ValueFormat.DATE_TIME_HH_MM_SS,
+   };
+
+   public static ValueFormat[] Period          = new ValueFormat[] {
+
+         ValueFormat.PERIOD_YEAR_MONTH_DAY,
+         ValueFormat.PERIOD_DAY,
    };
 
    /**

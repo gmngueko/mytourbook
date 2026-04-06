@@ -846,10 +846,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(15));
 
-            colDef.setValueFormats(
-                  ValueFormatSet.DateTime,
-                  ValueFormat.DATE_TIME,
-                  columnManager);
+            colDef.setValueFormats(             ValueFormatSet.DateTime,
+                                                ValueFormat.DATE_TIME,
+                                                columnManager);
 
             return colDef;
          }
@@ -908,10 +907,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(15));
 
-            colDef.setValueFormats(
-                  ValueFormatSet.DateTime,
-                  ValueFormat.DATE_TIME,
-                  columnManager);
+            colDef.setValueFormats(             ValueFormatSet.DateTime,
+                                                ValueFormat.DATE_TIME,
+                                                columnManager);
 
             return colDef;
          }
@@ -932,11 +930,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(15));
 
-            colDef.setValueFormats(
-                  ValueFormatSet.DateTime,
-                  ValueFormat.DATE_TIME,
-                  columnManager);
-
+            colDef.setValueFormats(             ValueFormatSet.DateTime,
+                                                ValueFormat.DATE_TIME,
+                                                columnManager);
             return colDef;
          }
       };
@@ -956,6 +952,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(20));
 
+            colDef.setValueFormats(             ValueFormatSet.Period,
+                                                ValueFormat.PERIOD_YEAR_MONTH_DAY,
+                                                columnManager);
             return colDef;
          }
       };
@@ -1052,10 +1051,6 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.UNIT_LABEL_DISTANCE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
-//            colDef.setValueFormats(
-//                  ValueFormatSet.Number,
-//                  ValueFormat.NUMBER_1_0,
-//                  columnManager);
 
             return colDef;
          }
@@ -1095,10 +1090,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(10));
 
-            colDef.setValueFormats(
-                  ValueFormatSet.Number_2_Digits,
-                  ValueFormat.NUMBER_1_0,
-                  columnManager);
+            colDef.setValueFormats(             ValueFormatSet.Number_2_Digits,
+                                                ValueFormat.NUMBER_1_0,
+                                                columnManager);
 
             return colDef;
          }
@@ -1231,10 +1225,10 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.UNIT_LABEL_WEIGHT);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_0,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_0,
+                                                columnManager);
 
             return colDef;
          }
@@ -1283,11 +1277,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               unitLabel);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(10));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1308,11 +1302,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.UNIT_LABEL_DISTANCE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_0,
-                  ValueFormat.NUMBER_1_3,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_0,
+                                                ValueFormat.NUMBER_1_3,
+                                                columnManager);
 
             return colDef;
          }
@@ -1336,11 +1330,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               unitLabel);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(10));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1388,11 +1382,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               Messages.ColumnFactory_power);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(5));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_0,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_0,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1413,11 +1407,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               Messages.ColumnFactory_power);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(5));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_0,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_0,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1458,11 +1452,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.UNIT_JOULE_MEGA);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_2,
-                  ValueFormat.NUMBER_1_3,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_2,
+                                                ValueFormat.NUMBER_1_3,
+                                                columnManager);
 
             return colDef;
          }
@@ -1487,11 +1481,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               Messages.ColumnFactory_avg_cadence);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1512,11 +1506,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.SYMBOL_PERCENTAGE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1537,11 +1531,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.SYMBOL_PERCENTAGE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1562,11 +1556,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.SYMBOL_PERCENTAGE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
@@ -1587,11 +1581,11 @@ public abstract class TreeColumnFactory {
             colDef.setColumnUnit(               UI.SYMBOL_PERCENTAGE);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
-            colDef.setValueFormats(
-                  ValueFormatSet.Number,
-                  ValueFormat.NUMBER_1_1,
-                  ValueFormat.NUMBER_1_1,
-                  columnManager);
+
+            colDef.setValueFormats(             ValueFormatSet.Number,
+                                                ValueFormat.NUMBER_1_1,
+                                                ValueFormat.NUMBER_1_1,
+                                                columnManager);
 
             return colDef;
          }
