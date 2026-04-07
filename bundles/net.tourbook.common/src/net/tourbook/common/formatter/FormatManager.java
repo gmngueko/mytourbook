@@ -281,6 +281,18 @@ public class FormatManager {
       case DATE_TIME_HH_MM_SS:
          return Messages.Value_Formatter_Time_DD_MM_YYY__HH_MM_SS;
 
+      case EQUIPMENT_BRAND:
+         return "Brand";
+
+      case EQUIPMENT_MODEL:
+         return "Model";
+
+      case EQUIPMENT_BRAND_MODEL:
+         return "Brand - Model";
+
+      case EQUIPMENT_TYPE:
+         return "Type";
+
       case PERIOD_DAY:
          return "Days";
 

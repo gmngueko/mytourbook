@@ -61,6 +61,8 @@ public abstract class TreeColumnFactory {
 
    public static final TreeColumnFactory EQUIPMENT_AND_CATEGORY;
    public static final String            EQUIPMENT_AND_CATEGORY_ID        = "EQUIPMENT_AND_CATEGORY";           //$NON-NLS-1$
+   public static final TreeColumnFactory EQUIPMENT_AUTO_RETIRED;
+   public static final String            EQUIPMENT_AUTO_RETIRED_ID        = "EQUIPMENT_AUTO_RETIRED";           //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_BRAND;
    public static final String            EQUIPMENT_BRAND_ID               = "EQUIPMENT_BRAND";                  //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_COLLATE;
@@ -769,6 +771,25 @@ public abstract class TreeColumnFactory {
             colDef.setColumnHeaderToolTipText(  Messages.ColumnFactory_Equipment_Equipment_Tooltip);
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(40));
+
+            return colDef;
+         }
+      };
+
+      EQUIPMENT_AUTO_RETIRED = new TreeColumnFactory() {
+         @Override
+         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
+                                                  final PixelConverter pixelConverter) {
+
+            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_AUTO_RETIRED_ID, SWT.CENTER);
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
+
+            colDef.setColumnLabel(              "Is auto retired");
+            colDef.setColumnHeaderText(         "Retired");
+            colDef.setColumnHeaderToolTipText(  "Is auto retired");
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
 
             return colDef;
          }
@@ -2726,6 +2747,9 @@ public abstract class TreeColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(20));
 
+            colDef.setValueFormats(             ValueFormatSet.Equipment,
+                                                ValueFormat.EQUIPMENT_BRAND_MODEL,
+                                                columnManager);
             return colDef;
          }
       };

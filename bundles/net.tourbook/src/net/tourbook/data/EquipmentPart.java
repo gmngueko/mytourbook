@@ -131,6 +131,12 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
    private boolean                    isCollate                       = true;
 
    /**
+    * When <code>true</code> then this part is auto retired which depends on
+    * {@link #dateCollateFrom} and {@link #dateCollateUntil}
+    */
+   private boolean                    isAutoRetired;
+
+   /**
     * When the part was firstly used, in milliseconds since 1970-01-01T00:00:00Z
     */
    private long                       dateUsed;
@@ -593,6 +599,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       return Objects.hash(partId, _createId);
    }
 
+   public boolean isAutoRetired() {
+      return isAutoRetired;
+   }
+
    public boolean isCollate() {
       return isCollate;
    }
@@ -747,6 +757,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       this.imageFilePath = imageFilePath;
    }
 
+   public void setIsAutoRetired(final boolean isAutoRetired) {
+      this.isAutoRetired = isAutoRetired;
+   }
+
    public void setIsCollate(final boolean isCollate) {
       this.isCollate = isCollate;
    }
@@ -834,6 +848,12 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
          serviceName = otherPart.getName_Service();
       }
 
+      // a not collated part cannot be auto retired
+      final boolean isCollateOther = otherPart.isCollate();
+      if (isCollateOther == false) {
+         setIsAutoRetired(false);
+      }
+
 // SET_FORMATTING_OFF
 
       setBrand             (otherPart.getBrand());
@@ -846,7 +866,7 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       setCompany           (otherPart.getCompany());
       setName_Service      (serviceName);
 
-      setIsCollate         (otherPart.isCollate());
+      setIsCollate         (isCollateOther);
       setCollateBetween    (otherPart.getCollateBetween());
       setPartType          (otherPart.getPartType());
 

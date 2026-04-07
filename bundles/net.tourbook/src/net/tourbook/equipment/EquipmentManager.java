@@ -45,6 +45,7 @@ import javax.persistence.Query;
 
 import net.tourbook.Messages;
 import net.tourbook.common.UI;
+import net.tourbook.common.formatter.ValueFormat;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.ImageUtils;
 import net.tourbook.common.util.SQL;
@@ -1175,6 +1176,52 @@ public class EquipmentManager {
       return getEquipmentNamesText(allEquipmentNames, false);
    }
 
+   public static String getEquipmentNames(final List<Long> allEquipmentIDs, final ValueFormat valueFormat) {
+
+      if (allEquipmentIDs == null) {
+         return UI.EMPTY_STRING;
+      }
+
+      final Map<Long, Equipment> allEquipment = getAllEquipment_ByID();
+      final List<String> allEquipmentNames = new ArrayList<>();
+
+      // get equipment name for each equipment id
+      for (final Long equipmentID : allEquipmentIDs) {
+
+         final Equipment equipment = allEquipment.get(equipmentID);
+
+         if (equipment != null) {
+
+            if (valueFormat.equals(ValueFormat.EQUIPMENT_BRAND_MODEL)) {
+
+               allEquipmentNames.add(equipment.getName());
+
+            } else if (valueFormat.equals(ValueFormat.EQUIPMENT_BRAND)) {
+
+               allEquipmentNames.add(equipment.getBrand());
+
+            } else if (valueFormat.equals(ValueFormat.EQUIPMENT_MODEL)) {
+
+               allEquipmentNames.add(equipment.getModel());
+
+            } else if (valueFormat.equals(ValueFormat.EQUIPMENT_TYPE)) {
+
+               allEquipmentNames.add(equipment.getType());
+            }
+
+         } else {
+
+            try {
+               throw new MyTourbookException("Equipment id '" + equipmentID + "' is not available"); //$NON-NLS-1$ //$NON-NLS-2$
+            } catch (final MyTourbookException e) {
+               StatusUtil.log(e);
+            }
+         }
+      }
+
+      return getEquipmentNamesText(allEquipmentNames, false);
+   }
+
    /**
     * @param allEquipment
     *
@@ -1720,22 +1767,17 @@ public class EquipmentManager {
 
             // this is the first and only equipment
 
-            final long currentDateFrom = equipment.getDateCollateFrom();
-            final long currentDateUntil = equipment.getDateCollateUntil();
 
             final long newDateFrom = equipment.getDateUsed();
             final long newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
 
-            if (currentDateFrom != newDateFrom
-                  || currentDateUntil != newDateUntil) {
+            // modify date
+            equipment.setDateCollateFrom(newDateFrom);
+            equipment.setDateCollateUntil(newDateUntil);
 
-               // modify date
+            equipment.setIsAutoRetired(false);
 
-               equipment.setDateCollateFrom(newDateFrom);
-               equipment.setDateCollateUntil(newDateUntil);
-
-               allModifiedEquipment.add(equipment);
-            }
+            allModifiedEquipment.add(equipment);
 
          } else {
 
@@ -1745,16 +1787,18 @@ public class EquipmentManager {
 
                equipment = allSortedEquipment.get(equipmentIndex);
 
-               final long currentDateFrom = equipment.getDateCollateFrom();
                final long currentDateUntil = equipment.getDateCollateUntil();
 
                long newDateUntil = currentDateUntil;
+               boolean isAutoRetired = true;
 
                if (equipmentIndex == numEquipment - 1) {
 
                   // this is the last equipment
 
                   newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
+
+                  isAutoRetired = false;
 
                } else {
 
@@ -1776,16 +1820,13 @@ public class EquipmentManager {
                // collated tours are starting always with the equipment first used date
                final long newDateFrom = equipment.getDateUsed();
 
-               if (currentDateFrom != newDateFrom
-                     || currentDateUntil != newDateUntil) {
+               // modify date
+               equipment.setDateCollateFrom(newDateFrom);
+               equipment.setDateCollateUntil(newDateUntil);
 
-                  // from/until date is not correct -> modify date
+               equipment.setIsAutoRetired(isAutoRetired);
 
-                  equipment.setDateCollateFrom(newDateFrom);
-                  equipment.setDateCollateUntil(newDateUntil);
-
-                  allModifiedEquipment.add(equipment);
-               }
+               allModifiedEquipment.add(equipment);
             }
          }
 
@@ -1889,8 +1930,6 @@ public class EquipmentManager {
          // this is the first and only part
 
          final long partDateUsed = part.getDateUsed();
-         final long partDateFrom = part.getDateCollateFrom();
-         final long partDateUntil = part.getDateCollateUntil();
 
          long newDateFrom;
          long newDateUntil;
@@ -1910,33 +1949,31 @@ public class EquipmentManager {
             newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
          }
 
-         if (partDateFrom != newDateFrom
-               || partDateUntil != newDateUntil) {
+         // modify date
+         part.setDateCollateFrom(newDateFrom);
+         part.setDateCollateUntil(newDateUntil);
 
-            // modify date
+         part.setIsAutoRetired(false);
 
-            part.setDateCollateFrom(newDateFrom);
-            part.setDateCollateUntil(newDateUntil);
-
-            allModifiedParts.add(part);
-         }
+         allModifiedParts.add(part);
 
       } else {
 
          // these are all other parts with more than 1 parts
 
          long prevPartDateUsed = 0;
+         final int lastIndex = numParts - 1;
 
          for (int partIndex = 0; partIndex < numParts; partIndex++) {
 
             part = allSortedParts.get(partIndex);
 
             final long partDateUsed = part.getDateUsed();
-            final long partDateFrom = part.getDateCollateFrom();
-            final long partDateUntil = part.getDateCollateUntil();
 
             long newDateFrom;
             long newDateUntil;
+
+            boolean isAutoRetired = true;
 
             if (isCollatePrev) {
 
@@ -1957,6 +1994,13 @@ public class EquipmentManager {
                   newDateFrom = prevPartDateUsed + TimeTools.DAY_MILLISECONDS;
                }
 
+               if (partIndex == lastIndex) {
+
+                  // the last part cannot be auto retired
+
+                  isAutoRetired = false;
+               }
+
                newDateUntil = partDateUsed + oneDayMS;
 
                prevPartDateUsed = partDateUsed;
@@ -1967,11 +2011,13 @@ public class EquipmentManager {
                 * Collate from this part to the next part
                 */
 
-               if (partIndex == numParts - 1) {
+               if (partIndex == lastIndex) {
 
                   // this is the last part
 
                   newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
+
+                  isAutoRetired = false;
 
                } else {
 
@@ -1997,22 +2043,16 @@ public class EquipmentManager {
                newDateFrom = equipmentDateUsed;
             }
 
-            if (partDateFrom != newDateFrom
-                  || partDateUntil != newDateUntil
+            // modify date
+            part.setDateCollateFrom(newDateFrom);
+            part.setDateCollateUntil(newDateUntil);
 
-                  // check if collated between is modified
-                  || collateBetween != part.getCollateBetween()) {
+            part.setIsAutoRetired(isAutoRetired);
 
-               // modify date
+            // there can be only ONE "collated between" within the part collection of an equipment
+            part.setCollateBetween(collateBetween);
 
-               part.setDateCollateFrom(newDateFrom);
-               part.setDateCollateUntil(newDateUntil);
-
-               // there can be only ONE "collated between" within the part collection of an equipment
-               part.setCollateBetween(collateBetween);
-
-               allModifiedParts.add(part);
-            }
+            allModifiedParts.add(part);
          }
       }
 

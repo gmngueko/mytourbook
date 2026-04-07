@@ -4678,6 +4678,7 @@ public class TourDatabase {
 
                   // version 61 start
 
+                  + "   IsAutoRetired           BOOLEAN DEFAULT FALSE,                    " + NL //$NON-NLS-1$
                   + "   PurchaseLocation        VARCHAR(" + DB_LENGTH_NAME + "),          " + NL //$NON-NLS-1$ //$NON-NLS-2$
                   + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
 
@@ -4773,6 +4774,7 @@ public class TourDatabase {
 
                   // version 61 start
 
+                  + "   IsAutoRetired           BOOLEAN DEFAULT FALSE,                    " + NL //$NON-NLS-1$
                   + "   PurchaseLocation        VARCHAR(" + DB_LENGTH_NAME + "),          " + NL //$NON-NLS-1$ //$NON-NLS-2$
                   + "   WeightUnit              SMALLINT DEFAULT 0                       	" + NL //$NON-NLS-1$
 
@@ -7408,6 +7410,8 @@ public class TourDatabase {
          // this must be run BEFORE the subsequent update
          updateDb_058_To_059_DataUpdate(conn, splashManager); //                                   59 - 25.11
          updateDb__3_Data_Concurrent(conn, splashManager, new TourDataUpdate_058_to_059()); //     59 - 25.11
+
+         updateDb_060_To_061_DataUpdate(conn, splashManager); //                                   61 - 26.3+++?
 
       } catch (final SQLException e) {
 
@@ -11698,9 +11702,11 @@ public class TourDatabase {
 
 // SET_FORMATTING_OFF
 
+         SQL.addColumn_Boolean   (stmt, TABLE_EQUIPMENT,       "IsAutoRetired",     DEFAULT_FALSE);      //$NON-NLS-1$
          SQL.addColumn_VarCar    (stmt, TABLE_EQUIPMENT,       "PurchaseLocation",  DB_LENGTH_NAME);     //$NON-NLS-1$
          SQL.addColumn_SmallInt  (stmt, TABLE_EQUIPMENT,       "WeightUnit",        DEFAULT_0);          //$NON-NLS-1$
 
+         SQL.addColumn_Boolean   (stmt, TABLE_EQUIPMENT_PART,  "IsAutoRetired",     DEFAULT_FALSE);      //$NON-NLS-1$
          SQL.addColumn_VarCar    (stmt, TABLE_EQUIPMENT_PART,  "PurchaseLocation",  DB_LENGTH_NAME);     //$NON-NLS-1$
          SQL.addColumn_SmallInt  (stmt, TABLE_EQUIPMENT_PART,  "WeightUnit",        DEFAULT_0);          //$NON-NLS-1$
 
@@ -11712,6 +11718,76 @@ public class TourDatabase {
       logDbUpdate_End(newDbVersion);
 
       return newDbVersion;
+   }
+
+   /**
+    * Update field <code>isAutoRetired</code> in the equipment/parts
+    *
+    * @param conn
+    * @param splashManager
+    *
+    * @throws SQLException
+    */
+   private void updateDb_060_To_061_DataUpdate(final Connection conn,
+                                               final SplashManager splashManager) throws SQLException {
+
+      final long startTime = System.currentTimeMillis();
+
+      final int dbDataVersion = 61;
+
+      if (getDbVersion(conn, TABLE_DB_VERSION_DATA) >= dbDataVersion) {
+
+         // data version is higher -> nothing to do
+         return;
+      }
+
+      final EntityManager em = null;
+
+//      try {
+//
+//         em = TourDatabase.getInstance().getEntityManager();
+//
+//         if (em != null) {
+//
+//            final Query query = em.createQuery(UI.EMPTY_STRING
+//
+//                  + "SELECT Equipment" + NL //                                               //$NON-NLS-1$
+//                  + " FROM " + Equipment.class.getSimpleName() + " AS Equipment" + NL //     //$NON-NLS-1$ //$NON-NLS-2$
+//
+//                  // sort by name
+//                  + " ORDER BY Equipment.brand, Equipment.model" + NL //                     //$NON-NLS-1$
+//            );
+//
+//            final Map<Long, Equipment> allEquipments_ByID = new HashMap<>();
+//            final Map<Long, EquipmentPart> allParts_ByID = new HashMap<>();
+//
+//            final List<Equipment> allEquipments_ByName = new ArrayList<>();
+//
+//            final List<?> allResults = query.getResultList();
+//
+//            for (final Object result : allResults) {
+//
+//               if (result instanceof final Equipment equipment) {
+//
+//                  allEquipments_ByID.put(equipment.getEquipmentId(), equipment);
+//                  allEquipments_ByName.add(equipment);
+//
+//                  for (final EquipmentPart part : equipment.getParts()) {
+//
+//                     allParts_ByID.put(part.getPartId(), part);
+//                  }
+//               }
+//            }
+//         }
+//
+//      } finally {
+//
+//         if (em != null) {
+//            em.close();
+//         }
+//      }
+
+      updateVersionNumber_20_AfterDataUpdate(conn, dbDataVersion, startTime);
    }
 
    private void updateMonitor(final SplashManager splashManager, final int newDbVersion) {

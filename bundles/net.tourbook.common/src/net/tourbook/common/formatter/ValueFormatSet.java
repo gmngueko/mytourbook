@@ -55,6 +55,14 @@ public class ValueFormatSet {
          ValueFormat.PERIOD_DAY,
    };
 
+   public static ValueFormat[] Equipment       = new ValueFormat[] {
+
+         ValueFormat.EQUIPMENT_BRAND_MODEL,
+         ValueFormat.EQUIPMENT_BRAND,
+         ValueFormat.EQUIPMENT_MODEL,
+         ValueFormat.EQUIPMENT_TYPE,
+   };
+
    /**
     * Only {@link ValueFormatter_Time_HHMM} or {@link ValueFormatter_Time_HHMMSS}
     */

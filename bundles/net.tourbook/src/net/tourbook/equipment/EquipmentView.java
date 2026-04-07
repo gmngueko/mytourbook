@@ -1220,6 +1220,7 @@ public class EquipmentView extends ViewPart implements
       defineColumn_Equipment_Date_UsageDuration();
       defineColumn_Equipment_Date_Built();
       defineColumn_Equipment_Date_Retired();
+      defineColumn_Equipment_AutoRetired();
 
       defineColumn_Equipment_Price();
       defineColumn_Equipment_PriceUnit();
@@ -1538,6 +1539,42 @@ public class EquipmentView extends ViewPart implements
 
                colDef.printValue_0(cell, value);
 
+               setCellColor(cell, element);
+            }
+         }
+      });
+   }
+
+   /**
+    * Column: Auto Retired
+    */
+   private void defineColumn_Equipment_AutoRetired() {
+
+      final ColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_AUTO_RETIRED.createColumn(_columnManager, _pc);
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final Object element = cell.getElement();
+
+            boolean isAutoRetired = false;
+
+            if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
+
+               isAutoRetired = equipmentItem.getEquipment().isAutoRetired();
+
+            } else if (element instanceof final TVIEquipmentView_Part partItem) {
+
+               isAutoRetired = partItem.getPart().isAutoRetired();
+            }
+
+            if (isAutoRetired) {
+
+               cell.setText(UI.SYMBOL_BOX);
                setCellColor(cell, element);
             }
          }
@@ -3414,6 +3451,8 @@ public class EquipmentView extends ViewPart implements
 
       if (firstElement instanceof final TVIEquipmentView_Equipment equipmentItem) {
 
+         // equipment is modified
+
          final Equipment selectedEquipment = equipmentItem.getEquipment();
 
          final DialogEquipment dialogEquipment = new DialogEquipment(_parent.getShell(), selectedEquipment, false);
@@ -3440,11 +3479,13 @@ public class EquipmentView extends ViewPart implements
 
             // date and/or type is modified -> update "until date"
 
-            if (selectedEquipment.isCollate()) {
+            /*
+             * Update equipment always, its possible that the retired flag must be updated in
+             * previously collated equipment items
+             */
+            EquipmentManager.updateUntilDate_Equipment(allModifiedTypes);
 
-               EquipmentManager.updateUntilDate_Equipment(allModifiedTypes);
-
-            } else {
+            if (selectedEquipment.isCollate() == false) {
 
                // update part/service items
 
@@ -3469,6 +3510,8 @@ public class EquipmentView extends ViewPart implements
          updateUI_ReloadViewer();
 
       } else if (firstElement instanceof final TVIEquipmentView_Part partItem) {
+
+         // part/service is modified
 
          final Equipment equipment = partItem.getEquipment();
          final EquipmentPart selectedPart = partItem.getPart();
@@ -3636,7 +3679,9 @@ public class EquipmentView extends ViewPart implements
             return;
          }
 
-         equipment.setIsCollate(!equipment.isCollate());
+         final boolean isCollate = !equipment.isCollate();
+
+         equipment.setIsCollate(isCollate);
 
          updateAfterModified_Equipment(equipment);
 
@@ -3645,7 +3690,9 @@ public class EquipmentView extends ViewPart implements
          final EquipmentPart part = partItem.getPart();
          final Equipment equipment = partItem.getEquipment();
 
-         part.setIsCollate(!part.isCollate());
+         final boolean isCollate = !part.isCollate();
+
+         part.setIsCollate(isCollate);
 
          updateAfterModified_Part(equipment, part);
       }
@@ -4413,6 +4460,11 @@ public class EquipmentView extends ViewPart implements
 
    private void updateAfterModified_Equipment(final Equipment equipment) {
 
+      // a not collated equipment can not be auto retired
+      if (equipment.isCollate() == false) {
+         equipment.setIsAutoRetired(false);
+      }
+
       final Set<String> allTypes = new HashSet<>(Arrays.asList(equipment.getType()));
 
       TourDatabase.saveEntity(equipment, equipment.getEquipmentId(), Equipment.class);
@@ -4423,6 +4475,11 @@ public class EquipmentView extends ViewPart implements
    }
 
    private void updateAfterModified_Part(final Equipment equipment, final EquipmentPart part) {
+
+      // a not collated part can not be auto retired
+      if (part.isCollate() == false) {
+         part.setIsAutoRetired(false);
+      }
 
       final EquipmentPart savedPart = TourDatabase.saveEntity(part, part.getPartId(), EquipmentPart.class);
 

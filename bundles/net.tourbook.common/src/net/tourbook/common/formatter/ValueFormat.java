@@ -32,6 +32,11 @@ public enum ValueFormat {
    DATE_TIME, //
    DATE_TIME_HH_MM_SS, //
 
+   EQUIPMENT_BRAND, //
+   EQUIPMENT_MODEL, //
+   EQUIPMENT_TYPE, //
+   EQUIPMENT_BRAND_MODEL, //
+
    PERIOD_DAY, //
    PERIOD_YEAR_MONTH_DAY, //
 
@@ -39,5 +44,4 @@ public enum ValueFormat {
    TIME_HH_MM, //
    TIME_HH_MM_SS, //
    TIME_SSS, //
-
 }

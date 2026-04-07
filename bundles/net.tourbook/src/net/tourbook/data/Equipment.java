@@ -131,6 +131,12 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    private boolean                    isCollate;
 
    /**
+    * When <code>true</code> then this equipment is auto retired which depends on
+    * {@link #dateCollateFrom} and {@link #dateCollateUntil}
+    */
+   private boolean                    isAutoRetired;
+
+   /**
     * When the equipment was firstly used, in milliseconds since 1970-01-01T00:00:00Z
     */
    private long                       dateUsed;
@@ -517,6 +523,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       return Objects.hash(equipmentId, _createId);
    }
 
+   public boolean isAutoRetired() {
+      return isAutoRetired;
+   }
+
    /**
     * @return {@link #isCollate}
     */
@@ -637,6 +647,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       this.imageFilePath = imageFilePath;
    }
 
+   public void setIsAutoRetired(final boolean isAutoRetired) {
+      this.isAutoRetired = isAutoRetired;
+   }
+
    public void setIsCollate(final boolean isCollate) {
       this.isCollate = isCollate;
    }
@@ -736,6 +750,12 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
 
    public void updateFromOther(final Equipment otherEquipment) {
 
+      // a not collated equipment cannot be auto retired
+      final boolean isCollateOther = otherEquipment.isCollate();
+      if (isCollateOther == false) {
+         setIsAutoRetired(false);
+      }
+
 // SET_FORMATTING_OFF
 
       setBrand             (otherEquipment.getBrand());
@@ -745,7 +765,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       setPurchaseLocation  (otherEquipment.getPurchaseLocation());
       setUrlAddress        (otherEquipment.getUrlAddress());
 
-      setIsCollate         (otherEquipment.isCollate());
+      setIsCollate         (isCollateOther);
       setType              (otherEquipment.getType());
 
       setDistanceFirstUse  (otherEquipment.getDistanceFirstUse());
