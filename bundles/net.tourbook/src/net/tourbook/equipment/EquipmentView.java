@@ -580,72 +580,55 @@ public class EquipmentView extends ViewPart implements
          if (obj1 instanceof final TVIEquipmentView_Equipment item1
                && obj2 instanceof final TVIEquipmentView_Equipment item2) {
 
-            // sort equipment by name
-
             final Equipment equipment1 = item1.getEquipment();
             final Equipment equipment2 = item2.getEquipment();
 
-            final boolean isCollate1 = equipment1.isCollate();
-            final boolean isCollate2 = equipment2.isCollate();
+            int compareDiff = 0;
 
-            if (isCollate1 && isCollate2) {
+            // 1st sort by collation type
+            if (compareDiff == 0) {
 
-               // collated equipment
-
-               // 1st compare by type
-               int compareDiff = equipment1.getType().compareTo(equipment2.getType());
-
-               // 2nd compare by date
-               if (compareDiff == 0) {
-
-                  final long date1 = equipment1.getDateUsed();
-                  final long date2 = equipment2.getDateUsed();
-
-                  final long dateDiff = date1 - date2;
-
-                  // diff value can be larger than Integer.MAX_VALUE
-                  if (dateDiff > 0) {
-                     compareDiff = 1;
-                  } else if (dateDiff < 0) {
-                     compareDiff = -1;
-                  }
-               }
-
-               return compareDiff;
-
-            } else if (isCollate1) {
-
-               // sort collated before not collated
-
-               return -1;
-
-            } else if (isCollate2) {
-
-               // sort collated before not collated
-
-               return 1;
-
-            } else {
-
-               // not collated equipment -> sort by name
-
-               return equipment1.getName().compareTo(equipment2.getName());
+               compareDiff = equipment1.getTypeEmptyChecked().compareTo(equipment2.getTypeEmptyChecked());
             }
+
+            // 2nd sort by date
+            if (compareDiff == 0) {
+
+               final long date1 = equipment1.getDateUsed();
+               final long date2 = equipment2.getDateUsed();
+
+               final long dateDiff = date1 - date2;
+
+               // diff value can be larger than Integer.MAX_VALUE
+               if (dateDiff > 0) {
+                  compareDiff = 1;
+               } else if (dateDiff < 0) {
+                  compareDiff = -1;
+               }
+            }
+
+            return compareDiff;
 
          } else if (obj1 instanceof final TVIEquipmentView_Part item1
                && obj2 instanceof final TVIEquipmentView_Part item2) {
 
-            // sort part by type/date
+            // sort parts/services
 
             final EquipmentPart part1 = item1.getPart();
             final EquipmentPart part2 = item2.getPart();
 
-            // 1st compare by type
-// disabled: this may be an option in the future
-            int compareDiff = part1.getPartType().compareTo(part2.getPartType());
-//            int compareDiff = 0;
+            // 1st sort parts before services
+            final int itemType1 = part1.getItemType();
+            final int itemType2 = part2.getItemType();
+            int compareDiff = itemType1 - itemType2;
 
-            // 2nd compare by date
+            // 2st sort by collation type
+            if (compareDiff == 0) {
+
+               compareDiff = part1.getPartType().compareTo(part2.getPartType());
+            }
+
+            // 3nd sort by date
             if (compareDiff == 0) {
 
                final long date1 = part1.getDateUsed();

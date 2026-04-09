@@ -88,7 +88,7 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
             .margins(0, 0)
             .applyTo(_shellContainer);
       {
-         UI.createLabel(_shellContainer, "Filter out equipment depending on");
+         UI.createLabel(_shellContainer, "Filter out equipment but display");
 
          createUI_10_Filter(_shellContainer);
       }
@@ -128,7 +128,7 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
             }
          }
          {
-            final Label label = UI.createLabel(container, "Its retirement");
+            final Label label = UI.createLabel(container, "Retirement");
             GridDataFactory.fillDefaults().grab(true, false).align(SWT.FILL, SWT.BEGINNING).applyTo(label);
 
             final Composite containerRetired = new Composite(container, SWT.NONE);
@@ -142,7 +142,7 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
                }
                {
                   _rdoFilter_Equipment_Retired_IsNot = new Button(containerRetired, SWT.RADIO);
-                  _rdoFilter_Equipment_Retired_IsNot.setText("&Active equipment");
+                  _rdoFilter_Equipment_Retired_IsNot.setText("&Not retired equipment");
                   _rdoFilter_Equipment_Retired_IsNot.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
                }
                {

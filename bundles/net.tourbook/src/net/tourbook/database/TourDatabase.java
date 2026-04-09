@@ -41,6 +41,7 @@ import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,6 +69,8 @@ import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorValue;
+import net.tourbook.data.Equipment;
+import net.tourbook.data.EquipmentPart;
 import net.tourbook.data.TourBeverageContainer;
 import net.tourbook.data.TourBike;
 import net.tourbook.data.TourData;
@@ -82,6 +85,7 @@ import net.tourbook.data.TourTag;
 import net.tourbook.data.TourTagCategory;
 import net.tourbook.data.TourType;
 import net.tourbook.data.TourWayPoint;
+import net.tourbook.equipment.EquipmentManager;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.search.FTSearchManager;
 import net.tourbook.tag.TagCollection;
@@ -11741,51 +11745,65 @@ public class TourDatabase {
          return;
       }
 
-      final EntityManager em = null;
+      EntityManager em = null;
 
-//      try {
-//
-//         em = TourDatabase.getInstance().getEntityManager();
-//
-//         if (em != null) {
-//
-//            final Query query = em.createQuery(UI.EMPTY_STRING
-//
-//                  + "SELECT Equipment" + NL //                                               //$NON-NLS-1$
-//                  + " FROM " + Equipment.class.getSimpleName() + " AS Equipment" + NL //     //$NON-NLS-1$ //$NON-NLS-2$
-//
-//                  // sort by name
-//                  + " ORDER BY Equipment.brand, Equipment.model" + NL //                     //$NON-NLS-1$
-//            );
-//
-//            final Map<Long, Equipment> allEquipments_ByID = new HashMap<>();
-//            final Map<Long, EquipmentPart> allParts_ByID = new HashMap<>();
-//
-//            final List<Equipment> allEquipments_ByName = new ArrayList<>();
-//
-//            final List<?> allResults = query.getResultList();
-//
-//            for (final Object result : allResults) {
-//
-//               if (result instanceof final Equipment equipment) {
-//
-//                  allEquipments_ByID.put(equipment.getEquipmentId(), equipment);
-//                  allEquipments_ByName.add(equipment);
-//
-//                  for (final EquipmentPart part : equipment.getParts()) {
-//
-//                     allParts_ByID.put(part.getPartId(), part);
-//                  }
-//               }
-//            }
-//         }
-//
-//      } finally {
-//
-//         if (em != null) {
-//            em.close();
-//         }
-//      }
+      try {
+
+         em = TourDatabase.getInstance().getEntityManager();
+
+         if (em != null) {
+
+            final Query query = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT Equipment" + NL //                                               //$NON-NLS-1$
+                  + " FROM " + Equipment.class.getSimpleName() + " AS Equipment" + NL //     //$NON-NLS-1$ //$NON-NLS-2$
+
+                  // sort by name
+                  + " ORDER BY Equipment.brand, Equipment.model" + NL //                     //$NON-NLS-1$
+            );
+
+            final Set<String> allEquipmentTypes = new HashSet<>();
+
+            final List<?> allResults = query.getResultList();
+
+            for (final Object result : allResults) {
+
+               if (result instanceof final Equipment equipment) {
+
+                  final Set<String> allPartTypes = new HashSet<>();
+
+                  if (equipment.isCollate()) {
+
+                     allEquipmentTypes.add(equipment.getType());
+
+                  } else {
+
+                     // equipment is not collated but parts can be
+
+                     // get all collated part types
+                     for (final EquipmentPart part : equipment.getParts()) {
+                        if (part.isCollate()) {
+                           allPartTypes.add(part.getPartType());
+                        }
+                     }
+
+                     for (final String partType : allPartTypes) {
+
+                        EquipmentManager.updateUntilDate_Parts_OneType(equipment, partType, (short) -1);
+                     }
+                  }
+               }
+            }
+
+            EquipmentManager.updateUntilDate_Equipment(allEquipmentTypes);
+         }
+
+      } finally {
+
+         if (em != null) {
+            em.close();
+         }
+      }
 
       updateVersionNumber_20_AfterDataUpdate(conn, dbDataVersion, startTime);
    }

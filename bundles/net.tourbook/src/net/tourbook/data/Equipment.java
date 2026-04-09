@@ -68,7 +68,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    private String                     model;
 
    /**
-    * e.g. Velo
+    * Collation type, e.g. backpack
     */
    private String                     type;
 
@@ -205,6 +205,9 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
 
    @Transient
    private String                     _equipmentName;
+
+   @Transient
+   private String                     _checkedEmptyType;
 
    /**
     * Default constructor used in EJB
@@ -494,6 +497,16 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       return type;
    }
 
+   public String getTypeEmptyChecked() {
+
+      if (_checkedEmptyType == null) {
+
+         _checkedEmptyType = EquipmentManager.isEmptyEquipmentType(type) ? UI.EMPTY_STRING : type;
+      }
+
+      return _checkedEmptyType;
+   }
+
    public String getUrlAddress() {
 
       if (urlAddress == null) {
@@ -679,7 +692,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    }
 
    public void setType(final String type) {
+
       this.type = type;
+
+      _checkedEmptyType = null;
    }
 
    public void setUrlAddress(final String urlAddress) {
@@ -715,6 +731,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
             + "  model            = " + model + NL //                         //$NON-NLS-1$
 
             + "  isCollate        = " + isCollate + NL //                     //$NON-NLS-1$
+            + "  isAutoRetired    = " + isAutoRetired + NL //                 //$NON-NLS-1$
             + "  type             = " + type + NL //                          //$NON-NLS-1$
             + "  dateUsed         = " + getDateUsed_Local() + NL //           //$NON-NLS-1$
             + "  dateCollateFrom  = " + getDateCollateFrom_Local() + NL //    //$NON-NLS-1$

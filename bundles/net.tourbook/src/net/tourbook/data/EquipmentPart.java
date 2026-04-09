@@ -86,7 +86,9 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
    private String                     model;
 
    /**
-    * Part type, e.g. Faltreifen
+    *
+    * The collation type, e.g. shoe xyz is used to combine it other parts with the same type but
+    * different {@link #dateUsed}
     */
    private String                     type;
 
@@ -541,6 +543,9 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       return partId;
    }
 
+   /**
+    * @return Returns the part type {@link #type} or an empty string when <code>null</code>
+    */
    public String getPartType() {
 
       if (type == null) {

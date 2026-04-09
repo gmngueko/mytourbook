@@ -1767,7 +1767,6 @@ public class EquipmentManager {
 
             // this is the first and only equipment
 
-
             final long newDateFrom = equipment.getDateUsed();
             final long newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
 
