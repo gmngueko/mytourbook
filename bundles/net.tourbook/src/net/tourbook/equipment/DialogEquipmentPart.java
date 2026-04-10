@@ -126,6 +126,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
    private Button                    _btnDateRetiredNow;
    private Button                    _btnDeleteImage;
    private Button                    _chkCollate;
+   private Button                    _chkRetired;
    private Button                    _chkSyncDates;
    private Button                    _rdoCollateWith_Previous;
    private Button                    _rdoCollateWith_Next;
@@ -474,20 +475,17 @@ public class DialogEquipmentPart extends TitleAreaDialog {
          }
          {
             /*
-             * Retired date
+             * Retired: Checkbox
              */
             final Label label = UI.createLabel(_container, Messages.Dialog_Equipment_Label_DateRetired);
             gdVertCenter.applyTo(label);
 
-            _dateRetired = new DateTime(_container, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN);
-            _dateRetired.addSelectionListener(_defaultSelectionListener);
+            _chkRetired = new Button(_container, SWT.CHECK);
+            _chkRetired.setText("Is retired");
 
-            _btnDateRetiredNow = new Button(_container, SWT.PUSH);
-            _btnDateRetiredNow.setImage(_imageNow);
-            _btnDateRetiredNow.setToolTipText(Messages.Dialog_Equipment_Button_SetDateToToday_Tooltip);
-            _btnDateRetiredNow.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_RetireNow()));
+            _chkRetired.addSelectionListener(_defaultSelectionListener);
          }
-         UI.createSpacer_Horizontal(_container, 1);
+         UI.createSpacer_Horizontal(_container, 2);
          {
             /*
              * Distance first use
@@ -509,6 +507,20 @@ public class DialogEquipmentPart extends TitleAreaDialog {
             // label: km/mi
             UI.createLabel(_container, UI.UNIT_LABEL_DISTANCE);
          }
+         UI.createSpacer_Horizontal(_container, 1);
+         {
+            /*
+             * Retired: Date
+             */
+            _dateRetired = new DateTime(_container, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN);
+            _dateRetired.addSelectionListener(_defaultSelectionListener);
+
+            _btnDateRetiredNow = new Button(_container, SWT.PUSH);
+            _btnDateRetiredNow.setImage(_imageNow);
+            _btnDateRetiredNow.setToolTipText(Messages.Dialog_Equipment_Button_SetDateToToday_Tooltip);
+            _btnDateRetiredNow.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_RetireNow()));
+         }
+         UI.createSpacer_Horizontal(_container, 4);
          {
             /*
              * Collate tours
@@ -704,10 +716,14 @@ public class DialogEquipmentPart extends TitleAreaDialog {
 // SET_FORMATTING_OFF
 
       final boolean isCollate          = _chkCollate.getSelection();
+      final boolean isRetired          = _chkRetired.getSelection();
       final boolean isSyncDates        = _chkSyncDates.getSelection();
       final boolean canEditBuiltDate   = isSyncDates == false;
 
       _dateBuilt                 .setEnabled(canEditBuiltDate);
+      _dateRetired               .setEnabled(isRetired);
+
+      _btnDateRetiredNow         .setEnabled(isRetired);
       _btnDeleteImage            .setEnabled(StringUtils.hasContent(_imageFilePath));
 
       _lblCollateWith            .setEnabled(isCollate);
@@ -1210,20 +1226,21 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       _part.setBrand(            _comboBrand.getText().trim());
       _part.setModel(            _comboModel.getText().trim());
       _part.setPartType(         type);
-      _part.setPurchaseLocation( _txtPurchaseLocation.getText().trim());
-      _part.setDescription(      _txtDescription.getText().trim());
-      _part.setUrlAddress(       _txtUrlAddress.getText().trim());
-      _part.setImageFilePath(    _lblImageFilePath.getText().trim());
+      _part.setPurchaseLocation( _txtPurchaseLocation    .getText().trim());
+      _part.setDescription(      _txtDescription         .getText().trim());
+      _part.setUrlAddress(       _txtUrlAddress          .getText().trim());
+      _part.setImageFilePath(    _lblImageFilePath       .getText().trim());
 
       _part.setIsCollate(        _chkCollate.getSelection());
+      _part.setIsRetired(        _chkRetired.getSelection());
       _part.setCollateBetween(   _rdoCollateWith_Next.getSelection()
                                        ? EquipmentPart.COLLATED_WITH_NEXT
                                        : EquipmentPart.COLLATED_WITH_PREVIOUS);
 
       _part.setDistanceFirstUse( distance);
-      _part.setPrice(            _spinPrice.getSelection() / 100f);
-      _part.setPriceUnit(        _comboPriceUnit.getText());
-      _part.setSize(             _comboSize.getText().trim());
+      _part.setPrice(            _spinPrice              .getSelection() / 100f);
+      _part.setPriceUnit(        _comboPriceUnit         .getText());
+      _part.setSize(             _comboSize              .getText().trim());
       _part.setWeight(           getWeight_FromUI());
       _part.setWeightUnit(       (short) _comboWeightUnit.getSelectionIndex());
 
@@ -1324,6 +1341,7 @@ public class DialogEquipmentPart extends TitleAreaDialog {
       final String urlAddress    = _part.getUrlAddress();
 
       _chkCollate                .setSelection(_part.isCollate());
+      _chkRetired                .setSelection(_part.isRetired());
 
       _comboBrand                .setText(_part.getBrand());
       _comboModel                .setText(_part.getModel());

@@ -61,8 +61,6 @@ public abstract class TreeColumnFactory {
 
    public static final TreeColumnFactory EQUIPMENT_AND_CATEGORY;
    public static final String            EQUIPMENT_AND_CATEGORY_ID        = "EQUIPMENT_AND_CATEGORY";           //$NON-NLS-1$
-   public static final TreeColumnFactory EQUIPMENT_AUTO_RETIRED;
-   public static final String            EQUIPMENT_AUTO_RETIRED_ID        = "EQUIPMENT_AUTO_RETIRED";           //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_BRAND;
    public static final String            EQUIPMENT_BRAND_ID               = "EQUIPMENT_BRAND";                  //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_COLLATE;
@@ -101,6 +99,8 @@ public abstract class TreeColumnFactory {
    public static final String            EQUIPMENT_PRICE_ID               = "EQUIPMENT_PRICE";                  //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_PRICE_UNIT;
    public static final String            EQUIPMENT_PRICE_UNIT_ID          = "EQUIPMENT_PRICE_UNIT";             //$NON-NLS-1$
+   public static final TreeColumnFactory EQUIPMENT_RETIRED;
+   public static final String            EQUIPMENT_RETIRED_ID             = "EQUIPMENT_RETIRED";                //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_SIZE;
    public static final String            EQUIPMENT_SIZE_ID                = "EQUIPMENT_SIZE";                   //$NON-NLS-1$
    public static final TreeColumnFactory EQUIPMENT_TYPE;
@@ -776,25 +776,6 @@ public abstract class TreeColumnFactory {
          }
       };
 
-      EQUIPMENT_AUTO_RETIRED = new TreeColumnFactory() {
-         @Override
-         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
-                                                  final PixelConverter pixelConverter) {
-
-            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_AUTO_RETIRED_ID, SWT.CENTER);
-
-            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
-
-            colDef.setColumnLabel(              "Is auto retired");
-            colDef.setColumnHeaderText(         "Retired");
-            colDef.setColumnHeaderToolTipText(  "Is auto retired");
-
-            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
-
-            return colDef;
-         }
-      };
-
       EQUIPMENT_BRAND = new TreeColumnFactory() {
          @Override
          public TreeColumnDefinition createColumn(final ColumnManager columnManager,
@@ -1153,6 +1134,25 @@ public abstract class TreeColumnFactory {
             colDef.setColumnHeaderText(         "Location");
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(25));
+
+            return colDef;
+         }
+      };
+
+      EQUIPMENT_RETIRED = new TreeColumnFactory() {
+         @Override
+         public TreeColumnDefinition createColumn(final ColumnManager columnManager,
+                                                  final PixelConverter pixelConverter) {
+
+            final TreeColumnDefinition colDef = new TreeColumnDefinition(columnManager, EQUIPMENT_RETIRED_ID, SWT.CENTER);
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Equipment);
+
+            colDef.setColumnLabel(              "Is retired");
+            colDef.setColumnHeaderText(         "Retired");
+            colDef.setColumnHeaderToolTipText(  "Is retired");
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(12));
 
             return colDef;
          }

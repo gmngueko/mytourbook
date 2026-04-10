@@ -131,10 +131,9 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
    private boolean                    isCollate;
 
    /**
-    * When <code>true</code> then this equipment is auto retired which depends on
-    * {@link #dateCollateFrom} and {@link #dateCollateUntil}
+    * When <code>true</code> then this equipment is retired
     */
-   private boolean                    isAutoRetired;
+   private boolean                    isRetired;
 
    /**
     * When the equipment was firstly used, in milliseconds since 1970-01-01T00:00:00Z
@@ -536,10 +535,6 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       return Objects.hash(equipmentId, _createId);
    }
 
-   public boolean isAutoRetired() {
-      return isAutoRetired;
-   }
-
    /**
     * @return {@link #isCollate}
     */
@@ -559,6 +554,10 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       }
 
       return false;
+   }
+
+   public boolean isRetired() {
+      return isRetired;
    }
 
    /**
@@ -660,12 +659,12 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       this.imageFilePath = imageFilePath;
    }
 
-   public void setIsAutoRetired(final boolean isAutoRetired) {
-      this.isAutoRetired = isAutoRetired;
-   }
-
    public void setIsCollate(final boolean isCollate) {
       this.isCollate = isCollate;
+   }
+
+   public void setIsRetired(final boolean isRetired) {
+      this.isRetired = isRetired;
    }
 
    public void setModel(final String model) {
@@ -731,7 +730,7 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
             + "  model            = " + model + NL //                         //$NON-NLS-1$
 
             + "  isCollate        = " + isCollate + NL //                     //$NON-NLS-1$
-            + "  isAutoRetired    = " + isAutoRetired + NL //                 //$NON-NLS-1$
+            + "  isRetired    	 = " + isRetired + NL //                     //$NON-NLS-1$
             + "  type             = " + type + NL //                          //$NON-NLS-1$
             + "  dateUsed         = " + getDateUsed_Local() + NL //           //$NON-NLS-1$
             + "  dateCollateFrom  = " + getDateCollateFrom_Local() + NL //    //$NON-NLS-1$
@@ -767,12 +766,6 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
 
    public void updateFromOther(final Equipment otherEquipment) {
 
-      // a not collated equipment cannot be auto retired
-      final boolean isCollateOther = otherEquipment.isCollate();
-      if (isCollateOther == false) {
-         setIsAutoRetired(false);
-      }
-
 // SET_FORMATTING_OFF
 
       setBrand             (otherEquipment.getBrand());
@@ -782,7 +775,8 @@ public class Equipment implements Cloneable, Comparable<Object>, Serializable {
       setPurchaseLocation  (otherEquipment.getPurchaseLocation());
       setUrlAddress        (otherEquipment.getUrlAddress());
 
-      setIsCollate         (isCollateOther);
+      setIsCollate         (otherEquipment.isCollate());
+      setIsRetired         (otherEquipment.isRetired());
       setType              (otherEquipment.getType());
 
       setDistanceFirstUse  (otherEquipment.getDistanceFirstUse());

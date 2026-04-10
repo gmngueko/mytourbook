@@ -19,31 +19,22 @@ import net.tourbook.common.tooltip.ActionToolbarSlideoutAdv;
 import net.tourbook.common.tooltip.AdvancedSlideout;
 import net.tourbook.common.tooltip.SlideoutLocation;
 
-import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.ToolItem;
 
 public class ActionEquipmentFilter extends ActionToolbarSlideoutAdv {
 
-   private IDialogSettings         _state;
-
    private SlideoutEquipmentFilter _slideoutEquipmentFilter;
 
    private EquipmentView           _equipmentView;
 
-   private IDialogSettings         _stateSlideout;
-
    /**
     * @param equipmentView
     * @param state
-    * @param stateSlideout
-    *           State to save slideout size/position
     * @param actionImage
     */
    public ActionEquipmentFilter(final EquipmentView equipmentView,
-                                final IDialogSettings state,
-                                final IDialogSettings stateSlideout,
                                 final Image actionImage) {
 
       /*
@@ -55,9 +46,6 @@ public class ActionEquipmentFilter extends ActionToolbarSlideoutAdv {
 
       _equipmentView = equipmentView;
 
-      _state = state;
-      _stateSlideout = stateSlideout;
-
       isToggleAction = true;
 
       notSelectedTooltip = "Enable/disable equipment filter";
@@ -66,7 +54,7 @@ public class ActionEquipmentFilter extends ActionToolbarSlideoutAdv {
    @Override
    protected AdvancedSlideout createSlideout(final ToolItem toolItem) {
 
-      _slideoutEquipmentFilter = new SlideoutEquipmentFilter(toolItem, _state, _stateSlideout, _equipmentView);
+      _slideoutEquipmentFilter = new SlideoutEquipmentFilter(toolItem, _equipmentView);
       _slideoutEquipmentFilter.setSlideoutLocation(SlideoutLocation.BELOW_CENTER);
 
       return _slideoutEquipmentFilter;

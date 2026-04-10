@@ -173,11 +173,35 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
 
    private void loadChildren_Parts() {
 
+      final boolean isFilterEnabled = EquipmentManager.isEquipmentFilterEnabled();
+      final int equipmentFilter_Retired = EquipmentManager.getEquipmentFilter_Retired();
+
+      final boolean useRetiredFilter = equipmentFilter_Retired != EquipmentManager.FILTER_RETIRED_IGNORE;
+      final boolean useFilter = isFilterEnabled && useRetiredFilter;
+
       final Set<EquipmentPart> allParts = _equipment.getParts();
 
       final ArrayList<TreeViewerItem> allPartItems = new ArrayList<>();
 
       for (final EquipmentPart part : allParts) {
+
+         if (useFilter) {
+
+            final boolean isRetired = part.isRetired();
+
+            if (equipmentFilter_Retired == EquipmentManager.FILTER_RETIRED_IS_RETIRED) {
+
+               if (isRetired) {
+                  continue;
+               }
+
+            } else if (equipmentFilter_Retired == EquipmentManager.FILTER_RETIRED_IS_NOT_RETIRED) {
+
+               if (isRetired) {
+                  continue;
+               }
+            }
+         }
 
          long durationMS = part.getDuration();
          String durationText = TEXT_FORMATTING;

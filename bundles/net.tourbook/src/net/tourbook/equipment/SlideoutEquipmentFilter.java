@@ -15,9 +15,9 @@
  *******************************************************************************/
 package net.tourbook.equipment;
 
+import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.tooltip.AdvancedSlideout;
-import net.tourbook.common.util.Util;
 
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -36,33 +36,30 @@ import org.eclipse.swt.widgets.ToolItem;
  */
 public class SlideoutEquipmentFilter extends AdvancedSlideout {
 
-   private ToolItem _toolItem;
+   private static final IDialogSettings _state = TourbookPlugin.getState("net.tourbook.equipment.SlideoutEquipmentFilter"); //$NON-NLS-1$
+
+   private ToolItem                     _toolItem;
 
    /*
     * UI controls
     */
-   private Composite       _shellContainer;
+   private Composite     _shellContainer;
 
-   private Button          _rdoFilter_Equipment_Retired_Is;
-   private Button          _rdoFilter_Equipment_Retired_IsNot;
-   private Button          _rdoFilter_Equipment_Retired_Ignore;
-   private Button          _rdoFilter_Equipment_Tours_With;
-   private Button          _rdoFilter_Equipment_Tours_Without;
-   private Button          _rdoFilter_Equipment_Tours_Ignore;
+   private Button        _rdoFilter_Equipment_ContainsTours_Yes;
+   private Button        _rdoFilter_Equipment_ContainsTours_No;
+   private Button        _rdoFilter_Equipment_ContainsTours_Ignore;
+   private Button        _rdoFilter_Equipment_Retired_Is;
+   private Button        _rdoFilter_Equipment_Retired_IsNot;
+   private Button        _rdoFilter_Equipment_Retired_Ignore;
 
-   private EquipmentView   _equipmentView;
-
-   private IDialogSettings _state;
+   private EquipmentView _equipmentView;
 
    public SlideoutEquipmentFilter(final ToolItem toolItem,
-                                  final IDialogSettings state,
-                                  final IDialogSettings stateSlideout,
                                   final EquipmentView equipmentView) {
 
-      super(toolItem.getParent(), stateSlideout, new int[] { 220, 100, 220, 100 });
+      super(toolItem.getParent(), _state, new int[] { 220, 100, 220, 100 });
 
       _toolItem = toolItem;
-      _state = state;
       _equipmentView = equipmentView;
 
       setTitleText("Equipment Filter");
@@ -98,6 +95,8 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
 
    private void createUI_10_Filter(final Composite parent) {
 
+      final SelectionListener defaultListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified());
+
       final Composite container = new Composite(parent, SWT.NONE);
       GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_BLUE);
@@ -111,19 +110,19 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
             GridLayoutFactory.fillDefaults().numColumns(1).applyTo(containerTours);
             {
                {
-                  _rdoFilter_Equipment_Tours_Ignore = new Button(containerTours, SWT.RADIO);
-                  _rdoFilter_Equipment_Tours_Ignore.setText("Ignore &tours");
-                  _rdoFilter_Equipment_Tours_Ignore.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_ContainsTours_Ignore = new Button(containerTours, SWT.RADIO);
+                  _rdoFilter_Equipment_ContainsTours_Ignore.setText("Ignore &tours");
+                  _rdoFilter_Equipment_ContainsTours_Ignore.addSelectionListener(defaultListener);
                }
                {
-                  _rdoFilter_Equipment_Tours_With = new Button(containerTours, SWT.RADIO);
-                  _rdoFilter_Equipment_Tours_With.setText("Equipment &with tours");
-                  _rdoFilter_Equipment_Tours_With.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_ContainsTours_Yes = new Button(containerTours, SWT.RADIO);
+                  _rdoFilter_Equipment_ContainsTours_Yes.setText("Equipment &with tours");
+                  _rdoFilter_Equipment_ContainsTours_Yes.addSelectionListener(defaultListener);
                }
                {
-                  _rdoFilter_Equipment_Tours_Without = new Button(containerTours, SWT.RADIO);
-                  _rdoFilter_Equipment_Tours_Without.setText("Equipment with&out tours");
-                  _rdoFilter_Equipment_Tours_Without.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_ContainsTours_No = new Button(containerTours, SWT.RADIO);
+                  _rdoFilter_Equipment_ContainsTours_No.setText("Equipment with&out tours");
+                  _rdoFilter_Equipment_ContainsTours_No.addSelectionListener(defaultListener);
                }
             }
          }
@@ -138,17 +137,17 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
                {
                   _rdoFilter_Equipment_Retired_Ignore = new Button(containerRetired, SWT.RADIO);
                   _rdoFilter_Equipment_Retired_Ignore.setText("&Ignore retirement");
-                  _rdoFilter_Equipment_Retired_Ignore.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_Retired_Ignore.addSelectionListener(defaultListener);
                }
                {
                   _rdoFilter_Equipment_Retired_IsNot = new Button(containerRetired, SWT.RADIO);
                   _rdoFilter_Equipment_Retired_IsNot.setText("&Not retired equipment");
-                  _rdoFilter_Equipment_Retired_IsNot.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_Retired_IsNot.addSelectionListener(defaultListener);
                }
                {
                   _rdoFilter_Equipment_Retired_Is = new Button(containerRetired, SWT.RADIO);
                   _rdoFilter_Equipment_Retired_Is.setText("&Retired equipment");
-                  _rdoFilter_Equipment_Retired_Is.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onModified()));
+                  _rdoFilter_Equipment_Retired_Is.addSelectionListener(defaultListener);
                }
             }
          }
@@ -174,29 +173,29 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
    @Override
    protected void onFocus() {
 
-      _rdoFilter_Equipment_Tours_Ignore.setFocus();
+      _rdoFilter_Equipment_ContainsTours_Ignore.setFocus();
    }
 
    private void onModified() {
 
-      final int isContainsTours =
+// SET_FORMATTING_OFF
 
-            _rdoFilter_Equipment_Tours_With.getSelection() ? 1
-                  : _rdoFilter_Equipment_Tours_Without.getSelection() ? 2
+      final int containsTours =
 
-                        // ignore
-                        : 0;
+            _rdoFilter_Equipment_ContainsTours_Yes.getSelection() ? EquipmentManager.FILTER_CONTAINS_TOURS_YES
+          : _rdoFilter_Equipment_ContainsTours_No.getSelection()  ? EquipmentManager.FILTER_CONTAINS_TOURS_NO
+                                                                  : EquipmentManager.FILTER_CONTAINS_TOURS_IGNORE;
 
-      final int isRetired =
+      final int retired =
 
-            _rdoFilter_Equipment_Retired_Is.getSelection() ? 1
-                  : _rdoFilter_Equipment_Retired_IsNot.getSelection() ? 2
+            _rdoFilter_Equipment_Retired_Is.getSelection()     ? EquipmentManager.FILTER_RETIRED_IS_RETIRED
+          : _rdoFilter_Equipment_Retired_IsNot.getSelection()  ? EquipmentManager.FILTER_RETIRED_IS_NOT_RETIRED
+                                                               : EquipmentManager.FILTER_RETIRED_IGNORE;
 
-                        // ignore
-                        : 0;
+// SET_FORMATTING_ON
 
-      _state.put(EquipmentView.STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS, isContainsTours);
-      _state.put(EquipmentView.STATE_EQUIPMENT_FILTER_IS_RETIRED, isRetired);
+      EquipmentManager.setEquipmentFilter_ContainsTours(containsTours);
+      EquipmentManager.setEquipmentFilter_Retired(retired);
 
       _shellContainer.getDisplay().asyncExec(() -> _equipmentView.updateEquipmentFilter_FromSlideout());
    }
@@ -219,23 +218,18 @@ public class SlideoutEquipmentFilter extends AdvancedSlideout {
 
    private void restoreState() {
 
-      final int isWithTours = Util.getStateInt(_state,
-            EquipmentView.STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS,
-            EquipmentView.STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS_DEFAULT);
-
-      final int isRetired = Util.getStateInt(_state,
-            EquipmentView.STATE_EQUIPMENT_FILTER_IS_RETIRED,
-            EquipmentView.STATE_EQUIPMENT_FILTER_IS_RETIRED_DEFAULT);
-
 // SET_FORMATTING_OFF
 
-      _rdoFilter_Equipment_Tours_Ignore   .setSelection(isWithTours == 0);
-      _rdoFilter_Equipment_Tours_With     .setSelection(isWithTours == 1);
-      _rdoFilter_Equipment_Tours_Without  .setSelection(isWithTours == 2);
+      final int containsTours = EquipmentManager.getEquipmentFilter_ContainsTours();
+      final int retired       = EquipmentManager.getEquipmentFilter_Retired();
 
-      _rdoFilter_Equipment_Retired_Ignore .setSelection(isRetired == 0);
-      _rdoFilter_Equipment_Retired_Is     .setSelection(isRetired == 1);
-      _rdoFilter_Equipment_Retired_IsNot  .setSelection(isRetired == 2);
+      _rdoFilter_Equipment_ContainsTours_Ignore .setSelection(containsTours   == EquipmentManager.FILTER_CONTAINS_TOURS_IGNORE);
+      _rdoFilter_Equipment_ContainsTours_Yes    .setSelection(containsTours   == EquipmentManager.FILTER_CONTAINS_TOURS_YES);
+      _rdoFilter_Equipment_ContainsTours_No     .setSelection(containsTours   == EquipmentManager.FILTER_CONTAINS_TOURS_NO);
+
+      _rdoFilter_Equipment_Retired_Ignore       .setSelection(retired         == EquipmentManager.FILTER_RETIRED_IGNORE);
+      _rdoFilter_Equipment_Retired_Is           .setSelection(retired         == EquipmentManager.FILTER_RETIRED_IS_RETIRED);
+      _rdoFilter_Equipment_Retired_IsNot        .setSelection(retired         == EquipmentManager.FILTER_RETIRED_IS_NOT_RETIRED);
 
 // SET_FORMATTING_ON
    }

@@ -44,6 +44,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
 import net.tourbook.Messages;
+import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.formatter.ValueFormat;
 import net.tourbook.common.time.TimeTools;
@@ -70,6 +71,7 @@ import net.tourbook.ui.ITourProvider2;
 import net.tourbook.ui.ITourProviderByID;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
@@ -87,21 +89,38 @@ import org.eclipse.swt.widgets.Label;
 
 public class EquipmentManager {
 
-   private static final char                 NL                          = UI.NEW_LINE;
+   private static final char   NL                                            = UI.NEW_LINE;
 
-   private static final Object               DB_LOCK                     = new Object();
+   private static final Object DB_LOCK                                       = new Object();
+
+   static final String         STATE_EQUIPMENT_FILTER_IS_ENABLED             = "STATE_EQUIPMENT_FILTER_IS_ENABLED";     //$NON-NLS-1$
+   static final boolean        STATE_EQUIPMENT_FILTER_IS_ENABLED_DEFAULT     = false;
+   static final String         STATE_EQUIPMENT_FILTER_CONTAINS_TOURS         = "STATE_EQUIPMENT_FILTER_CONTAINS_TOURS"; //$NON-NLS-1$
+   static final int            STATE_EQUIPMENT_FILTER_CONTAINS_TOURS_DEFAULT = 0;
+   static final String         STATE_EQUIPMENT_FILTER_RETIRED                = "STATE_EQUIPMENT_FILTER_RETIRED";        //$NON-NLS-1$
+   static final int            STATE_EQUIPMENT_FILTER_RETIRED_DEFAULT        = 0;
+   //
+   //
+   private static final IDialogSettings      _state                        = TourbookPlugin.getState("net.tourbook.equipment.EquipmentManager");
+
+   static final int                          FILTER_CONTAINS_TOURS_IGNORE  = 0;
+   static final int                          FILTER_CONTAINS_TOURS_YES     = 1;
+   static final int                          FILTER_CONTAINS_TOURS_NO      = 2;
+   static final int                          FILTER_RETIRED_IGNORE         = 0;
+   static final int                          FILTER_RETIRED_IS_RETIRED     = 1;
+   static final int                          FILTER_RETIRED_IS_NOT_RETIRED = 2;
 
    /**
     * To identify an empty equipment type, they are not empty but filled with a random UUID. To
     * identify an UUID type from a real type, the UUID type has this prefix
     */
-   public static final String                EMPTY_TYPE_PREFIX           = "v4a1n9---"; //$NON-NLS-1$
+   private static final String               EMPTY_TYPE_PREFIX             = "v4a1n9---";                                                       //$NON-NLS-1$
 
-   public static final short                 EXPAND_TYPE_FLAT            = 0;
-   public static final short                 EXPAND_TYPE_YEAR_TOUR       = 1;
-   public static final short                 EXPAND_TYPE_YEAR_MONTH_TOUR = 2;
+   public static final short                 EXPAND_TYPE_FLAT              = 0;
+   public static final short                 EXPAND_TYPE_YEAR_TOUR         = 1;
+   public static final short                 EXPAND_TYPE_YEAR_MONTH_TOUR   = 2;
 
-   static final String[]                     EXPAND_TYPE_NAMES           = {
+   static final String[]                     EXPAND_TYPE_NAMES             = {
 
          Messages.app_action_expand_type_flat,
          Messages.app_action_expand_type_year_day,
@@ -111,14 +130,14 @@ public class EquipmentManager {
    /**
     * The EXPAND_TYPE_... value is the index for these labels
     */
-   static final String[]                     EXPAND_TYPE_LABEL           = {
+   static final String[]                     EXPAND_TYPE_LABEL             = {
 
          Messages.Equipment_ExpandType_SortByDate,
          Messages.Equipment_ExpandType_ByYear,
          Messages.Equipment_ExpandType_ByYearMonth
    };
 
-   static final short[]                      EXPAND_TYPES                = {
+   static final short[]                      EXPAND_TYPES                  = {
 
          EXPAND_TYPE_FLAT,
          EXPAND_TYPE_YEAR_TOUR,
@@ -128,6 +147,33 @@ public class EquipmentManager {
    private static int                        _equipmentImageSize_View;
 
    /**
+    * Main switch if equipment are filtered or not
+    */
+   private static boolean                    _equipmentFilter_IsEnabled;
+
+   /**
+    * Contains
+    *
+    * <pre>
+    * {@link #FILTER_CONTAINS_TOURS_IGNORE} ... {@value #FILTER_CONTAINS_TOURS_IGNORE}
+    * {@link #FILTER_CONTAINS_TOURS_YES} ... {@value #FILTER_CONTAINS_TOURS_YES}
+    * {@link #FILTER_CONTAINS_TOURS_NO} ...{@value #FILTER_CONTAINS_TOURS_NO}
+    * </pre>
+    */
+   private static int                        _equipmentFilter_ContainsTours;
+
+   /**
+    * Contains
+    *
+    * <pre>
+    * {@link #FILTER_RETIRED_IGNORE} ... {@value #FILTER_RETIRED_IGNORE}
+    * {@link #FILTER_RETIRED_IS_RETIRED} ... {@value #FILTER_RETIRED_IS_RETIRED}
+    * {@link #FILTER_RETIRED_IS_NOT_RETIRED} ...{@value #FILTER_RETIRED_IS_NOT_RETIRED}
+    * </pre>
+    */
+   private static int                        _equipmentFilter_Retired;
+
+   /**
     * Key is the image file path
     */
    private static final Cache<String, Image> _imageCache_Content;
@@ -135,10 +181,17 @@ public class EquipmentManager {
 
    static {
 
-      restoreEquipmentContentValues();
+      _equipmentFilter_IsEnabled = Util.getStateBoolean(_state, STATE_EQUIPMENT_FILTER_IS_ENABLED, false);
 
-   }
-   static {
+      _equipmentFilter_ContainsTours = Util.getStateInt(_state,
+            STATE_EQUIPMENT_FILTER_CONTAINS_TOURS,
+            STATE_EQUIPMENT_FILTER_CONTAINS_TOURS_DEFAULT);
+
+      _equipmentFilter_Retired = Util.getStateInt(_state,
+            STATE_EQUIPMENT_FILTER_RETIRED,
+            STATE_EQUIPMENT_FILTER_RETIRED_DEFAULT);
+
+      restoreEquipmentContentValues();
 
       final RemovalListener<String, Image> removalListener = new RemovalListener<>() {
 
@@ -1044,6 +1097,22 @@ public class EquipmentManager {
    }
 
    /**
+    * @return Returns {@link #_equipmentFilter_ContainsTours}
+    */
+   public static int getEquipmentFilter_ContainsTours() {
+
+      return _equipmentFilter_ContainsTours;
+   }
+
+   /**
+    * @return Returns {@link #_equipmentFilter_Retired}
+    */
+   public static int getEquipmentFilter_Retired() {
+
+      return _equipmentFilter_Retired;
+   }
+
+   /**
     * For a given image file path, try to retrieve the already created
     * Image resource from the cache.
     * Otherwise, create an image resource, and put it in the cache
@@ -1375,6 +1444,11 @@ public class EquipmentManager {
       return type != null && type.trim().startsWith(EMPTY_TYPE_PREFIX);
    }
 
+   public static boolean isEquipmentFilterEnabled() {
+
+      return _equipmentFilter_IsEnabled;
+   }
+
    private static void loadEquipment() {
 
       synchronized (DB_LOCK) {
@@ -1453,6 +1527,27 @@ public class EquipmentManager {
             TourManager.fireEvent(TourEventId.TOUR_CHANGED, new TourEvent(selectedTours));
          }
       }
+   }
+
+   public static void setEquipmentFilter_ContainsTours(final int containsTours) {
+
+      _equipmentFilter_ContainsTours = containsTours;
+
+      _state.put(STATE_EQUIPMENT_FILTER_CONTAINS_TOURS, _equipmentFilter_ContainsTours);
+   }
+
+   public static void setEquipmentFilter_IsEnabled(final boolean isEnabled) {
+
+      _equipmentFilter_IsEnabled = isEnabled;
+
+      _state.put(STATE_EQUIPMENT_FILTER_IS_ENABLED, _equipmentFilter_IsEnabled);
+   }
+
+   public static void setEquipmentFilter_Retired(final int retiredState) {
+
+      _equipmentFilter_Retired = retiredState;
+
+      _state.put(STATE_EQUIPMENT_FILTER_RETIRED, _equipmentFilter_Retired);
    }
 
    public static void setEquipmentImageSize_View(final int imageSize) {
@@ -1774,8 +1869,6 @@ public class EquipmentManager {
             equipment.setDateCollateFrom(newDateFrom);
             equipment.setDateCollateUntil(newDateUntil);
 
-            equipment.setIsAutoRetired(false);
-
             allModifiedEquipment.add(equipment);
 
          } else {
@@ -1789,15 +1882,12 @@ public class EquipmentManager {
                final long currentDateUntil = equipment.getDateCollateUntil();
 
                long newDateUntil = currentDateUntil;
-               boolean isAutoRetired = true;
 
                if (equipmentIndex == numEquipment - 1) {
 
                   // this is the last equipment
 
                   newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
-
-                  isAutoRetired = false;
 
                } else {
 
@@ -1822,8 +1912,6 @@ public class EquipmentManager {
                // modify date
                equipment.setDateCollateFrom(newDateFrom);
                equipment.setDateCollateUntil(newDateUntil);
-
-               equipment.setIsAutoRetired(isAutoRetired);
 
                allModifiedEquipment.add(equipment);
             }
@@ -1952,8 +2040,6 @@ public class EquipmentManager {
          part.setDateCollateFrom(newDateFrom);
          part.setDateCollateUntil(newDateUntil);
 
-         part.setIsAutoRetired(false);
-
          allModifiedParts.add(part);
 
       } else {
@@ -1971,8 +2057,6 @@ public class EquipmentManager {
 
             long newDateFrom;
             long newDateUntil;
-
-            boolean isAutoRetired = true;
 
             if (isCollatePrev) {
 
@@ -1993,13 +2077,6 @@ public class EquipmentManager {
                   newDateFrom = prevPartDateUsed + TimeTools.DAY_MILLISECONDS;
                }
 
-               if (partIndex == lastIndex) {
-
-                  // the last part cannot be auto retired
-
-                  isAutoRetired = false;
-               }
-
                newDateUntil = partDateUsed + oneDayMS;
 
                prevPartDateUsed = partDateUsed;
@@ -2015,8 +2092,6 @@ public class EquipmentManager {
                   // this is the last part
 
                   newDateUntil = TimeTools.MAX_TIME_IN_EPOCH_MILLI;
-
-                  isAutoRetired = false;
 
                } else {
 
@@ -2045,8 +2120,6 @@ public class EquipmentManager {
             // modify date
             part.setDateCollateFrom(newDateFrom);
             part.setDateCollateUntil(newDateUntil);
-
-            part.setIsAutoRetired(isAutoRetired);
 
             // there can be only ONE "collated between" within the part collection of an equipment
             part.setCollateBetween(collateBetween);

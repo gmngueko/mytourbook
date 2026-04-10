@@ -147,15 +147,7 @@ public class EquipmentView extends ViewPart implements
       ITreeViewer
 
 {
-
-   public static final String            ID                                               = "net.tourbook.equipment.EquipmentView.ID";  //$NON-NLS-1$
-
-   static final String                   STATE_EQUIPMENT_FILTER_IS_ENABLED                = "STATE_EQUIPMENT_FILTER_IS_ENABLED";        //$NON-NLS-1$
-   static final boolean                  STATE_EQUIPMENT_FILTER_IS_ENABLED_DEFAULT        = false;
-   static final String                   STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS         = "STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS"; //$NON-NLS-1$
-   static final int                      STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS_DEFAULT = 0;
-   static final String                   STATE_EQUIPMENT_FILTER_IS_RETIRED                = "STATE_EQUIPMENT_FILTER_IS_RETIRED";        //$NON-NLS-1$
-   static final int                      STATE_EQUIPMENT_FILTER_IS_RETIRED_DEFAULT        = 0;
+   public static final String            ID                                     = "net.tourbook.equipment.EquipmentView.ID"; //$NON-NLS-1$
 
    /**
     * The expanded equipment items have these structure:
@@ -167,32 +159,30 @@ public class EquipmentView extends ViewPart implements
     * 4. id/year/month<br>
     * ...
     */
-   private static final String           STATE_EXPANDED_ITEMS                             = "STATE_EXPANDED_ITEMS";                     //$NON-NLS-1$
-   private static final String           STATE_IS_ON_SELECT_EXPAND_COLLAPSE               = "STATE_IS_ON_SELECT_EXPAND_COLLAPSE";       //$NON-NLS-1$
-   private static final String           STATE_IS_SINGLE_EXPAND_COLLAPSE_OTHERS           = "STATE_IS_SINGLE_EXPAND_COLLAPSE_OTHERS";   //$NON-NLS-1$
+   private static final String           STATE_EXPANDED_ITEMS                   = "STATE_EXPANDED_ITEMS";                    //$NON-NLS-1$
+   private static final String           STATE_IS_ON_SELECT_EXPAND_COLLAPSE     = "STATE_IS_ON_SELECT_EXPAND_COLLAPSE";      //$NON-NLS-1$
+   private static final String           STATE_IS_SINGLE_EXPAND_COLLAPSE_OTHERS = "STATE_IS_SINGLE_EXPAND_COLLAPSE_OTHERS";  //$NON-NLS-1$
 
    /**
     * Using large numbers to easier debug and find issues
     */
-   private static final int              STATE_ITEM_TYPE_SEPARATOR                        = -1;
+   private static final int              STATE_ITEM_TYPE_SEPARATOR              = -1;
 
-   private static final int              STATE_ITEM_TYPE_EQUIPMENT                        = 1111;
-   private static final int              STATE_ITEM_TYPE_EQUIPMENT_YEAR                   = 1222;
-   private static final int              STATE_ITEM_TYPE_EQUIPMENT_MONTH                  = 1333;
+   private static final int              STATE_ITEM_TYPE_EQUIPMENT              = 1111;
+   private static final int              STATE_ITEM_TYPE_EQUIPMENT_YEAR         = 1222;
+   private static final int              STATE_ITEM_TYPE_EQUIPMENT_MONTH        = 1333;
 
-   private static final int              STATE_ITEM_TYPE_PART                             = 2111;
-   private static final int              STATE_ITEM_TYPE_PART_YEAR                        = 2222;
-   private static final int              STATE_ITEM_TYPE_PART_MONTH                       = 2333;
+   private static final int              STATE_ITEM_TYPE_PART                   = 2111;
+   private static final int              STATE_ITEM_TYPE_PART_YEAR              = 2222;
+   private static final int              STATE_ITEM_TYPE_PART_MONTH             = 2333;
 
-   private static final IPreferenceStore _prefStore                                       = TourbookPlugin.getPrefStore();
-   private static final IPreferenceStore _prefStore_Common                                = CommonActivator.getPrefStore();
-   private static final IDialogSettings  _state                                           = TourbookPlugin.getState(ID);
-   private static final IDialogSettings  _state_EquipmentFilter                           = TourbookPlugin.getState(
-         "net.tourbook.equipment.EquipmentView.EquipmentFilter");
+   private static final IPreferenceStore _prefStore                             = TourbookPlugin.getPrefStore();
+   private static final IPreferenceStore _prefStore_Common                      = CommonActivator.getPrefStore();
+   private static final IDialogSettings  _state                                 = TourbookPlugin.getState(ID);
 
-   private static final PeriodType       _tourPeriodTemplate                              = PeriodType.yearMonthDay();
+   private static final PeriodType       _tourPeriodTemplate                    = PeriodType.yearMonthDay();
 
-   private NumberFormat                  _nf0                                             = NumberFormat.getNumberInstance();
+   private NumberFormat                  _nf0                                   = NumberFormat.getNumberInstance();
    {
       _nf0.setMinimumFractionDigits(0);
       _nf0.setMaximumFractionDigits(0);
@@ -223,10 +213,6 @@ public class EquipmentView extends ViewPart implements
    private int                                _selectedTreeItemHeight;
 
    private OpenDialogManager                  _openDlgMgr                              = new OpenDialogManager();
-
-   private boolean                            _equipmentFilter_IsEnabled;
-   private int                                _equipmentFilter_IsContainsTours;
-   private int                                _equipmentFilter_isRetired;
 
    private EquipmentMenuManager               _equipmentMenuManager;
    private TagMenuManager                     _tagMenuManager;
@@ -897,7 +883,7 @@ public class EquipmentView extends ViewPart implements
 
 // SET_FORMATTING_OFF
 
-      _actionEquipmentFilter                 = new ActionEquipmentFilter(this, _state, _state_EquipmentFilter, _equipmentFilterImage);
+      _actionEquipmentFilter                 = new ActionEquipmentFilter(this, _equipmentFilterImage);
       _actionEquipmentOptions                = new ActionEquipmentOptions();
 
       // equipment actions
@@ -1011,7 +997,9 @@ public class EquipmentView extends ViewPart implements
       parent.getDisplay().asyncExec(() ->
 
       // async is needed otherwise it is NOT selected
-      _actionEquipmentFilter.setSelection(_equipmentFilter_IsEnabled));
+      _actionEquipmentFilter.setSelection(EquipmentManager.isEquipmentFilterEnabled()) //
+
+      );
    }
 
    private void createUI(final Composite parent) {
@@ -1187,6 +1175,7 @@ public class EquipmentView extends ViewPart implements
       defineColumn_Equipment_Type();
       defineColumn_Equipment_Collate();
       defineColumn_Equipment_CollateBetween();
+      defineColumn_Equipment_Retired();
 
       defineColumn_Tour_Title();
 
@@ -1203,7 +1192,6 @@ public class EquipmentView extends ViewPart implements
       defineColumn_Equipment_Date_UsageDuration();
       defineColumn_Equipment_Date_Built();
       defineColumn_Equipment_Date_Retired();
-      defineColumn_Equipment_AutoRetired();
 
       defineColumn_Equipment_Price();
       defineColumn_Equipment_PriceUnit();
@@ -1522,42 +1510,6 @@ public class EquipmentView extends ViewPart implements
 
                colDef.printValue_0(cell, value);
 
-               setCellColor(cell, element);
-            }
-         }
-      });
-   }
-
-   /**
-    * Column: Auto Retired
-    */
-   private void defineColumn_Equipment_AutoRetired() {
-
-      final ColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_AUTO_RETIRED.createColumn(_columnManager, _pc);
-
-      colDef.setIsDefaultColumn();
-
-      colDef.setLabelProvider(new CellLabelProvider() {
-
-         @Override
-         public void update(final ViewerCell cell) {
-
-            final Object element = cell.getElement();
-
-            boolean isAutoRetired = false;
-
-            if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
-
-               isAutoRetired = equipmentItem.getEquipment().isAutoRetired();
-
-            } else if (element instanceof final TVIEquipmentView_Part partItem) {
-
-               isAutoRetired = partItem.getPart().isAutoRetired();
-            }
-
-            if (isAutoRetired) {
-
-               cell.setText(UI.SYMBOL_BOX);
                setCellColor(cell, element);
             }
          }
@@ -2228,6 +2180,42 @@ public class EquipmentView extends ViewPart implements
             if (purchaseLocation != null && purchaseLocation.length() > 0) {
 
                cell.setText(purchaseLocation);
+               setCellColor(cell, element);
+            }
+         }
+      });
+   }
+
+   /**
+    * Column: Auto Retired
+    */
+   private void defineColumn_Equipment_Retired() {
+
+      final ColumnDefinition colDef = TreeColumnFactory.EQUIPMENT_RETIRED.createColumn(_columnManager, _pc);
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final Object element = cell.getElement();
+
+            boolean isRetired = false;
+
+            if (element instanceof final TVIEquipmentView_Equipment equipmentItem) {
+
+               isRetired = equipmentItem.getEquipment().isRetired();
+
+            } else if (element instanceof final TVIEquipmentView_Part partItem) {
+
+               isRetired = partItem.getPart().isRetired();
+            }
+
+            if (isRetired) {
+
+               cell.setText(UI.SYMBOL_BOX);
                setCellColor(cell, element);
             }
          }
@@ -3185,7 +3173,7 @@ public class EquipmentView extends ViewPart implements
     */
    private boolean isInEquipmentFilter(final Object item) {
 
-      if (_equipmentFilter_IsEnabled == false) {
+      if (EquipmentManager.isEquipmentFilterEnabled() == false) {
 
          // nothing is filtered
 
@@ -3196,7 +3184,9 @@ public class EquipmentView extends ViewPart implements
 
       if (item instanceof final TVIEquipmentView_Equipment equipmentItem) {
 
-         if (_equipmentFilter_IsContainsTours == 0) {
+         final int containsTours = EquipmentManager.getEquipmentFilter_ContainsTours();
+
+         if (containsTours == 0) {
 
             // ignore
 
@@ -3206,13 +3196,13 @@ public class EquipmentView extends ViewPart implements
 
             final boolean hasTour = equipmentItem.numTours_All > 0;
 
-            if (_equipmentFilter_IsContainsTours == 1 && hasTour) {
+            if (containsTours == 1 && hasTour) {
 
                // show equipment WITH tours
 
                return true;
 
-            } else if (_equipmentFilter_IsContainsTours == 2 && hasTour == false) {
+            } else if (containsTours == 2 && hasTour == false) {
 
                // show equipment WITHOUT tours
 
@@ -4011,16 +4001,6 @@ public class EquipmentView extends ViewPart implements
       return _equipmentViewer;
    }
 
-   private void refreshViewer() {
-
-      final Tree tree = _equipmentViewer.getTree();
-      tree.setRedraw(false);
-      {
-         _equipmentViewer.refresh();
-      }
-      tree.setRedraw(true);
-   }
-
    @Override
    public void reloadViewer() {
 
@@ -4059,24 +4039,10 @@ public class EquipmentView extends ViewPart implements
       _actionSingleExpand_CollapseOthers.setChecked(_isBehaviour_SingleExpand_CollapseOthers);
 
       restoreState_TreeItemHeight();
-      restoreState_EquipmentFilter();
 
       EquipmentManager.setEquipmentImageSize_View(_selectedTreeItemHeight);
 
       updateToolTipState();
-   }
-
-   private void restoreState_EquipmentFilter() {
-
-      _equipmentFilter_IsEnabled = Util.getStateBoolean(_state, STATE_EQUIPMENT_FILTER_IS_ENABLED, false);
-
-      _equipmentFilter_IsContainsTours = Util.getStateInt(_state,
-            STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS,
-            STATE_EQUIPMENT_FILTER_IS_CONTAINS_TOURS_DEFAULT);
-
-      _equipmentFilter_isRetired = Util.getStateInt(_state,
-            STATE_EQUIPMENT_FILTER_IS_RETIRED,
-            STATE_EQUIPMENT_FILTER_IS_RETIRED_DEFAULT);
    }
 
    private void restoreState_TreeItemHeight() {
@@ -4332,13 +4298,7 @@ public class EquipmentView extends ViewPart implements
       _state.put(STATE_IS_SINGLE_EXPAND_COLLAPSE_OTHERS, _actionSingleExpand_CollapseOthers.isChecked());
       _state.put(STATE_IS_ON_SELECT_EXPAND_COLLAPSE, _actionOnMouseSelect_ExpandCollapse.isChecked());
 
-      saveState_EquipmentFilter();
       saveState_ExpandedItems();
-   }
-
-   private void saveState_EquipmentFilter() {
-
-      _state.put(STATE_EQUIPMENT_FILTER_IS_ENABLED, _equipmentFilter_IsEnabled);
    }
 
    /**
@@ -4443,11 +4403,6 @@ public class EquipmentView extends ViewPart implements
 
    private void updateAfterModified_Equipment(final Equipment equipment) {
 
-      // a not collated equipment can not be auto retired
-      if (equipment.isCollate() == false) {
-         equipment.setIsAutoRetired(false);
-      }
-
       final Set<String> allTypes = new HashSet<>(Arrays.asList(equipment.getType()));
 
       TourDatabase.saveEntity(equipment, equipment.getEquipmentId(), Equipment.class);
@@ -4458,11 +4413,6 @@ public class EquipmentView extends ViewPart implements
    }
 
    private void updateAfterModified_Part(final Equipment equipment, final EquipmentPart part) {
-
-      // a not collated part can not be auto retired
-      if (part.isCollate() == false) {
-         part.setIsAutoRetired(false);
-      }
 
       final EquipmentPart savedPart = TourDatabase.saveEntity(part, part.getPartId(), EquipmentPart.class);
 
@@ -4497,18 +4447,14 @@ public class EquipmentView extends ViewPart implements
 
    void updateEquipmentFilter_FromAction(final boolean isFilterSelected) {
 
-      _equipmentFilter_IsEnabled = isFilterSelected;
+      EquipmentManager.setEquipmentFilter_IsEnabled(isFilterSelected);
 
-      saveState_EquipmentFilter();
-
-      refreshViewer();
+      reloadViewer_SetContent();
    }
 
    void updateEquipmentFilter_FromSlideout() {
 
-      restoreState_EquipmentFilter();
-
-      refreshViewer();
+      reloadViewer_SetContent();
    }
 
    private void updateToolTipState() {

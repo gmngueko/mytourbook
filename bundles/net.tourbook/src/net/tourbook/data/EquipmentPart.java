@@ -133,10 +133,9 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
    private boolean                    isCollate                       = true;
 
    /**
-    * When <code>true</code> then this part is auto retired which depends on
-    * {@link #dateCollateFrom} and {@link #dateCollateUntil}
+    * When <code>true</code> then this part is retired
     */
-   private boolean                    isAutoRetired;
+   private boolean                    isRetired;
 
    /**
     * When the part was firstly used, in milliseconds since 1970-01-01T00:00:00Z
@@ -604,10 +603,6 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       return Objects.hash(partId, _createId);
    }
 
-   public boolean isAutoRetired() {
-      return isAutoRetired;
-   }
-
    public boolean isCollate() {
       return isCollate;
    }
@@ -633,6 +628,10 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
 
    public boolean isItemType_Service() {
       return itemType == ITEM_TYPE_SERVICE;
+   }
+
+   public boolean isRetired() {
+      return isRetired;
    }
 
    /**
@@ -762,12 +761,12 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       this.imageFilePath = imageFilePath;
    }
 
-   public void setIsAutoRetired(final boolean isAutoRetired) {
-      this.isAutoRetired = isAutoRetired;
-   }
-
    public void setIsCollate(final boolean isCollate) {
       this.isCollate = isCollate;
+   }
+
+   public void setIsRetired(final boolean isRetired) {
+      this.isRetired = isRetired;
    }
 
    public void setModel(final String model) {
@@ -853,12 +852,6 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
          serviceName = otherPart.getName_Service();
       }
 
-      // a not collated part cannot be auto retired
-      final boolean isCollateOther = otherPart.isCollate();
-      if (isCollateOther == false) {
-         setIsAutoRetired(false);
-      }
-
 // SET_FORMATTING_OFF
 
       setBrand             (otherPart.getBrand());
@@ -871,7 +864,8 @@ public class EquipmentPart implements Cloneable, Comparable<Object>, Serializabl
       setCompany           (otherPart.getCompany());
       setName_Service      (serviceName);
 
-      setIsCollate         (isCollateOther);
+      setIsCollate         (otherPart.isCollate());
+      setIsRetired         (otherPart.isRetired());
       setCollateBetween    (otherPart.getCollateBetween());
       setPartType          (otherPart.getPartType());
 
