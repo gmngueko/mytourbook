@@ -187,17 +187,27 @@ public class TVIEquipmentView_Equipment extends TVIEquipmentView_Item {
 
          if (useFilter) {
 
-            final boolean isRetired = part.isRetired();
+            final boolean isPartRetired = part.isRetired();
 
             if (equipmentFilter_Retired == EquipmentManager.FILTER_RETIRED_IS_RETIRED) {
 
-               if (isRetired) {
+               // display retired parts
+
+               if (isPartRetired == false) {
+
+                  // ignore part
+
                   continue;
                }
 
-            } else if (equipmentFilter_Retired == EquipmentManager.FILTER_RETIRED_IS_NOT_RETIRED) {
+            } else if (equipmentFilter_Retired == EquipmentManager.FILTER_RETIRED_IS_ACTIVE) {
 
-               if (isRetired) {
+               // display active parts
+
+               if (isPartRetired) {
+
+                  // ignore part
+
                   continue;
                }
             }

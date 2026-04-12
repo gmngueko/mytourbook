@@ -240,6 +240,7 @@ public class EquipmentView extends ViewPart implements
    private ActionSetTourStructure             _actionSetTourStructure;
    private ActionSetTourStructure_All         _actionSetTourStructure_All;
    private ActionToggleCollatedTours          _actionToggleCollatedTours;
+   private ActionToggleRetiredAsset           _actionToggleRetiredAsset;
 
    private ActionCollapseAll_WithoutSelection _actionCollapseAll_WithoutSelection;
    private ActionCollapseOthers               _actionCollapseOthers;
@@ -553,6 +554,21 @@ public class EquipmentView extends ViewPart implements
       @Override
       public void run() {
          onAction_ToggleCollatedTours();
+      }
+   }
+
+   private class ActionToggleRetiredAsset extends Action {
+
+      public ActionToggleRetiredAsset() {
+
+         super("Toggle &Retired Asset", AS_PUSH_BUTTON);
+
+         setToolTipText("Set if this asset is retired or not");
+      }
+
+      @Override
+      public void run() {
+         onAction_ToggleRetiredTours();
       }
    }
 
@@ -903,6 +919,7 @@ public class EquipmentView extends ViewPart implements
       _actionSetTourStructure                = new ActionSetTourStructure(this);
       _actionSetTourStructure_All            = new ActionSetTourStructure_All();
       _actionToggleCollatedTours             = new ActionToggleCollatedTours();
+      _actionToggleRetiredAsset              = new ActionToggleRetiredAsset();
 
       // collapse/expand actions
       _actionCollapseAll_WithoutSelection    = new ActionCollapseAll_WithoutSelection();
@@ -994,12 +1011,12 @@ public class EquipmentView extends ViewPart implements
 
       enableActions();
 
-      parent.getDisplay().asyncExec(() ->
+      parent.getDisplay().asyncExec(() -> {
 
-      // async is needed otherwise it is NOT selected
-      _actionEquipmentFilter.setSelection(EquipmentManager.isEquipmentFilterEnabled()) //
+         // async is needed otherwise it is NOT selected
+         _actionEquipmentFilter.setSelection(EquipmentManager.isEquipmentFilterEnabled());
 
-      );
+      });
    }
 
    private void createUI(final Composite parent) {
@@ -2918,6 +2935,7 @@ public class EquipmentView extends ViewPart implements
       _actionNewService          .setEnabled(canCreatePartOrService);
       _actionSetTourStructure    .setEnabled(canSetTourStructure);
       _actionToggleCollatedTours .setEnabled(isOneItemSelected && isAssetSelected);
+      _actionToggleRetiredAsset  .setEnabled(isAssetSelected);
 
       _actionExportTour          .setEnabled(isSelectedTours);
 
@@ -3024,6 +3042,7 @@ public class EquipmentView extends ViewPart implements
          menuMgr.add(_actionEditService);
       }
 
+      menuMgr.add(_actionToggleRetiredAsset);
       menuMgr.add(_actionToggleCollatedTours);
       menuMgr.add(_actionSetTourStructure);
       menuMgr.add(_actionSetTourStructure_All);
@@ -3671,6 +3690,44 @@ public class EquipmentView extends ViewPart implements
       }
    }
 
+   private void onAction_ToggleRetiredTours() {
+
+      boolean isUpdateUI = false;
+
+      final ITreeSelection selection = _equipmentViewer.getStructuredSelection();
+
+      for (final Object object : selection) {
+
+         if (object instanceof final TVIEquipmentView_Equipment equipmentItem) {
+
+            final Equipment equipment = equipmentItem.getEquipment();
+
+            final boolean isRetired = equipment.isRetired();
+
+            equipment.setIsRetired(!isRetired);
+
+            TourDatabase.saveEntity(equipment, equipment.getEquipmentId(), Equipment.class);
+
+            isUpdateUI = true;
+
+         } else if (object instanceof final TVIEquipmentView_Part partItem) {
+
+            final EquipmentPart part = partItem.getPart();
+
+            part.setIsRetired(!part.isRetired());
+
+            TourDatabase.saveEntity(part, part.getPartId(), EquipmentPart.class);
+
+            isUpdateUI = true;
+         }
+      }
+
+      if (isUpdateUI) {
+
+         updateUI_ReloadViewer();
+      }
+   }
+
    private void onColumnImage_OnPaintViewer(final Event event) {
 
       // skip other columns
@@ -4019,13 +4076,16 @@ public class EquipmentView extends ViewPart implements
 
    private void reloadViewer_SetContent() {
 
-      _rootItem = new TVIEquipmentView_Root(_equipmentViewer, EquipmentViewerType.IS_EQUIPMENT_VIEWER);
+      BusyIndicator.showWhile(_parent.getDisplay(), () -> {
 
-      // first: load all tree items
-      loadAllTreeItems();
+         _rootItem = new TVIEquipmentView_Root(_equipmentViewer, EquipmentViewerType.IS_EQUIPMENT_VIEWER);
 
-      // second: update viewer
-      _equipmentViewer.setInput(_rootItem);
+         // first: load all tree items
+         loadAllTreeItems();
+
+         // second: update viewer
+         _equipmentViewer.setInput(_rootItem);
+      });
    }
 
    private void restoreState() {
@@ -4441,15 +4501,16 @@ public class EquipmentView extends ViewPart implements
    }
 
    @Override
-   public void updateColumnHeader(final ColumnDefinition colDef) {
-
-   }
+   public void updateColumnHeader(final ColumnDefinition colDef) {}
 
    void updateEquipmentFilter_FromAction(final boolean isFilterSelected) {
 
       EquipmentManager.setEquipmentFilter_IsEnabled(isFilterSelected);
 
-      reloadViewer_SetContent();
+      _parent.getDisplay().asyncExec(() -> {
+
+         reloadViewer_SetContent();
+      });
    }
 
    void updateEquipmentFilter_FromSlideout() {

@@ -11728,7 +11728,7 @@ public class TourDatabase {
    }
 
    /**
-    * Update field <code>isAutoRetired</code> in the equipment/parts
+    * Update field <code>isRetired</code> in the equipment/parts
     *
     * @param conn
     * @param splashManager

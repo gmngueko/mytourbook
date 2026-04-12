@@ -101,26 +101,26 @@ public class EquipmentManager {
    static final int            STATE_EQUIPMENT_FILTER_RETIRED_DEFAULT        = 0;
    //
    //
-   private static final IDialogSettings      _state                        = TourbookPlugin.getState("net.tourbook.equipment.EquipmentManager");
+   private static final IDialogSettings      _state                       = TourbookPlugin.getState("net.tourbook.equipment.EquipmentManager");
 
-   static final int                          FILTER_CONTAINS_TOURS_IGNORE  = 0;
-   static final int                          FILTER_CONTAINS_TOURS_YES     = 1;
-   static final int                          FILTER_CONTAINS_TOURS_NO      = 2;
-   static final int                          FILTER_RETIRED_IGNORE         = 0;
-   static final int                          FILTER_RETIRED_IS_RETIRED     = 1;
-   static final int                          FILTER_RETIRED_IS_NOT_RETIRED = 2;
+   static final int                          FILTER_CONTAINS_TOURS_IGNORE = 0;
+   static final int                          FILTER_CONTAINS_TOURS_YES    = 1;
+   static final int                          FILTER_CONTAINS_TOURS_NO     = 2;
+   static final int                          FILTER_RETIRED_IGNORE        = 0;
+   static final int                          FILTER_RETIRED_IS_RETIRED    = 1;
+   static final int                          FILTER_RETIRED_IS_ACTIVE     = 2;
 
    /**
     * To identify an empty equipment type, they are not empty but filled with a random UUID. To
-    * identify an UUID type from a real type, the UUID type has this prefix
+    * identify an UUID type from a real type, the UUID type has this 'random' prefix
     */
-   private static final String               EMPTY_TYPE_PREFIX             = "v4a1n9---";                                                       //$NON-NLS-1$
+   private static final String               EMPTY_TYPE_PREFIX            = "v4a1n9---";                                                       //$NON-NLS-1$
 
-   public static final short                 EXPAND_TYPE_FLAT              = 0;
-   public static final short                 EXPAND_TYPE_YEAR_TOUR         = 1;
-   public static final short                 EXPAND_TYPE_YEAR_MONTH_TOUR   = 2;
+   public static final short                 EXPAND_TYPE_FLAT             = 0;
+   public static final short                 EXPAND_TYPE_YEAR_TOUR        = 1;
+   public static final short                 EXPAND_TYPE_YEAR_MONTH_TOUR  = 2;
 
-   static final String[]                     EXPAND_TYPE_NAMES             = {
+   static final String[]                     EXPAND_TYPE_NAMES            = {
 
          Messages.app_action_expand_type_flat,
          Messages.app_action_expand_type_year_day,
@@ -130,14 +130,14 @@ public class EquipmentManager {
    /**
     * The EXPAND_TYPE_... value is the index for these labels
     */
-   static final String[]                     EXPAND_TYPE_LABEL             = {
+   static final String[]                     EXPAND_TYPE_LABEL            = {
 
          Messages.Equipment_ExpandType_SortByDate,
          Messages.Equipment_ExpandType_ByYear,
          Messages.Equipment_ExpandType_ByYearMonth
    };
 
-   static final short[]                      EXPAND_TYPES                  = {
+   static final short[]                      EXPAND_TYPES                 = {
 
          EXPAND_TYPE_FLAT,
          EXPAND_TYPE_YEAR_TOUR,
@@ -168,7 +168,7 @@ public class EquipmentManager {
     * <pre>
     * {@link #FILTER_RETIRED_IGNORE} ... {@value #FILTER_RETIRED_IGNORE}
     * {@link #FILTER_RETIRED_IS_RETIRED} ... {@value #FILTER_RETIRED_IS_RETIRED}
-    * {@link #FILTER_RETIRED_IS_NOT_RETIRED} ...{@value #FILTER_RETIRED_IS_NOT_RETIRED}
+    * {@link #FILTER_RETIRED_IS_ACTIVE} ...{@value #FILTER_RETIRED_IS_ACTIVE}
     * </pre>
     */
    private static int                        _equipmentFilter_Retired;
