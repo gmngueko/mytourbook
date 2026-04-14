@@ -4076,6 +4076,8 @@ public class EquipmentView extends ViewPart implements
 
    private void reloadViewer_SetContent() {
 
+      EquipmentLoader.startUpdate();
+
       BusyIndicator.showWhile(_parent.getDisplay(), () -> {
 
          _rootItem = new TVIEquipmentView_Root(_equipmentViewer, EquipmentViewerType.IS_EQUIPMENT_VIEWER);
@@ -4515,7 +4517,17 @@ public class EquipmentView extends ViewPart implements
 
    void updateEquipmentFilter_FromSlideout() {
 
-      reloadViewer_SetContent();
+      _viewerContainer.setRedraw(false);
+      {
+         final Object[] expandedElements = _equipmentViewer.getExpandedElements();
+         final ITreeSelection selection = _equipmentViewer.getStructuredSelection();
+
+         reloadViewer_SetContent();
+
+         _equipmentViewer.setExpandedElements(expandedElements);
+         _equipmentViewer.setSelection(selection);
+      }
+      _viewerContainer.setRedraw(true);
    }
 
    private void updateToolTipState() {
