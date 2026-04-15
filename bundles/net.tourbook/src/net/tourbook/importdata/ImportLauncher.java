@@ -35,7 +35,7 @@ public class ImportLauncher implements Cloneable {
    public String                   name                          = UI.EMPTY_STRING;
 
    /**
-    * When <code>null</code> then the tour type is not set.
+    * When <code>null</code> then the tour type is not set
     */
    public Enum<TourTypeConfig>     tourTypeConfig;
 
@@ -150,6 +150,11 @@ public class ImportLauncher implements Cloneable {
     */
    public String                   equipmentGroupID;
 
+   /**
+    * When <code>null</code> then the equipment config is not set
+    */
+   public Enum<EquipmentConfig>    equipmentConfig;
+
    public ImportLauncher() {
 
       _id = ++_idCreator;
@@ -243,7 +248,7 @@ public class ImportLauncher implements Cloneable {
    }
 
    /**
-    * Setup data for the tour type config image.
+    * Setup data for the tour type config image
     */
    void setupItemImage() {
 
