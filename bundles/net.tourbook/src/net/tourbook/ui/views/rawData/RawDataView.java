@@ -2343,7 +2343,7 @@ public class RawDataView extends ViewPart implements
 
          if (importLauncher.isSetEquipment()) {
 
-            EasyLauncherUtils.createText_EquipmentGroup(importLauncher, sb);
+            EasyLauncherUtils.createText_EquipmentOneGroup(importLauncher, sb);
 
          } else {
 
@@ -2857,7 +2857,7 @@ public class RawDataView extends ViewPart implements
 
    private String createText_EquipmentGroup(final ImportLauncher importLauncher) {
 
-      final String equipmentGroupID = importLauncher.equipmentGroupID;
+      final String equipmentGroupID = importLauncher.equipmentOneGroupID;
 
       final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
       final Set<Equipment> allEquipment = EquipmentGroupManager.getEquipment(equipmentGroupID);
@@ -6027,7 +6027,7 @@ public class RawDataView extends ViewPart implements
          /*
           * 9. Set equipment from a group
           */
-         if (importLauncher.isSetEquipmentGroup) {
+         if (importLauncher.isSetEquipment) {
             runEasyImport_009_SetEquipment(importLauncher, importedTours);
          }
 
@@ -6348,7 +6348,7 @@ public class RawDataView extends ViewPart implements
    private void runEasyImport_009_SetEquipment(final ImportLauncher importLauncher,
                                                final ArrayList<TourData> allImportedTours) {
 
-      final String equipmentGroupID = importLauncher.equipmentGroupID;
+      final String equipmentGroupID = importLauncher.equipmentOneGroupID;
       final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
 
       if (equipmentGroup == null) {

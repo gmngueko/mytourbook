@@ -70,12 +70,12 @@ public class EasyLauncherUtils {
       _nf1.setMaximumFractionDigits(1);
    }
 
-   public static void createText_EquipmentGroup(final ImportLauncher importLauncher, final StringBuilder sb) {
+   public static void createText_EquipmentOneGroup(final ImportLauncher importLauncher, final StringBuilder sb) {
 
-      final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentGroupID);
-      final Set<Equipment> allEquipment = EquipmentGroupManager.getEquipment(importLauncher.equipmentGroupID);
+      final EquipmentGroup equipmentOneGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentOneGroupID);
+      final Set<Equipment> allEquipment = EquipmentGroupManager.getEquipment(importLauncher.equipmentOneGroupID);
 
-      if (equipmentGroup == null || allEquipment == null) {
+      if (equipmentOneGroup == null || allEquipment == null) {
 
          return;
       }
@@ -91,7 +91,7 @@ public class EasyLauncherUtils {
       }
 
       sb.append(NL);
-      sb.append(Messages.Import_Data_HTML_SetEquipment_YES.formatted(equipmentGroup.name, sbEquipment.toString()));
+      sb.append(Messages.Import_Data_HTML_SetEquipment_YES.formatted(equipmentOneGroup.name, sbEquipment.toString()));
    }
 
    public static void createText_TagsGroup(final ImportLauncher importLauncher, final StringBuilder sb) {
@@ -218,9 +218,9 @@ public class EasyLauncherUtils {
       {
          // equipment group
 
-         if (importLauncher.isSetEquipmentGroup) {
+         if (importLauncher.isSetEquipment) {
 
-            createText_EquipmentGroup(importLauncher, sb);
+            createText_EquipmentOneGroup(importLauncher, sb);
 
          } else {
 
@@ -622,9 +622,9 @@ public class EasyLauncherUtils {
 
             final ImportLauncher importLauncher = (ImportLauncher) cell.getElement();
 
-            if (importLauncher.isSetEquipmentGroup) {
+            if (importLauncher.isSetEquipment) {
 
-               final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentGroupID);
+               final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentOneGroupID);
 
                cell.setText(equipmentGroup == null ? UI.EMPTY_STRING : equipmentGroup.name);
 

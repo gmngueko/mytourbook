@@ -143,17 +143,17 @@ public class ImportLauncher implements Cloneable {
    /**
     * When <code>true</code> then all equipment in a groups are set into the tour
     */
-   public boolean                  isSetEquipmentGroup;
+   public boolean                  isSetEquipment;
+
+   /**
+    * When <code>null</code> then a equipment config is not set and an empty page is displayed
+    */
+   public Enum<EquipmentConfig>    equipmentConfig;
 
    /**
     * ID of the {@link EquipmentGroup}
     */
-   public String                   equipmentGroupID;
-
-   /**
-    * When <code>null</code> then the equipment config is not set
-    */
-   public Enum<EquipmentConfig>    equipmentConfig;
+   public String                   equipmentOneGroupID;
 
    public ImportLauncher() {
 
@@ -222,9 +222,9 @@ public class ImportLauncher implements Cloneable {
     */
    public boolean isSetEquipment() {
 
-      final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
+      final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentOneGroupID);
 
-      if (equipmentGroup != null && isSetEquipmentGroup) {
+      if (equipmentGroup != null && isSetEquipment) {
 
          return equipmentGroup.allEquipment.size() > 0;
       }

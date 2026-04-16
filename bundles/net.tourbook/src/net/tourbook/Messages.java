@@ -854,6 +854,7 @@ public class Messages extends NLS {
    public static String        Dialog_ImportConfig_Label_DeviceFolder;
    public static String        Dialog_ImportConfig_Label_DeviceFolder_Tooltip;
    public static String        Dialog_ImportConfig_Label_DeviceType_Tooltip;
+   public static String        Dialog_ImportConfig_Label_EquipmentGroup;
    public static String        Dialog_ImportConfig_Label_ImportColumns;
    public static String        Dialog_ImportConfig_Label_ImportColumns_Tooltip;
    public static String        Dialog_ImportConfig_Label_ImportLauncher;
