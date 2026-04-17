@@ -4818,6 +4818,10 @@ public abstract class TableColumnFactory {
 
             colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(20));
 
+
+            colDef.setValueFormats(             ValueFormatSet.Equipment,
+                                                ValueFormat.EQUIPMENT_BRAND_MODEL,
+                                                columnManager);
             return colDef;
          }
       };
