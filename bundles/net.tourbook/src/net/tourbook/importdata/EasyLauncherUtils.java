@@ -125,7 +125,7 @@ public class EasyLauncherUtils {
 
       if (TourTypeConfig.TOUR_TYPE_CONFIG_BY_SPEED.equals(ttConfig)) {
 
-         final ArrayList<SpeedTourType> speedTourTypes = importLauncher.speedTourTypes;
+         final List<SpeedTourType> speedTourTypes = importLauncher.speedTourTypes;
          boolean isSpeedAdded = false;
 
          for (final SpeedTourType speedTT : speedTourTypes) {
@@ -624,9 +624,22 @@ public class EasyLauncherUtils {
 
             if (importLauncher.isSetEquipment) {
 
-               final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentOneGroupID);
+               final Enum<EquipmentConfig> equipmentConfig = importLauncher.equipmentConfig;
 
-               cell.setText(equipmentGroup == null ? UI.EMPTY_STRING : equipmentGroup.name);
+               String eqText = UI.EMPTY_STRING;
+
+               if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL == equipmentConfig) {
+
+                  final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(importLauncher.equipmentOneGroupID);
+
+                  eqText = equipmentGroup == null ? UI.EMPTY_STRING : equipmentGroup.name;
+
+               } else if (EquipmentConfig.EQUIPMENT_CONFIG_BY_SPEED == equipmentConfig) {
+
+                  eqText = "speed";
+               }
+
+               cell.setText(eqText);
 
             } else {
 

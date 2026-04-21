@@ -52,6 +52,8 @@ import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourType;
 import net.tourbook.database.TourDatabase;
+import net.tourbook.equipment.EquipmentGroup;
+import net.tourbook.equipment.EquipmentGroupManager;
 import net.tourbook.tour.CadenceMultiplier;
 import net.tourbook.tour.TourLogManager;
 import net.tourbook.tour.TourLogState;
@@ -83,13 +85,14 @@ public class EasyImportManager {
    private static final String      TAG_DASH_CONFIG                                       = "DashConfig";                                             //$NON-NLS-1$
    private static final String      TAG_IMPORT_CONFIG                                     = "ImportConfig";                                           //$NON-NLS-1$
    private static final String      TAG_LAUNCHER_CONFIG                                   = "LauncherConfig";                                         //$NON-NLS-1$
-   private static final String      TAG_TOUR_TYPE_BY_SPEED                                = "Speed";                                                  //$NON-NLS-1$
+   private static final String      TAG_SPEED                                             = "Speed";                                                  //$NON-NLS-1$
    //
    private static final String      ATTR_AVG_SPEED                                        = "avgSpeed";                                               //$NON-NLS-1$
    private static final String      ATTR_BACKUP_FOLDER                                    = "backupFolder";                                           //$NON-NLS-1$
    private static final String      ATTR_DEVICE_FILES                                     = "deviceFiles";                                            //$NON-NLS-1$
    private static final String      ATTR_DEVICE_FOLDER                                    = "deviceFolder";                                           //$NON-NLS-1$
    private static final String      ATTR_DEVICE_TYPE                                      = "deviceType";                                             //$NON-NLS-1$
+   private static final String      ATTR_EQUIPMENT_GROUP_ID                               = "equipmentGroupId";                                       //$NON-NLS-1$
    private static final String      ATTR_IS_ACTIVE_CONFIG                                 = "isActiveConfig";                                         //$NON-NLS-1$
    private static final String      ATTR_IS_CREATE_BACKUP                                 = "isCreateBackup";                                         //$NON-NLS-1$
    private static final String      ATTR_IS_DELETE_DEVICE_FILES                           = "isDeleteDeviceFiles";                                    //$NON-NLS-1$
@@ -874,6 +877,33 @@ public class EasyImportManager {
 
       if (EquipmentConfig.EQUIPMENT_CONFIG_BY_SPEED.equals(eqConfig)) {
 
+         final List<SpeedEquipment> allEqSpeeds = importLauncher.allEquipmentSpeeds;
+
+         for (final IMemento memento : xmlConfig.getChildren()) {
+
+            final XMLMemento xmlSpeed = (XMLMemento) memento;
+
+            // check if group id is valid
+            final String xmlEqGroupId = Util.getXmlString(xmlSpeed, ATTR_EQUIPMENT_GROUP_ID, null);
+            final EquipmentGroup validEqGroup = EquipmentGroupManager.getEquipmentGroup(xmlEqGroupId);
+
+            if (validEqGroup != null) {
+
+               final SpeedEquipment eqSpeed = new SpeedEquipment();
+
+               eqSpeed.equipmentGroupID = xmlEqGroupId;
+
+               eqSpeed.avgSpeed = Util.getXmlFloatFloat(
+                     xmlSpeed,
+                     ATTR_AVG_SPEED,
+                     EasyConfig.TOUR_AVG_SPEED_DEFAULT,
+                     EasyConfig.TOUR_AVG_SPEED_MIN,
+                     EasyConfig.TOUR_AVG_SPEED_MAX);
+
+               allEqSpeeds.add(eqSpeed);
+            }
+         }
+
       } else if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL.equals(eqConfig)) {
 
          importLauncher.equipmentOneGroupID = Util.getXmlString(xmlConfig, ATTR_IL_TOUR_EQUIPMENT_ONE_GROUP_ID, null);
@@ -898,7 +928,7 @@ public class EasyImportManager {
 
       if (TourTypeConfig.TOUR_TYPE_CONFIG_BY_SPEED.equals(ttConfig)) {
 
-         final ArrayList<SpeedTourType> speedVertices = importLauncher.speedTourTypes;
+         final List<SpeedTourType> speedVertices = importLauncher.speedTourTypes;
 
          for (final IMemento memento : xmlConfig.getChildren()) {
 
@@ -920,9 +950,9 @@ public class EasyImportManager {
                speedVertex.avgSpeed = Util.getXmlFloatFloat(
                      xmlSpeed,
                      ATTR_AVG_SPEED,
-                     EasyConfig.TOUR_TYPE_AVG_SPEED_DEFAULT,
-                     EasyConfig.TOUR_TYPE_AVG_SPEED_MIN,
-                     EasyConfig.TOUR_TYPE_AVG_SPEED_MAX);
+                     EasyConfig.TOUR_AVG_SPEED_DEFAULT,
+                     EasyConfig.TOUR_AVG_SPEED_MIN,
+                     EasyConfig.TOUR_AVG_SPEED_MAX);
 
                speedVertex.cadenceMultiplier = (CadenceMultiplier) Util.getXmlEnum(xmlSpeed,
                      ATTR_IL_TOUR_TYPE_CADENCE,
@@ -1318,7 +1348,7 @@ public class EasyImportManager {
 
             for (final SpeedTourType speedVertex : importLauncher.speedTourTypes) {
 
-               final IMemento memento = xmlConfig.createChild(TAG_TOUR_TYPE_BY_SPEED);
+               final IMemento memento = xmlConfig.createChild(TAG_SPEED);
 
                if (memento instanceof XMLMemento) {
 
@@ -1353,6 +1383,19 @@ public class EasyImportManager {
          Util.setXmlEnum(xmlConfig, ATTR_IL_TOUR_EQUIPMENT_CONFIG,      eqConfig);
 
          if (EquipmentConfig.EQUIPMENT_CONFIG_BY_SPEED.equals(eqConfig)) {
+
+            for (final SpeedEquipment eqSpeed : importLauncher.allEquipmentSpeeds) {
+
+               final IMemento memento = xmlConfig.createChild(TAG_SPEED);
+
+               if (memento instanceof XMLMemento) {
+
+                  final XMLMemento xmlSpeedVertex = (XMLMemento) memento;
+
+                  xmlSpeedVertex.putString(ATTR_EQUIPMENT_GROUP_ID, eqSpeed.equipmentGroupID);
+                  xmlSpeedVertex.putFloat(ATTR_AVG_SPEED, eqSpeed.avgSpeed);
+               }
+            }
 
          } else if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL.equals(eqConfig)) {
 
@@ -1392,7 +1435,7 @@ public class EasyImportManager {
             tourAvgSpeed = tourDistanceKm / movingTime * 3.6;
          }
 
-         final ArrayList<SpeedTourType> speedTourTypes = importLauncher.speedTourTypes;
+         final List<SpeedTourType> speedTourTypes = importLauncher.speedTourTypes;
          long tourTypeId = -1;
 
          // find tour type for the tour avg speed

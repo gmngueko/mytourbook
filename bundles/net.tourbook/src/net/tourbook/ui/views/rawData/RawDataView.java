@@ -4759,7 +4759,7 @@ public class RawDataView extends ViewPart implements
 
          // draw multiple tour types in one image
 
-         final ArrayList<SpeedTourType> allSpeedVertices = importConfig.speedTourTypes;
+         final List<SpeedTourType> allSpeedVertices = importConfig.speedTourTypes;
 
          final ImageData swtImageData = new ImageData(
                configWidthScaled,
