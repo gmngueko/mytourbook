@@ -225,13 +225,23 @@ public class ImportLauncher implements Cloneable {
    /**
     * @return Returns <code>true</code> when equipment are set into the tour
     */
-   public boolean isSetEquipment() {
+   public boolean isSetEquipmentAndIsAvailable() {
 
-      final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentOneGroupID);
+      if (isSetEquipment) {
 
-      if (equipmentGroup != null && isSetEquipment) {
+         if (EquipmentConfig.EQUIPMENT_CONFIG_BY_SPEED == equipmentConfig) {
 
-         return equipmentGroup.allEquipment.size() > 0;
+            return allEquipmentSpeeds.size() > 0;
+
+         } else if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL == equipmentConfig) {
+
+            final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentOneGroupID);
+
+            if (equipmentGroup != null) {
+
+               return equipmentGroup.allEquipment.size() > 0;
+            }
+         }
       }
 
       return false;

@@ -147,7 +147,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    private static final String           STATE_SELECTED_TAB_FOLDER_MAIN     = "STATE_SELECTED_TAB_FOLDER_MAIN";       //$NON-NLS-1$
    //
    private static final String           DATA_KEY_TOUR_TYPE_ID              = "DATA_KEY_TOUR_TYPE_ID";                //$NON-NLS-1$
-   private static final String           DATA_KEY_SPEED_TOUR_TYPE_INDEX     = "DATA_KEY_SPEED_TOUR_TYPE_INDEX";       //$NON-NLS-1$
+   private static final String           DATA_KEY_SPEED_INDEX               = "DATA_KEY_SPEED_INDEX";                 //$NON-NLS-1$
    //
    private static final int              CONTROL_DECORATION_WIDTH           = 6;
    private static final String           CSS_PX                             = "px";                                   //$NON-NLS-1$
@@ -427,7 +427,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private class ActionSpeedEquipment_Delete extends Action {
 
-      private int _speedEQIndex;
+      private int _speedIndex;
 
       public ActionSpeedEquipment_Delete() {
 
@@ -440,12 +440,13 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
       @Override
       public void run() {
-         onSpeed_IL_EQ_Remove(_speedEQIndex);
+
+         onSpeed_IL_EQ_Remove(_speedIndex);
       }
 
-      public void setData(final int speedTTIndex) {
+      public void setSpeedIndex(final int speedIndex) {
 
-         _speedEQIndex = speedTTIndex;
+         _speedIndex = speedIndex;
       }
    }
 
@@ -484,7 +485,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private class ActionSpeedTourType_Delete extends Action {
 
-      private int _speedTTIndex;
+      private int _speedIndex;
 
       public ActionSpeedTourType_Delete() {
 
@@ -497,12 +498,13 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
       @Override
       public void run() {
-         onSpeed_IL_TT_Remove(_speedTTIndex);
+
+         onSpeed_IL_TT_Remove(_speedIndex);
       }
 
-      public void setData(final int speedTTIndex) {
+      public void setSpeedIndex(final int speedIndex) {
 
-         _speedTTIndex = speedTTIndex;
+         _speedIndex = speedIndex;
       }
    }
 
@@ -2284,14 +2286,14 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
              * Keep controls
              */
 // SET_FORMATTING_OFF
-            
+
             _allAction_TT_Speed_Delete      [speedIndex] = actionDeleteSpeedTT;
             _allLbl_TT_Speed_SpeedUnit     [speedIndex] = lblUnit;
             _allLbl_TT_Speed_TourTypeIcon  [speedIndex] = lblTourTypeIcon;
             _allLinkTT_TourType_Speed     [speedIndex] = linkTourType;
             _allSpinner_TT_Speed_AvgSpeed  [speedIndex] = spinnerValue;
             _allCombo_ILTT_Cadence         [speedIndex] = comboCadence;
-            
+
 // SET_FORMATTING_ON
          }
       }
@@ -3670,7 +3672,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
             for (final Label label : _allLbl_TT_Speed_TourTypeIcon) {
 
-               final Integer speedTTIndex = (Integer) label.getData(DATA_KEY_SPEED_TOUR_TYPE_INDEX);
+               final Integer speedTTIndex = (Integer) label.getData(DATA_KEY_SPEED_INDEX);
 
                final SpeedTourType speedTT = _selectedIL.speedTourTypes.get(speedTTIndex);
                final long tourTypeId = speedTT.tourTypeId;
@@ -3703,7 +3705,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private void fillSpeedTourTypeMenu(final IMenuManager menuMgr, final Link linkTourType) {
 
-      final int speedTTIndex = (int) linkTourType.getData(DATA_KEY_SPEED_TOUR_TYPE_INDEX);
+      final int speedTTIndex = (int) linkTourType.getData(DATA_KEY_SPEED_INDEX);
       final SpeedTourType speedTT = _selectedIL.speedTourTypes.get(speedTTIndex);
       final long speedTourTypeId = speedTT.tourTypeId;
 
@@ -4702,34 +4704,32 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       // set focus to the speed control
       _allSpinner_ILEQ_Speed_AvgSpeed[0].setFocus();
 
-      updateUI_IL_ViewerRedraw();
+      updateUI_IL_CurrentLauncherInViewer();
    }
 
-   private void onSpeed_IL_EQ_Remove(final int speedTTIndex) {
+   private void onSpeed_IL_EQ_Remove(final int speedIndex) {
 
-//      // update model
-//      update_Model_From_UI_IL();
-//
-//      final ArrayList<SpeedTourType> speedTourTypes = _selectedIL.speedTourTypes;
-//
-//      final SpeedTourType removedSpeedTT = speedTourTypes.get(speedTTIndex);
-//
-//      speedTourTypes.remove(removedSpeedTT);
-//
-//      // update UI
-//      update_UI_From_Model_IL();
-//
-//      enable_IL_Controls();
-//
-//      redrawILViewer();
+      // update model
+      update_Model_From_UI_IL();
+
+      final List<SpeedEquipment> eqSpeed = _selectedIL.allEquipmentSpeeds;
+
+      final SpeedEquipment removedEqSpeed = eqSpeed.get(speedIndex);
+
+      eqSpeed.remove(removedEqSpeed);
+
+      // update UI
+      update_UI_From_Model_IL();
+
+      enable_IL_Controls();
+
+      updateUI_IL_CurrentLauncherInViewer();
    }
 
    private void onSpeed_IL_EQ_Sort() {
 
-//      update_Model_From_UI_IL();
-//      update_UI_From_Model_IL();
-//
-//      redrawILViewer();
+      update_Model_From_UI_IL();
+      update_UI_From_Model_IL();
    }
 
    private void onSpeed_IL_TT_Add() {
@@ -4755,14 +4755,14 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       updateUI_IL_ViewerRedraw();
    }
 
-   private void onSpeed_IL_TT_Remove(final int speedTTIndex) {
+   private void onSpeed_IL_TT_Remove(final int speedIndex) {
 
       // update model
       update_Model_From_UI_IL();
 
       final List<SpeedTourType> speedTourTypes = _selectedIL.speedTourTypes;
 
-      final SpeedTourType removedSpeedTT = speedTourTypes.get(speedTTIndex);
+      final SpeedTourType removedSpeedTT = speedTourTypes.get(speedIndex);
 
       speedTourTypes.remove(removedSpeedTT);
 
@@ -5104,6 +5104,13 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
          allNewEquipmentSpeeds.add(speedEq);
       }
+
+      // sort by speed
+      Collections.sort(allNewEquipmentSpeeds);
+
+      // update model
+      allOldEquipmentSpeeds.clear();
+      allOldEquipmentSpeeds.addAll(allNewEquipmentSpeeds);
    }
 
    private void update_Model_From_UI_IL_Equipment_One() {
@@ -5388,8 +5395,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                updateUI_EquipmentGroup(comboEq, eqGroup, true);
 
                // keep references
-//               spinnerAvgSpeed.setData(DATA_KEY_SPEED_TOUR_TYPE_INDEX, speedIndex);
-//               _allAction_ILEQ_Speed_Delete[speedIndex].setData(speedIndex);
+               _allAction_ILEQ_Speed_Delete[speedIndex].setSpeedIndex(speedIndex);
             }
          }
          _speedEquipment_OuterContainer.setRedraw(true);
@@ -5434,13 +5440,17 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
             for (int speedIndex = 0; speedIndex < speedTTSize; speedIndex++) {
 
-               final SpeedTourType speedTT = speedTourTypes.get(speedIndex);
-               final long tourTypeId = speedTT.tourTypeId;
+// SET_FORMATTING_OFF
 
-               final Spinner spinnerAvgSpeed = _allSpinner_TT_Speed_AvgSpeed[speedIndex];
-               final Link linkTourType = _allLinkTT_TourType_Speed[speedIndex];
-               final Label labelTourTypeIcon = _allLbl_TT_Speed_TourTypeIcon[speedIndex];
-               final ComboViewerCadence comboCadence = _allCombo_ILTT_Cadence[speedIndex];
+               final SpeedTourType speedTT            = speedTourTypes.get(speedIndex);
+               final long tourTypeId                  = speedTT.tourTypeId;
+
+               final Spinner spinnerAvgSpeed          = _allSpinner_TT_Speed_AvgSpeed[speedIndex];
+               final Link linkTourType                = _allLinkTT_TourType_Speed[speedIndex];
+               final Label labelTourTypeIcon          = _allLbl_TT_Speed_TourTypeIcon[speedIndex];
+               final ComboViewerCadence comboCadence  = _allCombo_ILTT_Cadence[speedIndex];
+
+// SET_FORMATTING_ON
 
                // update UI
                final double avgSpeed = (speedTT.avgSpeed / UI.UNIT_VALUE_DISTANCE) + 0.0001;
@@ -5470,13 +5480,14 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
                // keep references
 // SET_FORMATTING_OFF
-               
-               labelTourTypeIcon                      .setData(DATA_KEY_SPEED_TOUR_TYPE_INDEX, speedIndex);
-               linkTourType                           .setData(DATA_KEY_SPEED_TOUR_TYPE_INDEX, speedIndex);
-               spinnerAvgSpeed                        .setData(DATA_KEY_SPEED_TOUR_TYPE_INDEX, speedIndex);
-               comboCadence                           .setData(DATA_KEY_SPEED_TOUR_TYPE_INDEX, speedIndex);
-               _allAction_TT_Speed_Delete[speedIndex] .setData(speedIndex);
-               
+
+               labelTourTypeIcon                      .setData(DATA_KEY_SPEED_INDEX, speedIndex);
+               linkTourType                           .setData(DATA_KEY_SPEED_INDEX, speedIndex);
+               spinnerAvgSpeed                        .setData(DATA_KEY_SPEED_INDEX, speedIndex);
+               comboCadence                           .setData(DATA_KEY_SPEED_INDEX, speedIndex);
+
+               _allAction_TT_Speed_Delete[speedIndex] .setSpeedIndex(speedIndex);
+
 // SET_FORMATTING_ON
 
             }
