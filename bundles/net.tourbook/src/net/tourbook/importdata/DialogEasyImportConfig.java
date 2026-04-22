@@ -134,8 +134,8 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    public static final String            ID                                 = "DialogEasyImportConfig";               //$NON-NLS-1$
    //
    public static final String            IMPORT_LAUNCHER_TAB_1              = "  &3  ";                               //$NON-NLS-1$
-   public static final String            IMPORT_LAUNCHER_TAB_2              = " &4 . . . 7 ";                         //$NON-NLS-1$
-   public static final String            IMPORT_LAUNCHER_TAB_3              = " &8 . . . 9 ";                         //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_2              = " &4 . . . 8 ";                         //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_3              = " &9 . . . 10 ";                        //$NON-NLS-1$
    public static final String            IMPORT_LAUNCHER_TAB_4              = " &50 . . . 99 ";                       //$NON-NLS-1$
    //
    private static final String           STATE_BACKUP_DEVICE_HISTORY_ITEMS  = "STATE_BACKUP_DEVICE_HISTORY_ITEMS";    //$NON-NLS-1$
@@ -676,9 +676,9 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       @Override
       public Object[] getElements(final Object parent) {
 
-         final ArrayList<ImportLauncher> configItems = _dialogEasyConfig.importLaunchers;
+         final ArrayList<ImportLauncher> allImportLauncher = _dialogEasyConfig.importLaunchers;
 
-         return configItems.toArray(new ImportLauncher[configItems.size()]);
+         return allImportLauncher.toArray(new ImportLauncher[allImportLauncher.size()]);
       }
 
       @Override
@@ -1889,12 +1889,12 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                tab1.setText(IMPORT_LAUNCHER_TAB_1);
                tab1.setControl(createUI_602_Tab_1(_tabFolderIL));
 
-               // tab: 4...7
+               // tab: 4...8
                final CTabItem tab2 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab2.setText(IMPORT_LAUNCHER_TAB_2);
                tab2.setControl(createUI_604_Tab_2(_tabFolderIL));
 
-               // tab: 8...9
+               // tab: 9...10
                final CTabItem tab3 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab3.setText(IMPORT_LAUNCHER_TAB_3);
                tab3.setControl(createUI_606_Tab_3(_tabFolderIL));
@@ -1933,6 +1933,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          createUI_700_IL_05_AdjustTemperature(container);
          createUI_700_IL_06_AdjustElevation(container);
          createUI_700_IL_07_SetElevationFromSRTM(container);
+         createUI_700_IL_08_SetTagGroup(container);
       }
 
       return container;
@@ -1945,7 +1946,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_YELLOW);
       {
-         createUI_700_IL_08_SetTagGroup(container);
          createUI_700_IL_09_SetEquipment(container);
       }
 
@@ -4885,21 +4885,20 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       /*
        * Import Launcher
        */
-      final String stateILName = Util.getStateString(_state, STATE_SELECTED_IMPORT_LAUNCHER, UI.EMPTY_STRING);
-      final ArrayList<ImportLauncher> importLaunchers = _dialogEasyConfig.importLaunchers;
+      final int stateILIndex = Util.getStateInt(_state, STATE_SELECTED_IMPORT_LAUNCHER, 0);
+      final ArrayList<ImportLauncher> allImportLaunchers = _dialogEasyConfig.importLaunchers;
+
+      final int numLaunchers = allImportLaunchers.size();
 
       ImportLauncher initialIL = null;
 
-      for (final ImportLauncher importLauncher : importLaunchers) {
-         if (importLauncher.name.equals(stateILName)) {
-            initialIL = importLauncher;
-            break;
-         }
+      if (stateILIndex >= 0 && stateILIndex < numLaunchers) {
+         initialIL = allImportLaunchers.get(stateILIndex);
       }
 
       // select first import launcher
-      if (initialIL == null) {
-         initialIL = importLaunchers.get(0);
+      if (initialIL == null && numLaunchers > 0) {
+         initialIL = allImportLaunchers.get(0);
       }
 
       final Table ilTable = _ilViewer.getTable();
@@ -4936,7 +4935,9 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private void saveState() {
 
-      _state.put(STATE_SELECTED_IMPORT_LAUNCHER, _selectedIL == null ? UI.EMPTY_STRING : _selectedIL.name);
+      final int selectedILIndex = _ilViewer.getTable().getSelectionIndex();
+
+      _state.put(STATE_SELECTED_IMPORT_LAUNCHER, selectedILIndex);
 
       _icColumnManager.saveState(_stateIC);
       _ilColumnManager.saveState(_stateIL);
