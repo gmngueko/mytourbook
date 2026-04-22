@@ -2330,19 +2330,6 @@ public class RawDataView extends ViewPart implements
          }
       }
       {
-         // tags
-
-         if (importLauncher.isSetTags()) {
-
-            EasyLauncherUtils.createText_TagsGroup(importLauncher, sb);
-
-         } else {
-
-            sb.append(Messages.Import_Data_HTML_SetTourTags_NO);
-            sb.append(NL);
-         }
-      }
-      {
          // equipment
 
          if (importLauncher.isSetEquipmentAndIsAvailable()) {
@@ -2352,6 +2339,19 @@ public class RawDataView extends ViewPart implements
          } else {
 
             sb.append(Messages.Import_Data_HTML_SetEquipment_NO);
+            sb.append(NL);
+         }
+      }
+      {
+         // tags
+
+         if (importLauncher.isSetTags()) {
+
+            EasyLauncherUtils.createText_TagsGroup(importLauncher, sb);
+
+         } else {
+
+            sb.append(Messages.Import_Data_HTML_SetTourTags_NO);
             sb.append(NL);
          }
       }

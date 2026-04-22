@@ -261,6 +261,19 @@ public class EasyLauncherUtils {
          }
       }
       {
+         // equipment
+
+         if (importLauncher.isSetEquipment) {
+
+            createText_Equipment(importLauncher, sb);
+
+         } else {
+
+            sb.append(Messages.Import_Data_HTML_SetEquipment_NO);
+            sb.append(NL);
+         }
+      }
+      {
          // tag group tags
 
          if (importLauncher.isSetTourTagGroup) {
@@ -271,19 +284,6 @@ public class EasyLauncherUtils {
          } else {
 
             sb.append(Messages.Import_Data_HTML_SetTourTags_NO);
-            sb.append(NL);
-         }
-      }
-      {
-         // equipment
-
-         if (importLauncher.isSetEquipment) {
-
-            createText_Equipment(importLauncher, sb);
-
-         } else {
-
-            sb.append(Messages.Import_Data_HTML_SetEquipment_NO);
             sb.append(NL);
          }
       }
