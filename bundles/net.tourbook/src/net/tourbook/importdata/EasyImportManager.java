@@ -125,6 +125,7 @@ public class EasyImportManager {
    private static final String      ATTR_IL_IS_SAVE_TOUR                                  = "isSaveTour";                                             //$NON-NLS-1$
    private static final String      ATTR_IL_IS_SHOW_IN_DASHBOARD                          = "isShowInDashBoard";                                      //$NON-NLS-1$
    private static final String      ATTR_IL_IS_SET_LAST_MARKER                            = "isSetLastMarker";                                        //$NON-NLS-1$
+   private static final String      ATTR_IL_IS_SET_TOUR_CADENCE                           = "isSetTourCadence";                                       //$NON-NLS-1$
    private static final String      ATTR_IL_IS_SET_TOUR_EQUIPMENT                         = "isSetTourEquipment";                                     //$NON-NLS-1$
    private static final String      ATTR_IL_IS_SET_TOUR_TYPE                              = "isSetTourType";                                          //$NON-NLS-1$
    private static final String      ATTR_IL_IS_SET_TOUR_TAG_GROUP                         = "isSetTourTagGroup";                                      //$NON-NLS-1$
@@ -132,11 +133,12 @@ public class EasyImportManager {
    private static final String      ATTR_IL_LAST_MARKER_DISTANCE                          = "lastMarkerDistance";                                     //$NON-NLS-1$
    private static final String      ATTR_IL_TEMPERATURE_ADJUSTMENT_DURATION               = "temperatureAdjustmentDuration";                          //$NON-NLS-1$
    private static final String      ATTR_IL_TEMPERATURE_TOUR_AVG_TEMPERATURE              = "tourAverageTemperature";                                 //$NON-NLS-1$
+   private static final String      ATTR_IL_TOUR_CADENCE                                  = "tourCadence";                                            //$NON-NLS-1$
+   private static final String      ATTR_IL_TOUR_CADENCE_CONFIG                           = "tourCadenceConfig";                                      //$NON-NLS-1$
    private static final String      ATTR_IL_TOUR_EQUIPMENT_CONFIG                         = "tourEquipmentConfig";                                    //$NON-NLS-1$
    private static final String      ATTR_IL_TOUR_EQUIPMENT_ONE_GROUP_ID                   = "tourEquipmentOneGroupID";                                //$NON-NLS-1$
    private static final String      ATTR_IL_TOUR_TAG_GROUP_ID                             = "tourTagGroupID";                                         //$NON-NLS-1$
    private static final String      ATTR_IL_TOUR_LOCATION_PROFILE_NAME                    = "tourLocationProfileName";                                //$NON-NLS-1$
-   private static final String      ATTR_IL_TOUR_TYPE_CADENCE                             = "tourTypeCadence";                                        //$NON-NLS-1$
    private static final String      ATTR_IL_TOUR_TYPE_CONFIG                              = "tourTypeConfig";                                         //$NON-NLS-1$
    //
    public static final String       LOG_EASY_IMPORT_000_IMPORT_START                      = Messages.Log_EasyImport_000_ImportStart;
@@ -153,6 +155,7 @@ public class EasyImportManager {
    public static final String       LOG_EASY_IMPORT_007_REPLACE_ELEVATION_FROM_SRTM       = Messages.Log_EasyImport_006_ReplaceElevationFromSRTM;
    public static final String       LOG_EASY_IMPORT_008_SET_TOUR_TAGS                     = Messages.Log_EasyImport_008_SetTourTags;
    public static final String       LOG_EASY_IMPORT_009_SET_EQUIPMENT                     = Messages.Log_EasyImport_009_SetEquipment;
+   public static final String       LOG_EASY_IMPORT_010_SET_CADENCE                       = "10. Set cadence - %s";
    public static final String       LOG_EASY_IMPORT_050_RETRIEVE_WEATHER_DATA             = Messages.Log_EasyImport_050_RetrieveWeatherData;
    public static final String       LOG_EASY_IMPORT_051_RETRIEVE_TOUR_LOCATION            = Messages.Log_EasyImport_051_RetrieveTourLocation;
    public static final String       LOG_EASY_IMPORT_099_SAVE_TOUR                         = Messages.Log_EasyImport_099_SaveTour;
@@ -857,10 +860,59 @@ public class EasyImportManager {
 
 // SET_FORMATTING_ON
 
+      loadEasyConfig_41_Laucher_Cadence(xmlConfig, importLauncher);
       loadEasyConfig_42_Laucher_Equipment(xmlConfig, importLauncher);
       loadEasyConfig_44_Laucher_TourType(xmlConfig, importLauncher);
 
       importLauncher.setupItemImage();
+   }
+
+   private void loadEasyConfig_41_Laucher_Cadence(final XMLMemento xmlConfig, final ImportLauncher importLauncher) {
+
+      // set cadence
+      importLauncher.isSetCadence = Util.getXmlBoolean(xmlConfig, ATTR_IL_IS_SET_TOUR_CADENCE, false);
+
+      final Enum<CadenceConfig> cadConfig = Util.getXmlEnum(
+            xmlConfig,
+            ATTR_IL_TOUR_CADENCE_CONFIG,
+            CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL);
+
+      importLauncher.cadenceConfig = cadConfig;
+
+      if (CadenceConfig.CADENCE_CONFIG_BY_SPEED.equals(cadConfig)) {
+
+         final List<SpeedCadence> allCadSpeeds = importLauncher.allCadenceSpeeds;
+
+         for (final IMemento memento : xmlConfig.getChildren()) {
+
+            final XMLMemento xmlSpeed = (XMLMemento) memento;
+
+            final SpeedCadence cadSpeed = new SpeedCadence();
+
+            cadSpeed.cadenceMultiplier = (CadenceMultiplier) Util.getXmlEnum(xmlSpeed,
+                  ATTR_IL_TOUR_CADENCE,
+                  RawDataView.STATE_DEFAULT_CADENCE_MULTIPLIER_DEFAULT);
+
+            cadSpeed.avgSpeed = Util.getXmlFloatFloat(
+                  xmlSpeed,
+                  ATTR_AVG_SPEED,
+                  EasyConfig.TOUR_AVG_SPEED_DEFAULT,
+                  EasyConfig.TOUR_AVG_SPEED_MIN,
+                  EasyConfig.TOUR_AVG_SPEED_MAX);
+
+            allCadSpeeds.add(cadSpeed);
+         }
+
+      } else if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL.equals(cadConfig)) {
+
+         importLauncher.cadenceOne = (CadenceMultiplier) Util.getXmlEnum(xmlConfig,
+               ATTR_IL_TOUR_CADENCE,
+               RawDataView.STATE_DEFAULT_CADENCE_MULTIPLIER_DEFAULT);
+
+      } else {
+
+         // cadence is not set
+      }
    }
 
    private void loadEasyConfig_42_Laucher_Equipment(final XMLMemento xmlConfig, final ImportLauncher importLauncher) {
@@ -928,7 +980,7 @@ public class EasyImportManager {
 
       if (TourTypeConfig.TOUR_TYPE_CONFIG_BY_SPEED.equals(ttConfig)) {
 
-         final List<SpeedTourType> speedVertices = importLauncher.speedTourTypes;
+         final List<SpeedTourType> speedVertices = importLauncher.allTourTypeSpeeds;
 
          for (final IMemento memento : xmlConfig.getChildren()) {
 
@@ -954,10 +1006,6 @@ public class EasyImportManager {
                      EasyConfig.TOUR_AVG_SPEED_MIN,
                      EasyConfig.TOUR_AVG_SPEED_MAX);
 
-               speedVertex.cadenceMultiplier = (CadenceMultiplier) Util.getXmlEnum(xmlSpeed,
-                     ATTR_IL_TOUR_TYPE_CADENCE,
-                     RawDataView.STATE_DEFAULT_CADENCE_MULTIPLIER_DEFAULT);
-
                speedVertices.add(speedVertex);
             }
          }
@@ -967,9 +1015,6 @@ public class EasyImportManager {
          final Long xmlTourTypeId = Util.getXmlLong(xmlConfig, ATTR_TOUR_TYPE_ID, null);
 
          importLauncher.oneTourType = TourDatabase.getTourType(xmlTourTypeId);
-         importLauncher.oneTourTypeCadence = (CadenceMultiplier) Util.getXmlEnum(xmlConfig,
-               ATTR_IL_TOUR_TYPE_CADENCE,
-               RawDataView.STATE_DEFAULT_CADENCE_MULTIPLIER_DEFAULT);
 
       } else {
 
@@ -1346,7 +1391,7 @@ public class EasyImportManager {
 
          if (TourTypeConfig.TOUR_TYPE_CONFIG_BY_SPEED.equals(ttConfig)) {
 
-            for (final SpeedTourType speedVertex : importLauncher.speedTourTypes) {
+            for (final SpeedTourType speedVertex : importLauncher.allTourTypeSpeeds) {
 
                final IMemento memento = xmlConfig.createChild(TAG_SPEED);
 
@@ -1356,7 +1401,6 @@ public class EasyImportManager {
 
                   Util.setXmlLong(xmlSpeedVertex, ATTR_TOUR_TYPE_ID, speedVertex.tourTypeId);
                   xmlSpeedVertex.putFloat(ATTR_AVG_SPEED, speedVertex.avgSpeed);
-                  Util.setXmlEnum(xmlSpeedVertex, ATTR_IL_TOUR_TYPE_CADENCE, speedVertex.cadenceMultiplier);
                }
             }
 
@@ -1366,7 +1410,6 @@ public class EasyImportManager {
 
             if (oneTourType != null) {
                Util.setXmlLong(xmlConfig, ATTR_TOUR_TYPE_ID,            oneTourType.getTypeId());
-               Util.setXmlEnum(xmlConfig, ATTR_IL_TOUR_TYPE_CADENCE,    importLauncher.oneTourTypeCadence);
             }
 
          } else {
@@ -1392,8 +1435,8 @@ public class EasyImportManager {
 
                   final XMLMemento xmlSpeedVertex = (XMLMemento) memento;
 
-                  xmlSpeedVertex.putString(ATTR_EQUIPMENT_GROUP_ID, eqSpeed.equipmentGroupID);
                   xmlSpeedVertex.putFloat(ATTR_AVG_SPEED, eqSpeed.avgSpeed);
+                  xmlSpeedVertex.putString(ATTR_EQUIPMENT_GROUP_ID, eqSpeed.equipmentGroupID);
                }
             }
 
@@ -1404,6 +1447,38 @@ public class EasyImportManager {
          } else {
 
             // an equipment is not set
+         }
+
+         /*
+          * Set cadence
+          */
+         final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
+
+         xmlConfig.putBoolean(      ATTR_IL_IS_SET_TOUR_CADENCE,      importLauncher.isSetCadence);
+         Util.setXmlEnum(xmlConfig, ATTR_IL_TOUR_CADENCE_CONFIG,      cadConfig);
+
+         if (CadenceConfig.CADENCE_CONFIG_BY_SPEED.equals(cadConfig)) {
+
+            for (final SpeedCadence cadSpeed : importLauncher.allCadenceSpeeds) {
+
+               final IMemento memento = xmlConfig.createChild(TAG_SPEED);
+
+               if (memento instanceof XMLMemento) {
+
+                  final XMLMemento xmlSpeedVertex = (XMLMemento) memento;
+
+                  xmlSpeedVertex.putFloat(ATTR_AVG_SPEED,               cadSpeed.avgSpeed);
+                  Util.setXmlEnum(xmlSpeedVertex, ATTR_IL_TOUR_CADENCE, cadSpeed.cadenceMultiplier);
+               }
+            }
+
+         } else if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL.equals(cadConfig)) {
+
+            Util.setXmlEnum(xmlConfig, ATTR_IL_TOUR_CADENCE,            importLauncher.cadenceOne);
+
+         } else {
+
+            // a cadence is not set
          }
       }
 // SET_FORMATTING_ON
@@ -1418,7 +1493,6 @@ public class EasyImportManager {
    private void setTourType(final TourData tourData, final ImportLauncher importLauncher) {
 
       String tourTypeName = UI.EMPTY_STRING;
-      CadenceMultiplier tourTypeCadence = RawDataView.STATE_DEFAULT_CADENCE_MULTIPLIER_DEFAULT;
 
       final Enum<TourTypeConfig> ttConfig = importLauncher.tourTypeConfig;
 
@@ -1435,7 +1509,7 @@ public class EasyImportManager {
             tourAvgSpeed = tourDistanceKm / movingTime * 3.6;
          }
 
-         final List<SpeedTourType> speedTourTypes = importLauncher.speedTourTypes;
+         final List<SpeedTourType> speedTourTypes = importLauncher.allTourTypeSpeeds;
          long tourTypeId = -1;
 
          // find tour type for the tour avg speed
@@ -1444,7 +1518,6 @@ public class EasyImportManager {
             if (tourAvgSpeed <= speedTourType.avgSpeed) {
 
                tourTypeId = speedTourType.tourTypeId;
-               tourTypeCadence = speedTourType.cadenceMultiplier;
                break;
             }
          }
@@ -1458,7 +1531,6 @@ public class EasyImportManager {
             final float[] cadenceSerie = tourData.getCadenceSerie();
             if (cadenceSerie != null && cadenceSerie.length > 0) {
 
-               tourData.setCadenceMultiplier(tourTypeCadence.getMultiplier());
             }
          }
 
@@ -1471,10 +1543,8 @@ public class EasyImportManager {
          if (tourType != null) {
 
             tourTypeName = tourType.getName();
-            tourTypeCadence = importLauncher.oneTourTypeCadence;
 
             tourData.setTourType(tourType);
-            tourData.setCadenceMultiplier(tourTypeCadence.getMultiplier());
          }
 
       } else {
@@ -1485,6 +1555,6 @@ public class EasyImportManager {
       TourLogManager.subLog_DEFAULT(String.format(
             LOG_EASY_IMPORT_003_TOUR_TYPE_ITEM,
             TourManager.getTourDateTimeShort(tourData),
-            String.format("%s (%s)", tourTypeName, tourTypeCadence.getNlsLabel())));//$NON-NLS-1$
+            String.format("%s", tourTypeName)));//$NON-NLS-1$
    }
 }

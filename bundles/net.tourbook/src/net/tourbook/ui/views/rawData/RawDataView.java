@@ -104,6 +104,7 @@ import net.tourbook.extension.download.CloudDownloaderManager;
 import net.tourbook.extension.download.TourbookCloudDownloader;
 import net.tourbook.extension.export.ActionExport;
 import net.tourbook.extension.upload.ActionUpload;
+import net.tourbook.importdata.CadenceConfig;
 import net.tourbook.importdata.DeviceImportState;
 import net.tourbook.importdata.DialogEasyImportConfig;
 import net.tourbook.importdata.EasyConfig;
@@ -117,6 +118,7 @@ import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
 import net.tourbook.importdata.OSFile;
 import net.tourbook.importdata.RawDataManager;
+import net.tourbook.importdata.SpeedCadence;
 import net.tourbook.importdata.SpeedEquipment;
 import net.tourbook.importdata.SpeedTourType;
 import net.tourbook.importdata.TourTypeConfig;
@@ -2859,6 +2861,11 @@ public class RawDataView extends ViewPart implements
       }
    }
 
+   private String createText_Cadence(final ImportLauncher importLauncher) {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
    private String createText_EquipmentGroup(final ImportLauncher importLauncher) {
 
       final String equipmentGroupID = importLauncher.equipmentOneGroupID;
@@ -4767,7 +4774,7 @@ public class RawDataView extends ViewPart implements
 
          // draw multiple tour types in one image
 
-         final List<SpeedTourType> allSpeedVertices = importConfig.speedTourTypes;
+         final List<SpeedTourType> allSpeedVertices = importConfig.allTourTypeSpeeds;
 
          final ImageData swtImageData = new ImageData(
                configWidthScaled,
@@ -6040,6 +6047,13 @@ public class RawDataView extends ViewPart implements
          }
 
          /*
+          * 10. Set cadence
+          */
+         if (importLauncher.isSetCadence) {
+            runEasyImport_010_SetCadence(importLauncher, importedTours);
+         }
+
+         /*
           * 50. Retrieve weather data
           */
          if (importLauncher.isRetrieveWeatherData) {
@@ -6413,6 +6427,68 @@ public class RawDataView extends ViewPart implements
          for (final TourData tourData : allImportedTours) {
 
             tourData.setEquipment(equipmentGroup.allEquipment);
+         }
+      }
+   }
+
+   private void runEasyImport_010_SetCadence(final ImportLauncher importLauncher,
+                                             final ArrayList<TourData> allImportedTours) {
+
+      final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
+
+      if (CadenceConfig.CADENCE_CONFIG_BY_SPEED.equals(cadConfig)) {
+
+         // "10. Set cadence - %s"
+         TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_010_SET_CADENCE.formatted(createText_Cadence(importLauncher)));
+
+         for (final TourData tourData : allImportedTours) {
+
+            final float tourDistanceMeter = tourData.getTourDistance();
+            final long movingTime = tourData.getTourComputedTime_Moving();
+
+            double tourAvgSpeed = 0;
+
+            if (movingTime != 0) {
+               tourAvgSpeed = tourDistanceMeter / movingTime * 3.6;
+            }
+
+            if (tourAvgSpeed != 0) {
+
+               final List<SpeedCadence> allCadSpeed = importLauncher.allCadenceSpeeds;
+
+               // find cadence for the tour avg speed
+               for (final SpeedCadence cadSpeed : allCadSpeed) {
+
+                  if (tourAvgSpeed <= cadSpeed.avgSpeed) {
+
+                     final CadenceMultiplier cadenceMultiplier = cadSpeed.cadenceMultiplier;
+
+                     if (cadenceMultiplier != null) {
+
+                        tourData.setCadenceMultiplier(cadenceMultiplier.getMultiplier());
+
+                        break;
+                     }
+                  }
+               }
+            }
+         }
+
+      } else if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL.equals(cadConfig)) {
+
+         final CadenceMultiplier oneCadence = importLauncher.cadenceOne;
+
+         if (oneCadence != null) {
+
+            final float cadenceMultiplier = oneCadence.getMultiplier();
+
+            // "10. Set cadence - %s"
+            TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_010_SET_CADENCE.formatted(createText_Cadence(importLauncher)));
+
+            for (final TourData tourData : allImportedTours) {
+
+               tourData.setCadenceMultiplier(cadenceMultiplier);
+            }
          }
       }
    }
