@@ -3064,7 +3064,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(spinnerValue);
             spinnerValue.setMaximum(EasyConfig.TOUR_AVG_SPEED_MAX);
             spinnerValue.setMinimum(EasyConfig.TOUR_AVG_SPEED_MIN);
-            spinnerValue.setToolTipText("Max speed for this cadence group");
+            spinnerValue.setToolTipText("Max speed for this cadence");
             spinnerValue.addMouseWheelListener(_defaultMouseWheelListener);
 
             /*

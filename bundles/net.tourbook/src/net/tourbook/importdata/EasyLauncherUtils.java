@@ -377,18 +377,18 @@ public class EasyLauncherUtils {
       _pc = pc;
 
       defineColumn_10_LauncherName();
+      defineColumn_90_IsShowInDashboard();
       defineColumn_50_03_TourTypeImage();
-      defineColumn_50_09_Equipment();
       defineColumn_50_08_TourTags();
+      defineColumn_50_09_Equipment();
+      defineColumn_50_10_Cadence();
       defineColumn_50_041_Remove2ndLastTimeSliceMarker();
       defineColumn_50_042_LastMarkerDistance();
       defineColumn_50_05_AdjustTemperature();
       defineColumn_50_07_IsAdjustElevation();
-      defineColumn_50_10_Cadence();
       defineColumn_50_50_RetrieveWeatherData();
       defineColumn_50_51_RetrieveTourLocation();
       defineColumn_50_99_IsSaveTour();
-      defineColumn_90_IsShowInDashboard();
       defineColumn_99_Description();
    }
 
@@ -429,7 +429,7 @@ public class EasyLauncherUtils {
     */
    private void defineColumn_50_03_TourTypeImage() {
 
-      final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "colorImage", SWT.LEAD); //$NON-NLS-1$
+      final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "tourTypeImage", SWT.LEAD); //$NON-NLS-1$
       _colDef_TourTypeImage = colDef;
 
       colDef.setColumnLabel(Messages.Dialog_ImportConfig_Column_TourType);
@@ -536,10 +536,7 @@ public class EasyLauncherUtils {
     */
    private void defineColumn_50_05_AdjustTemperature() {
 
-      final TableColumnDefinition colDef = new TableColumnDefinition(
-            _columnManager,
-            "isAdjustTemperature", //$NON-NLS-1$
-            SWT.CENTER);
+      final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "isAdjustTemperature", SWT.CENTER); //$NON-NLS-1$
 
       colDef.setColumnLabel(Messages.Dialog_ImportConfig_Column_AdjustTemperature_Label);
       colDef.setColumnHeaderText(Messages.Dialog_ImportConfig_Column_AdjustTemperature_Header);
@@ -659,58 +656,6 @@ public class EasyLauncherUtils {
 
    private void defineColumn_50_09_Equipment() {
 
-      final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "cadence", SWT.LEAD); //$NON-NLS-1$
-
-      colDef.setColumnLabel("Cadence");
-      colDef.setColumnHeaderText("Cadence");
-
-      colDef.setDefaultColumnWidth(_pc.convertWidthInCharsToPixels(10));
-      colDef.setColumnWeightData(new ColumnWeightData(7));
-
-      colDef.setIsDefaultColumn();
-
-      colDef.setLabelProvider(new CellLabelProvider() {
-
-         @Override
-         public String getToolTipText(final Object element) {
-
-            return createLauncherTooltip((ImportLauncher) element);
-         }
-
-         @Override
-         public void update(final ViewerCell cell) {
-
-            final ImportLauncher importLauncher = (ImportLauncher) cell.getElement();
-
-            if (importLauncher.isSetCadence) {
-
-               final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
-
-               String eqText = UI.EMPTY_STRING;
-
-               if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL == cadConfig) {
-
-                  eqText = importLauncher.cadenceOne.getNlsLabel();
-
-               } else if (CadenceConfig.CADENCE_CONFIG_BY_SPEED == cadConfig) {
-
-                  final List<SpeedCadence> allCadSpeeds = importLauncher.allCadenceSpeeds;
-
-                  eqText = "Speed #" + allCadSpeeds.size();
-               }
-
-               cell.setText(eqText);
-
-            } else {
-
-               cell.setText(UI.EMPTY_STRING);
-            }
-         }
-      });
-   }
-
-   private void defineColumn_50_10_Cadence() {
-
       final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "equipment", SWT.LEAD); //$NON-NLS-1$
 
       colDef.setColumnLabel(Messages.Dialog_ImportConfig_Column_Equipment);
@@ -751,6 +696,58 @@ public class EasyLauncherUtils {
                   final List<SpeedEquipment> allEqSpeeds = importLauncher.allEquipmentSpeeds;
 
                   eqText = "Speed #" + allEqSpeeds.size();
+               }
+
+               cell.setText(eqText);
+
+            } else {
+
+               cell.setText(UI.EMPTY_STRING);
+            }
+         }
+      });
+   }
+
+   private void defineColumn_50_10_Cadence() {
+
+      final TableColumnDefinition colDef = new TableColumnDefinition(_columnManager, "cadence", SWT.LEAD); //$NON-NLS-1$
+
+      colDef.setColumnLabel("Cadence");
+      colDef.setColumnHeaderText("Cadence");
+
+      colDef.setDefaultColumnWidth(_pc.convertWidthInCharsToPixels(10));
+      colDef.setColumnWeightData(new ColumnWeightData(7));
+
+      colDef.setIsDefaultColumn();
+
+      colDef.setLabelProvider(new CellLabelProvider() {
+
+         @Override
+         public String getToolTipText(final Object element) {
+
+            return createLauncherTooltip((ImportLauncher) element);
+         }
+
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final ImportLauncher importLauncher = (ImportLauncher) cell.getElement();
+
+            if (importLauncher.isSetCadence) {
+
+               final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
+
+               String eqText = UI.EMPTY_STRING;
+
+               if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL == cadConfig) {
+
+                  eqText = importLauncher.cadenceOne.getNlsLabel();
+
+               } else if (CadenceConfig.CADENCE_CONFIG_BY_SPEED == cadConfig) {
+
+                  final List<SpeedCadence> allCadSpeeds = importLauncher.allCadenceSpeeds;
+
+                  eqText = "Speed #" + allCadSpeeds.size();
                }
 
                cell.setText(eqText);
