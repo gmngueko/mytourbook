@@ -21,14 +21,14 @@ import net.tourbook.tour.CadenceMultiplier;
 
 public class SpeedCadence implements Comparable<Object>, Cloneable {
 
-   private static final char NL = UI.NEW_LINE;
+   private static final char NL                = UI.NEW_LINE;
 
    /**
     * Average speed for this cadence in km/h
     */
    public float              avgSpeed;
 
-   public CadenceMultiplier  cadenceMultiplier;
+   public CadenceMultiplier  cadenceMultiplier = RawDataManager.getCadenceMultiplierDefaultValue();
 
    public SpeedCadence() {}
 
@@ -67,10 +67,10 @@ public class SpeedCadence implements Comparable<Object>, Cloneable {
 
       return UI.EMPTY_STRING
 
-            + "SpeedCadence" + NL //                               //$NON-NLS-1$
+            + "SpeedCadence" + NL //                                    //$NON-NLS-1$
 
             + " avgSpeed				= " + avgSpeed + NL //              //$NON-NLS-1$
-            + " cadenceMultiplier	= " + cadenceMultiplier + NL //      //$NON-NLS-1$
+            + " cadenceMultiplier	= " + cadenceMultiplier + NL //     //$NON-NLS-1$
       ;
    }
 
