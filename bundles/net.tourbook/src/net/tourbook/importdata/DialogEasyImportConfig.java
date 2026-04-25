@@ -68,6 +68,7 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.CellLabelProvider;
@@ -100,6 +101,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -131,33 +133,34 @@ import org.joda.time.PeriodType;
  */
 public class DialogEasyImportConfig extends TitleAreaDialog implements IActionResetToDefault {
 
-   public static final String ID = "DialogEasyImportConfig"; //$NON-NLS-1$
+   public static final String            ID                                 = "DialogEasyImportConfig";                                            //$NON-NLS-1$
    //
-   public static final String            IMPORT_LAUNCHER_TAB_00_DESCRIPTION = "D&esc";
-   public static final String            IMPORT_LAUNCHER_TAB_03_TOUR_TYPE   = "&Type";
-   public static final String            IMPORT_LAUNCHER_TAB_09_EQUIPMENT   = "E&quip";
-   public static final String            IMPORT_LAUNCHER_TAB_10_CADENCE     = "C&ad";
-   public static final String            IMPORT_LAUNCHER_TAB_04             = "&4...8";                             //$NON-NLS-1$
-   public static final String            IMPORT_LAUNCHER_TAB_50             = "&50+";                               //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_00_DESCRIPTION = "D&escription";
+   public static final String            IMPORT_LAUNCHER_TAB_03_TOUR_TYPE   = "&Tour Type";
+   public static final String            IMPORT_LAUNCHER_TAB_08_TAGS        = "Ta&g";
+   public static final String            IMPORT_LAUNCHER_TAB_09_EQUIPMENT   = "E&quipment";
+   public static final String            IMPORT_LAUNCHER_TAB_10_CADENCE     = "C&adence";
+   public static final String            IMPORT_LAUNCHER_TAB_04             = "&4...7";                                                            //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_50             = "&50+";                                                              //$NON-NLS-1$
    //
-   private static final String           STATE_BACKUP_DEVICE_HISTORY_ITEMS  = "STATE_BACKUP_DEVICE_HISTORY_ITEMS";  //$NON-NLS-1$
-   private static final String           STATE_BACKUP_FOLDER_HISTORY_ITEMS  = "STATE_BACKUP_FOLDER_HISTORY_ITEMS";  //$NON-NLS-1$
-   private static final String           STATE_DEVICE_DEVICE_HISTORY_ITEMS  = "STATE_DEVICE_DEVICE_HISTORY_ITEMS";  //$NON-NLS-1$
-   public static final String            STATE_DEVICE_FOLDER_HISTORY_ITEMS  = "STATE_DEVICE_FOLDER_HISTORY_ITEMS";  //$NON-NLS-1$
-   private static final String           STATE_SELECTED_IMPORT_LAUNCHER     = "STATE_SELECTED_IMPORT_LAUNCHER";     //$NON-NLS-1$
-   private static final String           STATE_SELECTED_TAB_FOLDER_LAUNCHER = "STATE_SELECTED_TAB_FOLDER_LAUNCHER"; //$NON-NLS-1$
-   private static final String           STATE_SELECTED_TAB_FOLDER_MAIN     = "STATE_SELECTED_TAB_FOLDER_MAIN";     //$NON-NLS-1$
+   private static final String           STATE_BACKUP_DEVICE_HISTORY_ITEMS  = "STATE_BACKUP_DEVICE_HISTORY_ITEMS";                                 //$NON-NLS-1$
+   private static final String           STATE_BACKUP_FOLDER_HISTORY_ITEMS  = "STATE_BACKUP_FOLDER_HISTORY_ITEMS";                                 //$NON-NLS-1$
+   private static final String           STATE_DEVICE_DEVICE_HISTORY_ITEMS  = "STATE_DEVICE_DEVICE_HISTORY_ITEMS";                                 //$NON-NLS-1$
+   public static final String            STATE_DEVICE_FOLDER_HISTORY_ITEMS  = "STATE_DEVICE_FOLDER_HISTORY_ITEMS";                                 //$NON-NLS-1$
+   private static final String           STATE_SELECTED_IMPORT_LAUNCHER     = "STATE_SELECTED_IMPORT_LAUNCHER";                                    //$NON-NLS-1$
+   private static final String           STATE_SELECTED_TAB_FOLDER_LAUNCHER = "STATE_SELECTED_TAB_FOLDER_LAUNCHER";                                //$NON-NLS-1$
+   private static final String           STATE_SELECTED_TAB_FOLDER_MAIN     = "STATE_SELECTED_TAB_FOLDER_MAIN";                                    //$NON-NLS-1$
    //
-   private static final String           DATA_KEY_TOUR_TYPE_ID              = "DATA_KEY_TOUR_TYPE_ID";              //$NON-NLS-1$
-   private static final String           DATA_KEY_SPEED_INDEX               = "DATA_KEY_SPEED_INDEX";               //$NON-NLS-1$
+   private static final String           DATA_KEY_TOUR_TYPE_ID              = "DATA_KEY_TOUR_TYPE_ID";                                             //$NON-NLS-1$
+   private static final String           DATA_KEY_SPEED_INDEX               = "DATA_KEY_SPEED_INDEX";                                              //$NON-NLS-1$
    //
    private static final int              CONTROL_DECORATION_WIDTH           = 6;
-   private static final String           CSS_PX                             = "px";                                 //$NON-NLS-1$
+   private static final String           CSS_PX                             = "px";                                                                //$NON-NLS-1$
    //
    private final IPreferenceStore        _prefStore                         = TourbookPlugin.getPrefStore();
    private final IDialogSettings         _state                             = TourbookPlugin.getState(ID);
-   private final IDialogSettings         _stateIC                           = TourbookPlugin.getState(ID + "_IC");  //$NON-NLS-1$
-   private final IDialogSettings         _stateIL                           = TourbookPlugin.getState(ID + "_IL");  //$NON-NLS-1$
+   private final IDialogSettings         _stateIC                           = TourbookPlugin.getState(ID + "_IC");                                 //$NON-NLS-1$
+   private final IDialogSettings         _stateIL                           = TourbookPlugin.getState(ID + "_IL");                                 //$NON-NLS-1$
    //
    private IPropertyChangeListener       _prefChangeListener;
    //
@@ -188,6 +191,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    private ActionSpeedTourType_Sort      _action_ILTT_Speed_Sort;
    private ActionSpeedTourType_Delete[]  _allAction_TT_Speed_Delete;
    //
+   private Font                          _boldFont                          = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
    private PixelConverter                _pc;
 
    /** Model for all configurations. */
@@ -325,7 +329,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    private Label                _lblIL_AvgTemperature;
    private Label                _lblIL_AvgTemperature_Unit;
    private Label                _lblIL_CadenceOne;
-   private Label                _lblIL_ConfigDescription;
    private Label                _lblIL_ConfigName;
    private Label                _lblIL_EquipmentOneGroup;
    private Label                _lblIL_LastMarker;
@@ -1633,22 +1636,22 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             .grab(true, true)
             .applyTo(container);
       GridLayoutFactory.swtDefaults()
-            .numColumns(3)
+            .numColumns(2)
             .applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_MAGENTA);
       {
          final Label label = new Label(container, SWT.WRAP);
          label.setText(Messages.Dialog_ImportConfig_Label_ImportLauncher);
          GridDataFactory.fillDefaults()
-               .span(3, 1)
+               .span(2, 1)
                .hint(convertWidthInCharsToPixels(30), SWT.DEFAULT)
                .applyTo(label);
 
          createUI_510_IL_Viewer(container);
          createUI_530_IL_Actions(container);
-         createUI_600_IL_Detail(container);
-
          createUI_800_IL_DragDropHint(container);
+
+         createUI_600_IL_Detail(container);
       }
 
       return container;
@@ -1937,12 +1940,16 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    private void createUI_600_IL_Detail(final Composite parent) {
 
       final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridDataFactory.fillDefaults()
+            .span(2, 1)
+            .indent(0, 10)
+            .applyTo(container);
       GridLayoutFactory.fillDefaults().applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_CYAN);
       {
          {
-            UI.createLabel(container, Messages.Dialog_ImportConfig_Group_ImportLauncherConfig);
+            final Label label = UI.createLabel(container, Messages.Dialog_ImportConfig_Group_ImportLauncherConfig);
+            label.setFont(_boldFont);
 
             final Composite topContainer = new Composite(container, SWT.NONE);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(topContainer);
@@ -1968,17 +1975,22 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                tab03.setText(IMPORT_LAUNCHER_TAB_03_TOUR_TYPE);
                tab03.setControl(createUI_602_Tab_03_TourType(_tabFolderIL));
 
+               // tab: Tag
+               final CTabItem tab08 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab08.setText(IMPORT_LAUNCHER_TAB_08_TAGS);
+               tab08.setControl(createUI_602_Tab_08_Tag(_tabFolderIL));
+
                // tab: Equipment
-               final CTabItem tab9 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab9.setText(IMPORT_LAUNCHER_TAB_09_EQUIPMENT);
-               tab9.setControl(createUI_602_Tab_09_Equipment(_tabFolderIL));
+               final CTabItem tab09 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab09.setText(IMPORT_LAUNCHER_TAB_09_EQUIPMENT);
+               tab09.setControl(createUI_602_Tab_09_Equipment(_tabFolderIL));
 
                // tab: Cadence
                final CTabItem tab10 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab10.setText(IMPORT_LAUNCHER_TAB_10_CADENCE);
                tab10.setControl(createUI_602_Tab_10_Cadence(_tabFolderIL));
 
-               // tab: 4...8
+               // tab: 4...7
                final CTabItem tab04 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab04.setText(IMPORT_LAUNCHER_TAB_04);
                tab04.setControl(createUI_602_Tab_04(_tabFolderIL));
@@ -1999,7 +2011,18 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       GridLayoutFactory.swtDefaults().numColumns(1).applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_YELLOW);
       {
-         createUI_614_IL_nn_Description(container);
+         _txtIL_ConfigDescription = new Text(container,
+               SWT.BORDER
+                     | SWT.WRAP
+                     | SWT.MULTI
+                     | SWT.V_SCROLL
+                     | SWT.H_SCROLL);
+         _txtIL_ConfigDescription.addModifyListener(_ilModifyListener);
+
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(4))
+               .applyTo(_txtIL_ConfigDescription);
       }
 
       return container;
@@ -2029,6 +2052,17 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          createUI_700_IL_05_AdjustTemperature(container);
          createUI_700_IL_06_AdjustElevation(container);
          createUI_700_IL_07_SetElevationFromSRTM(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_602_Tab_08_Tag(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+      {
          createUI_700_IL_08_SetTagGroup(container);
       }
 
@@ -2077,55 +2111,23 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private void createUI_610_IL_nn_Name(final Composite parent) {
 
-      {
-         /*
-          * Config name
-          */
+      /*
+       * Config name
+       */
 
-         // label
-         _lblIL_ConfigName = new Label(parent, SWT.NONE);
-         _lblIL_ConfigName.setText(Messages.Dialog_ImportConfig_Label_ConfigName);
-         GridDataFactory.fillDefaults()
-               .align(SWT.FILL, SWT.CENTER)
-               .applyTo(_lblIL_ConfigName);
+      // label
+      _lblIL_ConfigName = new Label(parent, SWT.NONE);
+      _lblIL_ConfigName.setText(Messages.Dialog_ImportConfig_Label_ConfigName);
+      GridDataFactory.fillDefaults()
+            .align(SWT.FILL, SWT.CENTER)
+            .applyTo(_lblIL_ConfigName);
 
-         // text
-         _txtIL_ConfigName = new Text(parent, SWT.BORDER);
-         _txtIL_ConfigName.addModifyListener(_ilModifyListener);
-         GridDataFactory.fillDefaults()
-               .grab(true, false)
-               .applyTo(_txtIL_ConfigName);
-      }
-   }
-
-   private void createUI_614_IL_nn_Description(final Composite parent) {
-
-      {
-         /*
-          * Config description
-          */
-
-         // label
-         _lblIL_ConfigDescription = new Label(parent, SWT.NONE);
-         _lblIL_ConfigDescription.setText(Messages.Dialog_ImportConfig_Label_ConfigDescription);
-         GridDataFactory.fillDefaults()
-               .align(SWT.FILL, SWT.BEGINNING)
-               .applyTo(_lblIL_ConfigDescription);
-
-         // text
-         _txtIL_ConfigDescription = new Text(parent,
-               SWT.BORDER
-                     | SWT.WRAP
-                     | SWT.MULTI
-                     | SWT.V_SCROLL
-                     | SWT.H_SCROLL);
-         _txtIL_ConfigDescription.addModifyListener(_ilModifyListener);
-
-         GridDataFactory.fillDefaults()
-               .grab(true, true)
-               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(4))
-               .applyTo(_txtIL_ConfigDescription);
-      }
+      // text
+      _txtIL_ConfigName = new Text(parent, SWT.BORDER);
+      _txtIL_ConfigName.addModifyListener(_ilModifyListener);
+      GridDataFactory.fillDefaults()
+            .grab(true, false)
+            .applyTo(_txtIL_ConfigName);
    }
 
    private void createUI_650_IL_03_TourType(final Composite parent) {
@@ -2344,7 +2346,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             linkTourType.setText(Messages.tour_editor_label_tour_type);
             linkTourType.addSelectionListener(_speedTourTypeListener);
             GridDataFactory.fillDefaults()
-                  .grab(true, false)
                   .align(SWT.FILL, SWT.CENTER)
                   .applyTo(linkTourType);
 
@@ -2855,8 +2856,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             comboEquipment.addSelectionListener(_defaultModify_Listener);
             GridDataFactory.fillDefaults()
                   .align(SWT.BEGINNING, SWT.CENTER)
-                  .hint(convertWidthInCharsToPixels(20), SWT.DEFAULT)
-                  .grab(true, false)
                   .applyTo(comboEquipment);
 
             fillEquipment(comboEquipment);
@@ -3124,7 +3123,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             final ToolBar toolBar = createUI_ActionButton(speedCad_Container, actionDeleteSpeed);
             GridDataFactory.fillDefaults()
                   .align(SWT.END, SWT.CENTER)
-                  .grab(true, false)
                   .applyTo(toolBar);
 
             /*
@@ -3265,7 +3263,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       final Label label = new Label(parent, SWT.WRAP);
       label.setText(Messages.Dialog_ImportConfig_Info_ConfigDragDrop);
       GridDataFactory.fillDefaults()
-            .span(3, 1)
+            .span(2, 1)
             .applyTo(label);
    }
 
@@ -3949,10 +3947,8 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       _chkIL_SetCadence                         .setEnabled(isILSelected );
       _comboIL_CadenceConfig                    .setEnabled(isILSelected && canSetCadence);
 
-
+      // config
       _lblIL_ConfigName                         .setEnabled(isILSelected);
-      _lblIL_ConfigDescription                  .setEnabled(isILSelected);
-
       _txtIL_ConfigName                         .setEnabled(isILSelected);
       _txtIL_ConfigDescription                  .setEnabled(isILSelected);
 

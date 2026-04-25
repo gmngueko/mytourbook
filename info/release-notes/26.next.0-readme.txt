@@ -44,6 +44,7 @@ Changes
 =======
 
 * Easyimport
+  - Improved launcher tab layout
   - Cadence settings needs to be recreated, they are not related any more with the tour type settings
 
 * Equipment
