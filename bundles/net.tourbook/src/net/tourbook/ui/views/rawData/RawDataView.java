@@ -76,6 +76,7 @@ import net.tourbook.common.tooltip.AdvancedSlideout;
 import net.tourbook.common.tooltip.ICloseOpenedDialogs;
 import net.tourbook.common.tooltip.IOpeningDialog;
 import net.tourbook.common.tooltip.OpenDialogManager;
+import net.tourbook.common.ui.SelectionCellLabelProvider;
 import net.tourbook.common.util.ColumnDefinition;
 import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.ColumnProfile;
@@ -3543,6 +3544,8 @@ public class RawDataView extends ViewPart implements
       defineColumn_Motion_AvgSpeed();
       defineColumn_Motion_AvgPace();
 
+      defineColumn_Powertrain_CadenceMultiplier();
+
       defineColumn_Altitude_Up();
       defineColumn_Altitude_Down();
 
@@ -3803,6 +3806,28 @@ public class RawDataView extends ViewPart implements
             final double value = tourDistance / 1000 / UI.UNIT_VALUE_DISTANCE;
 
             colDef.printDetailValue(cell, value);
+         }
+      });
+   }
+
+   /**
+    * Column: Powertrain - Cadence multiplier
+    */
+   private void defineColumn_Powertrain_CadenceMultiplier() {
+
+      final TableColumnDefinition colDef = TableColumnFactory.POWERTRAIN_CADENCE_MULTIPLIER.createColumn(_tourViewer_ColumnManager, _pc);
+      colDef.setLabelProvider(new SelectionCellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final TourData tourData = (TourData) cell.getElement();
+            final double cadenceMultiplier = tourData.getCadenceMultiplier();
+
+            if (cadenceMultiplier == 0) {
+               cell.setText(UI.EMPTY_STRING);
+            } else {
+               cell.setText(_nf1.format(cadenceMultiplier));
+            }
          }
       });
    }

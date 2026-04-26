@@ -319,7 +319,7 @@ public class EasyLauncherUtils {
 
          } else {
 
-            sb.append("Set cadence: NO");
+            sb.append("Set cadence . . . NO");
             sb.append(NL);
          }
       }

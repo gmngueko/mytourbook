@@ -68,7 +68,6 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.CellLabelProvider;
@@ -101,7 +100,6 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -133,34 +131,34 @@ import org.joda.time.PeriodType;
  */
 public class DialogEasyImportConfig extends TitleAreaDialog implements IActionResetToDefault {
 
-   public static final String            ID                                 = "DialogEasyImportConfig";                                            //$NON-NLS-1$
+   public static final String            ID                                 = "DialogEasyImportConfig";             //$NON-NLS-1$
    //
-   public static final String            IMPORT_LAUNCHER_TAB_00_DESCRIPTION = "D&escription";
-   public static final String            IMPORT_LAUNCHER_TAB_03_TOUR_TYPE   = "&Tour Type";
-   public static final String            IMPORT_LAUNCHER_TAB_08_TAGS        = "Ta&g";
-   public static final String            IMPORT_LAUNCHER_TAB_09_EQUIPMENT   = "E&quipment";
-   public static final String            IMPORT_LAUNCHER_TAB_10_CADENCE     = "C&adence";
-   public static final String            IMPORT_LAUNCHER_TAB_04             = "&4...7";                                                            //$NON-NLS-1$
-   public static final String            IMPORT_LAUNCHER_TAB_50             = "&50+";                                                              //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_DESCRIPTION    = "D&escription";
+   public static final String            IMPORT_LAUNCHER_TAB_TOUR_TYPE      = "&Tour Type";
+   public static final String            IMPORT_LAUNCHER_TAB_TAGS           = "Ta&g";
+   public static final String            IMPORT_LAUNCHER_TAB_EQUIPMENT      = "E&quipment";
+   public static final String            IMPORT_LAUNCHER_TAB_CADENCE        = "C&adence";
+   public static final String            IMPORT_LAUNCHER_TAB_OPTIONS_1      = "Options &1";                         //$NON-NLS-1$
+   public static final String            IMPORT_LAUNCHER_TAB_OPTIONS_2      = "Options &2";                         //$NON-NLS-1$
    //
-   private static final String           STATE_BACKUP_DEVICE_HISTORY_ITEMS  = "STATE_BACKUP_DEVICE_HISTORY_ITEMS";                                 //$NON-NLS-1$
-   private static final String           STATE_BACKUP_FOLDER_HISTORY_ITEMS  = "STATE_BACKUP_FOLDER_HISTORY_ITEMS";                                 //$NON-NLS-1$
-   private static final String           STATE_DEVICE_DEVICE_HISTORY_ITEMS  = "STATE_DEVICE_DEVICE_HISTORY_ITEMS";                                 //$NON-NLS-1$
-   public static final String            STATE_DEVICE_FOLDER_HISTORY_ITEMS  = "STATE_DEVICE_FOLDER_HISTORY_ITEMS";                                 //$NON-NLS-1$
-   private static final String           STATE_SELECTED_IMPORT_LAUNCHER     = "STATE_SELECTED_IMPORT_LAUNCHER";                                    //$NON-NLS-1$
-   private static final String           STATE_SELECTED_TAB_FOLDER_LAUNCHER = "STATE_SELECTED_TAB_FOLDER_LAUNCHER";                                //$NON-NLS-1$
-   private static final String           STATE_SELECTED_TAB_FOLDER_MAIN     = "STATE_SELECTED_TAB_FOLDER_MAIN";                                    //$NON-NLS-1$
+   private static final String           STATE_BACKUP_DEVICE_HISTORY_ITEMS  = "STATE_BACKUP_DEVICE_HISTORY_ITEMS";  //$NON-NLS-1$
+   private static final String           STATE_BACKUP_FOLDER_HISTORY_ITEMS  = "STATE_BACKUP_FOLDER_HISTORY_ITEMS";  //$NON-NLS-1$
+   private static final String           STATE_DEVICE_DEVICE_HISTORY_ITEMS  = "STATE_DEVICE_DEVICE_HISTORY_ITEMS";  //$NON-NLS-1$
+   public static final String            STATE_DEVICE_FOLDER_HISTORY_ITEMS  = "STATE_DEVICE_FOLDER_HISTORY_ITEMS";  //$NON-NLS-1$
+   private static final String           STATE_SELECTED_IMPORT_LAUNCHER     = "STATE_SELECTED_IMPORT_LAUNCHER";     //$NON-NLS-1$
+   private static final String           STATE_SELECTED_TAB_FOLDER_LAUNCHER = "STATE_SELECTED_TAB_FOLDER_LAUNCHER"; //$NON-NLS-1$
+   private static final String           STATE_SELECTED_TAB_FOLDER_MAIN     = "STATE_SELECTED_TAB_FOLDER_MAIN";     //$NON-NLS-1$
    //
-   private static final String           DATA_KEY_TOUR_TYPE_ID              = "DATA_KEY_TOUR_TYPE_ID";                                             //$NON-NLS-1$
-   private static final String           DATA_KEY_SPEED_INDEX               = "DATA_KEY_SPEED_INDEX";                                              //$NON-NLS-1$
+   private static final String           DATA_KEY_TOUR_TYPE_ID              = "DATA_KEY_TOUR_TYPE_ID";              //$NON-NLS-1$
+   private static final String           DATA_KEY_SPEED_INDEX               = "DATA_KEY_SPEED_INDEX";               //$NON-NLS-1$
    //
    private static final int              CONTROL_DECORATION_WIDTH           = 6;
-   private static final String           CSS_PX                             = "px";                                                                //$NON-NLS-1$
+   private static final String           CSS_PX                             = "px";                                 //$NON-NLS-1$
    //
    private final IPreferenceStore        _prefStore                         = TourbookPlugin.getPrefStore();
    private final IDialogSettings         _state                             = TourbookPlugin.getState(ID);
-   private final IDialogSettings         _stateIC                           = TourbookPlugin.getState(ID + "_IC");                                 //$NON-NLS-1$
-   private final IDialogSettings         _stateIL                           = TourbookPlugin.getState(ID + "_IL");                                 //$NON-NLS-1$
+   private final IDialogSettings         _stateIC                           = TourbookPlugin.getState(ID + "_IC");  //$NON-NLS-1$
+   private final IDialogSettings         _stateIL                           = TourbookPlugin.getState(ID + "_IL");  //$NON-NLS-1$
    //
    private IPropertyChangeListener       _prefChangeListener;
    //
@@ -191,7 +189,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
    private ActionSpeedTourType_Sort      _action_ILTT_Speed_Sort;
    private ActionSpeedTourType_Delete[]  _allAction_TT_Speed_Delete;
    //
-   private Font                          _boldFont                          = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
    private PixelConverter                _pc;
 
    /** Model for all configurations. */
@@ -1948,19 +1945,18 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    private void createUI_600_IL_Detail(final Composite parent) {
 
-      final Composite container = new Composite(parent, SWT.NONE);
+      final Group group = new Group(parent, SWT.NONE);
+      group.setText(Messages.Dialog_ImportConfig_Group_ImportLauncherConfig);
+
       GridDataFactory.fillDefaults()
             .span(2, 1)
             .indent(0, 10)
-            .applyTo(container);
-      GridLayoutFactory.fillDefaults().applyTo(container);
+            .applyTo(group);
+      GridLayoutFactory.swtDefaults().applyTo(group);
 //      container.setBackground(UI.SYS_COLOR_CYAN);
       {
          {
-            final Label label = UI.createLabel(container, Messages.Dialog_ImportConfig_Group_ImportLauncherConfig);
-            label.setFont(_boldFont);
-
-            final Composite topContainer = new Composite(container, SWT.NONE);
+            final Composite topContainer = new Composite(group, SWT.NONE);
             GridDataFactory.fillDefaults().grab(true, false).applyTo(topContainer);
             GridLayoutFactory.fillDefaults().numColumns(2).applyTo(topContainer);
             {
@@ -1968,7 +1964,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             }
          }
          {
-            _tabFolderIL = new CTabFolder(container, SWT.NONE);
+            _tabFolderIL = new CTabFolder(group, SWT.NONE);
             GridDataFactory.fillDefaults()
                   .grab(true, true)
                   .hint(_defaultPaneWidth, SWT.DEFAULT)
@@ -1976,37 +1972,37 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             {
                // tab: Tour type
                final CTabItem tab03 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab03.setText(IMPORT_LAUNCHER_TAB_03_TOUR_TYPE);
+               tab03.setText(IMPORT_LAUNCHER_TAB_TOUR_TYPE);
                tab03.setControl(createUI_602_Tab_03_TourType(_tabFolderIL));
 
                // tab: Tag
                final CTabItem tab08 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab08.setText(IMPORT_LAUNCHER_TAB_08_TAGS);
+               tab08.setText(IMPORT_LAUNCHER_TAB_TAGS);
                tab08.setControl(createUI_602_Tab_08_Tag(_tabFolderIL));
 
                // tab: Equipment
                final CTabItem tab09 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab09.setText(IMPORT_LAUNCHER_TAB_09_EQUIPMENT);
+               tab09.setText(IMPORT_LAUNCHER_TAB_EQUIPMENT);
                tab09.setControl(createUI_602_Tab_09_Equipment(_tabFolderIL));
 
                // tab: Cadence
                final CTabItem tab10 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab10.setText(IMPORT_LAUNCHER_TAB_10_CADENCE);
+               tab10.setText(IMPORT_LAUNCHER_TAB_CADENCE);
                tab10.setControl(createUI_602_Tab_10_Cadence(_tabFolderIL));
 
                // tab: 4...7
                final CTabItem tab04 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab04.setText(IMPORT_LAUNCHER_TAB_04);
+               tab04.setText(IMPORT_LAUNCHER_TAB_OPTIONS_1);
                tab04.setControl(createUI_602_Tab_04(_tabFolderIL));
 
                // tab: 50...99
                final CTabItem tab50 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab50.setText(IMPORT_LAUNCHER_TAB_50);
+               tab50.setText(IMPORT_LAUNCHER_TAB_OPTIONS_2);
                tab50.setControl(createUI_602_Tab_50(_tabFolderIL));
 
                // tab: Description
                final CTabItem tab0 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab0.setText(IMPORT_LAUNCHER_TAB_00_DESCRIPTION);
+               tab0.setText(IMPORT_LAUNCHER_TAB_DESCRIPTION);
                tab0.setControl(createUI_602_Tab_00_Description(_tabFolderIL));
             }
          }
@@ -2933,7 +2929,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
           * Checkbox: Set cadence
           */
          _chkIL_SetCadence = new Button(parent, SWT.CHECK);
-         _chkIL_SetCadence.setText("10. Set &cadence");
+         _chkIL_SetCadence.setText("Set &cadence");
          _chkIL_SetCadence.setToolTipText("The selected cadence will be set in the imported tour");
          _chkIL_SetCadence.addSelectionListener(cadListener);
          GridDataFactory.fillDefaults()
