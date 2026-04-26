@@ -1649,7 +1649,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
          createUI_510_IL_Viewer(container);
          createUI_530_IL_Actions(container);
-         createUI_800_IL_DragDropHint(container);
+         createUI_540_IL_DragDropHint(container);
 
          createUI_600_IL_Detail(container);
       }
@@ -1937,6 +1937,15 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
+   private void createUI_540_IL_DragDropHint(final Composite parent) {
+
+      final Label label = new Label(parent, SWT.WRAP);
+      label.setText(Messages.Dialog_ImportConfig_Info_ConfigDragDrop);
+      GridDataFactory.fillDefaults()
+            .span(2, 1)
+            .applyTo(label);
+   }
+
    private void createUI_600_IL_Detail(final Composite parent) {
 
       final Composite container = new Composite(parent, SWT.NONE);
@@ -1965,11 +1974,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                   .hint(_defaultPaneWidth, SWT.DEFAULT)
                   .applyTo(_tabFolderIL);
             {
-               // tab: Description
-               final CTabItem tab0 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab0.setText(IMPORT_LAUNCHER_TAB_00_DESCRIPTION);
-               tab0.setControl(createUI_602_Tab_00_Description(_tabFolderIL));
-
                // tab: Tour type
                final CTabItem tab03 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab03.setText(IMPORT_LAUNCHER_TAB_03_TOUR_TYPE);
@@ -1999,6 +2003,11 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                final CTabItem tab50 = new CTabItem(_tabFolderIL, SWT.NONE);
                tab50.setText(IMPORT_LAUNCHER_TAB_50);
                tab50.setControl(createUI_602_Tab_50(_tabFolderIL));
+
+               // tab: Description
+               final CTabItem tab0 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab0.setText(IMPORT_LAUNCHER_TAB_00_DESCRIPTION);
+               tab0.setControl(createUI_602_Tab_00_Description(_tabFolderIL));
             }
          }
       }
@@ -3256,15 +3265,6 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                .indent(0, convertVerticalDLUsToPixels(10))
                .applyTo(_chkIL_ShowInDashboard);
       }
-   }
-
-   private void createUI_800_IL_DragDropHint(final Composite parent) {
-
-      final Label label = new Label(parent, SWT.WRAP);
-      label.setText(Messages.Dialog_ImportConfig_Info_ConfigDragDrop);
-      GridDataFactory.fillDefaults()
-            .span(2, 1)
-            .applyTo(label);
    }
 
    private Composite createUI_900_Tab_Options(final Composite parent) {

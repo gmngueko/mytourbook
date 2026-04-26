@@ -2316,6 +2316,7 @@ public class RawDataView extends ViewPart implements
 
             sb.append(tileDescription);
             sb.append(NL);
+            sb.append(NL);
          }
       }
       {
@@ -2323,11 +2324,11 @@ public class RawDataView extends ViewPart implements
 
          if (importLauncher.isSetTourType) {
 
-            EasyLauncherUtils.createText_TourType(importLauncher, launcherName, sb);
+            EasyLauncherUtils.createTooltipText_TourType(importLauncher, launcherName, sb);
 
          } else {
 
-            sb.append("Set tour type: NO");
+            sb.append("Set tour type . . . NO");
             sb.append(NL);
          }
       }
@@ -2336,7 +2337,7 @@ public class RawDataView extends ViewPart implements
 
          if (importLauncher.isSetTags()) {
 
-            EasyLauncherUtils.createText_TagsGroup(importLauncher, sb);
+            EasyLauncherUtils.createTooltipText_Tags(importLauncher, sb);
 
          } else {
 
@@ -2349,7 +2350,7 @@ public class RawDataView extends ViewPart implements
 
          if (importLauncher.isSetEquipmentAndIsAvailable()) {
 
-            EasyLauncherUtils.createText_Equipment(importLauncher, sb);
+            EasyLauncherUtils.createTooltipText_Equipment(importLauncher, sb);
 
          } else {
 
@@ -2362,11 +2363,11 @@ public class RawDataView extends ViewPart implements
 
          if (importLauncher.isSetCadence) {
 
-            EasyLauncherUtils.createText_Cadence(importLauncher, sb);
+            EasyLauncherUtils.createTooltipText_Cadence(importLauncher, sb);
 
          } else {
 
-            sb.append("Set cadence: NO");
+            sb.append("Set cadence . . . NO");
             sb.append(NL);
          }
       }

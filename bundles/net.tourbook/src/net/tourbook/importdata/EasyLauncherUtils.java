@@ -70,7 +70,7 @@ public class EasyLauncherUtils {
       _nf1.setMaximumFractionDigits(1);
    }
 
-   public static void createText_Cadence(final ImportLauncher importLauncher, final StringBuilder sb) {
+   public static void createTooltipText_Cadence(final ImportLauncher importLauncher, final StringBuilder sb) {
 
       final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
 
@@ -93,22 +93,25 @@ public class EasyLauncherUtils {
             sbSpeed.append(NL);
          }
 
-         sb.append("Set cadence: By Speed\n\n%s".formatted(sbSpeed.toString()));
+         sb.append("Set cadence . . . By Speed\n\n%s".formatted(sbSpeed.toString()));
          sb.append(NL);
 
       } else if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL.equals(cadConfig)) {
 
          final CadenceMultiplier oneCadence = importLauncher.cadenceOne;
 
-         if (oneCadence != null) {
+         String cadLabel = "NO";
 
-            sb.append("Set cadence: %s".formatted(oneCadence.getNlsLabel()));
-            sb.append(NL);
+         if (oneCadence != null) {
+            cadLabel = oneCadence.getNlsLabel();
          }
+
+         sb.append("Set cadence . . . %s".formatted(cadLabel));
+         sb.append(NL);
       }
    }
 
-   public static void createText_Equipment(final ImportLauncher importLauncher, final StringBuilder sb) {
+   public static void createTooltipText_Equipment(final ImportLauncher importLauncher, final StringBuilder sb) {
 
       final Enum<EquipmentConfig> eqConfig = importLauncher.equipmentConfig;
 
@@ -130,6 +133,7 @@ public class EasyLauncherUtils {
                continue;
             }
 
+            sbSpeed.append(UI.SPACE3);
             sbSpeed.append(avgSpeed);
             sbSpeed.append(UI.SPACE);
             sbSpeed.append(UI.UNIT_LABEL_SPEED);
@@ -137,11 +141,11 @@ public class EasyLauncherUtils {
             sbSpeed.append(eqGroup.name);
             sbSpeed.append(NL);
             sbSpeed.append(NL);
-            sbSpeed.append(createText_Equipment_OneGroup(allEquipment));
+            sbSpeed.append(createTooltipText_Equipment_OneGroup(allEquipment, UI.SPACE8));
             sbSpeed.append(NL);
          }
 
-         sb.append("Set equipment: By Speed\n\n%s".formatted(sbSpeed.toString()));
+         sb.append("Set equipment . . . By Speed\n\n%s".formatted(sbSpeed.toString()));
 
       } else if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL == eqConfig) {
 
@@ -154,14 +158,15 @@ public class EasyLauncherUtils {
             return;
          }
 
-         final String eqText = createText_Equipment_OneGroup(allEquipment);
+         final String eqText = createTooltipText_Equipment_OneGroup(allEquipment, UI.SPACE3);
 
          sb.append(Messages.Import_Data_HTML_SetEquipment_YES.formatted(eqGroup.name, eqText));
          sb.append(NL);
       }
    }
 
-   private static String createText_Equipment_OneGroup(final Set<Equipment> allEquipment) {
+   private static String createTooltipText_Equipment_OneGroup(final Set<Equipment> allEquipment,
+                                                              final String horizontalIndent) {
 
       final List<Equipment> sortedEquipment = new ArrayList<>(allEquipment);
       Collections.sort(sortedEquipment);
@@ -170,13 +175,13 @@ public class EasyLauncherUtils {
 
       for (final Equipment equipment : sortedEquipment) {
 
-         sb.append(UI.SPACE3 + equipment.getName() + NL);
+         sb.append(horizontalIndent + equipment.getName() + NL);
       }
 
       return sb.toString();
    }
 
-   public static void createText_TagsGroup(final ImportLauncher importLauncher, final StringBuilder sb) {
+   public static void createTooltipText_Tags(final ImportLauncher importLauncher, final StringBuilder sb) {
 
       final TagGroup tagGroup = TagGroupManager.getTagGroup(importLauncher.tourTagGroupID);
       final Set<TourTag> allTags = TagGroupManager.getTags(importLauncher.tourTagGroupID);
@@ -200,9 +205,9 @@ public class EasyLauncherUtils {
       sb.append(NL);
    }
 
-   public static void createText_TourType(final ImportLauncher importLauncher,
-                                          final String tileName,
-                                          final StringBuilder sb) {
+   public static void createTooltipText_TourType(final ImportLauncher importLauncher,
+                                                 final String tileName,
+                                                 final StringBuilder sb) {
 
       final Enum<TourTypeConfig> ttConfig = importLauncher.tourTypeConfig;
 
@@ -226,20 +231,20 @@ public class EasyLauncherUtils {
             sbSpeed.append(NL);
          }
 
-         sb.append("Set tour type: By Speed\n\n%s".formatted(sbSpeed.toString()));
+         sb.append("Set tour type . . . By Speed\n\n%s".formatted(sbSpeed.toString()));
          sb.append(NL);
 
       } else if (TourTypeConfig.TOUR_TYPE_CONFIG_ONE_FOR_ALL.equals(ttConfig)) {
 
          final TourType oneTourType = importLauncher.oneTourType;
 
-         String ttName = UI.EMPTY_STRING;
+         String ttName = "NO";
 
          if (oneTourType != null) {
             ttName = oneTourType.getName();
          }
 
-         sb.append("Set tour type: %s".formatted(ttName));
+         sb.append("Set tour type . . . %s".formatted(ttName));
          sb.append(NL);
       }
    }
@@ -268,6 +273,7 @@ public class EasyLauncherUtils {
 
             sb.append(tileDescription);
             sb.append(NL);
+            sb.append(NL);
          }
       }
       {
@@ -275,7 +281,7 @@ public class EasyLauncherUtils {
 
          if (importLauncher.isSetTourType) {
 
-            createText_TourType(importLauncher, launcherName, sb);
+            createTooltipText_TourType(importLauncher, launcherName, sb);
          }
       }
       {
@@ -283,8 +289,7 @@ public class EasyLauncherUtils {
 
          if (importLauncher.isSetTourTagGroup) {
 
-            createText_TagsGroup(importLauncher, sb);
-            sb.append(NL);
+            createTooltipText_Tags(importLauncher, sb);
 
          } else {
 
@@ -297,7 +302,7 @@ public class EasyLauncherUtils {
 
          if (importLauncher.isSetEquipment) {
 
-            createText_Equipment(importLauncher, sb);
+            createTooltipText_Equipment(importLauncher, sb);
 
          } else {
 
@@ -310,7 +315,7 @@ public class EasyLauncherUtils {
 
          if (importLauncher.isSetCadence) {
 
-            createText_Cadence(importLauncher, sb);
+            createTooltipText_Cadence(importLauncher, sb);
 
          } else {
 
