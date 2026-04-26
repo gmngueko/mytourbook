@@ -1960,7 +1960,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             GridDataFactory.fillDefaults().grab(true, false).applyTo(topContainer);
             GridLayoutFactory.fillDefaults().numColumns(2).applyTo(topContainer);
             {
-               createUI_610_IL_nn_Name(topContainer);
+               createUI_602_IL_ConfigName(topContainer);
             }
          }
          {
@@ -1971,45 +1971,147 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
                   .applyTo(_tabFolderIL);
             {
                // tab: Tour type
-               final CTabItem tab03 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab03.setText(IMPORT_LAUNCHER_TAB_TOUR_TYPE);
-               tab03.setControl(createUI_602_Tab_03_TourType(_tabFolderIL));
+               final CTabItem tab1 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab1.setText(IMPORT_LAUNCHER_TAB_TOUR_TYPE);
+               tab1.setControl(createUI_610_IL_Tab_TourType(_tabFolderIL));
 
                // tab: Tag
-               final CTabItem tab08 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab08.setText(IMPORT_LAUNCHER_TAB_TAGS);
-               tab08.setControl(createUI_602_Tab_08_Tag(_tabFolderIL));
+               final CTabItem tab2 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab2.setText(IMPORT_LAUNCHER_TAB_TAGS);
+               tab2.setControl(createUI_612_IL_Tab_Tag(_tabFolderIL));
 
                // tab: Equipment
-               final CTabItem tab09 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab09.setText(IMPORT_LAUNCHER_TAB_EQUIPMENT);
-               tab09.setControl(createUI_602_Tab_09_Equipment(_tabFolderIL));
+               final CTabItem tab3 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab3.setText(IMPORT_LAUNCHER_TAB_EQUIPMENT);
+               tab3.setControl(createUI_614_IL_Tab_Equipment(_tabFolderIL));
 
                // tab: Cadence
-               final CTabItem tab10 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab10.setText(IMPORT_LAUNCHER_TAB_CADENCE);
-               tab10.setControl(createUI_602_Tab_10_Cadence(_tabFolderIL));
+               final CTabItem tab4 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab4.setText(IMPORT_LAUNCHER_TAB_CADENCE);
+               tab4.setControl(createUI_616_IL_Tab_Cadence(_tabFolderIL));
 
-               // tab: 4...7
-               final CTabItem tab04 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab04.setText(IMPORT_LAUNCHER_TAB_OPTIONS_1);
-               tab04.setControl(createUI_602_Tab_04(_tabFolderIL));
+               // tab: Options 1
+               final CTabItem tab5 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab5.setText(IMPORT_LAUNCHER_TAB_OPTIONS_1);
+               tab5.setControl(createUI_618_IL_Tab_Options1(_tabFolderIL));
 
-               // tab: 50...99
-               final CTabItem tab50 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab50.setText(IMPORT_LAUNCHER_TAB_OPTIONS_2);
-               tab50.setControl(createUI_602_Tab_50(_tabFolderIL));
+               // tab: Options 2
+               final CTabItem tab6 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab6.setText(IMPORT_LAUNCHER_TAB_OPTIONS_2);
+               tab6.setControl(createUI_620_IL_Tab_Options2(_tabFolderIL));
 
                // tab: Description
-               final CTabItem tab0 = new CTabItem(_tabFolderIL, SWT.NONE);
-               tab0.setText(IMPORT_LAUNCHER_TAB_DESCRIPTION);
-               tab0.setControl(createUI_602_Tab_00_Description(_tabFolderIL));
+               final CTabItem tab7 = new CTabItem(_tabFolderIL, SWT.NONE);
+               tab7.setText(IMPORT_LAUNCHER_TAB_DESCRIPTION);
+               tab7.setControl(createUI_622_IL_Tab_Description(_tabFolderIL));
             }
          }
       }
    }
 
-   private Control createUI_602_Tab_00_Description(final Composite parent) {
+   private void createUI_602_IL_ConfigName(final Composite parent) {
+
+      /*
+       * Config name
+       */
+
+      // label
+      _lblIL_ConfigName = new Label(parent, SWT.NONE);
+      _lblIL_ConfigName.setText(Messages.Dialog_ImportConfig_Label_ConfigName);
+      GridDataFactory.fillDefaults()
+            .align(SWT.FILL, SWT.CENTER)
+            .applyTo(_lblIL_ConfigName);
+
+      // text
+      _txtIL_ConfigName = new Text(parent, SWT.BORDER);
+      _txtIL_ConfigName.addModifyListener(_ilModifyListener);
+      GridDataFactory.fillDefaults()
+            .grab(true, false)
+            .applyTo(_txtIL_ConfigName);
+   }
+
+   private Control createUI_610_IL_Tab_TourType(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_YELLOW);
+      {
+         createUI_650_IL_SetTourType(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_612_IL_Tab_Tag(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+      {
+         createUI_700_IL_SetTag(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_614_IL_Tab_Equipment(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_YELLOW);
+      {
+         createUI_710_IL_SetEquipment(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_616_IL_Tab_Cadence(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_YELLOW);
+      {
+         createUI_730_IL_SetCadence(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_618_IL_Tab_Options1(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+      {
+         createUI_750_IL_Remove2ndLastTimeSliceMarker(container);
+         createUI_752_IL_SetLastMarker(container);
+         createUI_754_IL_AdjustTemperature(container);
+         createUI_756_IL_AdjustElevation(container);
+         createUI_758_IL_SetElevationFromSRTM(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_620_IL_Tab_Options2(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
+      {
+         createUI_770_IL_RetrieveWeatherData(container);
+         createUI_772_IL_RetrieveTourLocations(container);
+         createUI_774_IL_Save(container);
+      }
+
+      return container;
+   }
+
+   private Control createUI_622_IL_Tab_Description(final Composite parent) {
 
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
@@ -2033,109 +2135,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       return container;
    }
 
-   private Control createUI_602_Tab_03_TourType(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_YELLOW);
-      {
-         createUI_650_IL_03_TourType(container);
-      }
-
-      return container;
-   }
-
-   private Control createUI_602_Tab_04(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-      {
-         createUI_700_IL_041_Remove2ndLastTimeSliceMarker(container);
-         createUI_700_IL_042_SetLastMarker(container);
-         createUI_700_IL_05_AdjustTemperature(container);
-         createUI_700_IL_06_AdjustElevation(container);
-         createUI_700_IL_07_SetElevationFromSRTM(container);
-      }
-
-      return container;
-   }
-
-   private Control createUI_602_Tab_08_Tag(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-      {
-         createUI_700_IL_08_SetTagGroup(container);
-      }
-
-      return container;
-   }
-
-   private Control createUI_602_Tab_09_Equipment(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_YELLOW);
-      {
-         createUI_700_IL_09_SetEquipment(container);
-      }
-
-      return container;
-   }
-
-   private Control createUI_602_Tab_10_Cadence(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_YELLOW);
-      {
-         createUI_700_IL_10_SetCadence(container);
-      }
-
-      return container;
-   }
-
-   private Control createUI_602_Tab_50(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(container);
-      GridLayoutFactory.swtDefaults().numColumns(2).applyTo(container);
-      {
-         createUI_700_IL_50_RetrieveWeatherData(container);
-         createUI_700_IL_51_RetrieveTourLocations(container);
-         createUI_700_IL_99_Save(container);
-      }
-
-      return container;
-   }
-
-   private void createUI_610_IL_nn_Name(final Composite parent) {
-
-      /*
-       * Config name
-       */
-
-      // label
-      _lblIL_ConfigName = new Label(parent, SWT.NONE);
-      _lblIL_ConfigName.setText(Messages.Dialog_ImportConfig_Label_ConfigName);
-      GridDataFactory.fillDefaults()
-            .align(SWT.FILL, SWT.CENTER)
-            .applyTo(_lblIL_ConfigName);
-
-      // text
-      _txtIL_ConfigName = new Text(parent, SWT.BORDER);
-      _txtIL_ConfigName.addModifyListener(_ilModifyListener);
-      GridDataFactory.fillDefaults()
-            .grab(true, false)
-            .applyTo(_txtIL_ConfigName);
-   }
-
-   private void createUI_650_IL_03_TourType(final Composite parent) {
+   private void createUI_650_IL_SetTourType(final Composite parent) {
 
       final SelectionListener ttListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_IL_Config_TourType());
 
@@ -2177,9 +2177,9 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          {
 // SET_FORMATTING_OFF
 
-            _pageTourType_NoTourType   = createUI_650_IL_03_Z_01_PageTourType_NoTourType(_pagebookTourType);
-            _pageTourType_OneForAll    = createUI_650_IL_03_Z_02_PageTourType_OneForAll(_pagebookTourType);
-            _pageTourType_BySpeed      = createUI_650_IL_03_Z_03_PageTourType_BySpeed(_pagebookTourType);
+            _pageTourType_NoTourType   = createUI_652_IL_PageTourType_NoTourType(_pagebookTourType);
+            _pageTourType_OneForAll    = createUI_655_IL_PageTourType_OneForAll(_pagebookTourType);
+            _pageTourType_BySpeed      = createUI_660_IL_PageTourType_BySpeed(_pagebookTourType);
 
 // SET_FORMATTING_ON
          }
@@ -2191,7 +2191,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
     *
     * @return
     */
-   private Label createUI_650_IL_03_Z_01_PageTourType_NoTourType(final PageBook parent) {
+   private Label createUI_652_IL_PageTourType_NoTourType(final PageBook parent) {
 
       final Label label = new Label(parent, SWT.NONE);
       GridDataFactory.fillDefaults().applyTo(label);
@@ -2200,7 +2200,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       return label;
    }
 
-   private Composite createUI_650_IL_03_Z_02_PageTourType_OneForAll(final Composite parent) {
+   private Composite createUI_655_IL_PageTourType_OneForAll(final Composite parent) {
 
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
@@ -2230,21 +2230,21 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       return container;
    }
 
-   private Composite createUI_650_IL_03_Z_03_PageTourType_BySpeed(final Composite parent) {
+   private Composite createUI_660_IL_PageTourType_BySpeed(final Composite parent) {
 
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
       GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
 //      container.setBackground(UI.SYS_COLOR_RED);
       {
-         createUI_650_IL_03_Z_04_PageTourType_BySpeed_Actions(container);
-         createUI_650_IL_03_Z_05_PageTourType_BySpeed_OuterContainer(container);
+         createUI_662_IL_PageTourType_BySpeed_Actions(container);
+         createUI_670_IL_PageTourType_BySpeed_OuterContainer(container);
       }
 
       return container;
    }
 
-   private void createUI_650_IL_03_Z_04_PageTourType_BySpeed_Actions(final Composite parent) {
+   private void createUI_662_IL_PageTourType_BySpeed_Actions(final Composite parent) {
 
       final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
 
@@ -2256,7 +2256,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       tbm.update(true);
    }
 
-   private void createUI_650_IL_03_Z_05_PageTourType_BySpeed_OuterContainer(final Composite parent) {
+   private void createUI_670_IL_PageTourType_BySpeed_OuterContainer(final Composite parent) {
 
       /*
        * Speed tour type fields container
@@ -2268,7 +2268,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
       GridLayoutFactory.fillDefaults().applyTo(_speedTourType_OuterContainer);
 
-      createUI_650_IL_03_Z_06_PageTourType_BySpeed_Fields();
+      createUI_674_IL_PageTourType_BySpeed_Fields();
    }
 
    /**
@@ -2276,7 +2276,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
     *
     * @param parent
     */
-   private void createUI_650_IL_03_Z_06_PageTourType_BySpeed_Fields() {
+   private void createUI_674_IL_PageTourType_BySpeed_Fields() {
 
       if (_selectedIL == null) {
 
@@ -2303,7 +2303,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          _speedTourType_ScrolledContainer.dispose();
       }
 
-      final Composite speedTourType_Container = createUI_650_IL_03_Z_07_PageTourType_BySpeed_ScrolledContainer(_speedTourType_OuterContainer);
+      final Composite speedTourType_Container = createUI_676_IL_PageTourType_BySpeed_ScrolledContainer(_speedTourType_OuterContainer);
 
       /*
        * Fields
@@ -2394,7 +2394,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
-   private Composite createUI_650_IL_03_Z_07_PageTourType_BySpeed_ScrolledContainer(final Composite parent) {
+   private Composite createUI_676_IL_PageTourType_BySpeed_ScrolledContainer(final Composite parent) {
 
       // scrolled container
       _speedTourType_ScrolledContainer = new ScrolledComposite(parent, SWT.V_SCROLL);
@@ -2421,7 +2421,554 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       return speedTTContainer;
    }
 
-   private void createUI_700_IL_041_Remove2ndLastTimeSliceMarker(final Composite parent) {
+   private void createUI_700_IL_SetTag(final Composite parent) {
+
+      {
+         _chkIL_SetTourTagGroup = new Button(parent, SWT.CHECK);
+         _chkIL_SetTourTagGroup.setText(Messages.Dialog_ImportConfig_Checkbox_SetTourTags);
+         _chkIL_SetTourTagGroup.setToolTipText(Messages.Dialog_ImportConfig_Checkbox_SetTourTags_Tooltip);
+         _chkIL_SetTourTagGroup.addSelectionListener(_defaultModify_Listener);
+         GridDataFactory.fillDefaults()
+               .span(2, 1)
+               .indent(0, 5)
+               .applyTo(_chkIL_SetTourTagGroup);
+      }
+
+      {
+         _lblIL_TourTagGroup = new Label(parent, SWT.NONE);
+         _lblIL_TourTagGroup.setText(Messages.Dialog_ImportConfig_Label_TourTag);
+         GridDataFactory.fillDefaults()
+               .align(SWT.FILL, SWT.CENTER)
+               .indent(_leftPadding, 0)
+               .applyTo(_lblIL_TourTagGroup);
+
+         _comboIL_TourTagGroups = new Combo(parent, SWT.READ_ONLY);
+         _comboIL_TourTagGroups.addSelectionListener(_defaultModify_Listener);
+         GridDataFactory.fillDefaults()
+               .align(SWT.BEGINNING, SWT.FILL)
+               .hint(convertWidthInCharsToPixels(30), SWT.DEFAULT)
+               .applyTo(_comboIL_TourTagGroups);
+      }
+   }
+
+   private void createUI_710_IL_SetEquipment(final Composite parent) {
+
+      final SelectionListener eqListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_IL_Config_Equipment());
+
+      {
+         /*
+          * Checkbox: Set equipment
+          */
+         _chkIL_SetEquipment = new Button(parent, SWT.CHECK);
+         _chkIL_SetEquipment.setText(Messages.Dialog_ImportConfig_Checkbox_SetEquipmentFromGroup);
+         _chkIL_SetEquipment.setToolTipText(Messages.Dialog_ImportConfig_Checkbox_SetEquipmentFromGroup_Tooltip);
+         _chkIL_SetEquipment.addSelectionListener(eqListener);
+         GridDataFactory.fillDefaults()
+               .span(2, 1)
+               .indent(0, 5)
+               .applyTo(_chkIL_SetEquipment);
+      }
+      {
+         /*
+          * Equipment options
+          */
+         _comboIL_EquipmentConfig = new Combo(parent, SWT.READ_ONLY);
+         _comboIL_EquipmentConfig.addSelectionListener(eqListener);
+         GridDataFactory.fillDefaults()
+               .span(2, 1)
+               .align(SWT.BEGINNING, SWT.FILL)
+               .indent(_leftPadding, 0)
+               .applyTo(_comboIL_EquipmentConfig);
+
+         _pagebookEquipment = new PageBook(parent, SWT.NONE);
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               .span(2, 1)
+               .indent(_leftPadding, 0)
+
+               // force minimum height
+               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(6))
+               .applyTo(_pagebookEquipment);
+         {
+// SET_FORMATTING_OFF
+
+            _pageEquipment_NoEquipment = createUI_712_IL_PageEquipment_NoEquipment(_pagebookEquipment);
+            _pageEquipment_OneForAll   = createUI_714_IL_PageEquipment_OneForAll(_pagebookEquipment);
+            _pageEquipment_BySpeed     = createUI_720_IL_PageEquipment_BySpeed(_pagebookEquipment);
+
+// SET_FORMATTING_ON
+         }
+      }
+   }
+
+   /**
+    * This page is displayed when equipment is not enabled
+    *
+    * @param parent
+    *
+    * @return
+    */
+   private Label createUI_712_IL_PageEquipment_NoEquipment(final Composite parent) {
+
+      return UI.createLabel(parent, UI.EMPTY_STRING);
+   }
+
+   private Composite createUI_714_IL_PageEquipment_OneForAll(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_YELLOW);
+      {
+         _lblIL_EquipmentOneGroup = new Label(container, SWT.NONE);
+         _lblIL_EquipmentOneGroup.setText(Messages.Dialog_ImportConfig_Label_EquipmentGroup);
+         GridDataFactory.fillDefaults()
+               .align(SWT.FILL, SWT.CENTER)
+               .applyTo(_lblIL_EquipmentOneGroup);
+
+         _comboIL_EquipmentOneGroup = new Combo(container, SWT.READ_ONLY);
+         _comboIL_EquipmentOneGroup.addSelectionListener(_defaultModify_Listener);
+         GridDataFactory.fillDefaults()
+               .align(SWT.BEGINNING, SWT.FILL)
+               .hint(convertWidthInCharsToPixels(30), SWT.DEFAULT)
+               .applyTo(_comboIL_EquipmentOneGroup);
+      }
+
+      return container;
+   }
+
+   private Composite createUI_720_IL_PageEquipment_BySpeed(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_GREEN);
+      {
+         createUI_722_IL_PageEquipment_BySpeed_Actions(container);
+         createUI_724_IL_PageEquipment_BySpeed_OuterContainer(container);
+      }
+
+      return container;
+   }
+
+   private void createUI_722_IL_PageEquipment_BySpeed_Actions(final Composite parent) {
+
+      final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
+
+      final ToolBarManager tbm = new ToolBarManager(toolbar);
+
+      tbm.add(_action_ILEQ_Speed_Add);
+      tbm.add(_action_ILEQ_Speed_Sort);
+
+      tbm.update(true);
+   }
+
+   private void createUI_724_IL_PageEquipment_BySpeed_OuterContainer(final Composite parent) {
+
+      /*
+       * Speed equipment fields container
+       */
+      _speedEquipment_OuterContainer = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults()
+            .grab(true, true)
+            .applyTo(_speedEquipment_OuterContainer);
+
+      GridLayoutFactory.fillDefaults().applyTo(_speedEquipment_OuterContainer);
+
+      createUI_726_IL_PageEquipment_BySpeed_Fields();
+   }
+
+   /**
+    * Create the speed equipment fields from a list
+    *
+    * @param parent
+    */
+   private void createUI_726_IL_PageEquipment_BySpeed_Fields() {
+
+      if (_selectedIL == null) {
+
+         updateUI_ClearSpeedEquipment();
+
+         return;
+      }
+
+      final int numSpeeds = _selectedIL.allEquipmentSpeeds.size();
+
+      // check if required fields are already available
+      if (_allSpinner_ILEQ_Speed_AvgSpeed != null && _allSpinner_ILEQ_Speed_AvgSpeed.length == numSpeeds) {
+
+         return;
+      }
+
+      Point scrollOrigin = null;
+
+      // dispose previous content
+      if (_speedEquipment_ScrolledContainer != null) {
+
+         // get current scroll position
+         scrollOrigin = _speedEquipment_ScrolledContainer.getOrigin();
+
+         _speedEquipment_ScrolledContainer.dispose();
+      }
+
+      final Composite speedEQ_Container = createUI_728_IL_PageEquipment_BySpeed_ScrolledContainer(_speedEquipment_OuterContainer);
+
+      /*
+       * Fields
+       */
+      _allAction_ILEQ_Speed_Delete = new ActionSpeedEquipment_Delete[numSpeeds];
+      _allCombo_ILEQ_EquipmentGroup = new Combo[numSpeeds];
+      _allLbl_ILEQ_Speed_SpeedUnit = new Label[numSpeeds];
+      _allSpinner_ILEQ_Speed_AvgSpeed = new Spinner[numSpeeds];
+
+      speedEQ_Container.setRedraw(false);
+      {
+         for (int speedIndex = 0; speedIndex < numSpeeds; speedIndex++) {
+
+            /*
+             * Spinner: Speed value
+             */
+            final Spinner spinnerValue = new Spinner(speedEQ_Container, SWT.BORDER);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(spinnerValue);
+            spinnerValue.setMaximum(EasyConfig.TOUR_AVG_SPEED_MAX);
+            spinnerValue.setMinimum(EasyConfig.TOUR_AVG_SPEED_MIN);
+            spinnerValue.setToolTipText("Max speed for this equipment group");
+            spinnerValue.addMouseWheelListener(_defaultMouseWheelListener);
+
+            /*
+             * Label: Speed unit
+             */
+            final Label lblUnit = new Label(speedEQ_Container, SWT.NONE);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(lblUnit);
+            lblUnit.setText(UI.UNIT_LABEL_SPEED);
+
+            /*
+             * Combo: Equipment group
+             */
+            final Combo comboEquipment = new Combo(speedEQ_Container, SWT.READ_ONLY);
+            comboEquipment.addSelectionListener(_defaultModify_Listener);
+            GridDataFactory.fillDefaults()
+                  .align(SWT.BEGINNING, SWT.CENTER)
+                  .applyTo(comboEquipment);
+
+            fillEquipment(comboEquipment);
+
+            /*
+             * Action: Delete speed equipment
+             */
+            final ActionSpeedEquipment_Delete actionDeleteSpeed = new ActionSpeedEquipment_Delete();
+            final ToolBar toolBar = createUI_ActionButton(speedEQ_Container, actionDeleteSpeed);
+            GridDataFactory.fillDefaults()
+                  .align(SWT.END, SWT.CENTER)
+                  .applyTo(toolBar);
+
+            /*
+             * Keep controls
+             */
+            _allAction_ILEQ_Speed_Delete[speedIndex] = actionDeleteSpeed;
+            _allCombo_ILEQ_EquipmentGroup[speedIndex] = comboEquipment;
+            _allLbl_ILEQ_Speed_SpeedUnit[speedIndex] = lblUnit;
+            _allSpinner_ILEQ_Speed_AvgSpeed[speedIndex] = spinnerValue;
+         }
+      }
+      speedEQ_Container.setRedraw(true);
+
+      _speedEquipment_OuterContainer.layout(true);
+
+      // set scroll position to previous position
+      if (scrollOrigin != null) {
+         _speedEquipment_ScrolledContainer.setOrigin(scrollOrigin);
+      }
+   }
+
+   private Composite createUI_728_IL_PageEquipment_BySpeed_ScrolledContainer(final Composite parent) {
+
+      // scrolled container
+      _speedEquipment_ScrolledContainer = new ScrolledComposite(parent, SWT.V_SCROLL);
+      _speedEquipment_ScrolledContainer.setExpandVertical(true);
+      _speedEquipment_ScrolledContainer.setExpandHorizontal(true);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(_speedEquipment_ScrolledContainer);
+//    _speedEquipment_ScrolledContaine.setBackground(UI.SYS_COLOR_RED);
+
+      // container
+      final Composite speedTTContainer = new Composite(_speedEquipment_ScrolledContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(speedTTContainer);
+      GridLayoutFactory.fillDefaults()
+            .numColumns(4)
+            .applyTo(speedTTContainer);
+//      speedTTContainer.setBackground(UI.SYS_COLOR_BLUE);
+
+      final ControlListener controlResizedAdapter = ControlListener.controlResizedAdapter(
+            ControlEvent -> _speedEquipment_ScrolledContainer
+                  .setMinSize(speedTTContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT)));
+
+      _speedEquipment_ScrolledContainer.addControlListener(controlResizedAdapter);
+      _speedEquipment_ScrolledContainer.setContent(speedTTContainer);
+
+      return speedTTContainer;
+   }
+
+   private void createUI_730_IL_SetCadence(final Composite parent) {
+
+      final SelectionListener cadListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_IL_Config_Cadence());
+
+      {
+         /*
+          * Checkbox: Set cadence
+          */
+         _chkIL_SetCadence = new Button(parent, SWT.CHECK);
+         _chkIL_SetCadence.setText("Set &cadence");
+         _chkIL_SetCadence.setToolTipText("The selected cadence will be set in the imported tour");
+         _chkIL_SetCadence.addSelectionListener(cadListener);
+         GridDataFactory.fillDefaults()
+               .span(2, 1)
+               .indent(0, 5)
+               .applyTo(_chkIL_SetCadence);
+      }
+      {
+         /*
+          * Cadence options
+          */
+         _comboIL_CadenceConfig = new Combo(parent, SWT.READ_ONLY);
+         _comboIL_CadenceConfig.addSelectionListener(cadListener);
+         GridDataFactory.fillDefaults()
+               .span(2, 1)
+               .align(SWT.BEGINNING, SWT.FILL)
+               .indent(_leftPadding, 0)
+               .applyTo(_comboIL_CadenceConfig);
+
+         _pagebookCadence = new PageBook(parent, SWT.NONE);
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               .span(2, 1)
+               .indent(_leftPadding, 0)
+
+               // force minimum height
+               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(6))
+               .applyTo(_pagebookCadence);
+         {
+// SET_FORMATTING_OFF
+
+            _pageCadence_NoCadence  = createUI_732_IL_PageCadence_NoCadence(_pagebookCadence);
+            _pageCadence_OneForAll  = createUI_734_IL_PageCadence_OneForAll(_pagebookCadence);
+            _pageCadence_BySpeed    = createUI_740_IL_PageCadence_BySpeed(_pagebookCadence);
+
+// SET_FORMATTING_ON
+         }
+      }
+   }
+
+   /**
+    * This page is displayed when cadence is not enabled
+    *
+    * @param parent
+    *
+    * @return
+    */
+   private Label createUI_732_IL_PageCadence_NoCadence(final Composite parent) {
+
+      return UI.createLabel(parent, UI.EMPTY_STRING);
+   }
+
+   /**
+    * @param parent
+    *
+    * @return
+    */
+   private Composite createUI_734_IL_PageCadence_OneForAll(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_YELLOW);
+      {
+         _lblIL_CadenceOne = new Label(container, SWT.NONE);
+         _lblIL_CadenceOne.setText("Cadence");
+         GridDataFactory.fillDefaults()
+               .align(SWT.FILL, SWT.CENTER)
+               .applyTo(_lblIL_CadenceOne);
+
+         _comboViewer_IL_Cadence = new ComboViewerCadence(container, SWT.READ_ONLY | SWT.DROP_DOWN);
+         _comboViewer_IL_Cadence.addSelectionChangedListener(event -> onSelect_IL_CadenceOne());
+      }
+
+      return container;
+   }
+
+   private Composite createUI_740_IL_PageCadence_BySpeed(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
+//      container.setBackground(UI.SYS_COLOR_GREEN);
+      {
+         createUI_742_IL_PageCadence_BySpeed_Actions(container);
+         createUI_744_IL_PageCadence_BySpeed_OuterContainer(container);
+      }
+
+      return container;
+   }
+
+   private void createUI_742_IL_PageCadence_BySpeed_Actions(final Composite parent) {
+
+      final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
+
+      final ToolBarManager tbm = new ToolBarManager(toolbar);
+
+      tbm.add(_action_ILCad_Speed_Add);
+      tbm.add(_action_ILCad_Speed_Sort);
+
+      tbm.update(true);
+   }
+
+   private void createUI_744_IL_PageCadence_BySpeed_OuterContainer(final Composite parent) {
+
+      /*
+       * Speed cadence fields container
+       */
+      _speedCadence_OuterContainer = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults()
+            .grab(true, true)
+            .applyTo(_speedCadence_OuterContainer);
+
+      GridLayoutFactory.fillDefaults().applyTo(_speedCadence_OuterContainer);
+
+      createUI_746_IL_PageCadence_BySpeed_Fields();
+   }
+
+   /**
+    * Create the speed cadence fields from a list
+    *
+    * @param parent
+    */
+   private void createUI_746_IL_PageCadence_BySpeed_Fields() {
+
+      if (_selectedIL == null) {
+
+         updateUI_ClearSpeedCadence();
+
+         return;
+      }
+
+      final int numSpeeds = _selectedIL.allCadenceSpeeds.size();
+
+      // check if required fields are already available
+      if (_allSpinner_ILCad_Speed_AvgSpeed != null && _allSpinner_ILCad_Speed_AvgSpeed.length == numSpeeds) {
+
+         return;
+      }
+
+      Point scrollOrigin = null;
+
+      // dispose previous content
+      if (_speedCadence_ScrolledContainer != null) {
+
+         // get current scroll position
+         scrollOrigin = _speedCadence_ScrolledContainer.getOrigin();
+
+         _speedCadence_ScrolledContainer.dispose();
+      }
+
+      final Composite speedCad_Container = createUI_748_IL_PageCadence_BySpeed_ScrolledContainer(_speedCadence_OuterContainer);
+
+      /*
+       * Fields
+       */
+// SET_FORMATTING_OFF
+
+      _allAction_ILCad_Speed_Delete       = new ActionSpeedCadence_Delete[numSpeeds];
+      _allComboViewer_IL_Cadence          = new ComboViewerCadence[numSpeeds];
+      _allLbl_ILCad_Speed_SpeedUnit       = new Label[numSpeeds];
+      _allSpinner_ILCad_Speed_AvgSpeed    = new Spinner[numSpeeds];
+
+// SET_FORMATTING_ON
+
+      speedCad_Container.setRedraw(false);
+      {
+         for (int speedIndex = 0; speedIndex < numSpeeds; speedIndex++) {
+
+            /*
+             * Spinner: Speed value
+             */
+            final Spinner spinnerValue = new Spinner(speedCad_Container, SWT.BORDER);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(spinnerValue);
+            spinnerValue.setMaximum(EasyConfig.TOUR_AVG_SPEED_MAX);
+            spinnerValue.setMinimum(EasyConfig.TOUR_AVG_SPEED_MIN);
+            spinnerValue.setToolTipText("Max speed for this cadence");
+            spinnerValue.addMouseWheelListener(_defaultMouseWheelListener);
+
+            /*
+             * Label: Speed unit
+             */
+            final Label lblUnit = new Label(speedCad_Container, SWT.NONE);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(lblUnit);
+            lblUnit.setText(UI.UNIT_LABEL_SPEED);
+
+            /*
+             * Combo: Cadence
+             */
+            final ComboViewerCadence comboCadence = new ComboViewerCadence(speedCad_Container);
+
+            /*
+             * Action: Delete speed cadence
+             */
+            final ActionSpeedCadence_Delete actionDeleteSpeed = new ActionSpeedCadence_Delete();
+            final ToolBar toolBar = createUI_ActionButton(speedCad_Container, actionDeleteSpeed);
+            GridDataFactory.fillDefaults()
+                  .align(SWT.END, SWT.CENTER)
+                  .applyTo(toolBar);
+
+            /*
+             * Keep controls
+             */
+// SET_FORMATTING_OFF
+
+            _allAction_ILCad_Speed_Delete    [speedIndex] = actionDeleteSpeed;
+            _allComboViewer_IL_Cadence             [speedIndex] = comboCadence;
+            _allLbl_ILCad_Speed_SpeedUnit    [speedIndex] = lblUnit;
+            _allSpinner_ILCad_Speed_AvgSpeed [speedIndex] = spinnerValue;
+
+// SET_FORMATTING_ON
+         }
+      }
+      speedCad_Container.setRedraw(true);
+
+      _speedCadence_OuterContainer.layout(true);
+
+      // set scroll position to previous position
+      if (scrollOrigin != null) {
+         _speedCadence_ScrolledContainer.setOrigin(scrollOrigin);
+      }
+   }
+
+   private Composite createUI_748_IL_PageCadence_BySpeed_ScrolledContainer(final Composite parent) {
+
+      // scrolled container
+      _speedCadence_ScrolledContainer = new ScrolledComposite(parent, SWT.V_SCROLL);
+      _speedCadence_ScrolledContainer.setExpandVertical(true);
+      _speedCadence_ScrolledContainer.setExpandHorizontal(true);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(_speedCadence_ScrolledContainer);
+//    _speedCadence_ScrolledContaine.setBackground(UI.SYS_COLOR_RED);
+
+      // container
+      final Composite speedContainer = new Composite(_speedCadence_ScrolledContainer, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, true).applyTo(speedContainer);
+      GridLayoutFactory.fillDefaults()
+            .numColumns(4)
+            .applyTo(speedContainer);
+//      speedContainer.setBackground(UI.SYS_COLOR_BLUE);
+
+      final ControlListener controlResizedAdapter = ControlListener.controlResizedAdapter(
+            ControlEvent -> _speedCadence_ScrolledContainer
+                  .setMinSize(speedContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT)));
+
+      _speedCadence_ScrolledContainer.addControlListener(controlResizedAdapter);
+      _speedCadence_ScrolledContainer.setContent(speedContainer);
+
+      return speedContainer;
+   }
+
+   private void createUI_750_IL_Remove2ndLastTimeSliceMarker(final Composite parent) {
 
       {
          /*
@@ -2438,7 +2985,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
-   private void createUI_700_IL_042_SetLastMarker(final Composite parent) {
+   private void createUI_752_IL_SetLastMarker(final Composite parent) {
 
       {
          /*
@@ -2506,7 +3053,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
-   private void createUI_700_IL_05_AdjustTemperature(final Composite parent) {
+   private void createUI_754_IL_AdjustTemperature(final Composite parent) {
 
       {
          /*
@@ -2604,7 +3151,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
-   private void createUI_700_IL_06_AdjustElevation(final Composite parent) {
+   private void createUI_756_IL_AdjustElevation(final Composite parent) {
 
       /*
        * Checkbox: Adjust Elevation
@@ -2619,7 +3166,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             .applyTo(_chkIL_ReplaceFirstTimeSliceElevation);
    }
 
-   private void createUI_700_IL_07_SetElevationFromSRTM(final Composite parent) {
+   private void createUI_758_IL_SetElevationFromSRTM(final Composite parent) {
 
       /*
        * Checkbox: Set elevation up/down values from SRTM data
@@ -2633,554 +3180,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
             .applyTo(_chkIL_ReplaceElevationFromSRTM);
    }
 
-   private void createUI_700_IL_08_SetTagGroup(final Composite parent) {
-
-      {
-         _chkIL_SetTourTagGroup = new Button(parent, SWT.CHECK);
-         _chkIL_SetTourTagGroup.setText(Messages.Dialog_ImportConfig_Checkbox_SetTourTags);
-         _chkIL_SetTourTagGroup.setToolTipText(Messages.Dialog_ImportConfig_Checkbox_SetTourTags_Tooltip);
-         _chkIL_SetTourTagGroup.addSelectionListener(_defaultModify_Listener);
-         GridDataFactory.fillDefaults()
-               .span(2, 1)
-               .indent(0, 5)
-               .applyTo(_chkIL_SetTourTagGroup);
-      }
-
-      {
-         _lblIL_TourTagGroup = new Label(parent, SWT.NONE);
-         _lblIL_TourTagGroup.setText(Messages.Dialog_ImportConfig_Label_TourTag);
-         GridDataFactory.fillDefaults()
-               .align(SWT.FILL, SWT.CENTER)
-               .indent(_leftPadding, 0)
-               .applyTo(_lblIL_TourTagGroup);
-
-         _comboIL_TourTagGroups = new Combo(parent, SWT.READ_ONLY);
-         _comboIL_TourTagGroups.addSelectionListener(_defaultModify_Listener);
-         GridDataFactory.fillDefaults()
-               .align(SWT.BEGINNING, SWT.FILL)
-               .hint(convertWidthInCharsToPixels(30), SWT.DEFAULT)
-               .applyTo(_comboIL_TourTagGroups);
-      }
-   }
-
-   private void createUI_700_IL_09_SetEquipment(final Composite parent) {
-
-      final SelectionListener eqListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_IL_Config_Equipment());
-
-      {
-         /*
-          * Checkbox: Set equipment
-          */
-         _chkIL_SetEquipment = new Button(parent, SWT.CHECK);
-         _chkIL_SetEquipment.setText(Messages.Dialog_ImportConfig_Checkbox_SetEquipmentFromGroup);
-         _chkIL_SetEquipment.setToolTipText(Messages.Dialog_ImportConfig_Checkbox_SetEquipmentFromGroup_Tooltip);
-         _chkIL_SetEquipment.addSelectionListener(eqListener);
-         GridDataFactory.fillDefaults()
-               .span(2, 1)
-               .indent(0, 5)
-               .applyTo(_chkIL_SetEquipment);
-      }
-      {
-         /*
-          * Equipment options
-          */
-         _comboIL_EquipmentConfig = new Combo(parent, SWT.READ_ONLY);
-         _comboIL_EquipmentConfig.addSelectionListener(eqListener);
-         GridDataFactory.fillDefaults()
-               .span(2, 1)
-               .align(SWT.BEGINNING, SWT.FILL)
-               .indent(_leftPadding, 0)
-               .applyTo(_comboIL_EquipmentConfig);
-
-         _pagebookEquipment = new PageBook(parent, SWT.NONE);
-         GridDataFactory.fillDefaults()
-               .grab(true, true)
-               .span(2, 1)
-               .indent(_leftPadding, 0)
-
-               // force minimum height
-               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(6))
-               .applyTo(_pagebookEquipment);
-         {
-// SET_FORMATTING_OFF
-
-            _pageEquipment_NoEquipment = createUI_700_IL_09_Z_01_PageEquipment_NoEquipment(_pagebookEquipment);
-            _pageEquipment_OneForAll   = createUI_700_IL_09_Z_02_PageEquipment_OneForAll(_pagebookEquipment);
-            _pageEquipment_BySpeed     = createUI_700_IL_09_Z_03_PageEquipment_BySpeed(_pagebookEquipment);
-
-// SET_FORMATTING_ON
-         }
-      }
-   }
-
-   /**
-    * This page is displayed when equipment is not enabled
-    *
-    * @param parent
-    *
-    * @return
-    */
-   private Label createUI_700_IL_09_Z_01_PageEquipment_NoEquipment(final Composite parent) {
-
-      return UI.createLabel(parent, UI.EMPTY_STRING);
-   }
-
-   private Composite createUI_700_IL_09_Z_02_PageEquipment_OneForAll(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-      GridLayoutFactory.fillDefaults().numColumns(4).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_YELLOW);
-      {
-         _lblIL_EquipmentOneGroup = new Label(container, SWT.NONE);
-         _lblIL_EquipmentOneGroup.setText(Messages.Dialog_ImportConfig_Label_EquipmentGroup);
-         GridDataFactory.fillDefaults()
-               .align(SWT.FILL, SWT.CENTER)
-               .applyTo(_lblIL_EquipmentOneGroup);
-
-         _comboIL_EquipmentOneGroup = new Combo(container, SWT.READ_ONLY);
-         _comboIL_EquipmentOneGroup.addSelectionListener(_defaultModify_Listener);
-         GridDataFactory.fillDefaults()
-               .align(SWT.BEGINNING, SWT.FILL)
-               .hint(convertWidthInCharsToPixels(30), SWT.DEFAULT)
-               .applyTo(_comboIL_EquipmentOneGroup);
-      }
-
-      return container;
-   }
-
-   private Composite createUI_700_IL_09_Z_03_PageEquipment_BySpeed(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_GREEN);
-      {
-         createUI_700_IL_09_Z_03_PageEquipment_BySpeed1_Actions(container);
-         createUI_700_IL_09_Z_03_PageEquipment_BySpeed2_OuterContainer(container);
-      }
-
-      return container;
-   }
-
-   private void createUI_700_IL_09_Z_03_PageEquipment_BySpeed1_Actions(final Composite parent) {
-
-      final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
-
-      final ToolBarManager tbm = new ToolBarManager(toolbar);
-
-      tbm.add(_action_ILEQ_Speed_Add);
-      tbm.add(_action_ILEQ_Speed_Sort);
-
-      tbm.update(true);
-   }
-
-   private void createUI_700_IL_09_Z_03_PageEquipment_BySpeed2_OuterContainer(final Composite parent) {
-
-      /*
-       * Speed equipment fields container
-       */
-      _speedEquipment_OuterContainer = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults()
-            .grab(true, true)
-            .applyTo(_speedEquipment_OuterContainer);
-
-      GridLayoutFactory.fillDefaults().applyTo(_speedEquipment_OuterContainer);
-
-      createUI_700_IL_09_Z_03_PageEquipment_BySpeed3_Fields();
-   }
-
-   /**
-    * Create the speed equipment fields from a list
-    *
-    * @param parent
-    */
-   private void createUI_700_IL_09_Z_03_PageEquipment_BySpeed3_Fields() {
-
-      if (_selectedIL == null) {
-
-         updateUI_ClearSpeedEquipment();
-
-         return;
-      }
-
-      final int numSpeeds = _selectedIL.allEquipmentSpeeds.size();
-
-      // check if required fields are already available
-      if (_allSpinner_ILEQ_Speed_AvgSpeed != null && _allSpinner_ILEQ_Speed_AvgSpeed.length == numSpeeds) {
-
-         return;
-      }
-
-      Point scrollOrigin = null;
-
-      // dispose previous content
-      if (_speedEquipment_ScrolledContainer != null) {
-
-         // get current scroll position
-         scrollOrigin = _speedEquipment_ScrolledContainer.getOrigin();
-
-         _speedEquipment_ScrolledContainer.dispose();
-      }
-
-      final Composite speedEQ_Container = createUI_700_IL_09_Z_03_PageEquipment_BySpeed4_ScrolledContainer(_speedEquipment_OuterContainer);
-
-      /*
-       * Fields
-       */
-      _allAction_ILEQ_Speed_Delete = new ActionSpeedEquipment_Delete[numSpeeds];
-      _allCombo_ILEQ_EquipmentGroup = new Combo[numSpeeds];
-      _allLbl_ILEQ_Speed_SpeedUnit = new Label[numSpeeds];
-      _allSpinner_ILEQ_Speed_AvgSpeed = new Spinner[numSpeeds];
-
-      speedEQ_Container.setRedraw(false);
-      {
-         for (int speedIndex = 0; speedIndex < numSpeeds; speedIndex++) {
-
-            /*
-             * Spinner: Speed value
-             */
-            final Spinner spinnerValue = new Spinner(speedEQ_Container, SWT.BORDER);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(spinnerValue);
-            spinnerValue.setMaximum(EasyConfig.TOUR_AVG_SPEED_MAX);
-            spinnerValue.setMinimum(EasyConfig.TOUR_AVG_SPEED_MIN);
-            spinnerValue.setToolTipText("Max speed for this equipment group");
-            spinnerValue.addMouseWheelListener(_defaultMouseWheelListener);
-
-            /*
-             * Label: Speed unit
-             */
-            final Label lblUnit = new Label(speedEQ_Container, SWT.NONE);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(lblUnit);
-            lblUnit.setText(UI.UNIT_LABEL_SPEED);
-
-            /*
-             * Combo: Equipment group
-             */
-            final Combo comboEquipment = new Combo(speedEQ_Container, SWT.READ_ONLY);
-            comboEquipment.addSelectionListener(_defaultModify_Listener);
-            GridDataFactory.fillDefaults()
-                  .align(SWT.BEGINNING, SWT.CENTER)
-                  .applyTo(comboEquipment);
-
-            fillEquipment(comboEquipment);
-
-            /*
-             * Action: Delete speed equipment
-             */
-            final ActionSpeedEquipment_Delete actionDeleteSpeed = new ActionSpeedEquipment_Delete();
-            final ToolBar toolBar = createUI_ActionButton(speedEQ_Container, actionDeleteSpeed);
-            GridDataFactory.fillDefaults()
-                  .align(SWT.END, SWT.CENTER)
-                  .applyTo(toolBar);
-
-            /*
-             * Keep controls
-             */
-            _allAction_ILEQ_Speed_Delete[speedIndex] = actionDeleteSpeed;
-            _allCombo_ILEQ_EquipmentGroup[speedIndex] = comboEquipment;
-            _allLbl_ILEQ_Speed_SpeedUnit[speedIndex] = lblUnit;
-            _allSpinner_ILEQ_Speed_AvgSpeed[speedIndex] = spinnerValue;
-         }
-      }
-      speedEQ_Container.setRedraw(true);
-
-      _speedEquipment_OuterContainer.layout(true);
-
-      // set scroll position to previous position
-      if (scrollOrigin != null) {
-         _speedEquipment_ScrolledContainer.setOrigin(scrollOrigin);
-      }
-   }
-
-   private Composite createUI_700_IL_09_Z_03_PageEquipment_BySpeed4_ScrolledContainer(final Composite parent) {
-
-      // scrolled container
-      _speedEquipment_ScrolledContainer = new ScrolledComposite(parent, SWT.V_SCROLL);
-      _speedEquipment_ScrolledContainer.setExpandVertical(true);
-      _speedEquipment_ScrolledContainer.setExpandHorizontal(true);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(_speedEquipment_ScrolledContainer);
-//    _speedEquipment_ScrolledContaine.setBackground(UI.SYS_COLOR_RED);
-
-      // container
-      final Composite speedTTContainer = new Composite(_speedEquipment_ScrolledContainer, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(speedTTContainer);
-      GridLayoutFactory.fillDefaults()
-            .numColumns(4)
-            .applyTo(speedTTContainer);
-//      speedTTContainer.setBackground(UI.SYS_COLOR_BLUE);
-
-      final ControlListener controlResizedAdapter = ControlListener.controlResizedAdapter(
-            ControlEvent -> _speedEquipment_ScrolledContainer
-                  .setMinSize(speedTTContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT)));
-
-      _speedEquipment_ScrolledContainer.addControlListener(controlResizedAdapter);
-      _speedEquipment_ScrolledContainer.setContent(speedTTContainer);
-
-      return speedTTContainer;
-   }
-
-   private void createUI_700_IL_10_SetCadence(final Composite parent) {
-
-      final SelectionListener cadListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelect_IL_Config_Cadence());
-
-      {
-         /*
-          * Checkbox: Set cadence
-          */
-         _chkIL_SetCadence = new Button(parent, SWT.CHECK);
-         _chkIL_SetCadence.setText("Set &cadence");
-         _chkIL_SetCadence.setToolTipText("The selected cadence will be set in the imported tour");
-         _chkIL_SetCadence.addSelectionListener(cadListener);
-         GridDataFactory.fillDefaults()
-               .span(2, 1)
-               .indent(0, 5)
-               .applyTo(_chkIL_SetCadence);
-      }
-      {
-         /*
-          * Cadence options
-          */
-         _comboIL_CadenceConfig = new Combo(parent, SWT.READ_ONLY);
-         _comboIL_CadenceConfig.addSelectionListener(cadListener);
-         GridDataFactory.fillDefaults()
-               .span(2, 1)
-               .align(SWT.BEGINNING, SWT.FILL)
-               .indent(_leftPadding, 0)
-               .applyTo(_comboIL_CadenceConfig);
-
-         _pagebookCadence = new PageBook(parent, SWT.NONE);
-         GridDataFactory.fillDefaults()
-               .grab(true, true)
-               .span(2, 1)
-               .indent(_leftPadding, 0)
-
-               // force minimum height
-               .hint(SWT.DEFAULT, convertHeightInCharsToPixels(6))
-               .applyTo(_pagebookCadence);
-         {
-// SET_FORMATTING_OFF
-
-            _pageCadence_NoCadence  = createUI_700_IL_10_Z_01_PageCadence_NoCadence(_pagebookCadence);
-            _pageCadence_OneForAll  = createUI_700_IL_10_Z_02_PageCadence_OneForAll(_pagebookCadence);
-            _pageCadence_BySpeed    = createUI_700_IL_10_Z_03_PageCadence_BySpeed(_pagebookCadence);
-
-// SET_FORMATTING_ON
-         }
-      }
-   }
-
-   /**
-    * This page is displayed when cadence is not enabled
-    *
-    * @param parent
-    *
-    * @return
-    */
-   private Label createUI_700_IL_10_Z_01_PageCadence_NoCadence(final Composite parent) {
-
-      return UI.createLabel(parent, UI.EMPTY_STRING);
-   }
-
-   /**
-    * @param parent
-    *
-    * @return
-    */
-   private Composite createUI_700_IL_10_Z_02_PageCadence_OneForAll(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_YELLOW);
-      {
-         _lblIL_CadenceOne = new Label(container, SWT.NONE);
-         _lblIL_CadenceOne.setText("Cadence");
-         GridDataFactory.fillDefaults()
-               .align(SWT.FILL, SWT.CENTER)
-               .applyTo(_lblIL_CadenceOne);
-
-         _comboViewer_IL_Cadence = new ComboViewerCadence(container, SWT.READ_ONLY | SWT.DROP_DOWN);
-         _comboViewer_IL_Cadence.addSelectionChangedListener(event -> onSelect_IL_CadenceOne());
-      }
-
-      return container;
-   }
-
-   private Composite createUI_700_IL_10_Z_03_PageCadence_BySpeed(final Composite parent) {
-
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
-//      container.setBackground(UI.SYS_COLOR_GREEN);
-      {
-         createUI_700_IL_10_Z_03_PageCadence_BySpeed1_Actions(container);
-         createUI_700_IL_10_Z_03_PageCadence_BySpeed2_OuterContainer(container);
-      }
-
-      return container;
-   }
-
-   private void createUI_700_IL_10_Z_03_PageCadence_BySpeed1_Actions(final Composite parent) {
-
-      final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
-
-      final ToolBarManager tbm = new ToolBarManager(toolbar);
-
-      tbm.add(_action_ILCad_Speed_Add);
-      tbm.add(_action_ILCad_Speed_Sort);
-
-      tbm.update(true);
-   }
-
-   private void createUI_700_IL_10_Z_03_PageCadence_BySpeed2_OuterContainer(final Composite parent) {
-
-      /*
-       * Speed cadence fields container
-       */
-      _speedCadence_OuterContainer = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults()
-            .grab(true, true)
-            .applyTo(_speedCadence_OuterContainer);
-
-      GridLayoutFactory.fillDefaults().applyTo(_speedCadence_OuterContainer);
-
-      createUI_700_IL_10_Z_03_PageCadence_BySpeed3_Fields();
-   }
-
-   /**
-    * Create the speed cadence fields from a list
-    *
-    * @param parent
-    */
-   private void createUI_700_IL_10_Z_03_PageCadence_BySpeed3_Fields() {
-
-      if (_selectedIL == null) {
-
-         updateUI_ClearSpeedCadence();
-
-         return;
-      }
-
-      final int numSpeeds = _selectedIL.allCadenceSpeeds.size();
-
-      // check if required fields are already available
-      if (_allSpinner_ILCad_Speed_AvgSpeed != null && _allSpinner_ILCad_Speed_AvgSpeed.length == numSpeeds) {
-
-         return;
-      }
-
-      Point scrollOrigin = null;
-
-      // dispose previous content
-      if (_speedCadence_ScrolledContainer != null) {
-
-         // get current scroll position
-         scrollOrigin = _speedCadence_ScrolledContainer.getOrigin();
-
-         _speedCadence_ScrolledContainer.dispose();
-      }
-
-      final Composite speedCad_Container = createUI_700_IL_10_Z_03_PageCadence_BySpeed4_ScrolledContainer(_speedCadence_OuterContainer);
-
-      /*
-       * Fields
-       */
-// SET_FORMATTING_OFF
-
-      _allAction_ILCad_Speed_Delete       = new ActionSpeedCadence_Delete[numSpeeds];
-      _allComboViewer_IL_Cadence          = new ComboViewerCadence[numSpeeds];
-      _allLbl_ILCad_Speed_SpeedUnit       = new Label[numSpeeds];
-      _allSpinner_ILCad_Speed_AvgSpeed    = new Spinner[numSpeeds];
-
-// SET_FORMATTING_ON
-
-      speedCad_Container.setRedraw(false);
-      {
-         for (int speedIndex = 0; speedIndex < numSpeeds; speedIndex++) {
-
-            /*
-             * Spinner: Speed value
-             */
-            final Spinner spinnerValue = new Spinner(speedCad_Container, SWT.BORDER);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(spinnerValue);
-            spinnerValue.setMaximum(EasyConfig.TOUR_AVG_SPEED_MAX);
-            spinnerValue.setMinimum(EasyConfig.TOUR_AVG_SPEED_MIN);
-            spinnerValue.setToolTipText("Max speed for this cadence");
-            spinnerValue.addMouseWheelListener(_defaultMouseWheelListener);
-
-            /*
-             * Label: Speed unit
-             */
-            final Label lblUnit = new Label(speedCad_Container, SWT.NONE);
-            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).applyTo(lblUnit);
-            lblUnit.setText(UI.UNIT_LABEL_SPEED);
-
-            /*
-             * Combo: Cadence
-             */
-            final ComboViewerCadence comboCadence = new ComboViewerCadence(speedCad_Container);
-
-            /*
-             * Action: Delete speed cadence
-             */
-            final ActionSpeedCadence_Delete actionDeleteSpeed = new ActionSpeedCadence_Delete();
-            final ToolBar toolBar = createUI_ActionButton(speedCad_Container, actionDeleteSpeed);
-            GridDataFactory.fillDefaults()
-                  .align(SWT.END, SWT.CENTER)
-                  .applyTo(toolBar);
-
-            /*
-             * Keep controls
-             */
-// SET_FORMATTING_OFF
-
-            _allAction_ILCad_Speed_Delete    [speedIndex] = actionDeleteSpeed;
-            _allComboViewer_IL_Cadence             [speedIndex] = comboCadence;
-            _allLbl_ILCad_Speed_SpeedUnit    [speedIndex] = lblUnit;
-            _allSpinner_ILCad_Speed_AvgSpeed [speedIndex] = spinnerValue;
-
-// SET_FORMATTING_ON
-         }
-      }
-      speedCad_Container.setRedraw(true);
-
-      _speedCadence_OuterContainer.layout(true);
-
-      // set scroll position to previous position
-      if (scrollOrigin != null) {
-         _speedCadence_ScrolledContainer.setOrigin(scrollOrigin);
-      }
-   }
-
-   private Composite createUI_700_IL_10_Z_03_PageCadence_BySpeed4_ScrolledContainer(final Composite parent) {
-
-      // scrolled container
-      _speedCadence_ScrolledContainer = new ScrolledComposite(parent, SWT.V_SCROLL);
-      _speedCadence_ScrolledContainer.setExpandVertical(true);
-      _speedCadence_ScrolledContainer.setExpandHorizontal(true);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(_speedCadence_ScrolledContainer);
-//    _speedCadence_ScrolledContaine.setBackground(UI.SYS_COLOR_RED);
-
-      // container
-      final Composite speedContainer = new Composite(_speedCadence_ScrolledContainer, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, true).applyTo(speedContainer);
-      GridLayoutFactory.fillDefaults()
-            .numColumns(4)
-            .applyTo(speedContainer);
-//      speedContainer.setBackground(UI.SYS_COLOR_BLUE);
-
-      final ControlListener controlResizedAdapter = ControlListener.controlResizedAdapter(
-            ControlEvent -> _speedCadence_ScrolledContainer
-                  .setMinSize(speedContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT)));
-
-      _speedCadence_ScrolledContainer.addControlListener(controlResizedAdapter);
-      _speedCadence_ScrolledContainer.setContent(speedContainer);
-
-      return speedContainer;
-   }
-
-   private void createUI_700_IL_50_RetrieveWeatherData(final Composite parent) {
+   private void createUI_770_IL_RetrieveWeatherData(final Composite parent) {
 
       /*
        * Checkbox: Retrieve Weather Data
@@ -3196,7 +3196,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
 
    }
 
-   private void createUI_700_IL_51_RetrieveTourLocations(final Composite parent) {
+   private void createUI_772_IL_RetrieveTourLocations(final Composite parent) {
 
       {
          /*
@@ -3233,7 +3233,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
       }
    }
 
-   private void createUI_700_IL_99_Save(final Composite parent) {
+   private void createUI_774_IL_Save(final Composite parent) {
 
       {
          /*
@@ -5942,7 +5942,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          _speedCadence_OuterContainer.setRedraw(false);
          {
             // check and create fields
-            createUI_700_IL_10_Z_03_PageCadence_BySpeed3_Fields();
+            createUI_746_IL_PageCadence_BySpeed_Fields();
 
             final List<SpeedCadence> allSpeedCad = _selectedIL.allCadenceSpeeds;
 
@@ -5983,7 +5983,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          _speedEquipment_OuterContainer.setRedraw(false);
          {
             // check and create fields
-            createUI_700_IL_09_Z_03_PageEquipment_BySpeed3_Fields();
+            createUI_726_IL_PageEquipment_BySpeed_Fields();
 
             final List<SpeedEquipment> allSpeedEq = _selectedIL.allEquipmentSpeeds;
 
@@ -6043,7 +6043,7 @@ public class DialogEasyImportConfig extends TitleAreaDialog implements IActionRe
          _speedTourType_OuterContainer.setRedraw(false);
          {
             // check and create fields
-            createUI_650_IL_03_Z_06_PageTourType_BySpeed_Fields();
+            createUI_674_IL_PageTourType_BySpeed_Fields();
 
             final List<SpeedTourType> speedTourTypes = _selectedIL.allTourTypeSpeeds;
 
