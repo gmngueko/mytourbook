@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -19,34 +19,50 @@ import de.byteholder.geoclipse.map.DirectPainterContext;
 import de.byteholder.geoclipse.map.IDirectPainter;
 import de.byteholder.geoclipse.map.Map2;
 import de.byteholder.geoclipse.map.MapLegend;
-import de.byteholder.geoclipse.map.Map2Painter;
+import de.byteholder.geoclipse.map.PaintedMapPoint;
 import de.byteholder.geoclipse.mapprovider.MP;
 
 import java.util.List;
+import java.util.Set;
 
 import net.tourbook.Images;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.common.color.ColorProviderConfig;
 import net.tourbook.common.map.GeoPosition;
+import net.tourbook.common.util.CustomScalingImageDataProvider;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourPhoto;
 import net.tourbook.map2.Messages;
+import net.tourbook.photo.IPhotoPreferences;
+import net.tourbook.photo.Photo;
+import net.tourbook.photo.PhotoUI;
+import net.tourbook.photo.RatingStars;
+import net.tourbook.tour.photo.TourPhotoManager;
 
+import org.eclipse.jface.resource.ColorRegistry;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Display;
 
 public class DirectMappingPainter implements IDirectPainter {
 
-   private Map2                    _map;
+   private Map2                   _map2;
    private TourData               _tourData;
 
    private int                    _leftSliderValueIndex;
    private int                    _rightSliderValueIndex;
-   private int                    _valuePointIndex;
+   private int                    _externalValuePointIndex;
 
    private boolean                _isTourVisible;
    private boolean                _isShowSliderInMap;
@@ -55,18 +71,72 @@ public class DirectMappingPainter implements IDirectPainter {
 
    private SliderPathPaintingData _sliderPathPaintingData;
 
-   private final Image            _imageLeftSlider;
-   private final Image            _imageRightSlider;
-   private final Image            _imageValuePoint;
+   private final ColorRegistry    _colorRegistry        = JFaceResources.getColorRegistry();
+   private final Color            _photoBackgroundColor = _colorRegistry.get(IPhotoPreferences.PHOTO_VIEWER_COLOR_BACKGROUND);
+
+   private Rectangle              _imageMapLocationBounds;
+   private int                    _ratingStarImageSize;
+
+   /*
+    * UI resources
+    */
+   private final Image _imageMapLocation_Hovered;
+   private final Image _imageSlider_Left;
+   private final Image _imageSlider_Right;
+   private final Image _imageValuePoint;
+
+   private Image       _imageRatingStar;
+   private Image       _imageRatingStarAndHovered;
+   private Image       _imageRatingStarDelete;
+   private Image       _imageRatingStarHovered;
+   private Image       _imageRatingStarNotHovered;
+   private Image       _imageRatingStarNotHoveredButSet;
+
+   {
+      final ImageRegistry imageRegistry = UI.IMAGE_REGISTRY;
+
+// SET_FORMATTING_OFF
+
+      _imageRatingStar                  = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR);
+      _imageRatingStarAndHovered        = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR_AND_HOVERED);
+      _imageRatingStarDelete            = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR_DELETE);
+      _imageRatingStarHovered           = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR_HOVERED);
+      _imageRatingStarNotHovered        = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR_NOT_HOVERED);
+      _imageRatingStarNotHoveredButSet  = imageRegistry.get(PhotoUI.PHOTO_RATING_STAR_NOT_HOVERED_BUT_SET);
+
+// SET_FORMATTING_ON
+
+      _ratingStarImageSize = _imageRatingStar.getBounds().width;
+   }
 
    /**
+    * @param map2
+    * @param state
     *
     */
-   public DirectMappingPainter() {
+   public DirectMappingPainter(final Map2 map2) {
 
-      _imageLeftSlider = TourbookPlugin.getImageDescriptor(Messages.Image_Map_MarkerSliderLeft).createImage();
-      _imageRightSlider = TourbookPlugin.getImageDescriptor(Messages.Image_Map_MarkerSliderRight).createImage();
-      _imageValuePoint = TourbookPlugin.getImageDescriptor(Images.Map_ValuePoint).createImage();
+      _map2 = map2;
+
+      // get unscaled image
+      final ImageDescriptor imageDescriptor = TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Hovered);
+
+// THIS NEEDS TO BE USED WHEN THE LOCATION ICON IS UNSCALES
+      final ImageData imageData = imageDescriptor.getImageData(DPIUtil.getDeviceZoom());
+
+//    final ImageData imageData = imageDescriptor.getImageData(100);
+
+      _imageMapLocation_Hovered = new Image(Display.getDefault(), new CustomScalingImageDataProvider(imageData));
+
+// SET_FORMATTING_OFF
+
+      _imageSlider_Left          = TourbookPlugin.getImageDescriptor(Messages.Image_Map_MarkerSliderLeft).createImage();
+      _imageSlider_Right         = TourbookPlugin.getImageDescriptor(Messages.Image_Map_MarkerSliderRight).createImage();
+      _imageValuePoint           = TourbookPlugin.getImageDescriptor(Images.Map_ValuePoint).createImage();
+
+// SET_FORMATTING_ON
+
+      _imageMapLocationBounds = _imageMapLocation_Hovered.getBounds();
    }
 
    /**
@@ -74,7 +144,6 @@ public class DirectMappingPainter implements IDirectPainter {
     */
    public void disablePaintContext() {
 
-      _map = null;
       _tourData = null;
       _isTourVisible = false;
    }
@@ -82,8 +151,9 @@ public class DirectMappingPainter implements IDirectPainter {
    @Override
    public void dispose() {
 
-      disposeImage(_imageLeftSlider);
-      disposeImage(_imageRightSlider);
+      disposeImage(_imageMapLocation_Hovered);
+      disposeImage(_imageSlider_Left);
+      disposeImage(_imageSlider_Right);
       disposeImage(_imageValuePoint);
    }
 
@@ -94,23 +164,396 @@ public class DirectMappingPainter implements IDirectPainter {
       }
    }
 
+   private void drawMapPoint_Hovered(final DirectPainterContext painterContext) {
+
+      final GC gc = painterContext.gc;
+      final PaintedMapPoint hoveredPoint = _map2.getHoveredMapPoint();
+
+      drawMapPoint_Hovered_LabelItem(gc, hoveredPoint);
+
+      if (Map2PainterConfig.isShowPhotoRating) {
+         drawMapPoint_Hovered_RatingStars(gc, hoveredPoint);
+      }
+   }
+
+   private void drawMapPoint_Hovered_LabelItem(final GC gc, final PaintedMapPoint hoveredPoint) {
+
+      final float deviceScaling = _map2.getDeviceScaling();
+
+      final Map2Config mapConfig = Map2ConfigManager.getActiveConfig();
+      final Rectangle labelRectangle = hoveredPoint.labelRectangle;
+
+      final int labelDevX_Scaled = (int) (labelRectangle.x / deviceScaling);
+      final int labelDevY_Scaled = (int) (labelRectangle.y / deviceScaling);
+      final int labelWidth_Scaled = (int) (labelRectangle.width / deviceScaling);
+      final int labelHeight_Scaled = (int) (labelRectangle.height / deviceScaling);
+
+      final Map2Point mapPoint = hoveredPoint.mapPoint;
+      final MapPointType mapPointType = mapPoint.pointType;
+
+      final int mapPointDevX = mapPoint.geoPointDevX;
+      final int mapPointDevY = mapPoint.geoPointDevY;
+
+      final int symbolSize = mapConfig.locationSymbolSize;
+      final int symbolSize2 = symbolSize / 2;
+      final int lineWidth = (int) (symbolSize / 4 / deviceScaling);
+      final int lineWidth2 = (int) (lineWidth / 2f);
+
+      final String markerLabel = mapPoint.getFormattedLabel();
+
+      final int markerSymbolDevX = mapPointDevX - symbolSize2;
+      final int markerSymbolDevY = mapPointDevY - symbolSize2;
+
+      final Color lineColor = _map2.isMapBackgroundDark() ? UI.SYS_COLOR_WHITE : UI.SYS_COLOR_BLACK;
+
+      gc.setAntialias(mapConfig.isLabelAntialiased ? SWT.ON : SWT.OFF);
+
+      gc.setForeground(mapPoint.getOutlineColorSWT());
+      gc.setBackground(mapPoint.getFillColorSWT());
+
+      /*
+       * Draw location bounding box
+       */
+      if (mapConfig.isShowLocationBoundingBox) {
+
+         // draw original bbox
+         final Rectangle boundingBox = mapPoint.boundingBoxSWT;
+
+         if (boundingBox != null) {
+
+            gc.drawRectangle(
+                  boundingBox.x - 1,
+                  boundingBox.y - 1,
+                  boundingBox.width + 2,
+                  boundingBox.height + 2
+
+            );
+         }
+
+         final Rectangle boundingBox_Resized = mapPoint.boundingBox_ResizedSWT;
+
+         if (boundingBox_Resized != null) {
+
+            // draw resized bbox
+            gc.drawRectangle(
+                  boundingBox_Resized.x - 1,
+                  boundingBox_Resized.y - 1,
+                  boundingBox_Resized.width + 2,
+                  boundingBox_Resized.height + 2
+
+            );
+         }
+      }
+
+      /*
+       * Draw a line from the marker label to the marker location.
+       * Ensure that the line is not crossing the label
+       */
+      int devX_LineFrom = labelDevX_Scaled;
+      int devY_LineFrom = labelDevY_Scaled;
+      final int devX_LineTo = (int) (mapPointDevX / deviceScaling);
+      final int devY_LineTo = (int) (mapPointDevY / deviceScaling);
+
+      if (devX_LineTo > devX_LineFrom + labelWidth_Scaled) {
+         devX_LineFrom += labelWidth_Scaled;
+      } else if (devX_LineTo > devX_LineFrom && devX_LineTo < devX_LineFrom + labelWidth_Scaled) {
+         devX_LineFrom = devX_LineTo;
+      }
+
+      if (devY_LineTo > devY_LineFrom + labelHeight_Scaled) {
+         devY_LineFrom += labelHeight_Scaled;
+      } else if (devY_LineTo > devY_LineFrom && devY_LineTo < devY_LineFrom + labelHeight_Scaled) {
+         devY_LineFrom = devY_LineTo;
+      }
+
+      gc.setLineWidth(1);
+      gc.setForeground(UI.SYS_COLOR_BLACK);
+      gc.drawLine(
+            devX_LineFrom,
+            devY_LineFrom,
+
+            devX_LineTo,
+            devY_LineTo);
+
+      gc.setForeground(UI.SYS_COLOR_WHITE);
+
+      int devX_LineFrom2 = devX_LineFrom;
+      int devY_LineFrom2 = devY_LineFrom;
+
+      int devX_LineTo2 = devX_LineTo;
+      int devY_LineTo2 = devY_LineTo;
+
+      if (devX_LineFrom != devX_LineTo2) {
+         devY_LineFrom2 += 1;
+         devY_LineTo2 += 1;
+      }
+
+      if (devY_LineFrom2 != devY_LineTo2) {
+         devX_LineFrom2 += 1;
+         devX_LineTo2 += 1;
+      }
+
+      gc.drawLine(
+            devX_LineFrom2,
+            devY_LineFrom2,
+
+            devX_LineTo2,
+            devY_LineTo2);
+
+      gc.setForeground(mapPoint.getOutlineColorSWT());
+
+      /*
+       * Draw a symbol at the point location
+       */
+      if (mapPointType.equals(MapPointType.COMMON_LOCATION)
+            || mapPointType.equals(MapPointType.TOUR_LOCATION)) {
+
+         // display hovered location image
+
+         final int imageWidth = _imageMapLocationBounds.width;
+         final int imageHeight = _imageMapLocationBounds.height;
+         final int imageWidth2 = imageWidth / 2;
+
+//         gc.drawImage(_imageMapLocation_Hovered,
+//               (int) ((mapPointDevX - imageWidth2) / deviceScaling),
+//               (int) ((mapPointDevY - imageHeight) / deviceScaling));
+
+         gc.drawImage(_imageMapLocation_Hovered,
+               (int) ((mapPointDevX) / deviceScaling) - imageWidth2,
+               (int) ((mapPointDevY) / deviceScaling) - imageHeight);
+
+      } else {
+
+         // draw a symbol
+
+         final Rectangle symbolRectangle = new Rectangle(
+               (int) (markerSymbolDevX / deviceScaling),
+               (int) (markerSymbolDevY / deviceScaling),
+               (int) (symbolSize / deviceScaling),
+               (int) (symbolSize / deviceScaling));
+
+         if (mapPointType.equals(MapPointType.TOUR_PHOTO)) {
+
+            final Photo photo = mapPoint.photo;
+            final List<TourPhoto> allTourPhotos = TourPhotoManager.getTourPhotos(photo);
+
+            // set different color for positioned photos
+            if (allTourPhotos.size() > 0) {
+
+               final TourPhoto tourPhoto = allTourPhotos.get(0);
+               final TourData tourData = tourPhoto.getTourData();
+               final Set<Long> tourPhotosWithPositionedGeo = tourData.getTourPhotosWithPositionedGeo();
+               final boolean isPositionedPhoto = tourPhotosWithPositionedGeo.contains(tourPhoto.getPhotoId());
+
+               if (isPositionedPhoto) {
+
+                  gc.setForeground(UI.SYS_COLOR_YELLOW);
+                  gc.setBackground(UI.SYS_COLOR_RED);
+               }
+            }
+
+            gc.fillOval(
+                  symbolRectangle.x + 1, // fill a larger shape to hide the antialiasing which looks like a light border !!!
+                  symbolRectangle.y + 1,
+                  symbolRectangle.width - 2,
+                  symbolRectangle.height - 2);
+
+            gc.setLineWidth(lineWidth);
+            gc.drawOval(
+                  symbolRectangle.x + lineWidth2 - 1,
+                  symbolRectangle.y + lineWidth2 - 1,
+                  symbolRectangle.width - lineWidth + 2,
+                  symbolRectangle.height - lineWidth + 2);
+
+         } else {
+
+            gc.fillRectangle(
+                  symbolRectangle.x,
+                  symbolRectangle.y,
+                  symbolRectangle.width,
+                  symbolRectangle.height);
+
+            gc.setLineWidth(lineWidth);
+            gc.drawRectangle(
+                  symbolRectangle.x + lineWidth2 + 0,
+                  symbolRectangle.y + lineWidth2 + 0,
+
+                  symbolRectangle.width - lineWidth,
+                  symbolRectangle.height - lineWidth
+
+            );
+         }
+      }
+
+      /*
+       * Highlight hovered label/photo
+       */
+
+      if (mapPointType.equals(MapPointType.TOUR_PHOTO)) {
+
+         gc.setForeground(lineColor);
+
+         gc.setLineWidth(1);
+         gc.drawRectangle(
+               labelDevX_Scaled,
+               labelDevY_Scaled,
+               labelWidth_Scaled,
+               labelHeight_Scaled);
+
+      } else {
+
+         // fill label background
+         gc.fillRectangle(
+               labelDevX_Scaled - Map2.MAP_POINT_BORDER,
+               labelDevY_Scaled,
+               labelWidth_Scaled + 2 * Map2.MAP_POINT_BORDER,
+               labelHeight_Scaled);
+
+         // marker label
+         final Font currentFont = gc.getFont();
+
+         gc.setFont(_map2.getLabelFont());
+         gc.drawText(
+
+               markerLabel,
+
+               labelDevX_Scaled,
+               labelDevY_Scaled
+
+                     // for some fonts, e.g. "Yu Gothic UI Semilight" which looks very similar like "Segoe UI"
+                     // this will paint the text at the same position as with AWT
+                     + 1,
+
+               true);
+
+         gc.setFont(currentFont);
+
+         // border: horizontal bottom
+//         gc.setLineWidth(1);
+//         gc.drawLine(
+//               labelDevX_Scaled,
+//               labelDevY_Scaled + labelHeight_Scaled,
+//               labelDevX_Scaled + labelWidth_Scaled,
+//               labelDevY_Scaled + labelHeight_Scaled);
+      }
+   }
+
+   private void drawMapPoint_Hovered_RatingStars(final GC gc, final PaintedMapPoint hoveredPoint) {
+
+      final Photo photo = hoveredPoint.mapPoint.photo;
+
+      if (photo == null
+
+            // this happend when the photo was not yet painted
+            || photo.paintedPhoto == null
+
+            // this happend also
+            || photo.paintedRatingStars == null
+
+      ) {
+
+         return;
+      }
+
+      final float deviceScaling = _map2.getDeviceScaling();
+
+      final Rectangle paintedRatingStars = photo.paintedRatingStars;
+
+      final Rectangle paintedRatingStars_Unscaled = new Rectangle(
+            (int) (paintedRatingStars.x / deviceScaling),
+            (int) (paintedRatingStars.y / deviceScaling + 2),
+            (int) (paintedRatingStars.width / deviceScaling),
+            (int) (paintedRatingStars.height / deviceScaling));
+
+      // make the rating stars more visible
+      gc.setBackground(_photoBackgroundColor);
+      gc.fillRectangle(paintedRatingStars_Unscaled);
+
+      _map2.setPaintedRatingStars(paintedRatingStars);
+
+      final int hoveredStars = photo.hoveredStars;
+      final boolean isStarHovered = hoveredStars > 0;
+
+      final int photoDevX = photo.paintedPhoto.x;
+      final int photoDevY = photo.paintedPhoto.y;
+      final int photoWidth = photo.paintedPhoto.width;
+
+      final int numRatingStars = photo.ratingStars;
+
+      // center ratings stars horizontally in the image
+      final int ratingStarsLeftBorder = photoDevX
+            + photoWidth / 2
+            - _map2.MAX_RATING_STARS_WIDTH / 2;
+
+      final int ratingStarImageSize = (int) (_ratingStarImageSize * deviceScaling);
+
+      for (int starIndex = 0; starIndex < RatingStars.MAX_RATING_STARS; starIndex++) {
+
+         Image starImage;
+
+         if (isStarHovered) {
+
+            if (starIndex < hoveredStars) {
+
+               if (starIndex < numRatingStars) {
+
+                  if (starIndex == numRatingStars - 1) {
+                     starImage = _imageRatingStarDelete;
+                  } else {
+                     starImage = _imageRatingStarAndHovered;
+                  }
+               } else {
+                  starImage = _imageRatingStarHovered;
+               }
+
+            } else {
+               if (starIndex < numRatingStars) {
+                  starImage = _imageRatingStarNotHoveredButSet;
+               } else {
+                  starImage = _imageRatingStarNotHovered;
+               }
+            }
+
+         } else {
+
+            if (starIndex < numRatingStars) {
+               starImage = _imageRatingStarNotHoveredButSet;
+            } else {
+               starImage = _imageRatingStarNotHovered;
+            }
+         }
+
+         // draw stars at the top of the photo
+
+         final int devX = (int) ((ratingStarsLeftBorder + ratingStarImageSize * starIndex) / deviceScaling);
+         final int devY = (int) (photoDevY / deviceScaling);
+
+         gc.drawImage(starImage, devX, devY);
+      }
+   }
+
    /**
     * @param painterContext
     * @param sliderValueIndex
     * @param markerImage
     * @param isYPosCenter
+    *
     * @return Returns <code>true</code> when the marker is visible and painted
     */
-   private boolean drawMarker(final DirectPainterContext painterContext,
-                              final int sliderValueIndex,
-                              final Image markerImage,
-                              final boolean isYPosCenter) {
+   private boolean drawSliderImage(final DirectPainterContext painterContext,
+                                   final int sliderValueIndex,
+                                   final Image markerImage,
+                                   final boolean isYPosCenter) {
 
-      final MP mp = _map.getMapProvider();
-      final int zoomLevel = _map.getZoom();
+      final MP mp = _map2.getMapProvider();
+      final int zoomLevel = _map2.getZoomLevel();
 
       final double[] latitudeSerie = _tourData.latitudeSerie;
       final double[] longitudeSerie = _tourData.longitudeSerie;
+
+      if (latitudeSerie == null) {
+         return false;
+      }
 
       // force array bounds
       final int sliderValueIndexAdjusted = Math.min(Math.max(sliderValueIndex, 0), latitudeSerie.length - 1);
@@ -125,7 +568,7 @@ public class DirectMappingPainter implements IDirectPainter {
       final Point worldPixelMarker = new Point(worldPixelMarkerAWT.x, worldPixelMarkerAWT.y);
 
       // check if slider is visible
-      final Rectangle viewport = painterContext.viewport;
+      final Rectangle viewport = painterContext.mapViewport;
       if (viewport.contains(worldPixelMarker)) {
 
          // convert world position into device position
@@ -164,8 +607,8 @@ public class DirectMappingPainter implements IDirectPainter {
       // set alpha when requested
       int alpha = 0xff;
       final int opacity = _sliderPathPaintingData.opacity;
-      if (opacity < 100) {
-         alpha = 0xff * opacity / 100;
+      if (opacity <= 0xff) {
+         alpha = opacity;
       }
 
       final Color lineColor = new Color(gc.getDevice(), _sliderPathPaintingData.color);
@@ -196,11 +639,15 @@ public class DirectMappingPainter implements IDirectPainter {
 
    private void drawSliderPath_Multiple(final GC gc, final DirectPainterContext painterContext) {
 
-      final MP mp = _map.getMapProvider();
-      final int zoomLevel = _map.getZoom();
+      final MP mp = _map2.getMapProvider();
+      final int zoomLevel = _map2.getZoomLevel();
 
       final double[] latitudeSerie = _tourData.latitudeSerie;
       final double[] longitudeSerie = _tourData.longitudeSerie;
+
+      if (latitudeSerie == null || latitudeSerie.length == 0) {
+         return;
+      }
 
       // force array bounds
       final int leftSliderValueIndex = Math.min(Math.max(_leftSliderValueIndex, 0), latitudeSerie.length - 1);
@@ -216,7 +663,7 @@ public class DirectMappingPainter implements IDirectPainter {
          lastSliderValueIndex = rightSliderValueIndex;
       }
 
-      final Rectangle viewport = painterContext.viewport;
+      final Rectangle viewport = painterContext.mapViewport;
 
       final int numMaxSegments = _sliderPathPaintingData.segments;
 
@@ -289,9 +736,13 @@ public class DirectMappingPainter implements IDirectPainter {
             nextValueIndex += firstTourValueIndex;
 
             // get world position for the slider coordinates
-            final java.awt.Point wpRightSliderAWT = mp.geoToPixel(new GeoPosition(
-                  latitudeSerie[nextValueIndex],
-                  longitudeSerie[nextValueIndex]), zoomLevel);
+            final java.awt.Point wpRightSliderAWT = mp.geoToPixel(
+
+                  new GeoPosition(
+                        latitudeSerie[nextValueIndex],
+                        longitudeSerie[nextValueIndex]),
+
+                  zoomLevel);
 
             // convert awt to swt point
             final Point wpRightSlider = new Point(wpRightSliderAWT.x, wpRightSliderAWT.y);
@@ -320,11 +771,15 @@ public class DirectMappingPainter implements IDirectPainter {
 
    private void drawSliderPath_One(final GC gc, final DirectPainterContext painterContext) {
 
-      final MP mp = _map.getMapProvider();
-      final int zoomLevel = _map.getZoom();
+      final MP mp = _map2.getMapProvider();
+      final int zoomLevel = _map2.getZoomLevel();
 
       final double[] latitudeSerie = _tourData.latitudeSerie;
       final double[] longitudeSerie = _tourData.longitudeSerie;
+
+      if (latitudeSerie == null || latitudeSerie.length == 0) {
+         return;
+      }
 
       // force array bounds
       final int leftSliderValueIndex = Math.min(Math.max(_leftSliderValueIndex, 0), latitudeSerie.length - 1);
@@ -346,7 +801,7 @@ public class DirectMappingPainter implements IDirectPainter {
       final float numSlices = lastValueIndex - firstValueIndex;
       final int numSegments = (int) Math.min(numMaxSegments, numSlices);
 
-      final Rectangle viewport = painterContext.viewport;
+      final Rectangle viewport = painterContext.mapViewport;
 
       // get world position for the slider coordinates
       final java.awt.Point wpLeftSliderAWT = mp.geoToPixel(new GeoPosition(
@@ -397,7 +852,7 @@ public class DirectMappingPainter implements IDirectPainter {
 
    private void drawValueMarkerInLegend(final DirectPainterContext painterContext) {
 
-      final MapLegend mapLegend = _map.getLegend();
+      final MapLegend mapLegend = _map2.getLegend();
 
       if (mapLegend == null) {
          return;
@@ -408,22 +863,7 @@ public class DirectMappingPainter implements IDirectPainter {
          return;
       }
 
-      final List<Map2Painter> allMapPainter = _map.getMapPainter();
-      if (allMapPainter == null || allMapPainter.isEmpty()) {
-         return;
-      }
-
-      // get first tour painter
-      TourMapPainter tourPainter = null;
-      for (final Map2Painter mapPainter : allMapPainter) {
-         if (mapPainter instanceof TourMapPainter) {
-            tourPainter = (TourMapPainter) mapPainter;
-            break;
-         }
-      }
-      if (tourPainter == null) {
-         return;
-      }
+      final TourMapPainter tourPainter = _map2.getMapPainter();
 
       final Rectangle legendImageBounds = legendImage.getBounds();
 
@@ -468,24 +908,40 @@ public class DirectMappingPainter implements IDirectPainter {
    @Override
    public void paint(final DirectPainterContext painterContext) {
 
-      if (_map == null || _tourData == null || _isTourVisible == false || _sliderPathPaintingData == null) {
+      if (_map2 == null) {
+         return;
+      }
+
+      if (_map2.getHoveredMapPoint() != null) {
+         drawMapPoint_Hovered(painterContext);
+      }
+
+      if (_tourData == null
+            || _isTourVisible == false
+            || _sliderPathPaintingData == null) {
+
          return;
       }
 
       if (_sliderPathPaintingData.isShowSliderPath) {
 
-         // draw it even when the sliders are not visible but the tour can be visible !
+         // draw slider path even when the sliders are not visible but the tour can be visible !
 
          drawSliderPath(painterContext);
       }
 
       if (_isShowSliderInMap) {
-         drawMarker(painterContext, _rightSliderValueIndex, _imageRightSlider, false);
-         drawMarker(painterContext, _leftSliderValueIndex, _imageLeftSlider, false);
+
+         drawSliderImage(painterContext, _rightSliderValueIndex, _imageSlider_Right, false);
+         drawSliderImage(painterContext, _leftSliderValueIndex, _imageSlider_Left, false);
       }
 
-      if (_isShowValuePoint) {
-         drawMarker(painterContext, _valuePointIndex, _imageValuePoint, true);
+      if (_isShowValuePoint
+
+            // check if value point is valid -> do not show invalid point
+            && _externalValuePointIndex != -1) {
+
+         drawSliderImage(painterContext, _externalValuePointIndex, _imageValuePoint, true);
       }
 
       if (_isShowSliderInLegend) {
@@ -500,37 +956,43 @@ public class DirectMappingPainter implements IDirectPainter {
     * @param tourData
     * @param leftSliderValuesIndex
     * @param rightSliderValuesIndex
-    * @param isShowSliderInLegend
+    * @param externalValuePointIndex
+    *           When <code>-1</code> then this value point is not displayed, this happens when a
+    *           trackpoint is hovered because it is irritating when the external value point has
+    *           another position
     * @param isShowSliderInMap
+    * @param isShowSliderInLegend
+    * @param isShowValuePoint
     * @param sliderRelationPaintingData
     */
-   public void setPaintContext(final Map2 map,
-                               final boolean isTourVisible,
-                               final TourData tourData,
+   public void setPaintingOptions(final boolean isTourVisible,
+                                  final TourData tourData,
 
-                               final int leftSliderValuesIndex,
-                               final int rightSliderValuesIndex,
-                               final int valuePointIndex,
+                                  final int leftSliderValuesIndex,
+                                  final int rightSliderValuesIndex,
+                                  final int externalValuePointIndex,
 
-                               final boolean isShowSliderInMap,
-                               final boolean isShowSliderInLegend,
-                               final boolean isShowValuePoint,
+                                  final boolean isShowSliderInMap,
+                                  final boolean isShowSliderInLegend,
+                                  final boolean isShowValuePoint,
 
-                               final SliderPathPaintingData sliderRelationPaintingData) {
+                                  final SliderPathPaintingData sliderRelationPaintingData) {
+// SET_FORMATTING_OFF
 
-      _map = map;
-      _isTourVisible = isTourVisible;
-      _tourData = tourData;
+      _isTourVisible             = isTourVisible;
+      _tourData                  = tourData;
 
-      _leftSliderValueIndex = leftSliderValuesIndex;
-      _rightSliderValueIndex = rightSliderValuesIndex;
-      _valuePointIndex = valuePointIndex;
+      _leftSliderValueIndex      = leftSliderValuesIndex;
+      _rightSliderValueIndex     = rightSliderValuesIndex;
+      _externalValuePointIndex   = externalValuePointIndex;
 
-      _isShowSliderInMap = isShowSliderInMap;
-      _isShowSliderInLegend = isShowSliderInLegend;
-      _isShowValuePoint = isShowValuePoint;
+      _isShowSliderInMap         = isShowSliderInMap;
+      _isShowSliderInLegend      = isShowSliderInLegend;
+      _isShowValuePoint          = isShowValuePoint;
 
-      _sliderPathPaintingData = sliderRelationPaintingData;
+      _sliderPathPaintingData    = sliderRelationPaintingData;
+
+// SET_FORMATTING_ON
    }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
  * Foundation version 2 of the License.
@@ -17,10 +17,6 @@ import org.eclipse.osgi.util.NLS;
 public class Messages extends NLS {
 
    private static final String BUNDLE_NAME = "de.byteholder.geoclipse.preferences.messages"; //$NON-NLS-1$
-
-   public static String        External_Link_Forum;
-   public static String        External_Link_HomePage;
-   public static String        External_Link_MapProviders;
 
    public static String        Map2Provider_Tooltip_Checkbox_IncludeHillshading;
    public static String        Map2Provider_Tooltip_Checkbox_IsTransparentLayer;
@@ -83,6 +79,8 @@ public class Messages extends NLS {
    public static String        Pref_Map_Label_WmsDropTarget_Tooltip;
    public static String        Pref_Map_Label_Category;
    public static String        Pref_Map_Label_Files;
+   public static String        Pref_Map_Label_HiDPI;
+   public static String        Pref_Map_Label_HiDPI_Tooltip;
    public static String        Pref_Map_Label_MapProvider;
    public static String        Pref_Map_Label_MapProviderId;
    public static String        Pref_Map_Label_MapProviderType;
@@ -106,6 +104,7 @@ public class Messages extends NLS {
    public static String        Pref_Map2_Viewer_Column_IsVisible_Tooltip;
    public static String        Pref_Map2_Viewer_Column_Category;
    public static String        Pref_Map2_Viewer_Column_Description;
+   public static String        Pref_Map2_Viewer_Column_HiDPI;
    public static String        Pref_Map2_Viewer_Column_Layers;
    public static String        Pref_Map2_Viewer_Column_MapProvider;
    public static String        Pref_Map2_Viewer_Column_Modified;

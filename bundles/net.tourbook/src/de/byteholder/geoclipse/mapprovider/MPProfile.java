@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -20,11 +20,11 @@ import de.byteholder.geoclipse.map.ITileChildrenCreator;
 import de.byteholder.geoclipse.map.ParentImageStatus;
 import de.byteholder.geoclipse.map.Tile;
 import de.byteholder.geoclipse.map.TileCache;
-import de.byteholder.geoclipse.map.UI;
 
 import java.util.ArrayList;
 import java.util.Collections;
 
+import net.tourbook.common.UI;
 import net.tourbook.common.util.StatusUtil;
 
 import org.eclipse.core.runtime.IPath;
@@ -55,6 +55,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
    public MPProfile() {}
 
    public MPProfile(final ArrayList<MPWrapper> mpWrappers) {
+
       _mpWrappers = mpWrappers;
    }
 
@@ -175,6 +176,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
     * Creates tile children for all mp wrapper which are displayed in one tile
     *
     * @param parentTile
+    *
     * @return Returns a list with children which are not yet available in the tile cache or error
     *         cache, children are skipped when they already exist and have loading errord
     */
@@ -277,6 +279,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
     * Create a wrapper from a map provider
     *
     * @param mp
+    *
     * @return
     */
    private MPWrapper createWrapper(final MP mp) {
@@ -328,7 +331,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
    }
 
    /**
-    * this method is synchronized because when live View is checked in the map profile dialog
+    * This method is synchronized because when live View is checked in the map profile dialog
     * and the brightness is changed, many ConcurrentModificationException occured
     *
     * <pre>
@@ -349,9 +352,13 @@ public class MPProfile extends MP implements ITileChildrenCreator {
          return null;
       }
 
-      final ProfileTileImage parentImage = new ProfileTileImage();
+      final ProfileTileImage parentImage = new ProfileTileImage(parentTile);
 
       parentImage.setBackgroundColor(_backgroundColor);
+
+      final ImageData parentImageData = parentImage.getImageData();
+      final int parentImageWidth = parentImageData.width;
+      final int parentImageHeight = parentImageData.height;
 
       boolean isFinal = true;
 
@@ -373,7 +380,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
             continue;
          }
 
-         final ImageData childImageData = childTile.getChildImageData();
+         ImageData childImageData = childTile.getChildImageData();
 
          if (childImageData == null) {
 
@@ -381,6 +388,20 @@ public class MPProfile extends MP implements ITileChildrenCreator {
             isFinal = false;
 
             continue;
+         }
+
+         final int childImageWidth = childImageData.width;
+         final int childImageHeight = childImageData.height;
+
+         if (parentImageWidth != childImageWidth || parentImageHeight != childImageHeight) {
+
+            /*
+             * Images do not have the same size, rescale it
+             */
+
+            childImageData = childImageData.scaledTo(parentImageWidth, parentImageHeight);
+
+            childTile.setChildTileImageData(childImageData);
          }
 
          if (childTile.getMP().isProfileBrightnessForNextMp()) {
@@ -400,8 +421,8 @@ public class MPProfile extends MP implements ITileChildrenCreator {
          brightnessImageData = null;
       }
 
-      return new ParentImageStatus(//
-            parentImage.getImageData(),
+      return new ParentImageStatus(
+            parentImageData,
             isFinal,
             _isSaveImage,
             isChildError);
@@ -410,26 +431,43 @@ public class MPProfile extends MP implements ITileChildrenCreator {
    @Override
    public IPath getTileOSPath(final String fullPath, final Tile tile) {
 
-      final IPath filePath = new Path(fullPath)//
+      final float highDPIScaling = getHiDPI();
+
+      final String nameSuffix =
+
+            highDPIScaling == 2.0 ? UI.HIDPI_NAME_2x
+
+                  : highDPIScaling == 1.50 ? UI.HIDPI_NAME_15x
+
+                        : UI.EMPTY_STRING;
+
+      final IPath filePath = new Path(fullPath)
+
             .append(getOfflineFolder())
+
             .append(Integer.toString(tile.getZoom()))
             .append(Integer.toString(tile.getX()))
-            .append(Integer.toString(tile.getY()))
+            .append(Integer.toString(tile.getY()) + nameSuffix)
+
             .addFileExtension(MapProviderManager.getImageFileExtension(getImageFormat()));
 
       return filePath;
    }
 
    public void setBackgroundColor(final int backgroundColor) {
+
       _backgroundColor = backgroundColor;
    }
 
    public void setBackgroundColor(final RGB rgb) {
+
       _backgroundColor = ((rgb.red & 0xFF) << 0) | ((rgb.green & 0xFF) << 8) | ((rgb.blue & 0xFF) << 16);
    }
 
    public void setIsSaveImage(final boolean isSaveImage) {
+
       _isSaveImage = isSaveImage;
+
       setUseOfflineImage(isSaveImage);
    }
 
@@ -438,6 +476,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
     *
     * @param mpWrapper
     * @param validMapProvider
+    *
     * @return Returns <code>false</code> when the synchronization fails
     */
    private boolean synchMpWrapper(final MPWrapper mpWrapper, final MP validMapProvider) {
@@ -466,7 +505,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
 
          StatusUtil.showStatus(
                NLS.bind(
-                     Messages.DBG056_MapProfile_WrongClassForMapProvider,
+                     Messages.Error_MapProfile_WrongClassForMapProvider_DBG056,
                      new Object[] { mpWrapper.getMapProviderId(), wrapperClassName, validClassName }),
                new Exception());
 
@@ -554,7 +593,7 @@ public class MPProfile extends MP implements ITileChildrenCreator {
              */
             final StringBuilder sb = new StringBuilder();
 
-            sb.append(NLS.bind(Messages.DBG055_MapProfile_InvalidMapProvider, getName()));
+            sb.append(NLS.bind(Messages.Error_MapProfile_InvalidMapProvider_DBG055, getName()));
 
             for (final MPWrapper mpWrapper : remainingMpWrappers) {
                sb.append(mpWrapper.getMapProviderId());

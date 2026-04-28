@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,9 @@ import net.tourbook.common.CommonActivator;
 import net.tourbook.common.CommonImages;
 import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
+import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.common.tooltip.ActionToolbarSlideout;
+import net.tourbook.common.tooltip.ICanHideTooltip;
 import net.tourbook.common.tooltip.IOpeningDialog;
 import net.tourbook.common.tooltip.OpenDialogManager;
 import net.tourbook.common.tooltip.ToolbarSlideout;
@@ -60,14 +62,10 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.ui.IPartListener2;
-import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.ViewPart;
@@ -85,20 +83,24 @@ public class SensorChartView extends ViewPart implements ITourProvider {
 
 // SET_FORMATTING_OFF
 
-   private static final String      GRID_PREF_PREFIX                    = "GRID_SENSOR_CHART__";                                            //$NON-NLS-1$
+   private static final String   GRID_PREF_PREFIX                    = "GRID_SENSOR_CHART__";                                            //$NON-NLS-1$
 
-   private static final String      GRID_IS_SHOW_VERTICAL_GRIDLINES     = (GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES);
-   private static final String      GRID_IS_SHOW_HORIZONTAL_GRIDLINES   = (GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES);
-   private static final String      GRID_VERTICAL_DISTANCE              = (GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE);
-   private static final String      GRID_HORIZONTAL_DISTANCE            = (GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE);
+   private static final String   GRID_IS_SHOW_VERTICAL_GRIDLINES     = GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES;
+   private static final String   GRID_IS_SHOW_HORIZONTAL_GRIDLINES   = GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES;
+   private static final String   GRID_VERTICAL_DISTANCE              = GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE;
+   private static final String   GRID_HORIZONTAL_DISTANCE            = GRID_PREF_PREFIX  + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE;
+
+   private static final String   LAYOUT_PREF_PREFIX                  = "LAYOUT_SENSOR_CHART__";                                             //$NON-NLS-1$
+   private static final String   LAYOUT_GRAPH_Y_AXIS_WIDTH           = LAYOUT_PREF_PREFIX   + ITourbookPreferences.CHART_Y_AXIS_WIDTH;
 
 // SET_FORMATTING_ON
 
-   private final IPreferenceStore          _prefStore               = TourbookPlugin.getPrefStore();
-   private final IDialogSettings           _state                   = TourbookPlugin.getState(ID);
+   private static final IDialogSettings    _state                   = TourbookPlugin.getState(ID);
+   private static final IPreferenceStore   _prefStore               = TourbookPlugin.getPrefStore();
+   private static final IPreferenceStore   _prefStore_Common        = CommonActivator.getPrefStore();
 
-   private IPartListener2                  _partListener;
    private IPropertyChangeListener         _prefChangeListener;
+   private IPropertyChangeListener         _prefChangeListener_Common;
    private ITourEventListener              _tourEventListener;
 
    private FormToolkit                     _tk;
@@ -143,7 +145,12 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       @Override
       protected ToolbarSlideout createSlideout(final ToolBar toolbar) {
 
-         return new SlideoutSensorChartOptions(_parent, toolbar, SensorChartView.this, _state, GRID_PREF_PREFIX);
+         return new SlideoutSensorChartOptions(_parent,
+               toolbar,
+               SensorChartView.this,
+               _state,
+               GRID_PREF_PREFIX,
+               LAYOUT_PREF_PREFIX);
       }
 
       @Override
@@ -156,8 +163,7 @@ public class SensorChartView extends ViewPart implements ITourProvider {
 
       public ActionTourFilter() {
 
-         super(CommonActivator.getThemedImageDescriptor(CommonImages.App_Filter),
-               CommonActivator.getThemedImageDescriptor(CommonImages.App_Filter_Disabled));
+         super(CommonActivator.getThemedImageDescriptor(CommonImages.App_Filter));
 
          isToggleAction = true;
          notSelectedTooltip = Messages.Sensor_Chart_Action_TourQuickFilter_Tooltip;
@@ -183,38 +189,6 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       }
    }
 
-   private void addPartListener() {
-
-      _partListener = new IPartListener2() {
-
-         @Override
-         public void partActivated(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partBroughtToTop(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partClosed(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partDeactivated(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partHidden(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partInputChanged(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partOpened(final IWorkbenchPartReference partRef) {}
-
-         @Override
-         public void partVisible(final IWorkbenchPartReference partRef) {}
-      };
-
-      getViewSite().getPage().addPartListener(_partListener);
-   }
-
    private void addPrefListener() {
 
       _prefChangeListener = propertyChangeEvent -> {
@@ -232,14 +206,31 @@ public class SensorChartView extends ViewPart implements ITourProvider {
          } else if (property.equals(GRID_HORIZONTAL_DISTANCE)
                || property.equals(GRID_VERTICAL_DISTANCE)
                || property.equals(GRID_IS_SHOW_HORIZONTAL_GRIDLINES)
-               || property.equals(GRID_IS_SHOW_VERTICAL_GRIDLINES)) {
+               || property.equals(GRID_IS_SHOW_VERTICAL_GRIDLINES)
+
+               || property.equals(LAYOUT_GRAPH_Y_AXIS_WIDTH)
+
+         ) {
 
             // grid has changed, update chart
             updateChartProperties();
          }
       };
 
+      _prefChangeListener_Common = propertyChangeEvent -> {
+
+         final String property = propertyChangeEvent.getProperty();
+
+         if (property.equals(ICommonPreferences.UI_DRAWING_FONT_IS_MODIFIED)) {
+
+            _sensorChart.getChartComponents().updateFontScaling();
+
+            updateChartProperties();
+         }
+      };
+
       _prefStore.addPropertyChangeListener(_prefChangeListener);
+      _prefStore_Common.addPropertyChangeListener(_prefChangeListener_Common);
    }
 
    private void addTourEventListener() {
@@ -250,9 +241,9 @@ public class SensorChartView extends ViewPart implements ITourProvider {
             return;
          }
 
-         if (tourEventId == TourEventId.SELECTION_SENSOR && eventData instanceof SelectionSensor) {
+         if (tourEventId == TourEventId.SELECTION_SENSOR && eventData instanceof final SelectionSensor selectionSensor) {
 
-            onSelectionChanged((SelectionSensor) eventData);
+            onSelectionChanged(selectionSensor);
 
          } else if (tourEventId == TourEventId.TOUR_CHANGED) {
 
@@ -293,7 +284,6 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       createUI(parent);
       createActions();
 
-      addPartListener();
       addPrefListener();
       addTourEventListener();
 
@@ -328,11 +318,13 @@ public class SensorChartView extends ViewPart implements ITourProvider {
     *           serieIndex
     * @param hoveredBar_HorizontalIndex
     *           valueIndex
+    *
+    * @return
     */
-   private void createToolTipUI(final IToolTipProvider toolTipProvider,
-                                final Composite parent,
-                                final int serieIndex,
-                                final int valueIndex) {
+   private ICanHideTooltip createToolTipUI(final IToolTipProvider toolTipProvider,
+                                           final Composite parent,
+                                           final int serieIndex,
+                                           final int valueIndex) {
 
       final long tourId = _sensorData.allTourIds[valueIndex];
 
@@ -358,22 +350,22 @@ public class SensorChartView extends ViewPart implements ITourProvider {
          _tourInfoUI.setActionsEnabled(true);
       }
 
-      parent.addDisposeListener(new DisposeListener() {
-         @Override
-         public void widgetDisposed(final DisposeEvent e) {
-            _tourInfoUI.dispose();
-         }
-      });
+      parent.addDisposeListener(disposeEvent -> _tourInfoUI.dispose());
+
+      return _tourInfoUI;
    }
 
    private void createUI(final Composite parent) {
 
       _pageBook = new PageBook(parent, SWT.NONE);
 
-      _pageNoData = net.tourbook.ui.UI.createPage(_tk, _pageBook, Messages.Sensor_Chart_Label_SensorIsNotSelected);
-      _pageNoBatteryData = net.tourbook.ui.UI.createPage(_tk, _pageBook, Messages.Sensor_Chart_Label_SensorWithBatteryValuesIsNotSelected);
+      _pageNoData = UI.createPage(_tk, _pageBook, Messages.Sensor_Chart_Label_SensorIsNotSelected);
+      _pageNoBatteryData = UI.createPage(_tk, _pageBook, Messages.Sensor_Chart_Label_SensorWithBatteryValuesIsNotSelected);
 
       _sensorChart = createUI_10_Chart();
+
+      // set chart properties, this must be done after _sensorChart is created
+      updateChartProperties();
 
       _pageBook.showPage(_pageNoData);
    }
@@ -422,9 +414,6 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       sensorChart.setTourInfoIconToolTipProvider(_tourInfoToolTipProvider);
       _tourInfoToolTipProvider.setActionsEnabled(true);
 
-      // set chart properties
-      updateChartProperties();
-
       return sensorChart;
    }
 
@@ -438,8 +427,7 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       }
 
       _prefStore.removePropertyChangeListener(_prefChangeListener);
-
-      getViewSite().getPage().removePartListener(_partListener);
+      _prefStore_Common.removePropertyChangeListener(_prefChangeListener_Common);
 
       TourManager.getInstance().removeTourEventListener(_tourEventListener);
 
@@ -506,9 +494,7 @@ public class SensorChartView extends ViewPart implements ITourProvider {
          return;
       }
 
-      if (selection instanceof SelectionSensor) {
-
-         final SelectionSensor sensorSelection = (SelectionSensor) selection;
+      if (selection instanceof final SelectionSensor sensorSelection) {
 
          _selectedSensor = sensorSelection.getSensor();
 
@@ -557,9 +543,9 @@ public class SensorChartView extends ViewPart implements ITourProvider {
       if (_sensorData != null
             && _sensorData.allTourIds != null
             && _sensorData.allTourIds.length > 0
-            && selection instanceof SelectionBarChart) {
+            && selection instanceof final SelectionBarChart selectionBarChart) {
 
-         final long selectedTourId = _sensorData.allTourIds[((SelectionBarChart) selection).valueIndex];
+         final long selectedTourId = _sensorData.allTourIds[selectionBarChart.valueIndex];
 
          _state.put(STATE_SELECTED_TOUR_ID, Long.toString(selectedTourId));
       }
@@ -574,6 +560,7 @@ public class SensorChartView extends ViewPart implements ITourProvider {
    /**
     * @param tourId
     *           Tour ID to select, can also be an invalid value, then the first tour is selected
+    *
     * @return
     */
    private boolean selectTour(final Long tourId) {
@@ -630,13 +617,10 @@ public class SensorChartView extends ViewPart implements ITourProvider {
 
    private void setChartProviders(final ChartDataModel chartModel) {
 
-      final IChartInfoProvider chartInfoProvider = new IChartInfoProvider() {
-
-         @Override
-         public void createToolTipUI(final IToolTipProvider toolTipProvider, final Composite parent, final int serieIndex, final int valueIndex) {
-            SensorChartView.this.createToolTipUI(toolTipProvider, parent, serieIndex, valueIndex);
-         }
-      };
+      final IChartInfoProvider chartInfoProvider = (toolTipProvider, parent, serieIndex, valueIndex) -> createToolTipUI(toolTipProvider,
+            parent,
+            serieIndex,
+            valueIndex);
 
       chartModel.setCustomData(ChartDataModel.BAR_TOOLTIP_INFO_PROVIDER, chartInfoProvider);
 
@@ -663,7 +647,7 @@ public class SensorChartView extends ViewPart implements ITourProvider {
 
       final ArrayList<TourType> allTourTypes = TourDatabase.getAllTourTypes();
 
-      if (allTourTypes.size() == 0) {
+      if (allTourTypes.isEmpty()) {
 
          /**
           * Tour types are not available
@@ -861,6 +845,6 @@ public class SensorChartView extends ViewPart implements ITourProvider {
 
    private void updateChartProperties() {
 
-      net.tourbook.ui.UI.updateChartProperties(_sensorChart, GRID_PREF_PREFIX);
+      net.tourbook.ui.UI.updateChartProperties(_sensorChart, GRID_PREF_PREFIX, LAYOUT_PREF_PREFIX);
    }
 }

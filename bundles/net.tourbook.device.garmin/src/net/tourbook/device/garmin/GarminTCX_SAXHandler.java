@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -45,7 +45,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class GarminTCX_SAXHandler extends DefaultHandler {
+class GarminTCX_SAXHandler extends DefaultHandler {
 
    private static final String    TRAINING_CENTER_DATABASE_V1 = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v1"; //$NON-NLS-1$
    private static final String    TRAINING_CENTER_DATABASE_V2 = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"; //$NON-NLS-1$
@@ -84,6 +84,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
    private static final String    TAG_NS3_WATTS               = "ns3:Watts";                                                  //$NON-NLS-1$
 
    private static final String    TAG_TPX                     = "TPX";                                                        //$NON-NLS-1$
+   private static final String    TAG_TPX_AVERAGEWATTS        = "AverageWatts";                                               //$NON-NLS-1$
    private static final String    TAG_TPX_SPEED               = "Speed";                                                      //$NON-NLS-1$
    private static final String    TAG_TPX_WATTS               = "Watts";                                                      //$NON-NLS-1$
 
@@ -122,7 +123,10 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
    }
 
    private ImportState_File    _importState_File;
+   private boolean             _importState_IsComputePauseTime;
    private boolean             _importState_IsIgnoreSpeedValues;
+
+   private boolean             _isComputeAveragePower;
 
    private boolean             _isInActivity;
    private boolean             _isInCourse;
@@ -150,6 +154,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
    private boolean             _isInNs3_Watts;
 
    private boolean             _isInTPX;
+   private boolean             _isInTPX_AverageWatts;
    private boolean             _isInTPX_Speed;
    private boolean             _isInTPX_Watts;
 
@@ -179,12 +184,14 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
    private boolean             _isSetLapStartTime;
    private ArrayList<Long>     _allLapStart      = new ArrayList<>();
 
-   private long                _currentTime;
    private String              _activitySport;
-   private int                 _tourCalories;
-   private int                 _lapCalories;
+   private long                _currentTime;
    private boolean             _isDistanceFromSensor;
    private boolean             _isFromStrideSensor;
+   private float               _lapAverageWatts;
+   private float               _lapCalories;
+   private float               _totalLapAverageWatts;
+   private float               _tourCalories;
 
    private StringBuilder       _characters       = new StringBuilder();
 
@@ -200,12 +207,12 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
 
    }
 
-   public GarminTCX_SAXHandler(final TourbookDevice deviceDataReader,
-                               final String importFileName,
-                               final DeviceData deviceData,
-                               final Map<Long, TourData> alreadyImportedTours,
-                               final Map<Long, TourData> newlyImportedTours,
-                               final ImportState_File importState_File) {
+   GarminTCX_SAXHandler(final TourbookDevice deviceDataReader,
+                        final String importFileName,
+                        final DeviceData deviceData,
+                        final Map<Long, TourData> alreadyImportedTours,
+                        final Map<Long, TourData> newlyImportedTours,
+                        final ImportState_File importState_File) {
 
       _device = deviceDataReader;
       _importFilePath = importFileName;
@@ -215,6 +222,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
 
       final IPreferenceStore store = Activator.getDefault().getPreferenceStore();
 
+      _importState_IsComputePauseTime = store.getBoolean(IPreferences.IS_COMPUTE_PAUSED_TIME);
       _importState_IsIgnoreSpeedValues = store.getBoolean(IPreferences.IS_IGNORE_SPEED_VALUES);
    }
 
@@ -490,6 +498,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
             || _isInNs3_Speed
             || _isInNs3_Watts
 
+            || _isInTPX_AverageWatts
             || _isInTPX_Speed
             || _isInTPX_Watts
 
@@ -505,7 +514,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
       }
    }
 
-   public void dispose() {
+   void dispose() {
 
       _allLapStart.clear();
       _allTimeData.clear();
@@ -558,18 +567,26 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
                 * trackpoints
                 */
                _tourCalories += _lapCalories;
+
+               _totalLapAverageWatts += _lapAverageWatts;
             }
 
          } else if (name.equals(TAG_CALORIES)) {
 
             _isInCalories = false;
 
-            try {
-               /* every lap has a calorie value */
-               _lapCalories += Integer.parseInt(_characters.toString());
-               _characters.delete(0, _characters.length());
+            /* every lap has a calorie value */
+            _lapCalories += Util.parseFloat(_characters.toString());
+            _characters.delete(0, _characters.length());
 
-            } catch (final NumberFormatException e) {}
+         } else if (name.equals(TAG_TPX_AVERAGEWATTS)) {
+
+            _isInTPX_AverageWatts = false;
+
+            _lapAverageWatts += Util.parseFloat(_characters.toString());
+            _characters.delete(0, _characters.length());
+
+            _isComputeAveragePower = false;
 
          } else if (name.equals(TAG_TRACK)) {
 
@@ -634,9 +651,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
       // set tour notes
       setTourNotes(tourData);
 
-      /*
-       * set tour start date/time
-       */
+      // set tour start date/time
       adjustTourStart();
       final ZonedDateTime zonedStartTime = TimeTools.getZonedDateTime(_allTimeData.get(0).absoluteTime);
       tourData.setTourStartTime(zonedStartTime);
@@ -647,7 +662,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
       tourData.setImportFilePath(_importFilePath);
 
       tourData.setDeviceModeName(_activitySport);
-      tourData.setCalories(_tourCalories);
+      tourData.setCalories(Math.round(_tourCalories * 1000));
 
       final String deviceName = _sport.creatorName;
       final String majorVersion = _sport.creatorVersionMajor;
@@ -700,6 +715,12 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
          tourData.computeAltitudeUpDown();
          tourData.computeTourMovingTime();
          tourData.computeComputedValues();
+
+         setTourDataPowerAvgMax(tourData);
+
+         if (_importState_IsComputePauseTime) {
+            tourData.setPausedTimesFromBreakTimes();
+         }
       }
 
       _importState_File.isFileImportedWithValidData = true;
@@ -879,7 +900,6 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
       } else if (name.equals(TAG_TPX)) {
 
          _isInTPX = true;
-
       } else if (_isInTPX && name.equals(TAG_TPX_SPEED)) {
 
          _isInTPX_Speed = true;
@@ -1048,6 +1068,7 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
       _isInLap = true;
 
       _lapCounter++;
+      _lapAverageWatts = 0;
       _lapCalories = 0;
       _trackPointCounter = 0;
 
@@ -1072,6 +1093,37 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
 
       _pausedTime_Start.clear();
       _pausedTime_End.clear();
+
+      _isComputeAveragePower = true;
+   }
+
+   private void setTourDataPowerAvgMax(final TourData tourData) {
+
+      final boolean isPower = _allTimeData.stream().anyMatch(timeData -> timeData.power != Float.MIN_VALUE);
+      if (!isPower) {
+         return;
+      }
+
+      final float[] powerSerie = new float[_allTimeData.size()];
+      for (int index = 0; index < _allTimeData.size(); ++index) {
+         powerSerie[index] = _allTimeData.get(index).power;
+      }
+
+      /*
+       * In the case where the power was retrieved from the trackpoint's
+       * extension field and the file didn't contain the average power value, we
+       * need to compute it ourselves.
+       */
+      if (_isComputeAveragePower) {
+
+         tourData.setPower_Avg(tourData.computeAvg_FromValues(powerSerie, 0, powerSerie.length - 1));
+
+      } else if (_totalLapAverageWatts > 0 && _lapCounter > 0) {
+
+         tourData.setPower_Avg(_totalLapAverageWatts / _lapCounter);
+      }
+
+      tourData.setPower_Max(Math.round(tourData.computeMax_FromValues(powerSerie, 0, powerSerie.length - 1)));
    }
 
    /**
@@ -1160,6 +1212,18 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
 
                if (_isInLap) {
 
+                  if (name.equals(TAG_CALORIES)) {
+
+                     _isInCalories = true;
+                     _characters.delete(0, _characters.length());
+                  }
+
+                  if (name.equals(TAG_TPX_AVERAGEWATTS)) {
+
+                     _isInTPX_AverageWatts = true;
+                     _characters.delete(0, _characters.length());
+                  }
+
                   if (_isInTrack) {
 
                      if (_isInTrackpoint) {
@@ -1178,10 +1242,6 @@ public class GarminTCX_SAXHandler extends DefaultHandler {
                         _isInDistance = true;
                         _characters.delete(0, _characters.length());
 
-                     } else if (name.equals(TAG_CALORIES)) {
-
-                        _isInCalories = true;
-                        _characters.delete(0, _characters.length());
                      }
                   } else if (name.equals(TAG_TRACK)) {
 

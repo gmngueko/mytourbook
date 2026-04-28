@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,25 +15,34 @@
  *******************************************************************************/
 package net.tourbook.photo.internal;
 
+import static org.eclipse.swt.events.KeyListener.keyPressedAdapter;
+import static org.eclipse.swt.events.MouseListener.mouseDownAdapter;
+import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
 import net.tourbook.common.UI;
 import net.tourbook.common.util.Util;
-import net.tourbook.photo.PhotoActivator;
 import net.tourbook.photo.IPhotoGalleryProvider;
+import net.tourbook.photo.PhotoActivator;
 import net.tourbook.photo.PhotoEventId;
 import net.tourbook.photo.PhotoGallery;
+import net.tourbook.photo.PhotoImageCache;
 import net.tourbook.photo.PhotoImages;
+import net.tourbook.photo.PhotoLoadManager;
 import net.tourbook.photo.PhotoSelection;
 import net.tourbook.photo.PhotosWithExifSelection;
 import net.tourbook.photo.PicDirView;
+import net.tourbook.photo.internal.manager.ThumbnailStore;
 
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
+import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -41,12 +50,6 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -80,6 +83,7 @@ public class PicDirImages implements IPhotoGalleryProvider {
    private ActionNavigateHistoryBackward         _actionNavigateBackward;
    private ActionNavigateHistoryForward          _actionNavigateForward;
    private ActionClearNavigationHistory          _actionClearNavigationHistory;
+   private ActionClearPhotoCache                 _actionClearPhotoCache;
    private ActionRemoveInvalidFoldersFromHistory _actionRemoveInvalidFoldersFromHistory;
    private ActionSortFolderHistory               _actionSortFolderHistory;
    private ActionToggleFolderGallery             _actionToggleFolderGallery;
@@ -92,8 +96,20 @@ public class PicDirImages implements IPhotoGalleryProvider {
    private Display      _display;
 
    private Combo        _comboHistory;
-   private ToolBar      _galleryToolbar;
    private PhotoGallery _photoGallery;
+
+   public class ActionClearPhotoCache extends Action {
+
+      public ActionClearPhotoCache() {
+
+         super("&Discard all cached photo images", AS_PUSH_BUTTON);
+      }
+
+      @Override
+      public void run() {
+         actionClearPhotoCache();
+      }
+   }
 
    public PicDirImages(final PicDirView picDirView, final IDialogSettings state) {
 
@@ -118,6 +134,21 @@ public class PicDirImages implements IPhotoGalleryProvider {
       _actionNavigateForward.setEnabled(false);
    }
 
+   private void actionClearPhotoCache() {
+
+      PhotoLoadManager.stopImageLoading(true);
+      PhotoLoadManager.removeInvalidImageFiles();
+
+      PhotoImageCache.disposeAll();
+
+      ThumbnailStore.cleanupStoreFiles(true, true);
+
+      System.gc();
+
+      _photoGallery.resetPhotoLoadingStates();
+      _photoGallery.refreshUI();
+   }
+
    void actionNavigateBackward() {
 
       final int historySize = _folderHistory.size();
@@ -140,16 +171,13 @@ public class PicDirImages implements IPhotoGalleryProvider {
       _actionNavigateBackward.setEnabled(_selectedHistoryIndex < historySize - 1);
       _actionNavigateForward.setEnabled(true);
 
-      BusyIndicator.showWhile(_display, new Runnable() {
-         @Override
-         public void run() {
+      BusyIndicator.showWhile(_display, () -> {
 
-            final String prevFolderPathName = _folderHistory.get(_selectedHistoryIndex);
-            final boolean isFolderAvailable = _picDirFolder.selectFolder(prevFolderPathName, false, true, false);
+         final String prevFolderPathName = _folderHistory.get(_selectedHistoryIndex);
+         final boolean isFolderAvailable = _picDirFolder.selectFolder(prevFolderPathName, false, true, false);
 
-            if (isFolderAvailable == false) {
-               removeInvalidFolder(prevFolderPathName);
-            }
+         if (isFolderAvailable == false) {
+            removeInvalidFolder(prevFolderPathName);
          }
       });
    }
@@ -171,31 +199,23 @@ public class PicDirImages implements IPhotoGalleryProvider {
       // select combo history
       _comboHistory.select(_selectedHistoryIndex);
 
-      // enabel/disable history navigation
+      // enable/disable history navigation
       _actionNavigateBackward.setEnabled(historySize > 1);
       _actionNavigateForward.setEnabled(_selectedHistoryIndex > 0);
 
-      BusyIndicator.showWhile(_display, new Runnable() {
-         @Override
-         public void run() {
-            final String prevFolderPathName = _folderHistory.get(_selectedHistoryIndex);
-            final boolean isFolderAvailable = _picDirFolder.selectFolder(prevFolderPathName, false, true, false);
+      BusyIndicator.showWhile(_display, () -> {
+         final String prevFolderPathName = _folderHistory.get(_selectedHistoryIndex);
+         final boolean isFolderAvailable = _picDirFolder.selectFolder(prevFolderPathName, false, true, false);
 
-            if (isFolderAvailable == false) {
-               removeInvalidFolder(prevFolderPathName);
-            }
+         if (isFolderAvailable == false) {
+            removeInvalidFolder(prevFolderPathName);
          }
       });
    }
 
    void actionRemoveInvalidFolders() {
 
-      BusyIndicator.showWhile(_display, new Runnable() {
-         @Override
-         public void run() {
-            removeInvalidFolders();
-         }
-      });
+      BusyIndicator.showWhile(_display, () -> removeInvalidFolders());
    }
 
    void actionShowNavigationHistory() {
@@ -248,17 +268,22 @@ public class PicDirImages implements IPhotoGalleryProvider {
 
    private void createActions() {
 
-      _actionNavigateBackward = new ActionNavigateHistoryBackward(this, _picDirView);
-      _actionNavigateForward = new ActionNavigateHistoryForward(this, _picDirView);
+// SET_FORMATTING_OFF
+
+      _actionNavigateBackward                = new ActionNavigateHistoryBackward(this, _picDirView);
+      _actionNavigateForward                 = new ActionNavigateHistoryForward(this, _picDirView);
 
       // this action activates the shortcut key <Ctrl><Shift>H but the action is not displayed
       new ActionNavigateShowHistory(this, _picDirView);
 
-      _actionClearNavigationHistory = new ActionClearNavigationHistory(this);
+      _actionClearNavigationHistory          = new ActionClearNavigationHistory(this);
+      _actionClearPhotoCache                 = new ActionClearPhotoCache();
       _actionRemoveInvalidFoldersFromHistory = new ActionRemoveInvalidFoldersFromHistory(this);
-      _actionSortFolderHistory = new ActionSortFolderHistory(this);
+      _actionSortFolderHistory               = new ActionSortFolderHistory(this);
 
-      _actionToggleFolderGallery = new ActionToggleFolderGallery(this);
+      _actionToggleFolderGallery             = new ActionToggleFolderGallery(this);
+
+// SET_FORMATTING_ON
    }
 
    public void createUI(final Composite parent, final PicDirFolder picDirFolder) {
@@ -294,14 +319,14 @@ public class PicDirImages implements IPhotoGalleryProvider {
    private void createUI_20_GalleryToolbars(final Composite galleryActionBarContainer) {
 
       /*
-       * toolbar actions
+       * Toolbar actions
        */
-      _galleryToolbar = new ToolBar(galleryActionBarContainer, SWT.FLAT);
+      final ToolBar galleryToolbar = new ToolBar(galleryActionBarContainer, SWT.FLAT);
       GridDataFactory.fillDefaults()
             .align(SWT.BEGINNING, SWT.CENTER)
-            .applyTo(_galleryToolbar);
+            .applyTo(galleryToolbar);
 
-      final ToolBarManager tbm = new ToolBarManager(_galleryToolbar);
+      final ToolBarManager tbm = new ToolBarManager(galleryToolbar);
 
       tbm.add(_actionToggleFolderGallery);
       tbm.add(_actionNavigateBackward);
@@ -322,50 +347,33 @@ public class PicDirImages implements IPhotoGalleryProvider {
             .applyTo(_comboHistory);
       _comboHistory.setVisibleItemCount(60);
 
-      _comboHistory.addMouseListener(new MouseListener() {
-
-         @Override
-         public void mouseDoubleClick(final MouseEvent e) {}
-
-         @Override
-         public void mouseDown(final MouseEvent e) {
-
-            // show list
-            _comboHistory.setListVisible(true);
-         }
-
-         @Override
-         public void mouseUp(final MouseEvent e) {}
-      });
+      _comboHistory.addMouseListener(mouseDownAdapter(mouseEvent -> {
+         // show list
+         _comboHistory.setListVisible(true);
+      }));
 
       /**
        * This combination of key and selection listener causes a folder selection only with the
        * <Enter> key or with a selection with the mouse in the drop down box
        */
-      _comboHistory.addKeyListener(new KeyAdapter() {
-         @Override
-         public void keyPressed(final KeyEvent e) {
+      _comboHistory.addKeyListener(keyPressedAdapter(keyEvent -> {
 
-            _isComboKeyPressed = true;
+         _isComboKeyPressed = true;
 
-            if (e.keyCode == SWT.CR) {
-               onSelectHistoryFolder(_comboHistory.getText());
-            }
+         if (keyEvent.keyCode == SWT.CR) {
+            onSelectHistoryFolder(_comboHistory.getText());
          }
-      });
+      }));
 
-      _comboHistory.addSelectionListener(new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
+      _comboHistory.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
 
-            final boolean isKey = _isComboKeyPressed;
-            _isComboKeyPressed = false;
+         final boolean isKey = _isComboKeyPressed;
+         _isComboKeyPressed = false;
 
-            if (isKey == false) {
-               onSelectHistoryFolder(_comboHistory.getText());
-            }
+         if (isKey == false) {
+            onSelectHistoryFolder(_comboHistory.getText());
          }
-      });
+      }));
    }
 
    private void enableControls() {
@@ -379,6 +387,9 @@ public class PicDirImages implements IPhotoGalleryProvider {
       menuMgr.add(_actionSortFolderHistory);
       menuMgr.add(_actionRemoveInvalidFoldersFromHistory);
       menuMgr.add(_actionClearNavigationHistory);
+
+      menuMgr.add(new Separator());
+      menuMgr.add(_actionClearPhotoCache);
    }
 
    public PhotosWithExifSelection getSelectedPhotosWithExif(final boolean isAllImages) {
@@ -403,15 +414,12 @@ public class PicDirImages implements IPhotoGalleryProvider {
 
       updateHistory(selectedFolder);
 
-      BusyIndicator.showWhile(_display, new Runnable() {
-         @Override
-         public void run() {
+      BusyIndicator.showWhile(_display, () -> {
 
-            final boolean isFolderAvailable = _picDirFolder.selectFolder(selectedFolder, false, false, false);
+         final boolean isFolderAvailable = _picDirFolder.selectFolder(selectedFolder, false, false, false);
 
-            if (isFolderAvailable == false) {
-               removeInvalidFolder(selectedFolder);
-            }
+         if (isFolderAvailable == false) {
+            removeInvalidFolder(selectedFolder);
          }
       });
    }
@@ -517,7 +525,7 @@ public class PicDirImages implements IPhotoGalleryProvider {
       /*
        * history
        */
-      final String[] historyEntries = Util.getStateArray(_state, STATE_FOLDER_HISTORY, null);
+      final String[] historyEntries = Util.getStateStringArray(_state, STATE_FOLDER_HISTORY, null);
       if (historyEntries != null) {
 
          // update history and combo

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,6 +18,7 @@ package net.tourbook.data;
 import static javax.persistence.CascadeType.ALL;
 import static javax.persistence.FetchType.LAZY;
 
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,16 +37,15 @@ import net.tourbook.database.FIELD_VALIDATION;
 import net.tourbook.database.TourDatabase;
 
 @Entity
-public class TourTag implements Cloneable, Comparable<Object> {
+public class TourTag implements Cloneable, Comparable<Object>, Serializable {
 
-   private static final char NL                         = UI.NEW_LINE;
+   private static final long          serialVersionUID           = 1L;
 
-   public static final int   DB_LENGTH_NAME             = 255;
-   public static final int   DB_LENGTH_NOTES            = 32000;
+   private static final char          NL                         = UI.NEW_LINE;
 
-   public static final int   EXPAND_TYPE_YEAR_MONTH_DAY = 0;
-   public static final int   EXPAND_TYPE_FLAT           = 1;
-   public static final int   EXPAND_TYPE_YEAR_DAY       = 2;
+   public static final int            EXPAND_TYPE_FLAT           = 1;
+   public static final int            EXPAND_TYPE_YEAR_DAY       = 2;
+   public static final int            EXPAND_TYPE_YEAR_MONTH_DAY = 0;
 
    /**
     * Manually created marker or imported marker create a unique id to identify them, saved marker
@@ -61,8 +61,11 @@ public class TourTag implements Cloneable, Comparable<Object> {
    private long   tagId      = TourDatabase.ENTITY_IS_NOT_SAVED;
 
    /**
-    * This is a root tag when set to <code>1</code>, derby does not support BOOLEAN, 1 =
-    * <code>true</code>, 0 = <code>false</code>
+    * Derby does not support BOOLEAN (when this was implemented)
+    * <p>
+    * <code>1 = true</code><br>
+    * <code>0 = false</code>
+    * <p>
     */
    private int    isRoot     = 0;
 
@@ -80,8 +83,14 @@ public class TourTag implements Cloneable, Comparable<Object> {
    /**
     * When a tag is expanded in the tag tree viewer, the tours can be displayed in different
     * structures
+    * <p>
+    * <li>0 ... EXPAND_TYPE_YEAR_MONTH_DAY</li>
+    * <li>1 ... EXPAND_TYPE_FLAT</li>
+    * <li>2 ... EXPAND_TYPE_YEAR_DAY</li>
     */
    private int    expandType = EXPAND_TYPE_FLAT;
+
+   private String imageFilePath;
 
 //   /**
 //    * A tag belongs to <b>ONE</b> category and not to many as it was implemented in version 14.4
@@ -180,8 +189,15 @@ public class TourTag implements Cloneable, Comparable<Object> {
       return true;
    }
 
+   /**
+    * @return {@link #expandType}
+    */
    public int getExpandType() {
       return expandType;
+   }
+
+   public String getImageFilePath() {
+      return imageFilePath;
    }
 
    /**
@@ -238,13 +254,13 @@ public class TourTag implements Cloneable, Comparable<Object> {
        */
       fieldValidation = TourDatabase.isFieldValidForSave(
             name,
-            DB_LENGTH_NAME,
+            TourDatabase.DB_LENGTH_NAME,
             Messages.Db_Field_TourTag_Name);
 
       if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
          return false;
       } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
-         name = name.substring(0, DB_LENGTH_NAME);
+         name = name.substring(0, TourDatabase.DB_LENGTH_NAME);
       }
 
       /*
@@ -252,13 +268,27 @@ public class TourTag implements Cloneable, Comparable<Object> {
        */
       fieldValidation = TourDatabase.isFieldValidForSave(
             notes,
-            DB_LENGTH_NOTES,
+            TourDatabase.DB_LENGTH_NOTES,
             Messages.Db_Field_TourTag_Notes);
 
       if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
          return false;
       } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
-         notes = notes.substring(0, DB_LENGTH_NOTES);
+         notes = notes.substring(0, TourDatabase.DB_LENGTH_NOTES);
+      }
+
+      /*
+       * Check: Image file path
+       */
+      fieldValidation = TourDatabase.isFieldValidForSave(
+            imageFilePath,
+            TourDatabase.DB_LENGTH_FILE_PATH,
+            Messages.Db_Field_TourTag_ImageFilePath);
+
+      if (fieldValidation == FIELD_VALIDATION.IS_INVALID) {
+         return false;
+      } else if (fieldValidation == FIELD_VALIDATION.TRUNCATE) {
+         imageFilePath = imageFilePath.substring(0, TourDatabase.DB_LENGTH_FILE_PATH);
       }
 
       return true;
@@ -266,6 +296,10 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
    public void setExpandType(final int expandType) {
       this.expandType = expandType;
+   }
+
+   public void setImageFilePath(final String imageFilePath) {
+      this.imageFilePath = imageFilePath;
    }
 
    public void setNotes(final String notes) {
@@ -289,23 +323,27 @@ public class TourTag implements Cloneable, Comparable<Object> {
       this.name = tagName;
    }
 
+   /**
+    * This method is called in the "Tour Data" view !!!
+    */
    @Override
    public String toString() {
 
       return UI.EMPTY_STRING
 
-            + "TourTag" + NL //                       //$NON-NLS-1$
-            + "[" + NL //                             //$NON-NLS-1$
+            + "TourTag" + NL //                                //$NON-NLS-1$
 
-            + "tagId       =" + tagId + NL //         //$NON-NLS-1$
-            + "isRoot      =" + isRoot + NL //        //$NON-NLS-1$
-            + "name        =" + name + NL //          //$NON-NLS-1$
-            + "notes       =" + notes + NL //         //$NON-NLS-1$
-            + "expandType  =" + expandType + NL //    //$NON-NLS-1$
-//            + "tourData    =" + tourData + NL //      //$NON-NLS-1$
-            + "_createId   =" + _createId + NL //     //$NON-NLS-1$
+            + "  name          = " + name + NL //              //$NON-NLS-1$
+            + "  isRoot        = " + isRoot + NL //            //$NON-NLS-1$
+//          + "  tagId         = " + tagId + NL //             //$NON-NLS-1$
+//          + "  notes         = " + notes + NL //             //$NON-NLS-1$
+//          + "  expandType    = " + expandType + NL //        //$NON-NLS-1$
+//
+//          + "  _createId     = " + _createId + NL //         //$NON-NLS-1$
+//
+//          + "  imageFilePath = " + imageFilePath + NL //     //$NON-NLS-1$
 
-            + "]" + NL //                             //$NON-NLS-1$
+//          + "  tourData      = " + tourData + NL //          //$NON-NLS-1$
       ;
    }
 
@@ -318,6 +356,6 @@ public class TourTag implements Cloneable, Comparable<Object> {
 
       name = modifiedTourTag.name;
       notes = modifiedTourTag.notes;
+      imageFilePath = modifiedTourTag.imageFilePath;
    }
-
 }

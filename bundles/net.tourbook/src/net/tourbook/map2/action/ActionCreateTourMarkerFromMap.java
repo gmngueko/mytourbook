@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2019, 2021 Frédéric Bard
+ * Copyright (C) 2019, 2022 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,7 @@ import org.eclipse.swt.widgets.Display;
 public class ActionCreateTourMarkerFromMap extends Action {
 
    private Map2View _mapView;
-   private long     _currentHoverTourId;
+   private Long     _currentHoveredTourId;
 
    public ActionCreateTourMarkerFromMap(final Map2View mapView) {
 
@@ -50,16 +50,17 @@ public class ActionCreateTourMarkerFromMap extends Action {
    @Override
    public void run() {
 
-      final TourData tourData = TourManager.getTour(_currentHoverTourId);
+      final TourData tourData = TourManager.getTour(_currentHoveredTourId);
+      if (tourData == null
 
-      if (tourData == null ||
-      // make sure the tour editor does not contain a modified tour
-            TourManager.isTourEditorModified()) {
+            // make sure the tour editor does not contain a modified tour
+            || TourManager.isTourEditorModified()) {
+
          return;
       }
 
-      final double clickedTourPointLatitude = this._mapView.getMap().get_mouseMove_GeoPosition().latitude;
-      final double clickedTourPointLongitude = this._mapView.getMap().get_mouseMove_GeoPosition().longitude;
+      final double clickedTourPointLatitude = this._mapView.getMap().getMouseMove_GeoPosition().latitude;
+      final double clickedTourPointLongitude = this._mapView.getMap().getMouseMove_GeoPosition().longitude;
 
       final LatLng clickedTourPoint = new LatLng(clickedTourPointLatitude, clickedTourPointLongitude);
       double closestDistance = Double.MAX_VALUE;
@@ -138,8 +139,8 @@ public class ActionCreateTourMarkerFromMap extends Action {
       TourManager.saveModifiedTour(tourData);
    }
 
-   public void setCurrentHoverTourId(final long tourId) {
-      _currentHoverTourId = tourId;
+   public void setCurrentHoveredTourId(final Long hoveredTourId) {
+      _currentHoveredTourId = hoveredTourId;
    }
 
 }

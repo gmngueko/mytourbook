@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -45,6 +45,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.ModifyEvent;
@@ -317,7 +318,7 @@ public class DialogSelectSRTMColors extends TitleAreaDialog implements IProfileC
          GridLayoutFactory.fillDefaults().numColumns(2).applyTo(nameContainer);
          {
             /*
-             * lable: profile name
+             * Label: profile name
              */
             Label label = new Label(nameContainer, SWT.NONE);
             label.setText(Messages.dialog_adjust_srtm_colors_label_profile_name);
@@ -329,7 +330,7 @@ public class DialogSelectSRTMColors extends TitleAreaDialog implements IProfileC
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtProfileName);
 
             /*
-             * lable: tile path
+             * Label: tile path
              */
             label = new Label(nameContainer, SWT.NONE);
             label.setText(Messages.dialog_adjust_srtm_colors_label_tile_path);
@@ -397,7 +398,7 @@ public class DialogSelectSRTMColors extends TitleAreaDialog implements IProfileC
          GridLayoutFactory.fillDefaults().numColumns(2).applyTo(shadowContainer);
          {
             /*
-             * lable: shadow info
+             * Label: shadow info
              */
             _lblShadowValue = new Label(shadowContainer, SWT.NONE);
             GridDataFactory.swtDefaults().indent(20, 0).applyTo(_lblShadowValue);
@@ -427,13 +428,12 @@ public class DialogSelectSRTMColors extends TitleAreaDialog implements IProfileC
           * profile image
           */
          _canvasProfileImage = new ImageCanvas(container, SWT.NO_BACKGROUND);
-         GridDataFactory.fillDefaults().grab(true, true).hint(100, SWT.DEFAULT).applyTo(_canvasProfileImage);
-         _canvasProfileImage.addControlListener(new ControlAdapter() {
-            @Override
-            public void controlResized(final ControlEvent e) {
-               paintProfileImage();
-            }
-         });
+         _canvasProfileImage.addControlListener(ControlListener.controlResizedAdapter(controlEvent -> paintProfileImage()));
+
+         GridDataFactory.fillDefaults()
+               .grab(true, true)
+               .hint(100, SWT.DEFAULT)
+               .applyTo(_canvasProfileImage);
 
          /*
           * vertex fields
@@ -900,6 +900,7 @@ public class DialogSelectSRTMColors extends TitleAreaDialog implements IProfileC
       UI.disposeResource(_profileImage);
 
       final Rectangle imageBounds = _canvasProfileImage.getBounds();
+
       _profileImage = _dialogProfile.createImage(imageBounds.width, imageBounds.height, false);
 
       _canvasProfileImage.setImage(_profileImage);

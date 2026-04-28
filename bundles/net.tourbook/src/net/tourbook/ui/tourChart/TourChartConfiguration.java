@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -60,9 +60,9 @@ public class TourChartConfiguration {
 
       GRAPH_BACKGROUND_SOURCE_TYPE = new GraphBgSourceType[] {
 
-            new GraphBgSourceType(GraphBackgroundSource.DEFAULT,           Messages.TourChart_GraphBackgroundSource_Default),
-            new GraphBgSourceType(GraphBackgroundSource.HR_ZONE,           Messages.TourChart_GraphBackgroundSource_HrZone),
-            new GraphBgSourceType(GraphBackgroundSource.SWIMMING_STYLE,    Messages.TourChart_GraphBackgroundSource_SwimmingStyle),
+            new GraphBgSourceType(GraphBackgroundSource.DEFAULT,              Messages.TourChart_GraphBackgroundSource_Default),
+            new GraphBgSourceType(GraphBackgroundSource.HR_ZONE,              Messages.TourChart_GraphBackgroundSource_HrZone),
+            new GraphBgSourceType(GraphBackgroundSource.SWIMMING_STYLE,       Messages.TourChart_GraphBackgroundSource_SwimmingStyle),
       };
 
       GRAPH_BACKGROUND_STYLE_TYPE = new GraphBgStyleType[] {
@@ -76,16 +76,16 @@ public class TourChartConfiguration {
 
 // SET_FORMATTING_ON
 
-   private final IPreferenceStore _prefStore              = TourbookPlugin.getPrefStore();
+   private final IPreferenceStore _prefStore            = TourbookPlugin.getPrefStore();
 
    /**
     * true: show time on the x-axis
     * <p>
     * false: show distance on the x-axis
     */
-   public boolean                 isShowTimeOnXAxis       = false;
+   public boolean                 isShowTimeOnXAxis;
 
-   public boolean                 isShowTimeOnXAxisBackup = false;
+   public boolean                 isShowTimeOnXAxisBackup;
 
    /**
     * is <code>true</code> when the distance is not available and the time must be displayed on the
@@ -98,13 +98,13 @@ public class TourChartConfiguration {
     * <p>
     * false: show the tour time which starts at 0
     */
-   public X_AXIS_START_TIME       xAxisTime               = X_AXIS_START_TIME.START_WITH_0;
+   public X_AXIS_START_TIME       xAxisTime             = X_AXIS_START_TIME.START_WITH_0;
 
    /**
     * contains a list for all graphs which are displayed, the sequence of the list is the sequence
     * in which the graphs will be displayed
     */
-   private ArrayList<Integer>     _visibleGraphSequence   = new ArrayList<>();
+   private ArrayList<Integer>     _visibleGraphSequence = new ArrayList<>();
 
    /**
     * contains the min/max keeper or <code>null</code> when min/max is not kept
@@ -114,18 +114,18 @@ public class TourChartConfiguration {
    /**
     * when <code>true</code> the sliders are moved when the chart is zoomed
     */
-   public boolean                 moveSlidersWhenZoomed   = false;
+   public boolean                 moveSlidersWhenZoomed;
 
    /**
     * the graph is automatically zoomed to the slider position when the slider is moved
     */
-   public boolean                 autoZoomToSlider        = false;
+   public boolean                 autoZoomToSlider;
 
    /**
     * when <code>true</code> the action button is displayed to show/hide the tour compare result
     * graph
     */
-   public boolean                 canShowTourCompareGraph = false;
+   public boolean                 canShowTourCompareGraph;
 
    /**
     * is <code>true</code> when the altitude diff scaling in the merge layer is relative
@@ -135,7 +135,13 @@ public class TourChartConfiguration {
    /**
     * when <code>true</code> the SRTM data are visible in the altitude graph
     */
-   public boolean                 isSRTMDataVisible       = false;
+   public boolean                 isSRTMDataVisible;
+
+   /**
+    * When <code>true</code> then SRTM 1 values are displayed, when they are available, otherwise
+    * SRTM 3 values are displayed
+    */
+   public boolean                 isShowSrtm1Values;
 
    /**
     * when <code>true</code> the SRTM data are visible in the altitude graph
@@ -145,7 +151,7 @@ public class TourChartConfiguration {
    /**
     * Is <code>true</code> when tour markers are displayed.
     */
-   public boolean                 isShowTourMarker        = true;
+   public boolean                 isShowTourMarker      = true;
 
    /**
     * When <code>true</code>, hidden markers are also visible.
@@ -179,7 +185,7 @@ public class TourChartConfiguration {
    /**
     * Is <code>true</code> when tour pauses are displayed.
     */
-   public boolean                 isShowTourPauses        = true;
+   public boolean                 isShowTourPauses      = true;
    public boolean                 isShowPauseTooltip;
    public boolean                 isFilterTourPauses;
    public boolean                 isFilterPauseDuration;
@@ -190,9 +196,9 @@ public class TourChartConfiguration {
 
    public boolean                 isShowAbsoluteValues;
 
-   public int                     markerTooltipPosition   = ChartMarkerToolTip.DEFAULT_TOOLTIP_POSITION;
+   public int                     markerTooltipPosition = ChartMarkerToolTip.DEFAULT_TOOLTIP_POSITION;
 
-   public int                     pauseTooltipPosition    = ChartPauseToolTip.DEFAULT_TOOLTIP_POSITION;
+   public int                     pauseTooltipPosition  = ChartPauseToolTip.DEFAULT_TOOLTIP_POSITION;
 
    public boolean                 isShowMarkerPoint;
    public boolean                 isShowSignImage;
@@ -236,7 +242,7 @@ public class TourChartConfiguration {
     * Is <code>true</code> when graph values are displayed when they are recorded when a break time
     * is detected.
     */
-   public boolean                 isShowBreaktimeValues   = true;
+   public boolean                 isShowBreaktimeValues = true;
 
    /*
     * Graph background
@@ -245,29 +251,42 @@ public class TourChartConfiguration {
    /**
     * Source which is used to draw the graph background
     */
-   public GraphBackgroundSource graphBackground_Source      = GRAPH_BACKGROUND_SOURCE_DEFAULT;
+   public GraphBackgroundSource graphBackground_Source = GRAPH_BACKGROUND_SOURCE_DEFAULT;
 
    /**
     * Graph style which is used to draw the graph background
     */
-   public GraphBackgroundStyle  graphBackground_Style       = GRAPH_BACKGROUND_STYLE_DEFAULT;
+   public GraphBackgroundStyle  graphBackground_Style  = GRAPH_BACKGROUND_STYLE_DEFAULT;
 
    /**
     * Is <code>true</code> when HR zones can be displayed, which requires that pulse values are
     * available and the person has defined HR zones.
     */
-   public boolean               canShowBackground_HrZones   = false;
+   public boolean               canShowBackground_HrZones;
 
    /**
     * Is <code>true</code> when swim style can be displayed, this requires that swim data are
     * available .
     */
-   public boolean               canShowBackground_SwimStyle = false;
+   public boolean               canShowBackground_SwimStyle;
+
+   /**
+    * Is <code>true</code> when values are missing, e.g. when there is not always a geo position in
+    * the recorded tour
+    */
+   public boolean               canShowBackground_InterpolatedValues;
+
+   /**
+    * When <code>true</code> then night sections are displayed when tour time is between sunset and
+    * sunrise
+    */
+   public boolean               isShowNightSections;
+
    /*
     * Tour photos
     */
-   public boolean               isShowTourPhotos            = true;
-   public boolean               isShowTourPhotoTooltip      = true;
+   public boolean isShowTourPhotos       = true;
+   public boolean isShowTourPhotoTooltip = true;
 
    /*
     * Tour info
@@ -292,9 +311,9 @@ public class TourChartConfiguration {
    public boolean    canUseGeoCompareTool;
 
    /**
-    * Is <code>true</code> to show geo diff unit in compared tour chart
+    * Is <code>true</code> to show geo diff unit in the "Compared Tour" chart
     */
-   public boolean    isGeoCompareDiff;
+   public boolean    isGeoCompare;
 
    /**
     * Show/hide value point value label when mouse is hovering a graph
@@ -307,14 +326,25 @@ public class TourChartConfiguration {
    /**
     * @param keepMinMaxValues
     *           set <code>true</code> to keep min/max values when tour data will change
+    * @param state
     */
-   public TourChartConfiguration(final boolean keepMinMaxValues, final IDialogSettings state) {
+   public TourChartConfiguration(final IDialogSettings state) {
 
-      if (keepMinMaxValues) {
-         setMinMaxKeeper(true);
-      }
+      setMinMaxKeeper();
 
 // SET_FORMATTING_OFF
+
+      isSRTMDataVisible             = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SRTM_VISIBLE);
+      isShowSrtm1Values             = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_SRTM_1_VALUES);
+
+      isGraphOverlapped             = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_GRAPH_OVERLAPPED);
+
+      isShowTourPhotos              = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_TOUR_PHOTO_VISIBLE);
+      isShowTourPhotoTooltip        = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_TOUR_PHOTO_TOOLTIP_VISIBLE);
+
+      isShowBreaktimeValues         = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE);
+      isShowNightSections           = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS);
+      isShowValuePointValue         = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE);
 
       /*
        * Initialize tour marker settings from the pref store
@@ -373,6 +403,7 @@ public class TourChartConfiguration {
        */
       pulseGraph                    = (PulseGraph) Util.getEnumValue(_prefStore.getString(ITourbookPreferences.GRAPH_PULSE_GRAPH_VALUES), TourChart.PULSE_GRAPH_DEFAULT);
 
+
 // SET_FORMATTING_ON
 
       updateStateValues(state);
@@ -399,11 +430,18 @@ public class TourChartConfiguration {
    }
 
    public boolean isBackgroundStyle_Default() {
+
       return GraphBackgroundSource.DEFAULT.name().equals(graphBackground_Source.name());
    }
 
    public boolean isBackgroundStyle_HrZone() {
+
       return GraphBackgroundSource.HR_ZONE.name().equals(graphBackground_Source.name());
+   }
+
+   public boolean isBackgroundStyle_InterpolatedValues() {
+
+      return GraphBackgroundSource.INTERPOLATED_VALUES.name().equals(graphBackground_Source.name());
    }
 
    public boolean isBackgroundStyle_SwimmingStyle() {
@@ -427,21 +465,9 @@ public class TourChartConfiguration {
       this.isShowTimeOnXAxis = isShowTimeOnXAxisBackup = isShowTimeOnXAxis;
    }
 
-   /**
-    * <code>true</code> indicates to keep the min/max values in the chart configuration when the
-    * data model was changed, this has the higher priority than keeping the min/max values in the
-    * chart widget
-    *
-    * @param keepMinMaxValues
-    *           the keepMinMaxValues to set
-    */
-   public void setMinMaxKeeper(final boolean keepMinMaxValues) {
+   public void setMinMaxKeeper() {
 
-      if (keepMinMaxValues) {
-         _minMaxKeeper = new ChartYDataMinMaxKeeper();
-      } else {
-         _minMaxKeeper = null;
-      }
+      _minMaxKeeper = new ChartYDataMinMaxKeeper();
    }
 
    public void updateStateValues(final IDialogSettings state) {

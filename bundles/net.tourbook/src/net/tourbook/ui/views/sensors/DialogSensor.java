@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2023, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,12 +15,10 @@
  *******************************************************************************/
 package net.tourbook.ui.views.sensors;
 
-import de.byteholder.geoclipse.map.UI;
-
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
-import net.tourbook.common.util.Util;
+import net.tourbook.common.UI;
 import net.tourbook.common.widgets.ComboEnumEntry;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorType;
@@ -59,7 +57,7 @@ public class DialogSensor extends TitleAreaDialog {
    private Text  _txtDescription;
    private Text  _txtName;
 
-   private Image _imageDialog;
+   private Image _imageDialog = TourbookPlugin.getThemedImageDescriptor(Images.Sensor).createImage();
 
    public DialogSensor(final Shell parentShell, final DeviceSensor sensor) {
 
@@ -71,7 +69,6 @@ public class DialogSensor extends TitleAreaDialog {
       // make dialog resizable
       setShellStyle(getShellStyle() | SWT.RESIZE);
 
-      _imageDialog = TourbookPlugin.getThemedImageDescriptor(Images.Sensor).createImage();
       setDefaultImage(_imageDialog);
    }
 
@@ -114,7 +111,6 @@ public class DialogSensor extends TitleAreaDialog {
 
    @Override
    protected Control createDialogArea(final Composite parent) {
-
 
       final Composite dlgContainer = (Composite) super.createDialogArea(parent);
 
@@ -229,7 +225,7 @@ public class DialogSensor extends TitleAreaDialog {
 
    private void onDispose() {
 
-      Util.disposeResource(_imageDialog);
+      UI.disposeResource(_imageDialog);
    }
 
    private void restoreState() {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,8 +15,11 @@
  *******************************************************************************/
 package net.tourbook.search;
 
+import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
+
 import java.util.ArrayList;
 
+import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
@@ -33,6 +36,7 @@ import net.tourbook.web.WebContentServer;
 import net.tourbook.web.preferences.PrefPageWebBrowser;
 
 import org.eclipse.e4.ui.di.PersistState;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridDataFactory;
@@ -43,8 +47,6 @@ import org.eclipse.swt.SWTError;
 import org.eclipse.swt.browser.Browser;
 import org.eclipse.swt.browser.LocationAdapter;
 import org.eclipse.swt.browser.LocationEvent;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.ui.IPartListener2;
@@ -56,19 +58,38 @@ import org.eclipse.ui.part.ViewPart;
 
 public class SearchView extends ViewPart implements ISearchView {
 
-   public static final String     ID                             = "net.tourbook.search.SearchView"; //$NON-NLS-1$
+   public static final String   ID                      = "net.tourbook.search.SearchView";                   //$NON-NLS-1$
 
-   private static final String    STATE_USE_EXTERNAL_WEB_BROWSER = "STATE_USE_EXTERNAL_WEB_BROWSER"; //$NON-NLS-1$
+   private static final String  SYS_PROP__FORCE_BROWSER = "forceBrowserForTourSeachInLinux";                  //$NON-NLS-1$
 
-   private final IDialogSettings  _state                         = TourbookPlugin.getState(ID);
+   private static final boolean _isForceBrowser         = System.getProperty(SYS_PROP__FORCE_BROWSER) != null;
+   private static final boolean _isUseEmbeddedBrowser   = _isForceBrowser == false;
 
-   private PostSelectionProvider  _postSelectionProvider;
-   private IPartListener2         _partListener;
-   private ITourEventListener     _tourEventListener;
+   static {
 
-   private boolean                _isWinInternalLoaded           = false;
+      if (_isForceBrowser) {
 
-   private ActionExternalSearchUI _actionExternalSearchUI;
+         Util.logSystemProperty_IsEnabled(
+
+               SearchView.class,
+               SYS_PROP__FORCE_BROWSER,
+               "The browser UI is forced for the tour search in Linux"); //$NON-NLS-1$
+      }
+   }
+
+   private static final String      STATE_IS_PUSH_INTO_OTHER_VIEW  = "STATE_IS_PUSH_INTO_OTHER_VIEW";  //$NON-NLS-1$
+   private static final String      STATE_USE_EXTERNAL_WEB_BROWSER = "STATE_USE_EXTERNAL_WEB_BROWSER"; //$NON-NLS-1$
+
+   private final IDialogSettings    _state                         = TourbookPlugin.getState(ID);
+
+   private PostSelectionProvider    _postSelectionProvider;
+   private IPartListener2           _partListener;
+   private ITourEventListener       _tourEventListener;
+
+   private boolean                  _isWinInternalLoaded           = false;
+
+   private ActionExternalSearchUI   _actionExternalSearchUI;
+   private ActionPushIntoOtherViews _actionPushIntoOtherViews;
 
    /*
     * UI controls
@@ -80,6 +101,18 @@ public class SearchView extends ViewPart implements ISearchView {
    private Composite _pageLinux;
    private Composite _pageWinExternalBrowser;
    private Composite _pageWinInternalBrowser;
+
+   private class ActionPushIntoOtherViews extends Action {
+
+      public ActionPushIntoOtherViews() {
+
+         super(null, AS_CHECK_BOX);
+
+         setToolTipText(Messages.Search_View_Action_PushSearchResults_Tooltip);
+
+         setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.PushIntoViews));
+      }
+   }
 
    void actionSearchUI() {
       showUIPage();
@@ -129,31 +162,28 @@ public class SearchView extends ViewPart implements ISearchView {
 
    private void addTourEventListener() {
 
-      _tourEventListener = new ITourEventListener() {
-         @Override
-         public void tourChanged(final IWorkbenchPart part, final TourEventId eventId, final Object eventData) {
+      _tourEventListener = (part, tourEventId, eventData) -> {
 
-            if (part == SearchView.this) {
-               return;
-            }
+         if (part == SearchView.this) {
+            return;
+         }
 
-            if ((eventId == TourEventId.TOUR_CHANGED) && (eventData instanceof TourEvent)) {
+         if ((tourEventId == TourEventId.TOUR_CHANGED) && (eventData instanceof TourEvent)) {
 
-               final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
-               if (modifiedTours != null) {
+            final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
+            if (modifiedTours != null) {
 
-                  // update modified tour
+               // update modified tour
 
 //                  for (final TourData tourData : modifiedTours) {
 //
 //                  }
-               }
-
-            } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
-
-               clearView();
-
             }
+
+         } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+
+            clearView();
+
          }
       };
 
@@ -169,6 +199,7 @@ public class SearchView extends ViewPart implements ISearchView {
    private void createActions() {
 
       _actionExternalSearchUI = new ActionExternalSearchUI(this);
+      _actionPushIntoOtherViews = new ActionPushIntoOtherViews();
 
       fillActionBars();
    }
@@ -197,7 +228,7 @@ public class SearchView extends ViewPart implements ISearchView {
 
       _pageBook = new PageBook(parent, SWT.NONE);
 
-      if (UI.IS_WIN) {
+      if (UI.IS_WIN || _isUseEmbeddedBrowser) {
 
          // internal browser
          _pageWinInternalBrowser = new Composite(_pageBook, SWT.NONE);
@@ -260,12 +291,7 @@ public class SearchView extends ViewPart implements ISearchView {
                SearchManager.SEARCH_URL,
                SearchManager.SEARCH_URL));
 
-         linkExternalBrowser.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               WEB.openUrl(SearchManager.SEARCH_URL);
-            }
-         });
+         linkExternalBrowser.addSelectionListener(widgetSelectedAdapter(selectionEvent -> WEB.openUrl(SearchManager.SEARCH_URL)));
 
          createUI_50_SetupExternalWebbrowser(parent, container);
       }
@@ -290,12 +316,7 @@ public class SearchView extends ViewPart implements ISearchView {
                SearchManager.SEARCH_URL,
                SearchManager.SEARCH_URL));
 
-         linkLinuxBrowser.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               WEB.openUrl(SearchManager.SEARCH_URL);
-            }
-         });
+         linkLinuxBrowser.addSelectionListener(widgetSelectedAdapter(selectionEvent -> WEB.openUrl(SearchManager.SEARCH_URL)));
 
          createUI_50_SetupExternalWebbrowser(parent, container);
       }
@@ -313,16 +334,13 @@ public class SearchView extends ViewPart implements ISearchView {
 
       linkSetupBrowser.setText(Messages.Search_View_Link_SetupExternalBrowser);
       linkSetupBrowser.setEnabled(true);
-      linkSetupBrowser.addSelectionListener(new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            PreferencesUtil.createPreferenceDialogOn(//
-                  parent.getShell(),
-                  PrefPageWebBrowser.ID,
-                  null,
-                  null).open();
-         }
-      });
+      linkSetupBrowser.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+         PreferencesUtil.createPreferenceDialogOn(//
+               parent.getShell(),
+               PrefPageWebBrowser.ID,
+               null,
+               null).open();
+      }));
    }
 
    @Override
@@ -340,16 +358,17 @@ public class SearchView extends ViewPart implements ISearchView {
 
    private void enableActions() {
 
-      _actionExternalSearchUI.setEnabled(UI.IS_WIN);
+      _actionExternalSearchUI.setEnabled(UI.IS_WIN || _isUseEmbeddedBrowser);
    }
 
    private void fillActionBars() {
 
       /*
-       * fill view toolbar
+       * Fill view toolbar
        */
       final IToolBarManager tbm = getViewSite().getActionBars().getToolBarManager();
 
+      tbm.add(_actionPushIntoOtherViews);
       tbm.add(_actionExternalSearchUI);
    }
 
@@ -363,8 +382,14 @@ public class SearchView extends ViewPart implements ISearchView {
       return _postSelectionProvider;
    }
 
+   public boolean isPushSearchResult() {
+
+      return _actionPushIntoOtherViews.isChecked();
+   }
+
    private void restoreState() {
 
+      _actionPushIntoOtherViews.setChecked(Util.getStateBoolean(_state, STATE_IS_PUSH_INTO_OTHER_VIEW, false));
       _actionExternalSearchUI.setChecked(Util.getStateBoolean(_state, STATE_USE_EXTERNAL_WEB_BROWSER, false));
 
       enableActions();
@@ -373,13 +398,14 @@ public class SearchView extends ViewPart implements ISearchView {
    @PersistState
    private void saveState() {
 
+      _state.put(STATE_IS_PUSH_INTO_OTHER_VIEW, _actionPushIntoOtherViews.isChecked());
       _state.put(STATE_USE_EXTERNAL_WEB_BROWSER, _actionExternalSearchUI.isChecked());
    }
 
    @Override
    public void setFocus() {
 
-      if (UI.IS_WIN) {
+      if (UI.IS_WIN || _isUseEmbeddedBrowser) {
 
          final boolean isInternal = _actionExternalSearchUI.isChecked() == false;
 
@@ -392,7 +418,7 @@ public class SearchView extends ViewPart implements ISearchView {
 
    private void showUIPage() {
 
-      if (UI.IS_WIN) {
+      if (UI.IS_WIN || _isUseEmbeddedBrowser) {
 
          final boolean isExternal = _actionExternalSearchUI.isChecked();
 

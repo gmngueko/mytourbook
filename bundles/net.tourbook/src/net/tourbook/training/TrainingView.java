@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2011, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import net.tourbook.Messages;
+import net.tourbook.OtherMessages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.chart.Chart;
 import net.tourbook.chart.ChartDataModel;
@@ -30,9 +31,9 @@ import net.tourbook.chart.ChartDataSerie;
 import net.tourbook.chart.ChartDataXSerie;
 import net.tourbook.chart.ChartDataYSerie;
 import net.tourbook.chart.ChartType;
-import net.tourbook.chart.IBarSelectionListener;
 import net.tourbook.chart.MinMaxKeeper_YData;
 import net.tourbook.common.CommonActivator;
+import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
 import net.tourbook.common.color.ThemeUtil;
 import net.tourbook.common.preferences.ICommonPreferences;
@@ -54,11 +55,10 @@ import net.tourbook.tour.SelectionTourIds;
 import net.tourbook.tour.TourEvent;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
-import net.tourbook.ui.UI;
-import net.tourbook.ui.views.tourCatalog.SelectionTourCatalogView;
-import net.tourbook.ui.views.tourCatalog.TVICatalogComparedTour;
-import net.tourbook.ui.views.tourCatalog.TVICatalogRefTourItem;
-import net.tourbook.ui.views.tourCatalog.TVICompareResultComparedTour;
+import net.tourbook.ui.views.referenceTour.SelectionReferenceTourView;
+import net.tourbook.ui.views.referenceTour.TVIElevationCompareResult_ComparedTour;
+import net.tourbook.ui.views.referenceTour.TVIRefTour_ComparedTour;
+import net.tourbook.ui.views.referenceTour.TVIRefTour_RefTourItem;
 
 import org.eclipse.e4.ui.di.PersistState;
 import org.eclipse.jface.action.IToolBarManager;
@@ -71,15 +71,12 @@ import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseWheelListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -96,7 +93,6 @@ import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.forms.widgets.FormToolkit;
@@ -115,49 +111,53 @@ public class TrainingView extends ViewPart {
    private static final String STATE_IS_SHOW_ALL_PULSE_VALUES       = "IsShowAllPulseValues";               //$NON-NLS-1$
    private static final String STATE_IS_SYNC_VERTICAL_CHART_SCALING = "IsSyncVerticalChartScaling";         //$NON-NLS-1$
 
-   private static final String GRID_PREF_PREFIX                     = "GRID_TRAINING__";                    //$NON-NLS-1$
-
 // SET_FORMATTING_OFF
 
-   private static final String         GRID_IS_SHOW_VERTICAL_GRIDLINES     = (GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES);
-   private static final String         GRID_IS_SHOW_HORIZONTAL_GRIDLINES   = (GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES);
-   private static final String         GRID_VERTICAL_DISTANCE              = (GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE);
-   private static final String         GRID_HORIZONTAL_DISTANCE            = (GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE);
+   private static final String   GRID_PREF_PREFIX                    = "GRID_TRAINING__";                   //$NON-NLS-1$
+
+   private static final String   GRID_IS_SHOW_VERTICAL_GRIDLINES     = GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES;
+   private static final String   GRID_IS_SHOW_HORIZONTAL_GRIDLINES   = GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES;
+   private static final String   GRID_VERTICAL_DISTANCE              = GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE;
+   private static final String   GRID_HORIZONTAL_DISTANCE            = GRID_PREF_PREFIX + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE;
+
+   private static final String   LAYOUT_PREF_PREFIX                  = "LAYOUT_TRAINING__";                 //$NON-NLS-1$
+   private static final String   LAYOUT_GRAPH_Y_AXIS_WIDTH           = LAYOUT_PREF_PREFIX   + ITourbookPreferences.CHART_Y_AXIS_WIDTH;
 
 // SET_FORMATTING_ON
 
-   private final IPreferenceStore      _prefStore        = TourbookPlugin.getPrefStore();
-   private final IPreferenceStore      _prefStore_Common = CommonActivator.getPrefStore();
-   private final IDialogSettings       _state            = TourbookPlugin.getState(ID);
+   private static final IDialogSettings  _state            = TourbookPlugin.getState(ID);
+   private static final IPreferenceStore _prefStore        = TourbookPlugin.getPrefStore();
+   private static final IPreferenceStore _prefStore_Common = CommonActivator.getPrefStore();
 
-   private IPartListener2              _partListener;
-   private ISelectionListener          _postSelectionListener;
-   private IPropertyChangeListener     _prefChangeListener;
-   private ITourEventListener          _tourEventListener;
+   private IPartListener2                _partListener;
+   private ISelectionListener            _postSelectionListener;
+   private IPropertyChangeListener       _prefChangeListener;
+   private IPropertyChangeListener       _prefChangeListener_Common;
+   private ITourEventListener            _tourEventListener;
 
-   private ModifyListener              _defaultSpinnerModifyListener;
-   private SelectionListener           _defaultSpinnerSelectionListener;
-   private MouseWheelListener          _defaultSpinnerMouseWheelListener;
+   private ModifyListener                _defaultSpinnerModifyListener;
+   private SelectionListener             _defaultSpinnerSelectionListener;
+   private MouseWheelListener            _defaultSpinnerMouseWheelListener;
 
-   private TourPerson                  _currentPerson;
-   private TourData                    _tourData;
+   private TourPerson                    _currentPerson;
+   private TourData                      _tourData;
 
-   private boolean                     _isUpdateUI;
-   private boolean                     _isShowAllValues;
-   private boolean                     _isSynchChartVerticalValues;
+   private boolean                       _isUpdateUI;
+   private boolean                       _isShowAllValues;
+   private boolean                       _isSynchChartVerticalValues;
 
-   private ToolBarManager              _headerToolbarManager;
+   private ToolBarManager                _headerToolbarManager;
 
-   private ActionShowAllPulseValues    _actionShowAllPulseValues;
-   private ActionSynchChartScale       _actionSynchVerticalChartScaling;
-   private ActionTrainingOptions       _actionTrainingOptions;
+   private ActionShowAllPulseValues      _actionShowAllPulseValues;
+   private ActionSynchChartScale         _actionSynchVerticalChartScaling;
+   private ActionTrainingOptions         _actionTrainingOptions;
 
-   private double[]                    _xSeriePulse;
+   private double[]                      _xSeriePulse;
 
-   private ArrayList<TourPersonHRZone> _personHrZones    = new ArrayList<>();
-   private final MinMaxKeeper_YData    _minMaxKeeper     = new MinMaxKeeper_YData();
+   private ArrayList<TourPersonHRZone>   _personHrZones    = new ArrayList<>();
+   private final MinMaxKeeper_YData      _minMaxKeeper     = new MinMaxKeeper_YData();
 
-   private final NumberFormat          _nf1              = NumberFormat.getNumberInstance();
+   private final NumberFormat            _nf1              = NumberFormat.getNumberInstance();
    {
       _nf1.setMinimumFractionDigits(1);
       _nf1.setMaximumFractionDigits(1);
@@ -217,7 +217,11 @@ public class TrainingView extends ViewPart {
       @Override
       protected ToolbarSlideout createSlideout(final ToolBar toolbar) {
 
-         return new SlideoutTrainingOptions(_pageBook, toolbar, GRID_PREF_PREFIX, TrainingView.this);
+         return new SlideoutTrainingOptions(_pageBook,
+               toolbar,
+               GRID_PREF_PREFIX,
+               LAYOUT_PREF_PREFIX,
+               TrainingView.this);
       }
    }
 
@@ -296,36 +300,48 @@ public class TrainingView extends ViewPart {
 
    private void addPrefListener() {
 
-      _prefChangeListener = new IPropertyChangeListener() {
-         @Override
-         public void propertyChange(final PropertyChangeEvent event) {
+      _prefChangeListener = propertyChangeEvent -> {
 
-            final String property = event.getProperty();
+         final String property = propertyChangeEvent.getProperty();
 
-            /*
-             * set a new chart configuration when the preferences has changed
-             */
-            if (property.equals(ITourbookPreferences.TOUR_PERSON_LIST_IS_MODIFIED)
-                  || property.equals(ITourbookPreferences.APP_DATA_FILTER_IS_MODIFIED)) {
+         /*
+          * set a new chart configuration when the preferences has changed
+          */
+         if (property.equals(ITourbookPreferences.TOUR_PERSON_LIST_IS_MODIFIED)
+               || property.equals(ITourbookPreferences.APP_DATA_FILTER_IS_MODIFIED)) {
 
-               onModifyPerson();
+            onModifyPerson();
 
-            } else if (property.equals(GRID_HORIZONTAL_DISTANCE)
-                  || property.equals(GRID_VERTICAL_DISTANCE)
-                  || property.equals(GRID_IS_SHOW_HORIZONTAL_GRIDLINES)
-                  || property.equals(GRID_IS_SHOW_VERTICAL_GRIDLINES)
-            //
-            ) {
+         } else if (property.equals(GRID_HORIZONTAL_DISTANCE)
+               || property.equals(GRID_VERTICAL_DISTANCE)
+               || property.equals(GRID_IS_SHOW_HORIZONTAL_GRIDLINES)
+               || property.equals(GRID_IS_SHOW_VERTICAL_GRIDLINES)
 
-               setChartProperties();
+               || property.equals(LAYOUT_GRAPH_Y_AXIS_WIDTH)
 
-               // grid has changed, update chart
-               updateUI_30_HrZonesFromModel();
-            }
+         ) {
+
+            setChartProperties();
+
+            // grid has changed, update chart
+            updateUI_30_HrZonesFromModel();
+         }
+      };
+
+      _prefChangeListener_Common = propertyChangeEvent -> {
+
+         final String property = propertyChangeEvent.getProperty();
+
+         if (property.equals(ICommonPreferences.UI_DRAWING_FONT_IS_MODIFIED)) {
+
+            _chartHrTime.getChartComponents().updateFontScaling();
+
+            updateUI_30_HrZonesFromModel();
          }
       };
 
       _prefStore.addPropertyChangeListener(_prefChangeListener);
+      _prefStore_Common.addPropertyChangeListener(_prefChangeListener_Common);
    }
 
    /**
@@ -333,54 +349,47 @@ public class TrainingView extends ViewPart {
     */
    private void addSelectionListener() {
 
-      _postSelectionListener = new ISelectionListener() {
-         @Override
-         public void selectionChanged(final IWorkbenchPart part, final ISelection selection) {
+      _postSelectionListener = (part, selection) -> {
 
-            if (part == TrainingView.this) {
-               return;
-            }
-
-            onSelectionChanged(selection);
+         if (part == TrainingView.this) {
+            return;
          }
+
+         onSelectionChanged(selection);
       };
       getSite().getPage().addPostSelectionListener(_postSelectionListener);
    }
 
    private void addTourEventListener() {
 
-      _tourEventListener = new ITourEventListener() {
+      _tourEventListener = (part, tourEventId, eventData) -> {
 
-         @Override
-         public void tourChanged(final IWorkbenchPart part, final TourEventId eventId, final Object eventData) {
+         if (part == TrainingView.this) {
+            return;
+         }
 
-            if (part == TrainingView.this) {
-               return;
+         if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+
+            clearView();
+
+         } else if (tourEventId == TourEventId.TOUR_SELECTION && eventData instanceof ISelection) {
+
+            onSelectionChanged((ISelection) eventData);
+
+         } else if ((tourEventId == TourEventId.TOUR_CHANGED) && (eventData instanceof TourEvent)) {
+
+            final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
+
+            if ((modifiedTours != null) && (modifiedTours.size() > 0)) {
+               updateUI_20(modifiedTours.get(0));
             }
+         } else if (tourEventId == TourEventId.TOUR_CHART_PROPERTY_IS_MODIFIED) {
 
-            if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+            if (_tourData != null) {
 
-               clearView();
+               _tourData.clearComputedSeries();
 
-            } else if (eventId == TourEventId.TOUR_SELECTION && eventData instanceof ISelection) {
-
-               onSelectionChanged((ISelection) eventData);
-
-            } else if ((eventId == TourEventId.TOUR_CHANGED) && (eventData instanceof TourEvent)) {
-
-               final ArrayList<TourData> modifiedTours = ((TourEvent) eventData).getModifiedTours();
-
-               if ((modifiedTours != null) && (modifiedTours.size() > 0)) {
-                  updateUI_20(modifiedTours.get(0));
-               }
-            } else if (eventId == TourEventId.TOUR_CHART_PROPERTY_IS_MODIFIED) {
-
-               if (_tourData != null) {
-
-                  _tourData.clearComputedSeries();
-
-                  updateUI_20(_tourData);
-               }
+               updateUI_20(_tourData);
             }
          }
       };
@@ -547,12 +556,7 @@ public class TrainingView extends ViewPart {
          final Link link = new Link(container, SWT.WRAP);
          GridDataFactory.fillDefaults().grab(true, false).applyTo(link);
          link.setText(Messages.Training_View_Link_NoHrZones);
-         link.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               actionEditHrZones();
-            }
-         });
+         link.addSelectionListener(widgetSelectedAdapter(selectionEvent -> actionEditHrZones()));
          _tk.adapt(link, true, true);
       }
 
@@ -640,12 +644,9 @@ public class TrainingView extends ViewPart {
 
       setChartProperties();
 
-      _chartHrTime.addBarSelectionListener(new IBarSelectionListener() {
-         @Override
-         public void selectionChanged(final int serieIndex, final int valueIndex) {
+      _chartHrTime.addBarSelectionListener((serieIndex, valueIndex) -> {
 
 //               _postSelectionProvider.setSelection(selection);
-         }
       });
    }
 
@@ -728,7 +729,7 @@ public class TrainingView extends ViewPart {
       /*
        * label: bpm
        */
-      label = _tk.createLabel(parent, net.tourbook.common.Messages.Graph_Label_Heartbeat_Unit);
+      label = _tk.createLabel(parent, OtherMessages.GRAPH_LABEL_HEARTBEAT_UNIT);
       GridDataFactory.fillDefaults()
             .align(SWT.END, SWT.FILL)
             .applyTo(label);
@@ -740,25 +741,25 @@ public class TrainingView extends ViewPart {
 
    private void createUI_58_HrZoneFields(final Composite parent) {
 
-      final int hrZoneSize = _personHrZones.size();
+      final int numHrZones = _personHrZones.size();
 
       /*
        * fields
        */
-      _lblTourMinMaxValue = new Label[hrZoneSize];
-      _lblTourMinMaxHours = new Label[hrZoneSize];
-      _lblHRZoneName = new Label[hrZoneSize];
-      _lblHRZoneColor = new Label[hrZoneSize];
-      _lblHrZonePercent = new Label[hrZoneSize];
+      _lblTourMinMaxValue = new Label[numHrZones];
+      _lblTourMinMaxHours = new Label[numHrZones];
+      _lblHRZoneName = new Label[numHrZones];
+      _lblHRZoneColor = new Label[numHrZones];
+      _lblHrZonePercent = new Label[numHrZones];
 
       // set hr zone colors
       disposeHrZoneResources();
-      _hrZoneColors = new Color[hrZoneSize];
-      _hrZoneColorsBright = new Color[hrZoneSize];
-      _hrZoneColorsDark = new Color[hrZoneSize];
+      _hrZoneColors = new Color[numHrZones];
+      _hrZoneColorsBright = new Color[numHrZones];
+      _hrZoneColorsDark = new Color[numHrZones];
 
       // the sequence of the zones are inverted
-      for (int zoneIndex = hrZoneSize - 1; zoneIndex >= 0; zoneIndex--) {
+      for (int zoneIndex = numHrZones - 1; zoneIndex >= 0; zoneIndex--) {
 
          final TourPersonHRZone hrZone = _personHrZones.get(zoneIndex);
          _hrZoneColors[zoneIndex] = new Color(hrZone.getColor());
@@ -825,7 +826,7 @@ public class TrainingView extends ViewPart {
 
       getSite().getPage().removePostSelectionListener(_postSelectionListener);
 
-      // an NPE occured when the part could not be created
+      // an NPE occurred when the part could not be created
       if (_partListener != null) {
          getViewSite().getPage().removePartListener(_partListener);
       }
@@ -833,6 +834,7 @@ public class TrainingView extends ViewPart {
       TourManager.getInstance().removeTourEventListener(_tourEventListener);
 
       _prefStore.removePropertyChangeListener(_prefChangeListener);
+      _prefStore_Common.removePropertyChangeListener(_prefChangeListener_Common);
 
       super.dispose();
    }
@@ -895,6 +897,13 @@ public class TrainingView extends ViewPart {
 
             final Label label = _lblHRZoneColor[zoneIndex];
             final Color zoneColor = _hrZoneColors[zoneIndex];
+
+            if (label.isDisposed()) {
+
+               // this happened when closing the training view
+
+               continue;
+            }
 
             label.setBackground(zoneColor);
          }
@@ -1010,22 +1019,22 @@ public class TrainingView extends ViewPart {
       } else if (selection instanceof StructuredSelection) {
 
          final Object firstElement = ((StructuredSelection) selection).getFirstElement();
-         if (firstElement instanceof TVICatalogComparedTour) {
+         if (firstElement instanceof TVIRefTour_ComparedTour) {
 
-            updateUI(((TVICatalogComparedTour) firstElement).getTourId());
+            updateUI(((TVIRefTour_ComparedTour) firstElement).getTourId());
 
-         } else if (firstElement instanceof TVICompareResultComparedTour) {
+         } else if (firstElement instanceof TVIElevationCompareResult_ComparedTour) {
 
-            final TVICompareResultComparedTour compareResultItem = (TVICompareResultComparedTour) firstElement;
+            final TVIElevationCompareResult_ComparedTour compareResultItem = (TVIElevationCompareResult_ComparedTour) firstElement;
             final TourData tourData = TourManager.getInstance().getTourData(compareResultItem.getTourId());
             updateUI_20(tourData);
          }
 
-      } else if (selection instanceof SelectionTourCatalogView) {
+      } else if (selection instanceof SelectionReferenceTourView) {
 
-         final SelectionTourCatalogView tourCatalogSelection = (SelectionTourCatalogView) selection;
+         final SelectionReferenceTourView tourCatalogSelection = (SelectionReferenceTourView) selection;
 
-         final TVICatalogRefTourItem refItem = tourCatalogSelection.getRefItem();
+         final TVIRefTour_RefTourItem refItem = tourCatalogSelection.getRefItem();
          if (refItem != null) {
             updateUI(refItem.getTourId());
          }
@@ -1064,7 +1073,7 @@ public class TrainingView extends ViewPart {
 
    private void setChartProperties() {
 
-      UI.updateChartProperties(_chartHrTime, GRID_PREF_PREFIX);
+      net.tourbook.ui.UI.updateChartProperties(_chartHrTime, GRID_PREF_PREFIX, LAYOUT_PREF_PREFIX);
 
       // show title
       _chartHrTime.getChartTitleSegmentConfig().isShowSegmentTitle = true;
@@ -1247,7 +1256,7 @@ public class TrainingView extends ViewPart {
 
       final String prefGraphName = ICommonPreferences.GRAPH_COLORS + GraphColorManager.PREF_GRAPH_TIME + UI.SYMBOL_DOT;
 
-      final String prefColorText = net.tourbook.common.UI.IS_DARK_THEME
+      final String prefColorText = UI.IS_DARK_THEME
             ? GraphColorManager.PREF_COLOR_TEXT_DARK
             : GraphColorManager.PREF_COLOR_TEXT_LIGHT;
 
@@ -1369,7 +1378,7 @@ public class TrainingView extends ViewPart {
        */
       final ChartDataXSerie xData = new ChartDataXSerie(_xSeriePulse);
       xData.setAxisUnit(ChartDataXSerie.X_AXIS_UNIT_NUMBER_CENTER);
-      xData.setUnitLabel(net.tourbook.common.Messages.Graph_Label_Heartbeat_Unit);
+      xData.setUnitLabel(OtherMessages.GRAPH_LABEL_HEARTBEAT_UNIT);
       xData.setUnitStartValue(pulseMin);
 
       chartDataModel.setXData(xData);
@@ -1411,6 +1420,7 @@ public class TrainingView extends ViewPart {
 
       // create hr zones when not yet done or disposed
       if (_hrZoneDataContainerContent == null || _hrZoneDataContainerContent.isDisposed()) {
+
          createUI_52_HrZoneData_ContainerContent();
       }
 
@@ -1420,9 +1430,9 @@ public class TrainingView extends ViewPart {
 
       _tourHrZonePercent = new double[personZoneSize];
 
-      final int tourHrZoneSize = tourHrZoneTimes.length;
+      final int numHrZones = tourHrZoneTimes.length;
 
-      for (int tourZoneIndex = 0; tourZoneIndex < tourHrZoneSize; tourZoneIndex++) {
+      for (int tourZoneIndex = 0; tourZoneIndex < numHrZones; tourZoneIndex++) {
 
          if (tourZoneIndex >= personZoneSize) {
 
@@ -1434,7 +1444,7 @@ public class TrainingView extends ViewPart {
          }
 
          final double zoneTime = tourHrZoneTimes[tourZoneIndex];
-         final double zoneTimePercent = movingTime == 0 //
+         final double zoneTimePercent = movingTime == 0
                ? 0
                : zoneTime * 100.0 / movingTime;
 
@@ -1448,57 +1458,57 @@ public class TrainingView extends ViewPart {
          final TourPersonHRZone hrZone = _personHrZones.get(tourZoneIndex);
 
          final int zoneMaxValue = hrZone.getZoneMaxValue();
-         final String zoneMaxValueText = zoneMaxValue == Integer.MAX_VALUE //
+         final String zoneMaxValueText = zoneMaxValue == Integer.MAX_VALUE
                ? Messages.App_Label_max
                : Integer.toString(zoneMaxValue);
 
          final float zoneMinBpm = zoneContext.zoneMinBpm[tourZoneIndex];
          final float zoneMaxBmp = zoneContext.zoneMaxBpm[tourZoneIndex];
 
-         final String zoneMaxBpmText = zoneMaxBmp == Integer.MAX_VALUE //
+         final String zoneMaxBpmText = zoneMaxBmp == Integer.MAX_VALUE
                ? Messages.App_Label_max
                : Integer.toString((int) zoneMaxBmp);
 
-         final int ageYears = zoneContext.age;
-         final String ageText = UI.SPACE + ageYears + UI.SPACE2 + Messages.Pref_People_Label_Years;
+         final String ageText = "%s %d %s".formatted( //$NON-NLS-1$
+
+               Messages.Pref_People_Label_Age,
+               zoneContext.age,
+               Messages.Pref_People_Label_Years);
 
          final String hrZoneTooltip =
-               //
+
                hrZone.getNameLongShortcutFirst()
-                     //
+
                      + UI.NEW_LINE
                      + UI.NEW_LINE
-                     //
+
                      + hrZone.getZoneMinValue()
                      + UI.DASH
                      + zoneMaxValueText
                      + UI.SPACE
                      + UI.SYMBOL_PERCENTAGE
-                     //
+
                      + UI.SPACE
                      + UI.SYMBOL_EQUAL
                      + UI.SPACE
-                     //
+
                      + Integer.toString((int) zoneMinBpm)
                      + UI.DASH
                      + zoneMaxBpmText
                      + UI.SPACE
-                     + net.tourbook.common.Messages.Graph_Label_Heartbeat_Unit
-                     //
+                     + OtherMessages.GRAPH_LABEL_HEARTBEAT_UNIT
+
                      + UI.NEW_LINE
                      + UI.NEW_LINE
-                     //
-                     + Messages.Pref_People_Label_Age
+
                      + ageText
-                     //
+
                      + UI.DASH_WITH_DOUBLE_SPACE
-                     //
+
                      + Messages.HRMax_Label
                      + UI.SPACE
                      + zoneContext.hrMax
-                     + net.tourbook.common.Messages.Graph_Label_Heartbeat_Unit
-         //
-         ;
+                     + OtherMessages.GRAPH_LABEL_HEARTBEAT_UNIT;
 
          // % values
          _lblHrZonePercent[tourZoneIndex].setText(_nf1.format(zoneTimePercent));
@@ -1508,9 +1518,7 @@ public class TrainingView extends ViewPart {
          _lblTourMinMaxValue[tourZoneIndex].setText(((int) zoneMinBpm) + UI.DASH + zoneMaxBpmText);
          _lblTourMinMaxValue[tourZoneIndex].setToolTipText(hrZoneTooltip);
 
-         _lblTourMinMaxHours[tourZoneIndex].setText(net.tourbook.common.UI
-               .format_hh_mm((long) (zoneTime + 30))
-               .toString());
+         _lblTourMinMaxHours[tourZoneIndex].setText(UI.format_hh_mm((long) (zoneTime + 30)).toString());
          _lblTourMinMaxHours[tourZoneIndex].setToolTipText(hrZoneTooltip);
 
          _lblHRZoneName[tourZoneIndex].setToolTipText(hrZoneTooltip);
@@ -1529,6 +1537,10 @@ public class TrainingView extends ViewPart {
 
             // check if this is the newest request to create an image
             if (__counter < _imageCounter) {
+               return;
+            }
+
+            if (_canvasHrZoneImage.isDisposed()) {
                return;
             }
 

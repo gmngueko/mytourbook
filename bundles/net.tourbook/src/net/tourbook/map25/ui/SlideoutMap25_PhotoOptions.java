@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2018 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  * Copyright (C) 2019 Thomas Theussing
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -16,72 +16,88 @@
  *******************************************************************************/
 package net.tourbook.map25.ui;
 
-import org.eclipse.jface.layout.GridDataFactory;
-import org.eclipse.jface.layout.GridLayoutFactory;
-import org.eclipse.jface.layout.PixelConverter;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.FocusEvent;
-import org.eclipse.swt.events.FocusListener;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseWheelListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.Spinner;
-import org.eclipse.swt.widgets.ToolBar;
-
 import net.tourbook.Messages;
+import net.tourbook.OtherMessages;
 import net.tourbook.common.UI;
 import net.tourbook.common.font.MTFont;
 import net.tourbook.common.tooltip.ToolbarSlideout;
+import net.tourbook.common.util.Util;
+import net.tourbook.map.MapImageSize;
+import net.tourbook.map2.view.SlideoutMap2_PhotoOptions;
 import net.tourbook.map25.Map25App;
-import net.tourbook.map25.Map25ConfigManager;
 import net.tourbook.map25.Map25View;
-import net.tourbook.map25.layer.marker.MarkerConfig;
+import net.tourbook.photo.Photo;
+import net.tourbook.photo.PhotoImageCache;
+import net.tourbook.photo.PhotoLoadManager;
+
+import org.eclipse.jface.dialogs.IDialogSettings;
+import org.eclipse.jface.layout.GridDataFactory;
+import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseWheelListener;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TypedEvent;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
+import org.eclipse.swt.widgets.Spinner;
+import org.eclipse.swt.widgets.ToolBar;
 
 /**
- * Map 2.5D photo properties slideout.
+ * 2.5D map photo properties slideout
  */
 public class SlideoutMap25_PhotoOptions extends ToolbarSlideout {
 
-   private SelectionAdapter   _defaultSelectionListener;
+   private static final int   MIN_IMAGE_SIZE = 20;
+   private static final int   MAX_IMAGE_SIZE = 2000;
 
-   private SelectionAdapter   _layerSelectionListener;
-   
-   private FocusListener      _keepOpenListener;
-   private PixelConverter     _pc;
-   
+   private IDialogSettings    _state;
+
+   private MouseWheelListener _defaultMouseWheelListener;
+   private SelectionListener  _defaultSelectionListener;
+
    private Map25View          _map25View;
+
+   private int                _imageSize;
 
    /*
     * UI controls
     */
    private Composite _parent;
 
-   //private Button    _chkIsShowPhoto;
-   private Button    _chkIsShowPhotoTitle;
-   private Button    _chkIsPhotoClustered;
+   private Button    _chkShowHQImages;
+   private Button    _chkShowPhotoTitle;
 
-   private Button    _chkUseDraggedKeyboardNavigation;
+   private Button    _radioImageSize_Tiny;
+   private Button    _radioImageSize_Small;
+   private Button    _radioImageSize_Medium;
+   private Button    _radioImageSize_Large;
 
+   private Label     _lblHeapSize;
+
+   private Link      _linkDiscardImages;
+
+   private Spinner   _spinnerImageSize_Tiny;
+   private Spinner   _spinnerImageSize_Small;
+   private Spinner   _spinnerImageSize_Medium;
+   private Spinner   _spinnerImageSize_Large;
 
    /**
     * @param ownerControl
     * @param toolBar
+    * @param state
     * @param map25View
     */
    public SlideoutMap25_PhotoOptions(final Control ownerControl,
-                                   final ToolBar toolBar,
-                                   final Map25View map25View) {
+                                     final ToolBar toolBar,
+                                     final IDialogSettings state,
+                                     final Map25View map25View) {
 
       super(ownerControl, toolBar);
 
+      _state = state;
       _map25View = map25View;
    }
 
@@ -99,7 +115,10 @@ public class SlideoutMap25_PhotoOptions extends ToolbarSlideout {
       final Composite ui = createUI(parent);
 
       restoreState();
-      enableActions();
+
+      enableControls();
+
+      updateUI_Memory();
 
       return ui;
    }
@@ -111,15 +130,12 @@ public class SlideoutMap25_PhotoOptions extends ToolbarSlideout {
       {
          final Composite container = new Composite(shellContainer, SWT.NONE);
          GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-         GridLayoutFactory
-               .fillDefaults()//
-               .applyTo(container);
+         GridLayoutFactory.fillDefaults().applyTo(container);
 //			container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
          {
             createUI_10_Title(container);
-
-            createUI_50_Layer(container);
-            createUI_80_Other(container);
+            createUI_20_ImageSize(container);
+            createUI_30_Options(container);
          }
       }
 
@@ -132,185 +148,343 @@ public class SlideoutMap25_PhotoOptions extends ToolbarSlideout {
        * Label: Slideout title
        */
       final Label label = new Label(parent, SWT.NONE);
-      //label.setText(Messages.Slideout_Map25MapOptions_Label_MapOptions);
-      label.setText("Slideout_Map25PhotoOptions_Label_PhotoOptions"); //$NON-NLS-1$
+      label.setText(Messages.Slideout_Map_PhotoOptions_Label_Title);
       MTFont.setBannerFont(label);
-      GridDataFactory
-            .fillDefaults()//
+      GridDataFactory.fillDefaults()
             .align(SWT.BEGINNING, SWT.CENTER)
             .applyTo(label);
    }
 
-   private void createUI_50_Layer(final Composite parent) {
+   private void createUI_20_ImageSize(final Composite parent) {
 
-      final Group group = new Group(parent, SWT.NONE);
-      group.setText("Slideout_Map25PhotoOptions_Group_PhotoLayer"); //$NON-NLS-1$
-      GridDataFactory
-            .fillDefaults()//
-            .grab(true, false)
-            .applyTo(group);
-      GridLayoutFactory.swtDefaults().numColumns(1).applyTo(group);
+      final GridDataFactory gdIndent = GridDataFactory.fillDefaults().indent(16, 0);
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
+//      container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
       {
-         
-//         {
-//            /*
-//             * Photo
-//             */
-//            _chkIsShowPhoto = new Button(group, SWT.CHECK);
-//            _chkIsShowPhoto.setText("Slideout_Map25PhotoOptions_Checkbox_Layer_Photo");
-//            _chkIsShowPhoto.setToolTipText("Slideout_Map25PhotoOptions_Checkbox_Layer_Photo_Tooltip");
-//            _chkIsShowPhoto.addSelectionListener(_layerSelectionListener);
-//         }       
          {
             /*
-             * Photo Clustering
+             * Image size
              */
-            _chkIsPhotoClustered = new Button(group, SWT.CHECK);
-            //_chkIsPhotoClustering.setText(Messages.Slideout_Map25MapOptions_Checkbox_Layer_LabelSymbol);
-            _chkIsPhotoClustered.setText("Slideout_Map25PhotoOptions_Checkbox_Layer_Clustering"); //$NON-NLS-1$
-            _chkIsPhotoClustered.addSelectionListener(_layerSelectionListener);
+            final Label label = new Label(container, SWT.NO_FOCUS);
+            label.setText(Messages.Photo_Properties_Label_Size);
+            label.setToolTipText(Messages.Photo_Properties_Label_ThumbnailSize_Tooltip);
+            GridDataFactory.fillDefaults()
+                  .align(SWT.FILL, SWT.CENTER)
+                  .span(2, 1)
+                  .applyTo(label);
+         }
+         {
+            /*
+             * Image size: Tiny
+             */
+            _radioImageSize_Tiny = new Button(container, SWT.RADIO);
+            _radioImageSize_Tiny.setText(OtherMessages.APP_SIZE_TINY_LABEL);
+            _radioImageSize_Tiny.addSelectionListener(_defaultSelectionListener);
+            gdIndent.applyTo(_radioImageSize_Tiny);
+
+            _spinnerImageSize_Tiny = new Spinner(container, SWT.BORDER);
+            _spinnerImageSize_Tiny.setMinimum(MIN_IMAGE_SIZE);
+            _spinnerImageSize_Tiny.setMaximum(MAX_IMAGE_SIZE);
+            _spinnerImageSize_Tiny.setIncrement(1);
+            _spinnerImageSize_Tiny.setPageIncrement(10);
+            _spinnerImageSize_Tiny.addSelectionListener(_defaultSelectionListener);
+            _spinnerImageSize_Tiny.addMouseWheelListener(_defaultMouseWheelListener);
+         }
+         {
+            /*
+             * Image size: Small
+             */
+            _radioImageSize_Small = new Button(container, SWT.RADIO);
+            _radioImageSize_Small.setText(OtherMessages.APP_SIZE_SMALL_LABEL);
+            _radioImageSize_Small.addSelectionListener(_defaultSelectionListener);
+            gdIndent.applyTo(_radioImageSize_Small);
+
+            _spinnerImageSize_Small = new Spinner(container, SWT.BORDER);
+            _spinnerImageSize_Small.setMinimum(MIN_IMAGE_SIZE);
+            _spinnerImageSize_Small.setMaximum(MAX_IMAGE_SIZE);
+            _spinnerImageSize_Small.setIncrement(1);
+            _spinnerImageSize_Small.setPageIncrement(10);
+            _spinnerImageSize_Small.addSelectionListener(_defaultSelectionListener);
+            _spinnerImageSize_Small.addMouseWheelListener(_defaultMouseWheelListener);
+         }
+         {
+            /*
+             * Image size: Medium
+             */
+            _radioImageSize_Medium = new Button(container, SWT.RADIO);
+            _radioImageSize_Medium.setText(OtherMessages.APP_SIZE_MEDIUM_LABEL);
+            _radioImageSize_Medium.addSelectionListener(_defaultSelectionListener);
+            gdIndent.applyTo(_radioImageSize_Medium);
+
+            _spinnerImageSize_Medium = new Spinner(container, SWT.BORDER);
+            _spinnerImageSize_Medium.setMinimum(MIN_IMAGE_SIZE);
+            _spinnerImageSize_Medium.setMaximum(MAX_IMAGE_SIZE);
+            _spinnerImageSize_Medium.setIncrement(1);
+            _spinnerImageSize_Medium.setPageIncrement(10);
+            _spinnerImageSize_Medium.addSelectionListener(_defaultSelectionListener);
+            _spinnerImageSize_Medium.addMouseWheelListener(_defaultMouseWheelListener);
+         }
+         {
+            /*
+             * Image size: Large
+             */
+            _radioImageSize_Large = new Button(container, SWT.RADIO);
+            _radioImageSize_Large.setText(OtherMessages.APP_SIZE_LARGE_LABEL);
+            _radioImageSize_Large.addSelectionListener(_defaultSelectionListener);
+            gdIndent.applyTo(_radioImageSize_Large);
+
+            _spinnerImageSize_Large = new Spinner(container, SWT.BORDER);
+            _spinnerImageSize_Large.setMinimum(MIN_IMAGE_SIZE);
+            _spinnerImageSize_Large.setMaximum(MAX_IMAGE_SIZE);
+            _spinnerImageSize_Large.setIncrement(1);
+            _spinnerImageSize_Large.setPageIncrement(10);
+            _spinnerImageSize_Large.addSelectionListener(_defaultSelectionListener);
+            _spinnerImageSize_Large.addMouseWheelListener(_defaultMouseWheelListener);
+         }
+      }
+   }
+
+   private void createUI_30_Options(final Composite parent) {
+
+      final Composite container = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.fillDefaults().numColumns(1).applyTo(container);
+//      GridLayoutFactory.swtDefaults().numColumns(1).applyTo(container);
+      {
+         {
+            /*
+             * Show HQ photos
+             */
+            _chkShowHQImages = new Button(parent, SWT.CHECK);
+            _chkShowHQImages.setText(Messages.Slideout_Map_PhotoOptions_Checkbox_ShowHqPhotoImages);
+            _chkShowHQImages.setToolTipText(Messages.Slideout_Map_PhotoOptions_Checkbox_ShowHqPhotoImages_Tooltip);
+            _chkShowHQImages.addSelectionListener(_defaultSelectionListener);
          }
          {
             /*
              * Photo Title
              */
-            _chkIsShowPhotoTitle = new Button(group, SWT.CHECK);
-            //_chkIsShowPhotoTitle.setText(Messages.Slideout_Map25MapOptions_Checkbox_Layer_3DBuilding);
-            _chkIsShowPhotoTitle.setText("Slideout_Map25PhotoOptions_Checkbox_Layer_ShowTitle"); //$NON-NLS-1$
-            _chkIsShowPhotoTitle.addSelectionListener(_layerSelectionListener);
+            _chkShowPhotoTitle = new Button(container, SWT.CHECK);
+            _chkShowPhotoTitle.setText(Messages.Slideout_Map25PhotoOptions_Checkbox_Photo_Title);
+            _chkShowPhotoTitle.addSelectionListener(_defaultSelectionListener);
          }
+         {
+            /*
+             * Discard cached images
+             */
+            _linkDiscardImages = new Link(parent, SWT.NONE);
+            _linkDiscardImages.setText(UI.createLinkText(Messages.Slideout_Map_PhotoOptions_Link_DiscardCachedImages));
+            _linkDiscardImages.setToolTipText(Messages.Slideout_Map_PhotoOptions_Link_DiscardCachedImages_Tooltip);
+            _linkDiscardImages.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onDiscardImages()));
+         }
+         {
+            /*
+             * Memory/heap size
+             */
+            _lblHeapSize = new Label(parent, SWT.NONE);
+            _lblHeapSize.setText(UI.SPACE1);
+            GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER).grab(true, false).applyTo(_lblHeapSize);
+         }
+      }
 
+   }
 
+   private void enableControls() {
+
+      _spinnerImageSize_Large.setEnabled(_radioImageSize_Large.getSelection());
+      _spinnerImageSize_Medium.setEnabled(_radioImageSize_Medium.getSelection());
+      _spinnerImageSize_Small.setEnabled(_radioImageSize_Small.getSelection());
+      _spinnerImageSize_Tiny.setEnabled(_radioImageSize_Tiny.getSelection());
+   }
+
+   private int getSelectedImageSize() {
+
+      if (_radioImageSize_Large.getSelection()) {
+
+         return _spinnerImageSize_Large.getSelection();
+
+      } else if (_radioImageSize_Medium.getSelection()) {
+
+         return _spinnerImageSize_Medium.getSelection();
+
+      } else if (_radioImageSize_Small.getSelection()) {
+
+         return _spinnerImageSize_Small.getSelection();
+
+      } else {
+
+         return _spinnerImageSize_Tiny.getSelection();
       }
    }
 
-   private void createUI_80_Other(final Composite parent) {
-
-//      final Composite container = new Composite(parent, SWT.NONE);
-//      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
-//      GridLayoutFactory
-//            .fillDefaults()
-//            .numColumns(2)
-//            .applyTo(container);
-//      {
-//         {
-            /*
-             * Keyboard navigation
-             */
-
-            // checkbox
-//            _chkUseDraggedKeyboardNavigation = new Button(container, SWT.CHECK);
-//            _chkUseDraggedKeyboardNavigation.setText(Messages.Slideout_Map25MapOptions_Checkbox_UseDraggedKeyNavigation);
-//            _chkUseDraggedKeyboardNavigation.setToolTipText(Messages.Slideout_Map25MapOptions_Checkbox_UseDraggedKeyNavigation_Tooltip);
-//            _chkUseDraggedKeyboardNavigation.addSelectionListener(_defaultSelectionListener);
-//            GridDataFactory
-//                  .fillDefaults()//
-//                  .align(SWT.FILL, SWT.BEGINNING)
-//                  .span(2, 1)
-//                  .applyTo(_chkUseDraggedKeyboardNavigation);
-//         }
-//      }
-      
-   }
-
-   private void enableActions() {
-      Map25App.debugPrint("slideout: enableActions"); //$NON-NLS-1$
-     // final boolean isHillShading = _chkShowLayer_Hillshading.getSelection();
-
-     // _spinnerHillshadingOpacity.setEnabled(isHillShading);
-
-      // force UI update otherwise the slideout UI update is done after the map is updated
-      _parent.update();
-   }
-
    private void initUI(final Composite parent) {
-      Map25App.debugPrint("slideout: initUI");  //$NON-NLS-1$
+
       _parent = parent;
 
-      _pc = new PixelConverter(parent);
+      _defaultSelectionListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> {
 
-      _defaultSelectionListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            onChangeUI();
-         }
+         onChangeUI(selectionEvent);
+      });
+
+      _defaultMouseWheelListener = mouseEvent -> {
+         UI.adjustSpinnerValueOnMouseScroll(mouseEvent, 10, true);
+         onChangeUI(mouseEvent);
       };
-
-
-
-      _keepOpenListener = new FocusListener() {
-
-         @Override
-         public void focusGained(final FocusEvent e) {
-
-            /*
-             * This will fix the problem that when the list of a combobox is displayed, then the
-             * slideout will disappear :-(((
-             */
-            setIsAnotherDialogOpened(true);
-         }
-
-         @Override
-         public void focusLost(final FocusEvent e) {
-            setIsAnotherDialogOpened(false);
-         }
-      };
-
-      _layerSelectionListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            onModify_Layer();
-           _map25View.getMapApp();
-         Map25App.debugPrint("slideout: widget selected");  //$NON-NLS-1$
-         }
-      };
-
-
    }
 
-   private void onChangeUI() {
-      Map25App.debugPrint("slideout: onChangeUI");  //$NON-NLS-1$
+   private void onChangeUI(final TypedEvent selectionEvent) {
+
+      /**
+       * Very strange:
+       * <p>
+       * The radio buttons are fireing this event twice, first the unselected then the selected
+       * radio buttons
+       */
+      if (selectionEvent.widget instanceof final Button button) {
+
+         if (button == _radioImageSize_Large
+               || button == _radioImageSize_Medium
+               || button == _radioImageSize_Small
+               || button == _radioImageSize_Tiny) {
+
+            if (button.getSelection() == false) {
+
+               // skip the unselected event
+
+               return;
+            }
+         }
+      }
+
+      _imageSize = getSelectedImageSize();
+
+      // updade model
       saveState();
 
-      enableActions();
+      // update UI
+      updateUI();
+
+      enableControls();
    }
 
+   private void onDiscardImages() {
 
+      PhotoLoadManager.stopImageLoading(true);
+      PhotoLoadManager.removeInvalidImageFiles();
 
-   private void onModify_Layer() {
-      Map25App.debugPrint("slideout: onModify_Layer");  //$NON-NLS-1$
-      final Map25App mapApp = _map25View.getMapApp();
+      PhotoImageCache.disposeAll();
 
-     // mapApp.getLayer_Photo().setEnabled(_chkIsShowPhoto.getSelection());
+      updateUI();
 
-      mapApp.setIsPhotoClustered(_chkIsPhotoClustered.getSelection());
-      
-      mapApp.setIsPhotoShowTitle(_chkIsShowPhotoTitle.getSelection());
+      System.gc();
 
-      enableActions();
-
-      mapApp.getMap().updateMap(true);
-      mapApp.updateUI_PhotoLayer();
+      updateUI_Memory();
    }
 
    private void restoreState() {
 
-      final Map25App mapApp = _map25View.getMapApp();
+   // SET_FORMATTING_OFF
 
-     //_chkIsShowPhoto.setSelection(mapApp.getLayer_Photo().isEnabled());
+         _chkShowHQImages     .setSelection(Util.getStateBoolean(_state, Map25View.STATE_IS_SHOW_THUMB_HQ_IMAGES, Map25View.STATE_IS_SHOW_THUMB_HQ_IMAGES_DEFAULT));
+         _chkShowPhotoTitle   .setSelection(Util.getStateBoolean(_state, Map25View.STATE_IS_SHOW_PHOTO_TITLE,     Map25View.STATE_IS_SHOW_PHOTO_TITLE_DEFAULT));
 
-      _chkIsPhotoClustered.setSelection(mapApp.getIsPhotoClustered());
+         final Enum<MapImageSize> imageSizeCategory = Util.getStateEnum(_state, Map25View.STATE_PHOTO_IMAGE_SIZE, MapImageSize.MEDIUM);
 
-      _chkIsShowPhotoTitle.setSelection(mapApp.getIsPhotoShowTitle());   
-      
+         final int imageSizeLarge   = Util.getStateInt(_state, Map25View.STATE_PHOTO_IMAGE_SIZE_LARGE,  Map25App.MAP_IMAGE_DEFAULT_SIZE_LARGE);
+         final int imageSizeMedium  = Util.getStateInt(_state, Map25View.STATE_PHOTO_IMAGE_SIZE_MEDIUM, Map25App.MAP_IMAGE_DEFAULT_SIZE_MEDIUM);
+         final int imageSizeSmall   = Util.getStateInt(_state, Map25View.STATE_PHOTO_IMAGE_SIZE_SMALL,  Map25App.MAP_IMAGE_DEFAULT_SIZE_SMALL);
+         final int imageSizeTiny    = Util.getStateInt(_state, Map25View.STATE_PHOTO_IMAGE_SIZE_TINY,   Map25App.MAP_IMAGE_DEFAULT_SIZE_TINY);
+
+         _spinnerImageSize_Large .setSelection(imageSizeLarge);
+         _spinnerImageSize_Medium.setSelection(imageSizeMedium);
+         _spinnerImageSize_Small .setSelection(imageSizeSmall);
+         _spinnerImageSize_Tiny  .setSelection(imageSizeTiny);
+
+   // SET_FORMATTING_ON
+
+      if (imageSizeCategory.equals(MapImageSize.LARGE)) {
+
+         _imageSize = imageSizeLarge;
+         _radioImageSize_Large.setSelection(true);
+
+      } else if (imageSizeCategory.equals(MapImageSize.MEDIUM)) {
+
+         _imageSize = imageSizeMedium;
+         _radioImageSize_Medium.setSelection(true);
+
+      } else if (imageSizeCategory.equals(MapImageSize.SMALL)) {
+
+         _imageSize = imageSizeSmall;
+         _radioImageSize_Small.setSelection(true);
+
+      } else {
+
+         _imageSize = imageSizeTiny;
+         _radioImageSize_Tiny.setSelection(true);
+      }
+
+      Photo.setMap25ImageRequestedSize(_imageSize);
    }
 
    private void saveState() {
-      final MarkerConfig config = Map25ConfigManager.getActiveMarkerConfig();
-    //  config.isShowPhoto = _chkIsShowPhoto.getSelection();
-      config.isShowPhotoTitle = _chkIsShowPhotoTitle.getSelection();
-      config.isPhotoClustered = _chkIsPhotoClustered.getSelection();
-      //Map25ConfigManager.useDraggedKeyboardNavigation = _chkUseDraggedKeyboardNavigation.getSelection();
+
+   // SET_FORMATTING_OFF
+
+      _state.put(Map25View.STATE_IS_SHOW_PHOTO_TITLE,     _chkShowPhotoTitle      .getSelection());
+      _state.put(Map25View.STATE_IS_SHOW_THUMB_HQ_IMAGES, _chkShowHQImages        .getSelection());
+
+      final Enum<MapImageSize> selectedSize =
+
+      _radioImageSize_Large   .getSelection()   ? MapImageSize.LARGE    :
+      _radioImageSize_Medium  .getSelection()   ? MapImageSize.MEDIUM   :
+      _radioImageSize_Small   .getSelection()   ? MapImageSize.SMALL    :
+                                                  MapImageSize.TINY;
+
+      _state.put(Map25View.STATE_PHOTO_IMAGE_SIZE_LARGE,  _spinnerImageSize_Large .getSelection());
+      _state.put(Map25View.STATE_PHOTO_IMAGE_SIZE_MEDIUM, _spinnerImageSize_Medium.getSelection());
+      _state.put(Map25View.STATE_PHOTO_IMAGE_SIZE_SMALL,  _spinnerImageSize_Small .getSelection());
+      _state.put(Map25View.STATE_PHOTO_IMAGE_SIZE_TINY,   _spinnerImageSize_Tiny  .getSelection());
+
+      Util.setStateEnum(_state, Map25View.STATE_PHOTO_IMAGE_SIZE, selectedSize);
+
+   // SET_FORMATTING_ON
+
+      _map25View.getMapApp().getPhotoToolkit().restoreState();
+   }
+
+   private void updateUI() {
+
+      // run async that the slideout UI is updated immediately
+
+      Photo.setMap25ImageRequestedSize(_imageSize);
+
+      _parent.getDisplay().asyncExec(() -> {
+
+         final Map25App mapApp = _map25View.getMapApp();
+
+         mapApp.updateLayer_Photos();
+         mapApp.updateMap();
+      });
+   }
+
+   private void updateUI_Memory() {
+
+      if (_lblHeapSize.isDisposed()) {
+         return;
+      }
+
+      final Runtime runtime = Runtime.getRuntime();
+
+      final String heapSize = Messages.Slideout_Map_PhotoOptions_Label_MemoryState.formatted(
+
+            SlideoutMap2_PhotoOptions.formatSize(runtime.totalMemory()),
+            SlideoutMap2_PhotoOptions.formatSize(runtime.freeMemory()),
+            SlideoutMap2_PhotoOptions.formatSize(runtime.maxMemory()));
+
+      _lblHeapSize.setText(heapSize);
    }
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,11 +18,14 @@ package net.tourbook.tour;
 import net.tourbook.chart.SelectionChartInfo;
 import net.tourbook.chart.SelectionChartXSliderPosition;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourLocation;
 import net.tourbook.tag.ChangedTags;
 import net.tourbook.ui.tourChart.HoveredValueData;
 import net.tourbook.ui.views.sensors.SelectionRecordingDeviceBattery;
 import net.tourbook.ui.views.sensors.SelectionSensor;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
+
+import org.eclipse.jface.viewers.ISelection;
 
 public enum TourEventId {
 
@@ -79,10 +82,20 @@ public enum TourEventId {
    NOTIFY_TAG_VIEW,
 
    /**
+    * Structure of equipment are changed
+    */
+   EQUIPMENT_STRUCTURE_CHANGED,
+
+   /**
     * structure of the tags changed, this includes add/remove of tags and categories and
     * tag/category renaming
     */
    TAG_STRUCTURE_CHANGED,
+
+   /**
+    * Equipment or tag content has changed, e.g. tag image size
+    */
+   CONTENT_LAYOUT_CHANGED,
 
    /**
     * Sliders in the tour chart moved. Property data contains {@link SelectionChartInfo} or
@@ -128,6 +141,11 @@ public enum TourEventId {
    SELECTION_RECORDING_DEVICE_BATTERY,
 
    /**
+    * Something is selected in the map, event data contains a {@link ISelection}
+    */
+   MAP_SELECTION,
+
+   /**
     * Show geo grid in the map, event data contains {@link TourGeoFilterItem}
     */
    MAP_SHOW_GEO_GRID,
@@ -137,4 +155,20 @@ public enum TourEventId {
     * {@link Selection_StatisticValues}.
     */
    STATISTIC_VALUES,
+
+   /**
+    * Common locations are selected, event data contains a list with all {@link TourLocation}
+    */
+   COMMON_LOCATION_SELECTION,
+
+   /**
+    * Tour locations are selected, event data contains a list with all {@link TourLocation}
+    */
+   TOUR_LOCATION_SELECTION,
+
+   /**
+    * Fulltext was searched, the event data is containing a list with all tour ID's
+    */
+   FULLTEXT_SEARCH_TOURS,
+
 }

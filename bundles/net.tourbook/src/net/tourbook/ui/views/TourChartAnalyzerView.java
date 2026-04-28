@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -33,8 +33,11 @@ import net.tourbook.chart.GraphDrawingData;
 import net.tourbook.chart.SelectionChartInfo;
 import net.tourbook.chart.SelectionChartXSliderPosition;
 import net.tourbook.chart.Util;
+import net.tourbook.common.CommonActivator;
 import net.tourbook.common.UI;
+import net.tourbook.common.preferences.ICommonPreferences;
 import net.tourbook.data.TourData;
+import net.tourbook.map2.view.SelectionMapSelection;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.tour.ITourEventListener;
 import net.tourbook.tour.SelectionDeletedTours;
@@ -67,56 +70,57 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.ISelectionListener;
 import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.part.PageBook;
 import org.eclipse.ui.part.ViewPart;
 
 public class TourChartAnalyzerView extends ViewPart {
 
-   public static final String          ID               = "net.tourbook.views.TourChartAnalyzer"; //$NON-NLS-1$
+   public static final String            ID                = "net.tourbook.views.TourChartAnalyzer"; //$NON-NLS-1$
 
-   private static final int            LAYOUT_1_COLUMNS = 0;
-   private static final int            LAYOUT_2_COLUMNS = 1;
-   private static final int            LAYOUT_3_COLUMNS = 2;
-   private static final int            LAYOUT_6_COLUMNS = 3;
+   private static final int              LAYOUT_1_COLUMNS  = 0;
+   private static final int              LAYOUT_2_COLUMNS  = 1;
+   private static final int              LAYOUT_3_COLUMNS  = 2;
+   private static final int              LAYOUT_6_COLUMNS  = 3;
 
-   private final IPreferenceStore      _prefStore       = TourbookPlugin.getPrefStore();
+   private static final IPreferenceStore _prefStore_Common = CommonActivator.getPrefStore();
+   private final IPreferenceStore        _prefStore        = TourbookPlugin.getPrefStore();
 
-   private IPartListener2              _partListener;
-   private ISelectionListener          _postSelectionListener;
-   private IPropertyChangeListener     _prefChangeListener;
-   private ITourEventListener          _tourEventListener;
+   private IPartListener2                _partListener;
+   private ISelectionListener            _postSelectionListener;
+   private IPropertyChangeListener       _prefChangeListener;
+   private IPropertyChangeListener       _prefChangeListener_Common;
+   private ITourEventListener            _tourEventListener;
 
-   private ChartDataModel              _chartDataModel;
-   private ChartDrawingData            _chartDrawingData;
-   private ArrayList<GraphDrawingData> _graphDrawingData;
+   private ChartDataModel                _chartDataModel;
+   private ChartDrawingData              _chartDrawingData;
+   private ArrayList<GraphDrawingData>   _graphDrawingData;
 
-   private final ArrayList<GraphInfo>  _graphInfos      = new ArrayList<>();
+   private final ArrayList<GraphInfo>    _graphInfos       = new ArrayList<>();
 
-   private final ColorCache            _colorCache      = new ColorCache();
+   private final ColorCache              _colorCache       = new ColorCache();
 
-   private SelectionChartInfo          _chartInfo;
+   private SelectionChartInfo            _chartInfo;
 
-   private int                         _layoutFormat;
-
-   private int                         _valueIndexLeftBackup;
-   private int                         _valueIndexRightBackup;
+   private int                           _layoutFormat;
 
    /**
     * space between columns
     */
-   int                                 _columnSpacing   = 1;
+   int                                   _columnSpacing    = 1;
 
-   private boolean                     _isPartVisible   = false;
+   private boolean                       _isPartVisible    = false;
 
-   private PixelConverter              _pc;
+   private PixelConverter                _pc;
 
-   private int                         _valueIndexRightLast;
-   private int                         _valueIndexLeftLast;
+   private int                           _valueIndexLeftBackup;
+   private int                           _valueIndexRightBackup;
 
-   private long                        _lastUpdateUITime;
-   private int[]                       _updateCounter   = new int[] { 0 };
+   private int                           _valueIndexLeftLast;
+   private int                           _valueIndexRightLast;
+
+   private long                          _lastUpdateUITime;
+   private int[]                         _updateCounter    = new int[] { 0 };
 
    /*
     * UI controls
@@ -143,12 +147,7 @@ public class TourChartAnalyzerView extends ViewPart {
 
       _partContainer.addControlListener(controlResizedAdapter(controlEvent -> onResizeUI()));
 
-      _postSelectionListener = new ISelectionListener() {
-         @Override
-         public void selectionChanged(final IWorkbenchPart part, final ISelection selection) {
-            onSelectionChanged(selection);
-         }
-      };
+      _postSelectionListener = (part, selection) -> onSelection(selection);
       page.addPostSelectionListener(_postSelectionListener);
    }
 
@@ -226,31 +225,48 @@ public class TourChartAnalyzerView extends ViewPart {
          }
       };
 
+      _prefChangeListener_Common = propertyChangeEvent -> {
+
+         final String property = propertyChangeEvent.getProperty();
+
+         if (property.equals(ICommonPreferences.MEASUREMENT_SYSTEM)) {
+
+            // measurement system has changed
+            updateInfo();
+
+            // different unit labels have different widths
+            _pageBook.layout(true, true);
+         }
+      };
+
       _prefStore.addPropertyChangeListener(_prefChangeListener);
+      _prefStore_Common.addPropertyChangeListener(_prefChangeListener_Common);
    }
 
    private void addTourEventListener() {
 
-      _tourEventListener = new ITourEventListener() {
-         @Override
-         public void tourChanged(final IWorkbenchPart part, final TourEventId eventId, final Object eventData) {
+      _tourEventListener = (part, tourEventId, eventData) -> {
 
-            if (part == TourChartAnalyzerView.this) {
-               return;
-            }
+         if (part == TourChartAnalyzerView.this) {
+            return;
+         }
 
-            if ((eventId == TourEventId.TOUR_SELECTION) && eventData instanceof ISelection) {
+         if ((tourEventId == TourEventId.TOUR_SELECTION) && eventData instanceof final ISelection selection) {
 
-               onSelectionChanged((ISelection) eventData);
+            onSelection(selection);
 
-            } else if (eventId == TourEventId.SLIDER_POSITION_CHANGED && eventData instanceof ISelection) {
+         } else if (tourEventId == TourEventId.SLIDER_POSITION_CHANGED && eventData instanceof final ISelection selection) {
 
-               onSelectionChanged((ISelection) eventData);
+            onSelection(selection);
 
-            } else if (eventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+         } else if (tourEventId == TourEventId.MAP_SELECTION && eventData instanceof SelectionMapSelection) {
 
-               clearView();
-            }
+            // sliders are set in the tour chart
+            updateInfo();
+
+         } else if (tourEventId == TourEventId.CLEAR_DISPLAYED_TOUR) {
+
+            clearView();
          }
       };
 
@@ -703,6 +719,7 @@ public class TourChartAnalyzerView extends ViewPart {
       page.removePartListener(_partListener);
 
       _prefStore.removePropertyChangeListener(_prefChangeListener);
+      _prefStore_Common.removePropertyChangeListener(_prefChangeListener_Common);
 
       _colorCache.dispose();
 
@@ -744,7 +761,7 @@ public class TourChartAnalyzerView extends ViewPart {
       updateInfo(_chartInfo, true);
    }
 
-   private void onSelectionChanged(final ISelection selection) {
+   private void onSelection(final ISelection selection) {
 
       if (_isPartVisible == false) {
          return;
@@ -798,7 +815,8 @@ public class TourChartAnalyzerView extends ViewPart {
    private void showTour() {
 
       final ISelection selection = getSite().getWorkbenchWindow().getSelectionService().getSelection();
-      onSelectionChanged(selection);
+
+      onSelection(selection);
 
       if (_chartInfo == null) {
 
@@ -826,16 +844,19 @@ public class TourChartAnalyzerView extends ViewPart {
                final TourData selectedTour = selectedTours.get(0);
                final SelectionTourId tourSelection = new SelectionTourId(selectedTour.getTourId());
 
-               onSelectionChanged(tourSelection);
+               onSelection(tourSelection);
             }
          });
       }
    }
 
+   /**
+    * Update values with data from the tour chart which MUST be open
+    */
    private void updateInfo() {
 
       /*
-       * Run this delayed because the tour chart may not yet contain the data when a new tour is
+       * Run it delayed because the tour chart may not yet contain the data when a new tour is
        * selected.
        */
 
@@ -865,7 +886,7 @@ public class TourChartAnalyzerView extends ViewPart {
       // get time when the redraw is requested
       final long requestedRedrawTime = System.currentTimeMillis();
 
-      if (requestedRedrawTime > _lastUpdateUITime + 100) {
+      if (requestedRedrawTime > _lastUpdateUITime + 200) {
 
          // force a redraw
 
@@ -1008,12 +1029,13 @@ public class TourChartAnalyzerView extends ViewPart {
       }
 
       /*
-       * Optimize performance, this can probably be ignore because it must be deeply zoomed in to
+       * Optimize performance, this can probably be ignore because it must be deeply zoomed in, to
        * see a performance gain.
        */
       if (isForceUpdate == false
             && _valueIndexLeftLast == valuesIndexLeft
             && _valueIndexRightLast == valuesIndexRight) {
+
          return;
       }
 
@@ -1042,14 +1064,12 @@ public class TourChartAnalyzerView extends ViewPart {
          final int valueDivisor = serieData.getValueDivisor();
 
          double[] values = null;
-         if (serieData instanceof ChartDataYSerie) {
+         if (serieData instanceof final ChartDataYSerie yData) {
 
-            final ChartDataYSerie yData = (ChartDataYSerie) serieData;
             values = yData.getHighValuesDouble()[0];
 
-         } else if (serieData instanceof ChartDataXSerie) {
+         } else if (serieData instanceof final ChartDataXSerie graphXData) {
 
-            final ChartDataXSerie graphXData = (ChartDataXSerie) serieData;
             values = graphXData.getHighValuesDouble()[0];
          }
 

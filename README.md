@@ -1,7 +1,8 @@
+<center><img src="https://mytourbook.sourceforge.io/mytourbook/images/mytb/start-page/2024/splash-2401.png" width="50%"></center>
+
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![Downloads](https://img.shields.io/sourceforge/dt/mytourbook)](https://sourceforge.net/projects/mytourbook/files/latest/download)
-[![Downloads](https://img.shields.io/sourceforge/dm/mytourbook)](https://sourceforge.net/projects/mytourbook/files/latest/download)
-[![Latest release](https://badgen.net/github/tag/wolfgang-ch/mytourbook)](https://github.com/wolfgang-ch/mytourbook/tags/)
+[![Github All Releases](https://img.shields.io/github/downloads/wolfgang-ch/mytourbook/total.svg)]()
+[![Latest release](https://img.shields.io/github/v/release/wolfgang-ch/mytourbook)](https://github.com/wolfgang-ch/mytourbook/releases)
 
 [![Build status](https://github.com/wolfgang-ch/mytourbook/actions/workflows/build.yml/badge.svg)](https://github.com/wolfgang-ch/mytourbook/actions/workflows/build.yml)
 
@@ -11,10 +12,16 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=wolfgang-ch_mytourbook&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=wolfgang-ch_mytourbook)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=wolfgang-ch_mytourbook&metric=coverage)](https://sonarcloud.io/summary/new_code?id=wolfgang-ch_mytourbook)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=wolfgang-ch_mytourbook&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=wolfgang-ch_mytourbook)
-
+   
+<div>
+   <a href="https://github.com/mytourbook/mytourbook/issues/480"><img src="/info/community/oss-open-source-excellence-black.svg" width="150" height="150" /></a>
+   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+   <a href="https://github.com/mytourbook/mytourbook/issues/480"><img src="/info/community/oss-community-choice-black.svg" width="150" height="150" /></a>
+</div>
+   
 # MyTourbook
 
-All documentations for this project are available on the website <http://mytourbook.sourceforge.net>
+All documentations for this project are available on the website <https://mytourbook.sourceforge.io/>
 
 **Some contributor links**
 
@@ -32,6 +39,10 @@ _This document will not repeat already written text in the documentation._
 
 
 ## Commandline arguments
+
+When a command line argument is used, then the first argument has to be prefixed with `-vmargs`
+
+e.g. `-vmargs -DlogFitData -DcreateRandomTourId`
 
 ### Logging
 
@@ -54,7 +65,7 @@ _This document will not repeat already written text in the documentation._
 
 **Scramble content/values**
 
-It is scrambeling text and values. This is used to create anynymous screenshots
+This will scramble text and values. This is used to create anonymous screenshots
 
 -DscrambleData
 
@@ -69,3 +80,9 @@ It is scrambeling text and values. This is used to create anynymous screenshots
 This can be used to update default values in the Java code
 
 -DlogColorValues
+
+**Silently update the database in the background at startup**
+
+This can be used to update the database when a new version is available
+
+-DsilentDatabaseUpdate

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@ import net.tourbook.common.util.Util;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.importdata.TourbookDevice;
+import net.tourbook.math.Fmath;
 import net.tourbook.tour.TourManager;
 
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -374,7 +375,7 @@ public class Suunto2_SAXHandler extends DefaultHandler {
          _isInTemperature = false;
 
          final float kelvin = Util.parseFloat(_characters.toString());
-         _sampleData.temperature = kelvin - 273.15f;
+         _sampleData.temperature = (float) (kelvin + Fmath.T_ABS);
 
       } else if (name.equals(TAG_UTC)) {
 
@@ -504,7 +505,8 @@ public class Suunto2_SAXHandler extends DefaultHandler {
       tourData.setDeviceTimeInterval((short) -1);
       tourData.setImportFilePath(_importFilePath);
 
-      tourData.setCalories(_tourCalories);
+      // convert kcal -> cal
+      tourData.setCalories(_tourCalories * 1000);
 
       tourData.setBattery_Percentage_Start(_tourBatteryPercentageStart);
       tourData.setBattery_Percentage_End(_tourBatteryPercentageEnd);

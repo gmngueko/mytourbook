@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -32,12 +32,12 @@ public class ActionSetupImport extends Action {
       setToolTipText(Messages.Import_Data_Action_SetupEasyImport_Tooltip);
 
       setImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.TourOptions));
-      setDisabledImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.TourOptions_Disabled));
    }
 
    @Override
    public void run() {
-      _rawDataView.action_Easy_SetupImport(-1);
+
+      _rawDataView.onSelect_SetupEasyImport(-1);
    }
 
 }

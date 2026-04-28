@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,7 @@ import net.tourbook.preferences.PrefPageAppearanceTourChart;
 import net.tourbook.srtm.IPreferences;
 import net.tourbook.srtm.PrefPageSRTMData;
 import net.tourbook.ui.ChartOptions_Grid;
+import net.tourbook.ui.ChartOptions_Layout;
 
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -38,12 +39,12 @@ import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.resource.JFaceResources;
+import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.MouseWheelListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
@@ -61,23 +62,26 @@ import org.eclipse.ui.dialogs.PreferencesUtil;
  */
 public class SlideoutTourChartOptions extends ToolbarSlideout implements IActionResetToDefault {
 
-   private final IPreferenceStore _prefStore           = TourbookPlugin.getPrefStore();
+   private static final IPreferenceStore _prefStore           = TourbookPlugin.getPrefStore();
 
-   private SelectionAdapter       _defaultSelectionListener;
-   private MouseWheelListener     _defaultMouseWheelListener;
+   private SelectionListener             _defaultSelectionListener;
+   private MouseWheelListener            _defaultMouseWheelListener;
+   private FocusListener                 _keepOpenListener;
 
-   private ActionOpenPrefDialog   _actionPrefDialog;
-   private ActionResetToDefaults  _actionRestoreDefaults;
+   private ActionOpenPrefDialog          _actionPrefDialog;
+   private ActionResetToDefaults         _actionRestoreDefaults;
 
-   private ChartOptions_Grid      _gridUI;
+   private ChartOptions_Grid             _gridUI;
+   private ChartOptions_Layout           _layoutUI;
 
-   private SelectionAdapter       _defaultSelectionAdapter;
-   private FocusListener          _keepOpenListener;
+   private boolean                       _isNeededToRecomputeValues;
+
+   private int                           _speedDistanceIntervalBackup;
 
    /**
     * Pulse graph values MUST be in sync with pulse graph labels
     */
-   private PulseGraph[]           _allPulseGraph_Value = {
+   private PulseGraph[]                  _allPulseGraph_Value = {
 
          PulseGraph.DEVICE_BPM___2ND_RR_AVERAGE,
          PulseGraph.DEVICE_BPM_ONLY,
@@ -92,7 +96,7 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
    /**
     * Pulse graph labels MUST be in sync with pulse graph values
     */
-   private String[]               _allPulseGraph_Label = {
+   private String[]                      _allPulseGraph_Label = {
 
          Messages.TourChart_PulseGraph_DeviceBpm_2nd_RRAverage,
          Messages.TourChart_PulseGraph_DeviceBpm_Only,
@@ -103,15 +107,16 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
          Messages.TourChart_PulseGraph_RRAverage_2nd_DeviceBpm,
    };
 
-   private ArrayList<PulseGraph>  _possiblePulseGraph_Values;
+   private ArrayList<PulseGraph>         _possiblePulseGraph_Values;
 
    /*
     * UI controls
     */
    private TourChart _tourChart;
 
+   private Button    _chkGraphAntialiasing;
    private Button    _chkInvertPaceGraph;
-   private Button    _chkSelectAllTimeSlices;
+   private Button    _chkSelectInbetweenTimeSlices;
    private Button    _chkShowBreaktimeValues;
    private Button    _chkShowNightSections;
    private Button    _chkShowSrtmData;
@@ -119,7 +124,14 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
    private Button    _chkShowValuePointTooltip;
    private Button    _chkShowValuePointValue;
 
+   private Button    _rdoShowSrtm1Values;
+   private Button    _rdoShowSrtm3Values;
+
+   private Label     _lblNightSectionsOpacity;
+
+   private Spinner   _spinnerGraphLineOpacity;
    private Spinner   _spinnerNightSectionsOpacity;
+   private Spinner   _spinnerSpeedDistanceInterval;
 
    private Combo     _comboPulseValueGraph;
 
@@ -132,13 +144,15 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
    public SlideoutTourChartOptions(final Control ownerControl,
                                    final ToolBar toolBar,
                                    final TourChart tourChart,
-                                   final String gridPrefPrefix) {
+                                   final String gridPrefPrefix,
+                                   final String layoutPrefPrefix) {
 
       super(ownerControl, toolBar);
 
       _tourChart = tourChart;
 
       _gridUI = new ChartOptions_Grid(gridPrefPrefix);
+      _layoutUI = new ChartOptions_Layout(layoutPrefPrefix);
    }
 
    private void createActions() {
@@ -182,10 +196,12 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
                createUI_10_Title(titleContainer);
                createUI_12_Actions(titleContainer);
             }
+
             createUI_20_Options(container);
             createUI_30_Graph(container);
 
             _gridUI.createUI(container);
+            _layoutUI.createUI(container);
          }
       }
 
@@ -251,35 +267,62 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
              */
             _chkShowSrtmData = new Button(container, SWT.CHECK);
             _chkShowSrtmData.setText(Messages.tour_action_show_srtm_data);
-            _chkShowSrtmData.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  onSelectSRTM();
+            _chkShowSrtmData.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onSelectSRTM()));
+
+            final Composite srtmContainer = new Composite(container, SWT.NONE);
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .indent(16, 0)
+                  .applyTo(srtmContainer);
+            GridLayoutFactory.fillDefaults().numColumns(2).applyTo(srtmContainer);
+            {
+               {
+                  // radio: SRTM1
+                  _rdoShowSrtm1Values = new Button(srtmContainer, SWT.RADIO);
+                  _rdoShowSrtm1Values.setText(Messages.Slideout_TourChartOptions_Radio_SRTM1);
+                  _rdoShowSrtm1Values.setToolTipText(Messages.Slideout_TourChartOptions_Radio_SRTM1_Tooltip);
+                  _rdoShowSrtm1Values.addSelectionListener(_defaultSelectionListener);
                }
-            });
+               {
+                  // radio: SRTM3
+                  _rdoShowSrtm3Values = new Button(srtmContainer, SWT.RADIO);
+                  _rdoShowSrtm3Values.setText(Messages.Slideout_TourChartOptions_Radio_SRTM3);
+                  _rdoShowSrtm3Values.addSelectionListener(_defaultSelectionListener);
+               }
+            }
          }
          {
+            /*
+             * Show night section
+             */
+
+            _chkShowNightSections = new Button(container, SWT.CHECK);
+            _chkShowNightSections.setText(Messages.Slideout_TourChartOptions_Checkbox_ShowNightSections);
+            _chkShowNightSections.addSelectionListener(_defaultSelectionListener);
+
             final Composite nightContainer = new Composite(container, SWT.NONE);
-            GridDataFactory.fillDefaults().grab(true, false).applyTo(nightContainer);
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .indent(16, 0)
+                  .applyTo(nightContainer);
             GridLayoutFactory.fillDefaults().numColumns(2).applyTo(nightContainer);
             {
-               /*
-                * label: Night Sections Opacity
-                */
-               _chkShowNightSections = new Button(nightContainer, SWT.CHECK);
-               _chkShowNightSections.setText(Messages.Slideout_TourChartOptions_Check_NightSectionsOpacity);
-               _chkShowNightSections.setToolTipText(Messages.Slideout_TourChartOptions_Check_NightSectionsOpacity_Tooltip);
-               _chkShowNightSections.addSelectionListener(_defaultSelectionListener);
+               final String tooltipText = NLS.bind(
+                     Messages.Slideout_TourChartOptions_Label_NightSectionsOpacity_Tooltip,
+                     UI.TRANSFORM_OPACITY_MAX);
 
-               /*
-                * Night Sections Opacity Scale
-                */
+               // label: night sections opacity
+               _lblNightSectionsOpacity = new Label(nightContainer, SWT.CHECK);
+               _lblNightSectionsOpacity.setText(Messages.Slideout_TourChartOptions_Label_NightSectionsOpacity);
+               _lblNightSectionsOpacity.setToolTipText(tooltipText);
+
+               // spinner: Night sections opacity
                _spinnerNightSectionsOpacity = new Spinner(nightContainer, SWT.BORDER);
                _spinnerNightSectionsOpacity.setMinimum(0);
-               _spinnerNightSectionsOpacity.setMaximum(100);
+               _spinnerNightSectionsOpacity.setMaximum(UI.TRANSFORM_OPACITY_MAX);
                _spinnerNightSectionsOpacity.setIncrement(1);
                _spinnerNightSectionsOpacity.setPageIncrement(10);
-               _spinnerNightSectionsOpacity.setToolTipText(Messages.Slideout_TourChartOptions_Check_NightSectionsOpacity_Tooltip);
+               _spinnerNightSectionsOpacity.setToolTipText(tooltipText);
                _spinnerNightSectionsOpacity.addSelectionListener(_defaultSelectionListener);
                _spinnerNightSectionsOpacity.addMouseWheelListener(_defaultMouseWheelListener);
             }
@@ -298,27 +341,23 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
              */
             _chkShowValuePointTooltip = new Button(container, SWT.CHECK);
             _chkShowValuePointTooltip.setText(Messages.Tour_Action_ValuePointToolTip_IsVisible);
-            _chkShowValuePointTooltip.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
+            _chkShowValuePointTooltip.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> {
 
-                  // set in pref store, tooltip is listening pref store modifications
-                  _prefStore.setValue(
-                        ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE,
-                        _chkShowValuePointTooltip.getSelection());
-
-               }
-            });
+               // set in pref store, tooltip is listening pref store modifications
+               _prefStore.setValue(
+                     ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE_CHART,
+                     _chkShowValuePointTooltip.getSelection());
+            }));
          }
          {
             /*
              * Options to select all the time slices in between the left and right sliders or only
              * the current slider's one
              */
-            _chkSelectAllTimeSlices = new Button(container, SWT.CHECK);
-            _chkSelectAllTimeSlices.setText(Messages.Tour_Action_Select_Inbetween_Timeslices);
-            _chkSelectAllTimeSlices.setToolTipText(Messages.Tour_Action_Select_Inbetween_Timeslices_Tooltip);
-            _chkSelectAllTimeSlices.addSelectionListener(_defaultSelectionListener);
+            _chkSelectInbetweenTimeSlices = new Button(container, SWT.CHECK);
+            _chkSelectInbetweenTimeSlices.setText(Messages.Tour_Action_Select_Inbetween_Timeslices);
+            _chkSelectInbetweenTimeSlices.setToolTipText(Messages.Tour_Action_Select_Inbetween_Timeslices_Tooltip);
+            _chkSelectInbetweenTimeSlices.addSelectionListener(_defaultSelectionListener);
          }
       }
    }
@@ -331,72 +370,151 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
             .grab(true, false)
             .applyTo(group);
       GridLayoutFactory.swtDefaults()
-            .numColumns(2)
+            .numColumns(3)
             .applyTo(group);
+//      group.setBackground(UI.SYS_COLOR_BLUE);
       {
+         /*
+          * Put into separate container to reduce slideout width
+          */
+         final Composite container = new Composite(group, SWT.NONE);
+         GridDataFactory.fillDefaults().grab(true, false).span(3, 1).applyTo(container);
+         GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
          {
-            /*
-             * Pulse graph
-             */
+            {
+               /*
+                * Pulse graph
+                */
 
-            // label
-            final Label label = new Label(group, SWT.NONE);
-            label.setText(Messages.Slideout_TourChartOptions_Label_PulseGraph);
+               // label
+               final Label label = new Label(container, SWT.NONE);
+               label.setText(Messages.Slideout_TourChartOptions_Label_PulseGraph);
 
-            // combo
-            _comboPulseValueGraph = new Combo(group, SWT.DROP_DOWN | SWT.READ_ONLY);
-            _comboPulseValueGraph.setVisibleItemCount(20);
-            _comboPulseValueGraph.addSelectionListener(_defaultSelectionAdapter);
-            _comboPulseValueGraph.addFocusListener(_keepOpenListener);
-            GridDataFactory.fillDefaults()
-                  .grab(true, false)
-                  .align(SWT.FILL, SWT.FILL)
-                  .applyTo(_comboPulseValueGraph);
+               // combo
+               _comboPulseValueGraph = new Combo(container, SWT.DROP_DOWN | SWT.READ_ONLY);
+               _comboPulseValueGraph.setVisibleItemCount(20);
+               _comboPulseValueGraph.addSelectionListener(_defaultSelectionListener);
+               _comboPulseValueGraph.addFocusListener(_keepOpenListener);
+               GridDataFactory.fillDefaults()
+                     .grab(true, false)
+                     .align(SWT.FILL, SWT.FILL)
+                     .applyTo(_comboPulseValueGraph);
+            }
          }
          {
             /*
-             * Pace graph
+             * Invert pace graph
              */
             _chkInvertPaceGraph = new Button(group, SWT.CHECK);
-            _chkInvertPaceGraph.setText(Messages.Slideout_TourChartOptions_Check_InvertPaceGraph);
-            _chkInvertPaceGraph.setToolTipText(Messages.Slideout_TourChartOptions_Check_InvertPaceGraph_Tooltip);
+            _chkInvertPaceGraph.setText(Messages.Slideout_TourChartOptions_Checkbox_InvertPaceGraph);
+            _chkInvertPaceGraph.setToolTipText(Messages.Slideout_TourChartOptions_Checkbox_InvertPaceGraph_Tooltip);
             _chkInvertPaceGraph.addSelectionListener(_defaultSelectionListener);
-            GridDataFactory.fillDefaults()
-                  .span(2, 1)
-                  .applyTo(_chkInvertPaceGraph);
+            GridDataFactory.fillDefaults().span(3, 1).applyTo(_chkInvertPaceGraph);
+         }
+         {
+            /*
+             * Graph antialiasing
+             */
+            _chkGraphAntialiasing = new Button(group, SWT.CHECK);
+            _chkGraphAntialiasing.setText(Messages.Pref_Graphs_Checkbox_GraphAntialiasing);
+            _chkGraphAntialiasing.setToolTipText(Messages.Pref_Graphs_Checkbox_GraphAntialiasing_Tooltip);
+            _chkGraphAntialiasing.addSelectionListener(_defaultSelectionListener);
+            GridDataFactory.fillDefaults().span(3, 1).applyTo(_chkGraphAntialiasing);
+         }
+         {
+            /*
+             * Speed/pace graph distance interval
+             */
+            {
+               // Label
+               final Label label = new Label(group, SWT.NONE);
+               label.setText(Messages.Slideout_TourChartOptions_Label_SpeedAndPaceDistanceInterval);
+            }
+            {
+               // Spinner: Distance 0.1 ... 100.0 km/mi
+               _spinnerSpeedDistanceInterval = new Spinner(group, SWT.BORDER);
+               _spinnerSpeedDistanceInterval.setMinimum(1);
+               _spinnerSpeedDistanceInterval.setMaximum(1000);
+               _spinnerSpeedDistanceInterval.setDigits(1);
+               _spinnerSpeedDistanceInterval.setPageIncrement(10);
+               _spinnerSpeedDistanceInterval.addSelectionListener(_defaultSelectionListener);
+               _spinnerSpeedDistanceInterval.addMouseWheelListener(_defaultMouseWheelListener);
+            }
+            {
+               // Label: Distance unit
+               final Label label = new Label(group, SWT.NONE);
+               label.setText(UI.UNIT_LABEL_DISTANCE);
+            }
+         }
+         {
+            /*
+             * Graph line transparency
+             */
+
+            final String tooltipText = NLS.bind(
+                  Messages.Pref_Graphs_Label_GraphTransparencyLine_Tooltip,
+                  UI.TRANSFORM_OPACITY_MAX);
+
+            {
+               final Label label = new Label(group, SWT.NONE);
+               label.setText(Messages.Pref_Graphs_Label_GraphTransparencyLine);
+               label.setToolTipText(tooltipText);
+               GridDataFactory.fillDefaults()
+                     .align(SWT.FILL, SWT.CENTER)
+                     .applyTo(label);
+            }
+            {
+               _spinnerGraphLineOpacity = new Spinner(group, SWT.BORDER);
+               _spinnerGraphLineOpacity.setMinimum(0);
+               _spinnerGraphLineOpacity.setMaximum(UI.TRANSFORM_OPACITY_MAX);
+               _spinnerGraphLineOpacity.setIncrement(1);
+               _spinnerGraphLineOpacity.setPageIncrement(10);
+               _spinnerGraphLineOpacity.setToolTipText(tooltipText);
+               _spinnerGraphLineOpacity.addMouseWheelListener(_defaultMouseWheelListener);
+               _spinnerGraphLineOpacity.addSelectionListener(_defaultSelectionListener);
+               GridDataFactory.fillDefaults().applyTo(_spinnerGraphLineOpacity);
+            }
+            {
+               final Label spacer = UI.createSpacer_Horizontal(group, 1);
+               GridDataFactory.fillDefaults().grab(true, false).applyTo(spacer);
+            }
          }
       }
    }
 
    private void enableControls() {
 
-      _spinnerNightSectionsOpacity.setEnabled(_chkShowNightSections.getSelection());
-   }
+      final TourChartConfiguration tcc = _tourChart.getTourChartConfig();
 
-   private PulseGraph getSelectedPulseGraph() {
+      if (tcc == null) {
+         // this occur when tour chart is empty
+         return;
+      }
 
-      return _allPulseGraph_Value[_comboPulseValueGraph.getSelectionIndex()];
+      final boolean canShowTimeOnXAxis = tcc.isShowTimeOnXAxis;
+      final boolean canShowSRTMData = tcc.canShowSRTMData;
+
+      final boolean isShowNightSections = _chkShowNightSections.getSelection();
+      final boolean isShowSRTMValues = _chkShowSrtmData.getSelection();
+
+      _chkShowSrtmData.setEnabled(canShowSRTMData);
+      _chkShowStartTimeOnXAxis.setEnabled(canShowTimeOnXAxis);
+
+      _lblNightSectionsOpacity.setEnabled(isShowNightSections);
+      _spinnerNightSectionsOpacity.setEnabled(isShowNightSections);
+
+      _rdoShowSrtm1Values.setEnabled(isShowSRTMValues);
+      _rdoShowSrtm3Values.setEnabled(isShowSRTMValues);
    }
 
    private void initUI() {
 
-      _defaultSelectionListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            onChangeUI();
-         }
-      };
+      _defaultSelectionListener = SelectionListener.widgetSelectedAdapter(selectionEvent -> onChangeUI());
 
       _defaultMouseWheelListener = mouseEvent -> {
+
          UI.adjustSpinnerValueOnMouseScroll(mouseEvent);
          onChangeUI();
-      };
-
-      _defaultSelectionAdapter = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent e) {
-            onChangeUI();
-         }
       };
 
       _keepOpenListener = new FocusListener() {
@@ -425,7 +543,16 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
       enableControls();
 
       // update chart with new settings
-      _tourChart.updateTourChart();
+      if (_isNeededToRecomputeValues) {
+
+         _isNeededToRecomputeValues = false;
+
+         _tourChart.updateTourChart(true, true);
+
+      } else {
+
+         _tourChart.updateTourChart();
+      }
    }
 
    private void onSelectSRTM() {
@@ -485,42 +612,56 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
       onChangeUI();
    }
 
+// SET_FORMATTING_OFF
+
    @Override
    public void resetToDefaults() {
 
       final TourChartConfiguration tcc = _tourChart.getTourChartConfig();
 
-      final boolean isSelectInBetweenTimeSlices = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES);
-      final boolean isShowBreaktimeValues = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE);
-      final boolean isShowNightSections = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS);
-      final boolean isShowPaceGraphInverted = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED);
-      final boolean isShowValuePointTooltip = _prefStore.getDefaultBoolean(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE);
-      final boolean isShowValuePointValue = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE);
-      final boolean isSrtmDataVisible = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME);
-      final boolean isTourStartTime = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME);
+      final boolean isGraphAntialiasing            = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_ANTIALIASING);
+      final boolean isSelectInBetweenTimeSlices    = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES);
+      final boolean isShowBreaktimeValues          = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE);
+      final boolean isShowPaceGraphInverted        = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED);
+      final boolean isShowNightSections            = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS);
+      final boolean isShowSrtm1Values              = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_SRTM_1_VALUES);
+      final boolean isShowValuePointTooltip        = _prefStore.getDefaultBoolean(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE_CHART);
+      final boolean isShowValuePointValue          = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE);
+      final boolean isSrtmDataVisible              = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME);
+      final boolean isTourStartTime                = _prefStore.getDefaultBoolean(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME);
 
-      final int tourNightSectionsOpacity = _prefStore.getDefaultInt(ITourbookPreferences.GRAPH_OPACITY_NIGHT_SECTIONS);
+      final int nightSectionsOpacity               = _prefStore.getDefaultInt(ITourbookPreferences.GRAPH_NIGHT_SECTIONS_OPACITY);
+      final int graphLineOpacity                   = _prefStore.getDefaultInt(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE);
+
+      final float speedDistanceInterval            = _prefStore.getDefaultInt(ITourbookPreferences.GRAPH_SPEED_PACE_DISTANCE_INTERVAL);
 
       final X_AXIS_START_TIME xAxisStartTime = isTourStartTime
             ? X_AXIS_START_TIME.TOUR_START_TIME
             : X_AXIS_START_TIME.START_WITH_0;
 
-      tcc.isShowBreaktimeValues = isShowBreaktimeValues;
-      tcc.isShowValuePointValue = isShowValuePointValue;
-      tcc.isSRTMDataVisible = isSrtmDataVisible;
-      tcc.pulseGraph = TourChart.PULSE_GRAPH_DEFAULT;
-      tcc.xAxisTime = xAxisStartTime;
+      tcc.isShowBreaktimeValues     = isShowBreaktimeValues;
+      tcc.isShowNightSections       = isShowNightSections;
+      tcc.isShowValuePointValue     = isShowValuePointValue;
+      tcc.isSRTMDataVisible         = isSrtmDataVisible;
+      tcc.pulseGraph                = TourChart.PULSE_GRAPH_DEFAULT;
+      tcc.xAxisTime                 = xAxisStartTime;
 
-      _chkInvertPaceGraph.setSelection(isShowPaceGraphInverted);
-      _chkSelectAllTimeSlices.setSelection(isSelectInBetweenTimeSlices);
-      _chkShowBreaktimeValues.setSelection(isShowBreaktimeValues);
-      _chkShowSrtmData.setSelection(isSrtmDataVisible);
-      _chkShowNightSections.setSelection(isShowNightSections);
-      _chkShowStartTimeOnXAxis.setSelection(isTourStartTime);
-      _chkShowValuePointTooltip.setSelection(isShowValuePointTooltip);
-      _chkShowValuePointValue.setSelection(isShowValuePointValue);
+      _chkGraphAntialiasing         .setSelection(isGraphAntialiasing);
+      _chkInvertPaceGraph           .setSelection(isShowPaceGraphInverted);
+      _chkSelectInbetweenTimeSlices .setSelection(isSelectInBetweenTimeSlices);
+      _chkShowBreaktimeValues       .setSelection(isShowBreaktimeValues);
+      _chkShowNightSections         .setSelection(isShowNightSections);
+      _chkShowSrtmData              .setSelection(isSrtmDataVisible);
+      _chkShowStartTimeOnXAxis      .setSelection(isTourStartTime);
+      _chkShowValuePointTooltip     .setSelection(isShowValuePointTooltip);
+      _chkShowValuePointValue       .setSelection(isShowValuePointValue);
 
-      _spinnerNightSectionsOpacity.setSelection(tourNightSectionsOpacity);
+      _rdoShowSrtm1Values           .setSelection(isShowSrtm1Values);
+      _rdoShowSrtm3Values           .setSelection(isShowSrtm1Values == false);
+
+      _spinnerGraphLineOpacity      .setSelection(UI.transformOpacity_WhenRestored(graphLineOpacity));
+      _spinnerNightSectionsOpacity  .setSelection(UI.transformOpacity_WhenRestored(nightSectionsOpacity));
+      _spinnerSpeedDistanceInterval .setSelection((int) (UI.convertSpeed_FromMetric(speedDistanceInterval) / 100));
 
       setSelection_PulseGraph(TourChart.PULSE_GRAPH_DEFAULT,
             tcc.canShowPulseSerie,
@@ -528,9 +669,11 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
             tcc.isShowTimeOnXAxis);
 
       // this is not set in saveState()
-      _prefStore.setValue(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE, isShowValuePointTooltip);
+      _prefStore.setValue(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE_CHART, isShowValuePointTooltip);
 
       _gridUI.resetToDefaults();
+      _layoutUI.resetToDefaults();
+
 
       onChangeUI();
    }
@@ -544,79 +687,111 @@ public class SlideoutTourChartOptions extends ToolbarSlideout implements IAction
          return;
       }
 
-      final boolean canShowTimeOnXAxis = tcc.isShowTimeOnXAxis;
-      final boolean canShowSRTMData = tcc.canShowSRTMData;
+      final boolean isShowSrtm1Values     = _prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_SRTM_1_VALUES);
+      final int nightSectionsOpacity      = _prefStore.getInt(ITourbookPreferences.GRAPH_NIGHT_SECTIONS_OPACITY);
+      final int graphLineOpacity          = _prefStore.getInt(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE);
 
-      _chkInvertPaceGraph.setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED));
+      final float speedDistanceInterval   = _prefStore.getInt(ITourbookPreferences.GRAPH_SPEED_PACE_DISTANCE_INTERVAL);
+      _speedDistanceIntervalBackup  = (int) (UI.convertSpeed_FromMetric(speedDistanceInterval) / 100);
 
-      _chkShowNightSections.setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS));
-      _spinnerNightSectionsOpacity.setSelection(_prefStore.getInt(ITourbookPreferences.GRAPH_OPACITY_NIGHT_SECTIONS));
+      _chkInvertPaceGraph           .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED));
+      _chkShowNightSections         .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS));
 
-      _chkShowSrtmData.setEnabled(canShowSRTMData);
-      _chkShowSrtmData.setSelection(tcc.isSRTMDataVisible);
+      _spinnerNightSectionsOpacity  .setSelection(UI.transformOpacity_WhenRestored(nightSectionsOpacity));
+      _spinnerSpeedDistanceInterval .setSelection(_speedDistanceIntervalBackup);
 
-      _chkShowStartTimeOnXAxis.setEnabled(canShowTimeOnXAxis);
-      _chkShowStartTimeOnXAxis.setSelection(tcc.xAxisTime == X_AXIS_START_TIME.TOUR_START_TIME);
+      _chkShowSrtmData              .setSelection(tcc.isSRTMDataVisible);
+      _chkShowStartTimeOnXAxis      .setSelection(tcc.xAxisTime == X_AXIS_START_TIME.TOUR_START_TIME);
 
-      _chkShowBreaktimeValues.setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE));
-      _chkShowValuePointTooltip.setSelection(_prefStore.getBoolean(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE));
-      _chkShowValuePointValue.setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE));
+      _chkShowBreaktimeValues       .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE));
+      _chkShowValuePointTooltip     .setSelection(_prefStore.getBoolean(ITourbookPreferences.VALUE_POINT_TOOL_TIP_IS_VISIBLE_CHART));
+      _chkShowValuePointValue       .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE));
 
-      _chkSelectAllTimeSlices.setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES));
+      _chkSelectInbetweenTimeSlices .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES));
 
-      setSelection_PulseGraph(tcc.pulseGraph,
+      _chkGraphAntialiasing         .setSelection(_prefStore.getBoolean(ITourbookPreferences.GRAPH_ANTIALIASING));
+      _spinnerGraphLineOpacity      .setSelection(UI.transformOpacity_WhenRestored(graphLineOpacity));
+
+      _rdoShowSrtm1Values           .setSelection(isShowSrtm1Values);
+      _rdoShowSrtm3Values           .setSelection(isShowSrtm1Values == false);
+
+      setSelection_PulseGraph(
+
+            tcc.pulseGraph,
             tcc.canShowPulseSerie,
             tcc.canShowPulseTimeSerie,
             tcc.isShowTimeOnXAxis);
 
       _gridUI.restoreState();
+      _layoutUI.restoreState();
    }
 
    private void saveState() {
 
       final TourChartConfiguration tcc = _tourChart.getTourChartConfig();
 
-      final boolean isSelectInBetweenTimeSlices = _chkSelectAllTimeSlices.getSelection();
-      final boolean isShowBreaktimeValues = _chkShowBreaktimeValues.getSelection();
-      final boolean isShowNightSection = _chkShowNightSections.getSelection();
-      final boolean isShowPaceGraphInverted = _chkInvertPaceGraph.getSelection();
-      final boolean isShowValuePointValue = _chkShowValuePointValue.getSelection();
-      final boolean isSrtmDataVisible = _chkShowSrtmData.getSelection();
-      final boolean isTourStartTime = _chkShowStartTimeOnXAxis.getSelection();
-      final int nightSectionsOpacity = _spinnerNightSectionsOpacity.getSelection();
+      final boolean isGraphAntialiasing            = _chkGraphAntialiasing.getSelection();
+      final boolean isSelectInBetweenTimeSlices    = _chkSelectInbetweenTimeSlices.getSelection();
+      final boolean isShowBreaktimeValues          = _chkShowBreaktimeValues.getSelection();
+      final boolean isShowNightSections            = _chkShowNightSections.getSelection();
+      final boolean isShowPaceGraphInverted        = _chkInvertPaceGraph.getSelection();
+      final boolean isShowSrtm1Values              = _rdoShowSrtm1Values.getSelection();
+      final boolean isShowValuePointValue          = _chkShowValuePointValue.getSelection();
+      final boolean isSrtmDataVisible              = _chkShowSrtmData.getSelection();
+      final boolean isTourStartTime                = _chkShowStartTimeOnXAxis.getSelection();
+
+      final int graphLineOpacity                   = _spinnerGraphLineOpacity.getSelection();
+      final int nightSectionsOpacity               = _spinnerNightSectionsOpacity.getSelection();
+
+      final int speedDistanceIntervalSelection     = _spinnerSpeedDistanceInterval.getSelection() * 100;
+      final int speedDistanceInterval              = (int) UI.convertSpeed_ToMetric(speedDistanceIntervalSelection);
+
+      if (speedDistanceIntervalSelection != _speedDistanceIntervalBackup) {
+
+         _isNeededToRecomputeValues = true;
+
+         // update backup value
+         _speedDistanceIntervalBackup = speedDistanceIntervalSelection;
+      }
 
       final X_AXIS_START_TIME xAxisStartTime = isTourStartTime
             ? X_AXIS_START_TIME.TOUR_START_TIME
             : X_AXIS_START_TIME.START_WITH_0;
 
-      final PulseGraph pulseGraph = getSelectedPulseGraph();
+      final PulseGraph pulseGraph = _allPulseGraph_Value[_comboPulseValueGraph.getSelectionIndex()];
 
       /*
        * Update pref store
        */
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE, isShowBreaktimeValues);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES, isSelectInBetweenTimeSlices);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED, isShowPaceGraphInverted);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE, isShowValuePointValue);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS, isShowNightSection);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SRTM_VISIBLE, isSrtmDataVisible);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_OPACITY_NIGHT_SECTIONS, nightSectionsOpacity);
-      _prefStore.setValue(ITourbookPreferences.GRAPH_PULSE_GRAPH_VALUES, pulseGraph.name());
-      _prefStore.setValue(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME, isTourStartTime);
-
-      _gridUI.saveState();
+      _prefStore.setValue(ITourbookPreferences.GRAPH_ANTIALIASING,                     isGraphAntialiasing);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_BREAKTIME_VALUES_VISIBLE,      isShowBreaktimeValues);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SELECT_INBETWEEN_TIME_SLICES,  isSelectInBetweenTimeSlices);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_PACE_GRAPH_INVERTED,      isShowPaceGraphInverted);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_VALUE_POINT_VALUE,        isShowValuePointValue);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SRTM_VISIBLE,                  isSrtmDataVisible);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_NIGHT_SECTIONS,           isShowNightSections);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_IS_SHOW_SRTM_1_VALUES,            isShowSrtm1Values);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_NIGHT_SECTIONS_OPACITY,           UI.transformOpacity_WhenSaved(nightSectionsOpacity));
+      _prefStore.setValue(ITourbookPreferences.GRAPH_PULSE_GRAPH_VALUES,               pulseGraph.name());
+      _prefStore.setValue(ITourbookPreferences.GRAPH_SPEED_PACE_DISTANCE_INTERVAL,     speedDistanceInterval);
+      _prefStore.setValue(ITourbookPreferences.GRAPH_TRANSPARENCY_LINE,                UI.transformOpacity_WhenSaved(graphLineOpacity));
+      _prefStore.setValue(ITourbookPreferences.GRAPH_X_AXIS_STARTTIME,                 isTourStartTime);
 
       _tourChart.setupChartConfig();
 
       /*
        * Update chart config
        */
-      tcc.isShowBreaktimeValues = isShowBreaktimeValues;
-      tcc.isShowValuePointValue = isShowValuePointValue;
-      tcc.isSRTMDataVisible = isSrtmDataVisible;
-      tcc.pulseGraph = pulseGraph;
-      tcc.xAxisTime = xAxisStartTime;
+      tcc.isShowBreaktimeValues  = isShowBreaktimeValues;
+      tcc.isShowNightSections    = isShowNightSections;
+      tcc.isShowSrtm1Values      = isShowSrtm1Values;
+      tcc.isShowValuePointValue  = isShowValuePointValue;
+      tcc.isSRTMDataVisible      = isSrtmDataVisible;
+      tcc.pulseGraph             = pulseGraph;
+      tcc.xAxisTime              = xAxisStartTime;
    }
+
+// SET_FORMATTING_ON
 
    /**
     * @param requestedPulseGraph

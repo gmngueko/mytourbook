@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2019 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -26,7 +26,7 @@ import net.tourbook.data.TourMarker;
 import net.tourbook.device.garmin.fit.FitData;
 
 /**
- * A {@link TourMarker} is set for each lap.
+ * A {@link TourMarker} is set for each lap
  */
 public class MesgListener_Lap extends AbstractMesgListener implements LapMesgListener {
 
@@ -40,6 +40,7 @@ public class MesgListener_Lap extends AbstractMesgListener implements LapMesgLis
    }
 
    private Integer getLapMessageIndex(final Mesg mesg) {
+
       return mesg.getFieldIntegerValue(254);
    }
 
@@ -74,31 +75,41 @@ public class MesgListener_Lap extends AbstractMesgListener implements LapMesgLis
       }
 
       /*
-       * Set lap time, later the time slice position (serie index) will be set.
+       * Set lap time, later on the time slice position (serie index) will be set according to the
+       * time
        */
-      final DateTime garminTime = lapMesg.getTimestamp();
-      if (garminTime != null) {
+      final DateTime garminStartTime = lapMesg.getStartTime();
+      final Float totalElapsedTime_Sec = lapMesg.getTotalElapsedTime();
 
-         final Date javaTime = garminTime.getDate();
+      if (garminStartTime != null) {
 
-         tourMarker.setDeviceLapTime(javaTime.getTime());
+         final Date javaStartTime = garminStartTime.getDate();
+         final long javaStartTime_MS = javaStartTime.getTime();
 
-      } else {
+         if (totalElapsedTime_Sec != null) {
 
-         final Float totalElapsedTime = lapMesg.getTotalElapsedTime();
-         if (totalElapsedTime != null) {
+            final float totalElapsedTime_Rounded = totalElapsedTime_Sec + 0.5f;
+            final long totalElapsedTime_Rounded_MS = (long) (totalElapsedTime_Rounded * 1000);
 
-            int lapTime = -1;
+            tourMarker.setDeviceLapTime(javaStartTime_MS + totalElapsedTime_Rounded_MS);
 
-            lapTime = _lapTime;
-//          lapTime += Math.round(totalElapsedTime);
-            lapTime += totalElapsedTime;
+            // implementation before 25.11
+//          tourMarker.setDeviceLapTime(javaStartTime_MS + totalElapsedTime_Sec.longValue() * 1000);
 
-            _lapTime = lapTime;
-//
-//         // the correct absolute time will be set later
-            tourMarker.setTime(lapTime, Long.MIN_VALUE);
+         } else {
+
+            tourMarker.setDeviceLapTime(javaStartTime_MS);
+
          }
+
+      } else if (totalElapsedTime_Sec != null) {
+
+         final float totalElapsedTime_Rounded = totalElapsedTime_Sec + 0.5f;
+
+         _lapTime += totalElapsedTime_Rounded;
+
+         // the correct absolute time will be set later
+         tourMarker.setTime(_lapTime, Long.MIN_VALUE);
       }
    }
 }

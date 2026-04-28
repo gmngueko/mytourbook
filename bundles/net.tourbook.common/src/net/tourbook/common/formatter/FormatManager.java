@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2016, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@ import org.eclipse.jface.preference.IPreferenceStore;
  */
 public class FormatManager {
 
-   private final static IPreferenceStore _prefStore                  = CommonActivator.getPrefStore();
+   private static final IPreferenceStore _prefStore                  = CommonActivator.getPrefStore();
 
    private static IValueFormatter        _valueFormatter_Number_1_0  = new ValueFormatter_Number_1_0();
    private static IValueFormatter        _valueFormatter_Number_1_1  = new ValueFormatter_Number_1_1();
@@ -43,7 +43,9 @@ public class FormatManager {
    private static IValueFormatter        _elevationFormatter;
    private static IValueFormatter        _powerFormatter;
    private static IValueFormatter        _pulseFormatter;
+   private static IValueFormatter        _relativeFormatter;
    private static IValueFormatter        _speedFormatter;
+   private static IValueFormatter        _temperatureFormatter;
 
    private static IValueFormatter        _elapsedTimeFormatter;
    private static IValueFormatter        _recordedTimeFormatter;
@@ -57,6 +59,7 @@ public class FormatManager {
    private static IValueFormatter        _powerFormatter_Summary;
    private static IValueFormatter        _pulseFormatter_Summary;
    private static IValueFormatter        _speedFormatter_Summary;
+   private static IValueFormatter        _temperatureFormatter_Summary;
 
    private static IValueFormatter        _elapsedTimeFormatter_Summary;
    private static IValueFormatter        _recordedTimeFormatter_Summary;
@@ -114,6 +117,10 @@ public class FormatManager {
 
    public static String formatMovingTime(final long value) {
       return _movingTimeFormatter.printLong(value);
+   }
+
+   public static String formatMovingTime(final long value, final boolean isHide0Value, final boolean isShowBiggerThan0) {
+      return _movingTimeFormatter.printLong(value, isHide0Value, isShowBiggerThan0);
    }
 
    public static String formatMovingTime_Summary(final long value) {
@@ -181,6 +188,10 @@ public class FormatManager {
       return _recordedTimeFormatter_Summary.printLong(value, isHide0Value, isShowBiggerThan0);
    }
 
+   public static String formatRelative(final double value) {
+      return _relativeFormatter.printDouble(value);
+   }
+
    public static String formatSpeed(final double value) {
       return _speedFormatter.printDouble(value);
    }
@@ -189,7 +200,15 @@ public class FormatManager {
       return _speedFormatter_Summary.printDouble(value);
    }
 
-   private static IValueFormatter getNumberFormatter(final String formatName) {
+   public static String formatTemperature(final double value) {
+      return _temperatureFormatter.printDouble(value);
+   }
+
+   public static String formatTemperature_Summary(final double value) {
+      return _temperatureFormatter_Summary.printDouble(value);
+   }
+
+   public static IValueFormatter getNumberFormatter(final String formatName) {
 
       if (formatName.equals(ValueFormat.NUMBER_1_0.name())) {
 
@@ -213,7 +232,7 @@ public class FormatManager {
       }
    }
 
-   private static IValueFormatter getTimeFormatter(final String formatName) {
+   public static IValueFormatter getTimeFormatter(final String formatName) {
 
       if (formatName.equals(ValueFormat.TIME_HH.name())) {
 
@@ -256,6 +275,30 @@ public class FormatManager {
       case PACE_MM_SS:
          return Messages.Value_Formatter_Pace_MM_SS;
 
+      case DATE_TIME:
+         return Messages.Value_Formatter_Time_DD_MM_YYY;
+
+      case DATE_TIME_HH_MM_SS:
+         return Messages.Value_Formatter_Time_DD_MM_YYY__HH_MM_SS;
+
+      case EQUIPMENT_BRAND:
+         return "Brand";
+
+      case EQUIPMENT_MODEL:
+         return "Model";
+
+      case EQUIPMENT_BRAND_MODEL:
+         return "Brand - Model";
+
+      case EQUIPMENT_TYPE:
+         return "Type";
+
+      case PERIOD_DAY:
+         return "Days";
+
+      case PERIOD_YEAR_MONTH_DAY:
+         return "Years, Months, Days";
+
       case TIME_HH:
          return Messages.Value_Formatter_Time_HH;
 
@@ -286,7 +329,9 @@ public class FormatManager {
       final String elevation              = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_ALTITUDE);
       final String power                  = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_POWER);
       final String pulse                  = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_PULSE);
+      final String relative               = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_RELATIVE);
       final String speed                  = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_SPEED);
+      final String temperature            = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_TEMPERATURE);
 
       final String elapsedTime            = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_ELAPSED_TIME);
       final String recordedTime           = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_RECORDED_TIME);
@@ -300,6 +345,7 @@ public class FormatManager {
       final String power_Summary          = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_POWER_SUMMARY);
       final String pulse_Summary          = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_PULSE_SUMMARY);
       final String speed_Summary          = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_SPEED_SUMMARY);
+      final String temperature_Summary    = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_TEMPERATURE_SUMMARY);
 
       final String elapsedTime_Summary    = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_ELAPSED_TIME_SUMMARY);
       final String recordedTime_Summary   = _prefStore.getString(ICommonPreferences.DISPLAY_FORMAT_RECORDED_TIME_SUMMARY);
@@ -312,7 +358,9 @@ public class FormatManager {
       _elevationFormatter                 = getNumberFormatter(elevation);
       _powerFormatter                     = getNumberFormatter(power);
       _pulseFormatter                     = getNumberFormatter(pulse);
+      _relativeFormatter                  = getNumberFormatter(relative);
       _speedFormatter                     = getNumberFormatter(speed);
+      _temperatureFormatter               = getNumberFormatter(temperature);
 
       _elapsedTimeFormatter               = getTimeFormatter(elapsedTime);
       _recordedTimeFormatter              = getTimeFormatter(recordedTime);
@@ -326,6 +374,7 @@ public class FormatManager {
       _powerFormatter_Summary             = getNumberFormatter(power_Summary);
       _pulseFormatter_Summary             = getNumberFormatter(pulse_Summary);
       _speedFormatter_Summary             = getNumberFormatter(speed_Summary);
+      _temperatureFormatter_Summary       = getNumberFormatter(temperature_Summary);
 
       _elapsedTimeFormatter_Summary       = getTimeFormatter(elapsedTime_Summary);
       _recordedTimeFormatter_Summary      = getTimeFormatter(recordedTime_Summary);

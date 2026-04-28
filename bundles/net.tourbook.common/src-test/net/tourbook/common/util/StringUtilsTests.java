@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Frédéric Bard
+ * Copyright (C) 2021, 2023 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,9 +15,9 @@
  *******************************************************************************/
 package net.tourbook.common.util;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.tourbook.common.UI;
@@ -29,26 +29,20 @@ public class StringUtilsTests {
    @Test
    void testHasContent() {
 
-      assertTrue(StringUtils.hasContent("string"));
-      assertFalse(StringUtils.hasContent(" "));
-      assertFalse(StringUtils.hasContent(""));
-      assertFalse(StringUtils.hasContent(null));
+      assertAll(
+            () -> assertTrue(StringUtils.hasContent("string")), //$NON-NLS-1$
+            () -> assertFalse(StringUtils.hasContent(UI.SPACE1)),
+            () -> assertFalse(StringUtils.hasContent(UI.EMPTY_STRING)),
+            () -> assertFalse(StringUtils.hasContent(null)));
    }
 
    @Test
    void testJoin() {
 
-      final String[] stringArray = { "1", "2", "3" };
-      assertEquals(StringUtils.join(stringArray, ","), "1,2,3");
-      assertEquals(StringUtils.join(new String[] { "1" }, ","), "1");
-   }
+      final String[] stringArray = { "1", "2", "3" }; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
-   @Test
-   void testSanitizeFileName() {
-
-      final String fileName = "\\$%#filename.txt";
-      assertEquals(StringUtils.sanitizeFileName(fileName), "----filename.txt");
-      assertNull(StringUtils.sanitizeFileName(null));
-      assertEquals(StringUtils.sanitizeFileName(""), UI.EMPTY_STRING);
+      assertAll(
+            () -> assertEquals("1,2,3", StringUtils.join(stringArray, ",")), //$NON-NLS-1$ //$NON-NLS-2$
+            () -> assertEquals("1", StringUtils.join(new String[] { "1" }, ","))); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
    }
 }

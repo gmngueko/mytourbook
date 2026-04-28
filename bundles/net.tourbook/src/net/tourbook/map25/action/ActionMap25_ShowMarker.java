@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -20,7 +20,6 @@ import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.tooltip.IOpeningDialog;
-import net.tourbook.common.util.Util;
 import net.tourbook.map25.Map25View;
 import net.tourbook.map25.ui.SlideoutMap25_MarkerOptions;
 
@@ -56,7 +55,6 @@ public class ActionMap25_ShowMarker extends ContributionItem implements IOpening
    private Control _parent;
 
    private Image   _imageEnabled;
-   private Image   _imageDisabled;
 
    public ActionMap25_ShowMarker(final Map25View map25View, final Control parent) {
 
@@ -64,7 +62,6 @@ public class ActionMap25_ShowMarker extends ContributionItem implements IOpening
       _parent = parent;
 
       _imageEnabled = TourbookPlugin.getThemedImageDescriptor(Images.TourMarker).createImage();
-      _imageDisabled = TourbookPlugin.getThemedImageDescriptor(Images.TourMarker_Disabled).createImage();
 
       parent.addDisposeListener(disposeEvent -> onDispose());
    }
@@ -83,7 +80,6 @@ public class ActionMap25_ShowMarker extends ContributionItem implements IOpening
 
          _actionToolItem = new ToolItem(toolbar, SWT.CHECK);
          _actionToolItem.setImage(_imageEnabled);
-         _actionToolItem.setDisabledImage(_imageDisabled);
          _actionToolItem.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(final SelectionEvent e) {
@@ -142,8 +138,7 @@ public class ActionMap25_ShowMarker extends ContributionItem implements IOpening
 
    private void onDispose() {
 
-      Util.disposeResource(_imageEnabled);
-      Util.disposeResource(_imageDisabled);
+      UI.disposeResource(_imageEnabled);
    }
 
    private void onMouseMove(final ToolItem item, final MouseEvent mouseEvent) {

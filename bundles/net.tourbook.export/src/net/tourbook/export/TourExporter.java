@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020, 2021 Frédéric Bard
+ * Copyright (C) 2020, 2025 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -40,11 +41,17 @@ import java.util.TimeZone;
 import net.tourbook.Messages;
 import net.tourbook.common.UI;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.data.DeviceSensorValue;
+import net.tourbook.data.SerieData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
+import net.tourbook.data.TourPhoto;
+import net.tourbook.data.TourTag;
 import net.tourbook.data.TourWayPoint;
 import net.tourbook.database.TourDatabase;
+import net.tourbook.export.fit.FitExporter;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -55,29 +62,26 @@ import org.dinopolis.gpstool.gpsinput.GPSTrackpoint;
 import org.dinopolis.gpstool.gpsinput.garmin.GarminTrack;
 import org.dinopolis.gpstool.gpsinput.garmin.GarminTrackpointAdapter;
 import org.dinopolis.gpstool.gpsinput.garmin.GarminTrackpointD304;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.framework.Version;
 
 public class TourExporter {
+
    /*
     * Velocity (VC) context values
     */
-   private static final String            VC_HAS_TOUR_MARKERS        = "hasTourMarkers";                                   //$NON-NLS-1$
-   private static final String            VC_HAS_TRACKS              = "hasTracks";                                        //$NON-NLS-1$
-   private static final String            VC_HAS_WAY_POINTS          = "hasWayPoints";                                     //$NON-NLS-1$
    private static final String            VC_IS_EXPORT_ALL_TOUR_DATA = "isExportAllTourData";                              //$NON-NLS-1$
 
    private static final String            VC_TOUR_MARKERS            = "tourMarkers";                                      //$NON-NLS-1$
    private static final String            VC_TRACKS                  = "tracks";                                           //$NON-NLS-1$
    private static final String            VC_WAY_POINTS              = "wayPoints";                                        //$NON-NLS-1$
-   private static final String            VC_LAP                     = "lap";                                              //$NON-NLS-1$
-   private static final String            VC_TOUR_DATA               = "tourData";                                         //$NON-NLS-1$
 
    /**
     * This is a special parameter to force elevation values from the device and not from the lat/lon
     * + srtm data
-    * <a href="http://strava.github.io/api/v3/uploads/">http://strava.github.io/api/v3/uploads/</a>.
+    * https://developers.strava.com/docs/uploads/#device-and-elevation-data.
     *
     * @since 15.6
     */
@@ -86,11 +90,10 @@ public class TourExporter {
    private static final String            ZERO                       = "0";                                                //$NON-NLS-1$
 
    private static final DecimalFormat     _nf1                       = (DecimalFormat) NumberFormat.getInstance(Locale.US);
-
    private static final DecimalFormat     _nf3                       = (DecimalFormat) NumberFormat.getInstance(Locale.US);
    private static final DecimalFormat     _nf8                       = (DecimalFormat) NumberFormat.getInstance(Locale.US);
-   private static final DateTimeFormatter _dtIso                     = ISODateTimeFormat.dateTimeNoMillis();
 
+   private static final DateTimeFormatter _dtIso                     = ISODateTimeFormat.dateTimeNoMillis();
    private static final SimpleDateFormat  _dateFormat                = new SimpleDateFormat();
 
    static {
@@ -111,39 +114,46 @@ public class TourExporter {
       _dateFormat.setTimeZone(TimeZone.getTimeZone("UTC")); //$NON-NLS-1$
    }
 
-   private String       _activityType;
+   private String          _activityType;
+
    /**
     * The speed is in meters/second
     */
-   private float        _camouflageSpeed;
-   private String       _courseName;
-   private final String _formatTemplate;
-   private boolean      _isCamouflageSpeed;
-   private boolean      _isCourse;
-   private boolean      _isExportAllTourData;
-   private boolean      _isExportSurfingWaves;
-   private boolean      _isExportWithBarometer;
-   private boolean      _isRange;
-   private TourData     _tourData;
-   private int          _tourEndIndex;
-   private int          _tourStartIndex;
-   private boolean      _useAbsoluteDistance;
-   private boolean      _useActivityType;
-   private boolean      _useDescription;
+   private float           _camouflageSpeed;
+   private String          _courseName;
+   private boolean         _displayNotificationPopup;
+   private final String    _formatTemplate;
+   private ImageDescriptor _imageDescriptor;
+   private boolean         _isCamouflageSpeed;
+   private boolean         _isCourse;
+   private boolean         _isExportAllTourData;
+   private boolean         _isExportSurfingWaves;
+   private boolean         _isExportTrackPointsWithSameTime;
+   private boolean         _isExportWithBarometer;
+   private boolean         _isRange;
+   private TourData        _tourData;
+   private int             _tourEndIndex;
+   private int             _tourStartIndex;
+   private boolean         _useAbsoluteDistance;
+   private boolean         _useActivityType;
+   private boolean         _useDescription;
 
-   private boolean      _isGPX;
-   private boolean      _isTCX;
-
-   public enum ExportType {
-      GPX, TCX
-   }
+   private boolean         _isFIT;
+   private boolean         _isGPX;
+   private boolean         _isMT;
+   private boolean         _isTCX;
 
    public TourExporter(final String formatTemplate) {
 
       _formatTemplate = formatTemplate;
 
-      _isGPX = formatTemplate.toLowerCase().contains("gpx"); //$NON-NLS-1$
-      _isTCX = formatTemplate.toLowerCase().contains("tcx"); //$NON-NLS-1$
+      if (net.tourbook.common.util.StringUtils.hasContent(formatTemplate)) {
+
+         _isFIT = formatTemplate.equalsIgnoreCase("fit"); //$NON-NLS-1$
+         _isGPX = formatTemplate.toLowerCase().contains("gpx"); //$NON-NLS-1$
+         _isMT = formatTemplate.toLowerCase().contains("mt"); //$NON-NLS-1$
+         _isTCX = formatTemplate.toLowerCase().contains("tcx"); //$NON-NLS-1$
+      }
 
       // .tcx files always contain absolute distances
       if (_isTCX) {
@@ -164,15 +174,17 @@ public class TourExporter {
                        final boolean isExportSurfingWaves,
                        final boolean isExportAllTourData,
                        final boolean isCourse,
-                       final String courseName) {
+                       final String courseName,
+                       final ImageDescriptor imageDescriptor) {
 
       this(formatTemplate);
+
+      _displayNotificationPopup = true;
 
       setUseDescription(useDescription);
       setIsExportWithBarometer(isExportWithBarometer);
       setIsCamouflageSpeed(isCamouflageSpeed);
       setCamouflageSpeed(camouflageSpeed);
-      _camouflageSpeed = camouflageSpeed;
       _isRange = isRange;
       _tourStartIndex = tourStartIndex;
       _tourEndIndex = tourEndIndex;
@@ -186,6 +198,8 @@ public class TourExporter {
       //For TCX
       setIsCourse(isCourse);
       setCourseName(courseName);
+
+      _imageDescriptor = imageDescriptor;
    }
 
    public boolean doExport_10_Tour(final List<GarminTrack> tracks,
@@ -193,51 +207,144 @@ public class TourExporter {
                                    final List<TourMarker> tourMarkers,
                                    final GarminLap lap,
                                    final String exportFileName) throws IOException {
+      /*
+       * Create sorted lists that the comparison of before and after (export and import/export) can
+       * be done easily
+       */
+      final ArrayList<DeviceSensorValue> allSorted_SensorValues = new ArrayList<>(_tourData.getDeviceSensorValues());
+      Collections.sort(allSorted_SensorValues, (sensorValue1, sensorValue2) -> {
 
-      final File exportFile = new File(exportFileName);
-      final VelocityContext vc = new VelocityContext();
+         return sensorValue1.getDeviceSensor().getLabel().compareTo(
+               sensorValue2.getDeviceSensor().getLabel());
+      });
 
-      // math tool to convert float into double
-      vc.put("math", new MathTool());//$NON-NLS-1$
+      final ArrayList<TourWayPoint> allSorted_WayPoints = new ArrayList<>(_tourData.getTourWayPoints());
+      Collections.sort(allSorted_WayPoints, (item1, item2) -> {
 
-      if (_isGPX) {
+         return item1.getName().compareTo(item2.getName());
+      });
 
-         vc.put(VC_IS_EXPORT_ALL_TOUR_DATA, _isExportAllTourData && _tourData != null);
+      final ArrayList<TourTag> allSorted_Tags = new ArrayList<>(_tourData.getTourTags());
+      Collections.sort(allSorted_Tags, (item1, item2) -> {
 
-      } else if (_isTCX) {
+         return item1.getTagName().compareTo(item2.getTagName());
+      });
 
-         vc.put("iscourses", _isCourse); //$NON-NLS-1$
-         vc.put("coursename", _courseName); //$NON-NLS-1$
+      final ArrayList<TourPhoto> allSorted_Photos = new ArrayList<>(_tourData.getTourPhotos());
+      Collections.sort(allSorted_Photos, (item1, item2) -> {
+
+         return Long.compare(item1.getImageExifTime(), item2.getImageExifTime());
+      });
+
+      SerieData serieData = _tourData.getSerieData();
+      if (serieData == null) {
+
+         /**
+          * Fix the issue "NPE when exporting a tour imported but not saved" and support .mt export
+          * for not saved tours
+          * <p>
+          * https://github.com/mytourbook/mytourbook/issues/507
+          */
+         _tourData.onPrePersist();
+
+         serieData = _tourData.getSerieData();
       }
 
-      vc.put(VC_LAP, lap);
-      vc.put(VC_TRACKS, tracks);
-      vc.put(VC_WAY_POINTS, wayPoints);
-      vc.put(VC_TOUR_MARKERS, tourMarkers);
-      vc.put(VC_TOUR_DATA, _tourData);
+      if (_isGPX || _isTCX || _isMT) {
+         /*
+          * Setup context
+          */
+         final File exportFile = new File(exportFileName);
+         final VelocityContext vc = new VelocityContext();
 
-      vc.put(VC_HAS_TOUR_MARKERS, Boolean.valueOf(tourMarkers.size() > 0));
-      vc.put(VC_HAS_TRACKS, Boolean.valueOf(tracks.size() > 0));
-      vc.put(VC_HAS_WAY_POINTS, Boolean.valueOf(wayPoints.size() > 0));
+         // math tool to convert float into double
+         vc.put("math", new MathTool());//$NON-NLS-1$
 
-      vc.put("dateformat", _dateFormat); //$NON-NLS-1$
-      vc.put("dtIso", _dtIso); //$NON-NLS-1$
-      vc.put("nf1", _nf1); //$NON-NLS-1$
-      vc.put("nf3", _nf3); //$NON-NLS-1$
-      vc.put("nf8", _nf8); //$NON-NLS-1$
+         if (_isGPX) {
 
-      doExport_20_TourValues(vc);
+            vc.put(VC_IS_EXPORT_ALL_TOUR_DATA, _isExportAllTourData && _tourData != null);
 
-      try (final FileOutputStream fileOutputStream = new FileOutputStream(exportFile);
-            final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
-            final Writer exportWriter = new BufferedWriter(outputStreamWriter);
-            final Reader templateReader = new InputStreamReader(TourExporter.class.getClassLoader().getResourceAsStream(_formatTemplate))) {
+         } else if (_isTCX) {
 
-         Velocity.evaluate(vc, exportWriter, "MyTourbook", templateReader); //$NON-NLS-1$
+            vc.put("iscourses", _isCourse); //$NON-NLS-1$
+            vc.put("coursename", _courseName); //$NON-NLS-1$
+         }
 
-      } catch (final Exception e) {
-         StatusUtil.showStatus(e);
-         return false;
+// SET_FORMATTING_OFF
+
+      vc.put("lap",                                lap                                       ); //$NON-NLS-1$
+      vc.put(VC_TRACKS,                            tracks                                    );
+      vc.put(VC_WAY_POINTS,                        wayPoints                                 );
+      vc.put(VC_TOUR_MARKERS,                      tourMarkers                               );
+      vc.put("tourData",                           _tourData                                 ); //$NON-NLS-1$
+
+      vc.put("hasTourMarkers",                     Boolean.valueOf(tourMarkers.size() > 0)   ); //$NON-NLS-1$
+      vc.put("hasTracks",                          Boolean.valueOf(tracks.size() > 0)        ); //$NON-NLS-1$
+      vc.put("hasWayPoints",                       Boolean.valueOf(wayPoints.size() > 0)     ); //$NON-NLS-1$
+
+      vc.put("allSorted_Photos",                   allSorted_Photos                          ); //$NON-NLS-1$
+      vc.put("allSorted_SensorValues",             allSorted_SensorValues                    ); //$NON-NLS-1$
+      vc.put("allSorted_Tags",                     allSorted_Tags                            ); //$NON-NLS-1$
+      vc.put("allSorted_WayPoints",                allSorted_WayPoints                       ); //$NON-NLS-1$
+
+      vc.put("dateformat",                         _dateFormat                               ); //$NON-NLS-1$
+      vc.put("dtIso",                              _dtIso                                    ); //$NON-NLS-1$
+      vc.put("nf1",                                _nf1                                      ); //$NON-NLS-1$
+      vc.put("nf3",                                _nf3                                      ); //$NON-NLS-1$
+      vc.put("nf8",                                _nf8                                      ); //$NON-NLS-1$
+
+      /*
+       * Export raw serie data
+       */
+      vc.put("serieTime",                          serieData.timeSerie                       ); //$NON-NLS-1$
+      vc.put("serieAltitude",                      serieData.altitudeSerie20                 ); //$NON-NLS-1$
+      vc.put("serieCadence",                       serieData.cadenceSerie20                  ); //$NON-NLS-1$
+      vc.put("serieDistance",                      serieData.distanceSerie20                 ); //$NON-NLS-1$
+      vc.put("seriePulse",                         serieData.pulseSerie20                    ); //$NON-NLS-1$
+      vc.put("serieTemperature",                   serieData.temperatureSerie20              ); //$NON-NLS-1$
+      vc.put("seriePower",                         serieData.powerSerie20                    ); //$NON-NLS-1$
+      vc.put("serieSpeed",                         serieData.speedSerie20                    ); //$NON-NLS-1$
+      vc.put("serieGears",                         serieData.gears                           ); //$NON-NLS-1$
+      vc.put("serieLatitude",                      serieData.latitudeE6                      ); //$NON-NLS-1$
+      vc.put("serieLongitude",                     serieData.longitudeE6                     ); //$NON-NLS-1$
+      vc.put("seriePausedTime_Start",              serieData.pausedTime_Start                ); //$NON-NLS-1$
+      vc.put("seriePausedTime_End",                serieData.pausedTime_End                  ); //$NON-NLS-1$
+      vc.put("seriePausedTime_Data",               serieData.pausedTime_Data                 ); //$NON-NLS-1$
+      vc.put("seriePulseTimes",                    serieData.pulseTimes                      ); //$NON-NLS-1$
+      vc.put("seriePulseTimes_TimeIndex",          serieData.pulseTime_TimeIndex             ); //$NON-NLS-1$
+      vc.put("serieRunDyn_StanceTime",             serieData.runDyn_StanceTime               ); //$NON-NLS-1$
+      vc.put("serieRunDyn_StanceTimeBalance",      serieData.runDyn_StanceTimeBalance        ); //$NON-NLS-1$
+      vc.put("serieRunDyn_StepLength",             serieData.runDyn_StepLength               ); //$NON-NLS-1$
+      vc.put("serieRunDyn_VerticalOscillation",    serieData.runDyn_VerticalOscillation      ); //$NON-NLS-1$
+      vc.put("serieRunDyn_VerticalRatio",          serieData.runDyn_VerticalRatio            ); //$NON-NLS-1$
+      vc.put("serieSwim_LengthType",               serieData.swim_LengthType                 ); //$NON-NLS-1$
+      vc.put("serieSwim_Cadence",                  serieData.swim_Cadence                    ); //$NON-NLS-1$
+      vc.put("serieSwim_Strokes",                  serieData.swim_Strokes                    ); //$NON-NLS-1$
+      vc.put("serieSwim_StrokeStyle",              serieData.swim_StrokeStyle                ); //$NON-NLS-1$
+      vc.put("serieSwim_Time",                     serieData.swim_Time                       ); //$NON-NLS-1$
+      vc.put("serieVisiblePoints_Surfing",         serieData.visiblePoints_Surfing           ); //$NON-NLS-1$
+      vc.put("serieBattery_Percentage",            serieData.battery_Percentage              ); //$NON-NLS-1$
+      vc.put("serieBattery_Time",                  serieData.battery_Time                    ); //$NON-NLS-1$
+
+// SET_FORMATTING_ON
+
+         doExport_20_TourValues(vc);
+
+         try (final FileOutputStream fileOutputStream = new FileOutputStream(exportFile);
+               final OutputStreamWriter outputStreamWriter = new OutputStreamWriter(fileOutputStream, StandardCharsets.UTF_8);
+               final Writer exportWriter = new BufferedWriter(outputStreamWriter);
+               final Reader templateReader = new InputStreamReader(TourExporter.class.getClassLoader().getResourceAsStream(_formatTemplate))) {
+
+            Velocity.evaluate(vc, exportWriter, "MyTourbook", templateReader); //$NON-NLS-1$
+
+         } catch (final Exception e) {
+            StatusUtil.showStatus(e);
+            return false;
+         }
+      } else if (_isFIT) {
+
+         final FitExporter fitExporter = new FitExporter();
+         fitExporter.export(_tourData, exportFileName);
       }
 
       return true;
@@ -256,7 +363,9 @@ public class TourExporter {
        */
       final Calendar now = Calendar.getInstance();
       final Date creationDate = now.getTime();
+
       vcContext.put("creation_date", creationDate); //$NON-NLS-1$
+      vcContext.put("created", ZonedDateTime.now()); //$NON-NLS-1$
 
       doExport_21_Creator(vcContext);
       doExport_22_MinMax_LatLon(vcContext);
@@ -276,9 +385,11 @@ public class TourExporter {
       String pluginQualifierVersion = ZERO;
 
       if (version != null) {
+
          pluginMajorVersion = Integer.toString(version.getMajor());
          pluginMinorVersion = Integer.toString(version.getMinor());
          pluginMicroVersion = Integer.toString(version.getMicro());
+
          final String versionQualifier = version.getQualifier();
          if (StringUtils.isNumeric(versionQualifier)) {
             pluginQualifierVersion = versionQualifier;
@@ -295,7 +406,7 @@ public class TourExporter {
        */
       String creatorText = UI.EMPTY_STRING;
       if (version != null) {
-         creatorText = String.format("MyTourbook %d.%d.%d.%s - http://mytourbook.sourceforge.net", //$NON-NLS-1$
+         creatorText = String.format("MyTourbook %d.%d.%d.%s - https://mytourbook.sourceforge.io", //$NON-NLS-1$
                version.getMajor(),
                version.getMinor(),
                version.getMicro(),
@@ -323,9 +434,11 @@ public class TourExporter {
       double max_longitude = -180.0;
 
       final List<?> routes = (List<?>) vcContext.get("routes"); //$NON-NLS-1$
-      if (routes != null) {
+      if (CollectionUtils.isNotEmpty(routes)) {
+
          final Iterator<?> route_iterator = routes.iterator();
          while (route_iterator.hasNext()) {
+
             final GPSRoute route = (GPSRoute) route_iterator.next();
             min_longitude = route.getMinLongitude();
             max_longitude = route.getMaxLongitude();
@@ -335,9 +448,11 @@ public class TourExporter {
       }
 
       final List<?> wayPoints = (List<?>) vcContext.get(VC_WAY_POINTS);
-      if (wayPoints != null) {
+      if (CollectionUtils.isNotEmpty(wayPoints)) {
+
          final Iterator<?> waypoint_iterator = wayPoints.iterator();
          while (waypoint_iterator.hasNext()) {
+
             final TourWayPoint waypoint = (TourWayPoint) waypoint_iterator.next();
             min_longitude = Math.min(min_longitude, waypoint.getLongitude());
             max_longitude = Math.max(max_longitude, waypoint.getLongitude());
@@ -347,12 +462,11 @@ public class TourExporter {
       }
 
       final List<?> tourMarkers = (List<?>) vcContext.get(VC_TOUR_MARKERS);
-      if (tourMarkers != null) {
+      if (CollectionUtils.isNotEmpty(tourMarkers)) {
 
          for (final Object element : tourMarkers) {
-            if (element instanceof TourMarker) {
 
-               final TourMarker tourMarker = (TourMarker) element;
+            if (element instanceof final TourMarker tourMarker) {
 
                final double longitude = tourMarker.getLongitude();
                final double latitude = tourMarker.getLatitude();
@@ -369,9 +483,11 @@ public class TourExporter {
       }
 
       final List<?> tracks = (List<?>) vcContext.get(VC_TRACKS);
-      if (tracks != null) {
+      if (CollectionUtils.isNotEmpty(tracks)) {
+
          final Iterator<?> track_iterator = tracks.iterator();
          while (track_iterator.hasNext()) {
+
             final GPSTrack track = (GPSTrack) track_iterator.next();
             min_longitude = Math.min(min_longitude, track.getMinLongitude());
             max_longitude = Math.max(max_longitude, track.getMaxLongitude());
@@ -417,28 +533,26 @@ public class TourExporter {
                endtime = wp.getDate();
             }
 
-            if (wp instanceof GarminTrackpointAdapter) {
-
-               final GarminTrackpointAdapter gta = (GarminTrackpointAdapter) wp;
+            if (wp instanceof final GarminTrackpointAdapter garminTrackpointAdapter) {
 
                // average heartrate, maximum heartrate
-               if (gta.hasValidHeartrate()) {
-                  heartSum += gta.getHeartrate();
+               if (garminTrackpointAdapter.hasValidHeartrate()) {
+                  heartSum += garminTrackpointAdapter.getHeartrate();
                   heartNum++;
-                  if (gta.getHeartrate() > maximumheartrate) {
-                     maximumheartrate = gta.getHeartrate();
+                  if (garminTrackpointAdapter.getHeartrate() > maximumheartrate) {
+                     maximumheartrate = garminTrackpointAdapter.getHeartrate();
                   }
                }
 
                // average cadence
-               if (gta.hasValidCadence()) {
-                  cadSum += gta.getCadence();
+               if (garminTrackpointAdapter.hasValidCadence()) {
+                  cadSum += garminTrackpointAdapter.getCadence();
                   cadNum++;
                }
 
                // total distance
-               if (gta.hasValidDistance()) {
-                  totaldistance = gta.getDistance();
+               if (garminTrackpointAdapter.hasValidDistance()) {
+                  totaldistance = garminTrackpointAdapter.getDistance();
                }
             }
          }
@@ -498,13 +612,15 @@ public class TourExporter {
    }
 
    /**
-    * @param tourData
     * @param trackDateTime
-    * @param _mergedDistance2
-    * @param _mergedTime2
+    * @param mergedTime
+    * @param mergedDistance
+    *
     * @return Returns a track or <code>null</code> when tour data cannot be exported.
     */
-   public GarminTrack doExport_60_TrackPoints(final ZonedDateTime trackDateTime, final ZonedDateTime[] mergedTime, final int[] mergedDistance) {
+   public GarminTrack doExport_60_TrackPoints(final ZonedDateTime trackDateTime,
+                                              final ZonedDateTime[] mergedTime,
+                                              final int[] mergedDistance) {
 
       final int[] timeSerie = _tourData.timeSerie;
 
@@ -515,7 +631,7 @@ public class TourExporter {
       final float[] altitudeSerie = _tourData.altitudeSerie;
       final float[] cadenceSerie = _tourData.getCadenceSerie();
       final float[] distanceSerie = _tourData.distanceSerie;
-      final long[] gearSerie = _tourData.gearSerie;
+      final long[] gearSerie = _tourData.gearSerieCombined;
       final double[] latitudeSerie = _tourData.latitudeSerie;
       final double[] longitudeSerie = _tourData.longitudeSerie;
       final float[] pulseSerie = _tourData.pulseSerie;
@@ -524,7 +640,7 @@ public class TourExporter {
       final float[] speedSerie = _tourData.getSpeedSerieMetric();
 
       final boolean isAltitude = (altitudeSerie != null) && (altitudeSerie.length > 0);
-      final boolean isCadence = (cadenceSerie != null) && (cadenceSerie.length > 0);
+      final boolean isCadence = isDataSerieWithValues(cadenceSerie);
       final boolean isDistance = (distanceSerie != null) && (distanceSerie.length > 0);
       final boolean isGear = (gearSerie != null) && (gearSerie.length > 0);
       final boolean isPulse = (pulseSerie != null) && (pulseSerie.length > 0);
@@ -710,12 +826,15 @@ public class TourExporter {
          }
 
          if (isSpeed) {
-            final double speedValue = Math.round(speedSerie[serieIndex] * 10.0) / 10.0;
+
+            final double speedValue = Math.round(UI.convertSpeed_KmhToMs(speedSerie[serieIndex]) * 10.0) / 10.0;
             tpExt.setSpeed(speedValue);
          }
 
-         // ignore trackpoints which have the same time
-         if (relativeTime != prevTime) {
+         if (_isExportTrackPointsWithSameTime
+
+               // ignore trackpoints which have the same time
+               || relativeTime != prevTime) {
 
             lastTrackDateTime = trackDateTime.plusSeconds(relativeTime);
 
@@ -886,11 +1005,40 @@ public class TourExporter {
 
       doExport_70_WayPoints(wayPoints, tourMarkers, trackStartTime);
 
+      boolean exportStatus = false;
       try {
-         return doExport_10_Tour(tracks, wayPoints, tourMarkers, tourLap, exportFileName);
+
+         exportStatus = doExport_10_Tour(tracks, wayPoints, tourMarkers, tourLap, exportFileName);
+
       } catch (final IOException e) {
+
          StatusUtil.log(e);
       }
+
+      if (_displayNotificationPopup) {
+
+         final String notificationText = exportStatus
+               ? UI.SYMBOL_HEAVY_CHECK_MARK + UI.SPACE + String.format(Messages.Dialog_Export_Message_Successful, exportFileName)
+               : UI.SYMBOL_CROSS_MARK + UI.SPACE + String.format(Messages.Dialog_Export_Message_Unsuccessful, exportFileName);
+
+         UI.openNotificationPopup(Messages.dialog_export_dialog_title, _imageDescriptor, notificationText);
+      }
+
+      return exportStatus;
+   }
+
+   private boolean isDataSerieWithValues(final float[] dataSerie) {
+
+      if (dataSerie == null || dataSerie.length == 0) {
+         return false;
+      }
+
+      for (final float value : dataSerie) {
+         if (value != 0) {
+            return true;
+         }
+      }
+
       return false;
    }
 
@@ -920,6 +1068,13 @@ public class TourExporter {
 
    public void setIsExportSurfingWaves(final boolean isExportSurfingWaves) {
       _isExportSurfingWaves = isExportSurfingWaves;
+   }
+
+   public TourExporter setIsExportTrackpointsWithSameTime(final boolean isExportTrackpointsWithSameTime) {
+
+      _isExportTrackPointsWithSameTime = isExportTrackpointsWithSameTime;
+
+      return this;
    }
 
    public void setIsExportWithBarometer(final boolean isExportWithBarometer) {

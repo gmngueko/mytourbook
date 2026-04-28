@@ -1,21 +1,24 @@
 plugins {
 
-   id 'com.github.dkorotych.gradle-maven-exec' version '2.2.1'
-   id 'org.sonarqube' version '3.3'
+   id 'org.sonarqube' version '7.2.3.7755'
    id 'jacoco'
 }
 
 // get MT version and remove quotes
-def _mtVersionRaw                = project(':mytourbook').ext.myTourbookVersion      // '18.2.0'
-def _mtVersion                   = _mtVersionRaw.replaceAll('\'', '')                // 18.2.0
+def _mtVersionRaw                   = project(':mytourbook').ext.myTourbookVersion      // '18.2.0'
+def _mtVersion                      = _mtVersionRaw.replaceAll('\'', '')                //  18.2.0
+                                    
+def _dirProductBuilt                = file('../build.net.tourbook.product/target/products')
+def _dirProductArchive              = file('../../../../mytourbook-PRODUCT/' + _mtVersion)
+def _dirProductReleaseNotes         = file('../../info/release-notes')
+def _pathProductArchive             = _dirProductArchive.absolutePath
+                                    
+def _dirWinInnoSetup                = file('../../INSTALL-UPDATES/installer-net.tourbook/win-Inno.Setup')
+def _pathInnoSetupCompilerApp       = file('c:/Program Files (x86)/Inno Setup 6/iscc.exe').absolutePath
 
-def _dirProductBuilt             = file('../build.net.tourbook.product/target/products')
-def _dirProductArchive           = file('../../../../mytourbook-PRODUCT/' + _mtVersion)
-def _dirProductReleaseNotes      = file('../../info/release-notes')
-def _pathProductArchive          = _dirProductArchive.absolutePath
-                                 
-def _dirWinInnoSetup             = file('../../INSTALL-UPDATES/installer-net.tourbook/win-Inno.Setup')
-def _pathInnoSetupCompilerApp    = file('c:/Program Files (x86)/Inno Setup 6/iscc.exe').absolutePath
+def _pathWinInnoSetup               = _dirWinInnoSetup.absolutePath
+def _pathConfig_Win64Setup          = file(_pathWinInnoSetup + '/mytourbook-create-setup-exe.iss').absolutePath
+def _pathConfig_Win64SetupWithJRE   = file(_pathWinInnoSetup + '/mytourbook-create-setup-exe-with-jre.iss').absolutePath
 
 
 gradle.taskGraph.beforeTask { Task task ->
@@ -37,12 +40,12 @@ defaultTasks 'mt_0_Build'
 task mt_0_Build          
 mt_0_Build.dependsOn( 
 
-   'mt_10_CreateBuildFiles',
-   'mt_20_BuildProduct',
+   'mt_10_CreateBuildFiles', 
+   'mt_20_BuildProduct', 
    'mt_30_CopyProduct',
    'mt_40_ExtractWinFiles',
    'mt_50_CreateExeFiles',
-   'mt_60_CleanupWinFiles',
+   'mt_60_CleanupFiles',
    'mt_70_CopyReleaseNotes',
 )
 
@@ -51,12 +54,25 @@ sonarqube {
     property 'sonar.projectKey',                     'wolfgang-ch_mytourbook'
     property 'sonar.organization',                   'wolfgang-ch'
     property 'sonar.host.url',                       'https://sonarcloud.io'
-    property 'sonar.sources',                        'bundles'
-    property 'sonar.exclusions',                     'bundles/net.tourbook.ext.jars/**/*'
-    property 'sonar.coverage.exclusions',            'bundles/net.tourbook.tests/**/*.*, **src-test/**/*.*'
-    property 'sonar.java.binaries',                  '.'
-    property 'sonar.java.libraries',                 'bundles/net.tourbook.ext.jars/**/*.jar'
-    property 'sonar.coverage.jacoco.xmlReportPaths', '../../mytourbook-BUILD-autocreated/core/net.tourbook.tests/target/site/jacoco-aggregate/jacoco.xml'
+    property 'sonar.projectVersion',                            _mtVersion
+    property 'sonar.projectName',                               'MyTourbook'
+    property 'sonar.sources',                                   'bundles'
+    property 'sonar.java.binaries',                             '.'
+    property 'sonar.java.libraries',                            'bundles/**/*.jar'
+    property 'sonar.exclusions',                                'bundles/net.tourbook.ext.jars*/**/*, bundles/net.tourbook.model/map-models/**/*.*'
+    property 'sonar.coverage.exclusions',                       'bundles/*tests/**/*.*, bundles/**/src-test/**/*.*, bundles/net.tourbook.p2/**/*.*, bundles/**/Slideout*.java, bundles/**/*_DISABLED.java, bundles/**/*_TEMPLATE_*.java, bundles/net.tourbook/src/net/tourbook/update/**/*.*, bundles/net.tourbook/src/net/tourbook/map3/**/*.*, bundles/net.tourbook/src/net/tourbook/map25/**/*.*, bundles/**/AbstractRRShell.java, bundles/net.tourbook.cloud/src/net/tourbook/cloud/dropbox/**/*.*, bundles/net.tourbook/src/de/byteholder/geoclipse/tests/**/*.*, bundles/**/*ExternalDevice.java, bundles/**/device/Port*.java, bundles/**/SimpleSerialDevice.java, bundles/**/Fmath.java'
+    property 'sonar.cpd.exclusions',                            'bundles/net.tourbook.web/WebContent-rel/tourbook/search/**/*.*,bundles/net.tourbook.web/WebContent-dev/tourbook/search/nls/**/*.js'
+    property 'sonar.coverage.jacoco.xmlReportPaths',            '../../mytourbook-BUILD-autocreated/core/net.tourbook.tests/target/site/jacoco-aggregate/jacoco.xml, ../../mytourbook-BUILD-autocreated/core/net.tourbook.ui.tests/target/site/jacoco-aggregate/jacoco.xml'
+    property 'sonar.java.source',                               '21'
+    property 'sonar.issue.ignore.multicriteria',                'e1,e2,e3,e4'
+    property 'sonar.issue.ignore.multicriteria.e1.ruleKey',     'java:S1104'
+    property 'sonar.issue.ignore.multicriteria.e1.resourceKey', 'bundles/**/Messages.java'
+    property 'sonar.issue.ignore.multicriteria.e2.ruleKey',     'java:S1444'
+    property 'sonar.issue.ignore.multicriteria.e2.resourceKey', 'bundles/**/Messages.java'
+    property 'sonar.issue.ignore.multicriteria.e3.ruleKey',     'java:S1104'
+    property 'sonar.issue.ignore.multicriteria.e3.resourceKey', 'bundles/**/UI.java'
+    property 'sonar.issue.ignore.multicriteria.e4.ruleKey',     'java:S1444'
+    property 'sonar.issue.ignore.multicriteria.e4.resourceKey', 'bundles/**/UI.java'
   }
 }
 
@@ -75,28 +91,12 @@ task mt_10_CreateBuildFiles {
 /*
 * 2. Build product with maven/tycho
 */
-task mt_20_BuildProduct {
+task mt_20_BuildProduct(type: Exec) {
 
-   doLast {
-
-      //run: mvn verify -P build-release
-
-      def buildDir = file('../..')
-
-      mavenexec {
-
-         workingDir  buildDir
-         goals       'clean', 'verify'
-         
-         // repos can be used offline when this option "offline true" is set, 
-         // by default it is disabled 
-//       offline     true
-
-         options {
-            activateProfiles   = ['build-release']
-         }
-      }
-   }
+   // run: mvn clean verify -P build-release -V
+   
+   workingDir = "../.."
+   commandLine 'cmd', '/c', 'mvn clean verify -P build-release -V'
 }
 
 
@@ -135,12 +135,12 @@ task mt_40_ExtractWinFiles {
 
       println 'Extracting from ' + _dirProductArchive
 
-      file(_dirProductArchive).eachFileMatch(~/.*win.*.zip/) { winZipFile->
+      file(_dirProductArchive).eachFileMatch(~/.*win.*x86.*.zip/) { winZipFile->
 
-         def winZipFileName = winZipFile.name
-         def winZipName = winZipFileName.take(winZipFileName.lastIndexOf('.'))
+         def winZipFileName   = winZipFile.name
+         def winZipName       = winZipFileName.take(winZipFileName.lastIndexOf('.'))
 
-         def outputDir = file(_pathProductArchive + '/' + winZipName)
+         def outputDir        = file(_pathProductArchive + '/' + winZipName)
 
          println '\t' + outputDir
          
@@ -152,69 +152,81 @@ task mt_40_ExtractWinFiles {
    }
 }
 
-
 /*
- Create win exe files
+ Create win exe files, create separate Exec tasks for each setup file
 */
+task mt_52_CreateWin64Setup(type: Exec) {
+   
+   println 'Creating Windows setup files: Win 64'
+   
+   commandLine 'cmd', '/c', '"'+_pathInnoSetupCompilerApp+'"'
+   args        _pathConfig_Win64Setup
+}
+
+task mt_54_CreateWin64Setup_WithJRE(type: Exec) {
+   
+   println 'Creating Windows setup files: Win 64 with Java runtime'
+   
+   commandLine 'cmd', '/c', '"'+_pathInnoSetupCompilerApp+'"'
+   args        _pathConfig_Win64SetupWithJRE
+}
+
 task mt_50_CreateExeFiles {
-        
-   doLast {
-       
-      println 'Creating Windows setup files'
-      
-      def winInnoSetupDirName = _dirWinInnoSetup.absolutePath
-      
-      def win64SetupConfigFilename = file(winInnoSetupDirName + '/mytourbook-core-64-create-setup_exe.iss').absolutePath
-      
-      exec {
-      
-         println '\twin 64'
-      
-         commandLine 'cmd', '/c', '"'+_pathInnoSetupCompilerApp+'"'
-         args      win64SetupConfigFilename
-      }
-   }
+   
+   dependsOn mt_52_CreateWin64Setup, 
+             mt_54_CreateWin64Setup_WithJRE
 }
 
 /*
  Cleanup win zip files
 */
-task mt_60_CleanupWinFiles {
+task mt_60_CleanupFiles {
         
    doLast {
        
-      println 'Deleting extracted files from ' + _dirProductArchive
+      /*
+         Deleting extracted files
+      */
+      println 'Deleting extracted files'
       
-      def hiddenDir = file(_pathProductArchive + '/hidden')
-      
-      file(_dirProductArchive).eachFileMatch(~/.*win.*.zip/) { winZipFile->
+      file(_dirProductArchive).eachFileMatch(~/.*win.*x86.zip/) { winZipFile->
          
-         def winZipFileName = winZipFile.name
-         def winZipName = winZipFileName.take(winZipFileName.lastIndexOf('.'))
+         def winZipFileName   = winZipFile.name
+         def winZipName       = winZipFileName.take(winZipFileName.lastIndexOf('.'))
          
-         def outputDir = file(_pathProductArchive + '/' + winZipName)
+         def outputDir        = file(_pathProductArchive + '/' + winZipName)
 
-         println '\tdelete\t\t' + outputDir
+         println '\tdelete folder\t\t' + outputDir
          
          // delete extracted files
          outputDir.deleteDir()
+      }
+      
+      /*
+         Delete JRE files      
+      */
+      println '' 
+      println 'Deleting JRE files'
+      
+      file(_dirProductArchive).eachFileMatch(~/.*-jre-.*.zip/) { jreFile->
          
-//         // move zip into hidden folder
-//         hiddenDir.mkdirs()
-//         def hiddenFile = file(hiddenDir.absolutePath + '/' + winZipFileName)
-//         println '\tmove into\t' + hiddenFile 
-//         
-//         // delete old file when available
-//         hiddenFile.delete()
-//         
-//         winZipFile.renameTo(hiddenFile)
+         println '\tdelete file\t\t' + jreFile
+         
+         jreFile.delete()
+      }
+      
+      file(_dirProductArchive).eachFileMatch(~/.*-jre-.*.tar.gz/) { jreFile->
+         
+         println '\tdelete file\t\t' + jreFile
+         
+         jreFile.delete()
       }
    }
 }
 
 
 /*
-* Copy realease notes into product archive folder
+* Copy release notes into product archive folder
 */
 task mt_70_CopyReleaseNotes {
 

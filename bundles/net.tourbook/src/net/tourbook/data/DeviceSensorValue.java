@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2023, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,7 @@
  *******************************************************************************/
 package net.tourbook.data;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +32,9 @@ import net.tourbook.database.TourDatabase;
 /**
  */
 @Entity
-public class DeviceSensorValue {
+public class DeviceSensorValue implements Serializable {
+
+   private static final long    serialVersionUID     = 1L;
 
    private static final char    NL                   = UI.NEW_LINE;
 
@@ -80,6 +83,9 @@ public class DeviceSensorValue {
    @Transient
    private long                 _createId            = 0;
 
+   /**
+    * This constructor is needed for Hibernate
+    */
    public DeviceSensorValue() {}
 
    public DeviceSensorValue(final DeviceSensor sensor) {
@@ -90,43 +96,15 @@ public class DeviceSensorValue {
    }
 
    /**
-    * Ensure that the start value is larger than the end value, it happend that they are reverted.
+    * Used for MT import/export
+    *
+    * @param tourData
     */
-   @SuppressWarnings("unused")
-   private void checkBatteryLevel_StartEnd() {
+   public DeviceSensorValue(final TourData tourData) {
 
-      final short start = batteryLevel_Start;
-      final short end = batteryLevel_End;
+      this.tourData = tourData;
 
-      if (start == -1 || end == -1) {
-         return;
-      }
-
-      if (end > start) {
-
-         batteryLevel_Start = end;
-         batteryLevel_End = start;
-      }
-   }
-
-   /**
-    * Ensure that the start value is larger than the end value, it happend that they are reverted.
-    */
-   @SuppressWarnings("unused")
-   private void checkBatteryVoltage_StartEnd() {
-
-      final float start = batteryVoltage_Start;
-      final float end = batteryVoltage_End;
-
-      if (start == -1 || end == -1) {
-         return;
-      }
-
-      if (end > start) {
-
-         batteryVoltage_Start = end;
-         batteryVoltage_End = start;
-      }
+      _createId = _createCounter.incrementAndGet();
    }
 
    @Override
@@ -234,86 +212,58 @@ public class DeviceSensorValue {
       return false;
    }
 
-   public void setBattery_Level(final Short batteryLevel) {
-
-      if (batteryLevel == null) {
-         return;
-      }
-
-      if (batteryLevel_Start == -1) {
-
-         // first set the start value
-
-         batteryLevel_Start = batteryLevel;
-
-      } else {
-
-         batteryLevel_End = batteryLevel;
-      }
-
-      /*
-       * Ensure that the start value is larger than the end value
-       */
-      if (batteryLevel_Start != -1 && batteryLevel_End != -1
-
-            && batteryLevel_End > batteryLevel_Start) {
-
-         final short batteryLevel_StartBackup = batteryLevel_Start;
-
-         batteryLevel_Start = batteryLevel_End;
-         batteryLevel_End = batteryLevel_StartBackup;
-      }
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryLevel_End
+    */
+   public void setBatteryLevel_End(final short batteryLevel_End) {
+      this.batteryLevel_End = batteryLevel_End;
    }
 
-   public void setBattery_Status(final Short batteryStatus) {
-
-      if (batteryStatus == null) {
-         return;
-      }
-
-      if (batteryStatus_Start == -1) {
-
-         // first set the start value
-
-         batteryStatus_Start = batteryStatus;
-
-      } else {
-
-         batteryStatus_End = batteryStatus;
-      }
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryLevel_Start
+    */
+   public void setBatteryLevel_Start(final short batteryLevel_Start) {
+      this.batteryLevel_Start = batteryLevel_Start;
    }
 
-   public void setBattery_Voltage(final Float batteryVoltage) {
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryStatus_End
+    */
+   public void setBatteryStatus_End(final short batteryStatus_End) {
+      this.batteryStatus_End = batteryStatus_End;
+   }
 
-      if (batteryVoltage == null || batteryVoltage == 0.0) {
-         return;
-      }
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryStatus_Start
+    */
+   public void setBatteryStatus_Start(final short batteryStatus_Start) {
+      this.batteryStatus_Start = batteryStatus_Start;
+   }
 
-      if (batteryVoltage_Start == -1) {
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryVoltage_End
+    */
+   public void setBatteryVoltage_End(final float batteryVoltage_End) {
+      this.batteryVoltage_End = batteryVoltage_End;
+   }
 
-         // first set the start value
-
-         batteryVoltage_Start = batteryVoltage;
-
-      } else {
-
-         batteryVoltage_End = batteryVoltage;
-      }
-
-      /*
-       * It happened, that the end value is larger than the start value -> this cannot be possible
-       * when riding a tour -> the sensor chart could hide bars because of the wrong min/max values
-       */
-      if (batteryVoltage_Start != -1 && batteryVoltage_End != -1
-
-            && batteryVoltage_End > batteryVoltage_Start) {
-
-         final float batteryVoltage_StartBackup = batteryVoltage_Start;
-
-         batteryVoltage_Start = batteryVoltage_End;
-         batteryVoltage_End = batteryVoltage_StartBackup;
-
-      }
+   /**
+    * Used for MT import/export
+    *
+    * @param batteryVoltage_Start
+    */
+   public void setBatteryVoltage_Start(final float batteryVoltage_Start) {
+      this.batteryVoltage_Start = batteryVoltage_Start;
    }
 
    public void setDeviceIndex(final int deviceIndex) {
@@ -334,6 +284,15 @@ public class DeviceSensorValue {
 
    public void setTourTime_Start(final long tourTime_Start) {
       this.tourStartTime = tourTime_Start;
+   }
+
+   public void setupDeepClone(final TourData tourDataFromClone) {
+
+      _createId = _createCounter.incrementAndGet();
+
+      sensorValueId = TourDatabase.ENTITY_IS_NOT_SAVED;
+
+      tourData = tourDataFromClone;
    }
 
    /**

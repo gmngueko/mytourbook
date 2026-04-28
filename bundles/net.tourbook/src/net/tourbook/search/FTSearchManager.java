@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -45,6 +45,7 @@ import net.tourbook.data.TourMarker;
 import net.tourbook.data.TourWayPoint;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
+import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourLogManager;
 import net.tourbook.tour.TourManager;
 import net.tourbook.web.WEB;
@@ -105,21 +106,22 @@ import org.eclipse.swt.widgets.Display;
 
 public class FTSearchManager {
 
-   private static final String                  LUCENE_INDEX_FOLDER_NAME         = "lucene-index";                 //$NON-NLS-1$
+   private static final String                  LUCENE_INDEX_FOLDER_NAME         = "lucene-index";                       //$NON-NLS-1$
 
-   private static final String                  SEARCH_FIELD_DESCRIPTION         = "description";                  //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_DOC_SOURCE_INDEX    = "docSource_Index";              //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_DOC_SOURCE_SAVED    = "docSource_Saved";              //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_MARKER_ID           = "markerID";                     //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TITLE               = "title";                        //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TOUR_ID             = "tourID";                       //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TOUR_LOCATION_START = "startLocation";                //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TOUR_LOCATION_END   = "endLocation";                  //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TOUR_WEATHER        = "weather";                      //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_TIME                = "time";                         //$NON-NLS-1$
-   private static final String                  SEARCH_FIELD_WAYPOINT_ID         = "wayPointID";                   //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_DESCRIPTION         = "description";                        //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_DOC_SOURCE_INDEX    = "docSource_Index";                    //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_DOC_SOURCE_SAVED    = "docSource_Saved";                    //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_MARKER_ID           = "markerID";                           //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TITLE               = "title";                              //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TOUR_ID             = "tourID";                             //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TOUR_LOCATION_START = "startLocation";                      //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TOUR_LOCATION_END   = "endLocation";                        //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TOUR_WEATHER        = "weather";                            //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_TIME                = "time";                               //$NON-NLS-1$
+   private static final String                  SEARCH_FIELD_WAYPOINT_ID         = "wayPointID";                         //$NON-NLS-1$
 
-   private static final String                  LOG_CREATE_INDEX                 = "Created ft index: %s\t %d ms"; //$NON-NLS-1$
+   private static final String                  LOG_CREATE_INDEX                 = "Created fulltext index: %s\t %d ms"; //$NON-NLS-1$
+   private static final String                  LOG_DELETED_INDEX                = "Deleted fulltext index: %d ms";      //$NON-NLS-1$
 
    private static final IPreferenceStore        _prefStore                       = TourbookPlugin.getPrefStore();
 
@@ -147,7 +149,9 @@ public class FTSearchManager {
    private static boolean                       _isSearch_Tour_Weather;
    private static boolean                       _isSearch_Waypoint;
    private static boolean                       _isShow_TitleDescription;
-   private static boolean                       _isSort_DateAscending            = false;                          // -> sort descending
+   private static boolean                       _isSort_DateAscending            = false;                                // -> sort descending
+
+   private static Object                        _lastSearchText;
 
    private static final FieldType               fieldType_Int;
    private static final FieldType               fieldType_Long;
@@ -833,10 +837,71 @@ public class FTSearchManager {
       return allPartitionedTourIDs;
    }
 
+   public static void deleteCorruptIndex() {
+
+      _prefStore.setValue(ITourbookPreferences.FULLTEXT_INDEX_DELETE, true);
+   }
+
+   public static void deleteCorruptIndex_InAppStartup() {
+
+      final boolean isDeleteFulltextIndex = _prefStore.getBoolean(ITourbookPreferences.FULLTEXT_INDEX_DELETE);
+
+      if (isDeleteFulltextIndex) {
+
+         _prefStore.setValue(ITourbookPreferences.FULLTEXT_INDEX_DELETE, false);
+
+         deleteFulltextIndexFiles();
+      }
+   }
+
    /**
-    * Deletes the fulltext search index, this is useful when the index has new fields.
+    * Delete fulltext index files and directories
+    */
+   private static void deleteFulltextIndexFiles() {
+
+      final java.nio.file.Path rootPath = getLuceneIndexRootPath();
+
+      final String logMessage = String.format(Messages.Search_Manager_Log_DeletingLuceneRootFolder, rootPath.toString());
+
+      StatusUtil.logInfo(logMessage);
+      TourLogManager.log_INFO(logMessage);
+
+      try {
+
+         Files.walkFileTree(rootPath, new SimpleFileVisitor<java.nio.file.Path>() {
+
+            @Override
+            public FileVisitResult postVisitDirectory(final java.nio.file.Path dir, final IOException exc) throws IOException {
+
+               Files.delete(dir);
+
+               return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(final java.nio.file.Path file, final BasicFileAttributes attrs) throws IOException {
+
+               Files.delete(file);
+
+               return FileVisitResult.CONTINUE;
+            }
+         });
+
+      } catch (final IOException e) {
+
+         StatusUtil.log(e);
+      }
+
+      StatusUtil.logInfo(Messages.Search_Manager_Log_LuceneRootFolderIsDeleted);
+      TourLogManager.log_INFO(Messages.Search_Manager_Log_LuceneRootFolderIsDeleted);
+   }
+
+   /**
+    * Deletes the fulltext search index, this is useful when the index has new fields or is corrupt.
     */
    public static void deleteIndex() {
+
+      final long start = System.currentTimeMillis();
 
       setupIndexReader();
 
@@ -874,6 +939,8 @@ public class FTSearchManager {
       }
 
       closeIndexReaderSuggester();
+
+      StatusUtil.logInfo(LOG_DELETED_INDEX.formatted(System.currentTimeMillis() - start));
    }
 
    /**
@@ -973,30 +1040,7 @@ public class FTSearchManager {
 
          TourLogManager.log_ERROR(e.getMessage());
 
-         final java.nio.file.Path rootPath = getLuceneIndexRootPath();
-
-         TourLogManager.log_INFO(String.format(Messages.Search_Manager_Log_DeletingLuceneRootFolder, rootPath.toString()));
-
-         Files.walkFileTree(rootPath, new SimpleFileVisitor<java.nio.file.Path>() {
-
-            @Override
-            public FileVisitResult postVisitDirectory(final java.nio.file.Path dir, final IOException exc) throws IOException {
-
-               Files.delete(dir);
-
-               return FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public FileVisitResult visitFile(final java.nio.file.Path file, final BasicFileAttributes attrs) throws IOException {
-
-               Files.delete(file);
-
-               return FileVisitResult.CONTINUE;
-            }
-         });
-
-         TourLogManager.log_INFO(Messages.Search_Manager_Log_LuceneRootFolderIsDeleted);
+         deleteFulltextIndexFiles();
 
          indexWriter = new IndexWriter(indexStore, getIndexWriterConfig());
       }
@@ -1066,6 +1110,8 @@ public class FTSearchManager {
 
    /**
     * @return Returns <code>true</code> when the ft index is created.
+    *
+    * @throws IOException
     */
    private static boolean isIndexCreated() {
 
@@ -1112,12 +1158,15 @@ public class FTSearchManager {
     * @param searchText
     * @param searchFromIndex
     * @param searchToIndex
+    * @param isNewSearch
     * @param searchResult
+    *
     * @return
     */
    private static void search(final String searchText,
                               final int searchFromIndex,
                               final int searchToIndex,
+                              final boolean isNewSearch,
                               final SearchResult searchResult) {
 
       try {
@@ -1162,7 +1211,7 @@ public class FTSearchManager {
          searchResult.totalHits = _topDocs.totalHits;
 
          /**
-          * Get doc id's only for the current page
+          * Get doc id's only for the current visible page
           * <p>
           * It is very cheap to query the doc id's but very expensive to retrieve the documents
           * <p>
@@ -1172,17 +1221,17 @@ public class FTSearchManager {
          int docEndIndex = searchToIndex;
 
          final ScoreDoc[] allScoreDocs = _topDocs.scoreDocs;
-         final int scoreSize = allScoreDocs.length;
+         final int numScoreDocs = allScoreDocs.length;
 
-         if (docEndIndex >= scoreSize) {
-            docEndIndex = scoreSize - 1;
+         if (docEndIndex >= numScoreDocs) {
+            docEndIndex = numScoreDocs - 1;
          }
 
-         final int numSearchResultItems = docEndIndex - docStartIndex + 1;
-         final int allDocIds[] = new int[numSearchResultItems];
+         final int numPageItems = docEndIndex - docStartIndex + 1;
+         final int allPageDocIds[] = new int[numPageItems];
 
-         for (int docIndex = 0; docIndex < numSearchResultItems; docIndex++) {
-            allDocIds[docIndex] = allScoreDocs[docStartIndex + docIndex].doc;
+         for (int docIndex = 0; docIndex < numPageItems; docIndex++) {
+            allPageDocIds[docIndex] = allScoreDocs[docStartIndex + docIndex].doc;
          }
 
          /**
@@ -1197,15 +1246,34 @@ public class FTSearchManager {
          final Map<String, String[]> highlightedSearchResults = highlighter.highlightFields(
                queryResult.allQueryFields,
                queryResult.query,
-               allDocIds,
+               allPageDocIds,
                createMaxPassages(queryResult.allQueryFields.length));
 
-         search_90_CreateResult(
+         search_80_CreateResult(
                highlightedSearchResults,
                _indexReader,
                searchResult,
-               allDocIds,
+               allPageDocIds,
                docStartIndex);
+
+         /*
+          * Push into tourbook view
+          */
+         if (SearchManager.getSearchView() instanceof final SearchView searchView) {
+
+            if (searchView.isPushSearchResult()
+
+                  // push only when the search text has changed or a new search has started
+
+                  && (searchText.equals(_lastSearchText) == false || isNewSearch)
+
+            ) {
+
+               _lastSearchText = searchText;
+
+               search_90_CreatePushResult(_indexReader, _topDocs);
+            }
+         }
 
       } catch (final Exception e) {
 
@@ -1220,7 +1288,9 @@ public class FTSearchManager {
     *
     * @param searchText
     * @param analyzer
+    *
     * @return
+    *
     * @throws ParseException
     */
    private static QueryResult search_10_Search_All(final String searchText, final Analyzer analyzer) throws ParseException {
@@ -1250,6 +1320,7 @@ public class FTSearchManager {
     * Query text/marker/waypoint with OR
     *
     * @param analyzer
+    *
     * @throws ParseException
     */
    private static QueryResult search_20_Search_Parts(final String searchText, final Analyzer analyzer) throws ParseException {
@@ -1379,24 +1450,25 @@ public class FTSearchManager {
     * Creating the result is complicated because the highlights are listed by field and not by hit,
     * therefor the structure must be inverted.
     *
-    * @param highlights
+    * @param highlightedSearchResults
     * @param indexReader
     * @param searchResult
     * @param docStartIndex
     * @param docids2
+    *
     * @throws IOException
     */
-   private static void search_90_CreateResult(final Map<String, String[]> highlights,
+   private static void search_80_CreateResult(final Map<String, String[]> highlightedSearchResults,
                                               final IndexReader indexReader,
                                               final SearchResult searchResult,
                                               final int[] docids,
                                               final int docStartIndex) throws IOException {
 
-      if (highlights.isEmpty()) {
+      if (highlightedSearchResults.isEmpty()) {
          return;
       }
 
-      final Set<Entry<String, String[]>> fields = highlights.entrySet();
+      final Set<Entry<String, String[]>> fields = highlightedSearchResults.entrySet();
       Entry<String, String[]> firstHit;
       try {
          firstHit = fields.iterator().next();
@@ -1407,14 +1479,11 @@ public class FTSearchManager {
       final int numHits = firstHit.getValue().length;
 
       // create result items
-//      final SearchResultItem[] resultItems = new SearchResultItem[numHits];
       final ArrayList<SearchResultItem> allSearchResultItems = searchResult.allItems;
 
       for (int hitIndex = 0; hitIndex < numHits; hitIndex++) {
 
          final SearchResultItem resultItem = new SearchResultItem();
-
-//         resultItems[hitIndex] = resultItem;
 
          allSearchResultItems.add(resultItem);
       }
@@ -1441,36 +1510,35 @@ public class FTSearchManager {
       for (final Entry<String, String[]> field : fields) {
 
          final String fieldName = field.getKey();
-         final String[] allSnippets = field.getValue();
+         final String[] allFieldValues = field.getValue();
 
-         for (int hitIndex = 0; hitIndex < allSnippets.length; hitIndex++) {
+         for (int hitIndex = 0; hitIndex < allFieldValues.length; hitIndex++) {
 
-//            final SearchResultItem resultItem = resultItems[hitIndex];
             final SearchResultItem resultItem = allSearchResultItems.get(hitIndex);
 
-            final String snippet = allSnippets[hitIndex];
-            if (snippet != null) {
+            final String fieldValue = allFieldValues[hitIndex];
+            if (fieldValue != null) {
 
                switch (fieldName) {
 
                case SEARCH_FIELD_DESCRIPTION:
-                  resultItem.description = snippet;
+                  resultItem.description = fieldValue;
                   break;
 
                case SEARCH_FIELD_TITLE:
-                  resultItem.title = snippet;
+                  resultItem.title = fieldValue;
                   break;
 
                case SEARCH_FIELD_TOUR_LOCATION_START:
-                  resultItem.locationStart = snippet;
+                  resultItem.locationStart = fieldValue;
                   break;
 
                case SEARCH_FIELD_TOUR_LOCATION_END:
-                  resultItem.locationEnd = snippet;
+                  resultItem.locationEnd = fieldValue;
                   break;
 
                case SEARCH_FIELD_TOUR_WEATHER:
-                  resultItem.weather = snippet;
+                  resultItem.weather = fieldValue;
                   break;
                }
             }
@@ -1538,19 +1606,70 @@ public class FTSearchManager {
       }
    }
 
+   private static void search_90_CreatePushResult(final IndexReader indexReader,
+                                                  final TopDocs topDocs) {
+
+      final List<Long> allTourIDs = new ArrayList<>();
+
+      search_92_PushResult(indexReader, topDocs, allTourIDs);
+
+      TourManager.fireEventWithCustomData(TourEventId.FULLTEXT_SEARCH_TOURS, allTourIDs, null);
+   }
+
+   private static void search_92_PushResult(final IndexReader indexReader,
+                                            final TopDocs topDocs,
+                                            final List<Long> allTourIDs) {
+
+      final Set<String> fieldsToLoadFromDocument = new HashSet<>();
+      fieldsToLoadFromDocument.add(SEARCH_FIELD_TOUR_ID);
+
+// THIS DO NOT WORK OR I HAVE NOT UNDERSTOOD HOW IT WORKS
+//
+//      final DocumentStoredFieldVisitor docStoreVisitor = new DocumentStoredFieldVisitor(fieldsToLoadFromDocument);
+
+      final ScoreDoc[] allScoreDocs = topDocs.scoreDocs;
+
+      for (final ScoreDoc scoreDoc : allScoreDocs) {
+
+         final int docID = scoreDoc.doc;
+
+         try {
+
+            final Document doc = indexReader.document(docID, fieldsToLoadFromDocument);
+
+//            indexReader.document(docID, docStoreVisitor);
+//            final Document doc = docStoreVisitor.getDocument();
+
+            final IndexableField tourIDField = doc.getField(SEARCH_FIELD_TOUR_ID);
+
+            final String tourID = tourIDField.stringValue();
+            final long tourIDValue = Long.parseLong(tourID);
+
+            allTourIDs.add(tourIDValue);
+
+         } catch (final IOException e) {
+
+            StatusUtil.log(e);
+         }
+      }
+   }
+
    /**
     * @param searchText
     * @param searchPosFrom
     * @param searchPosTo
+    * @param isNewSearch
+    *
     * @return Returns {@link SearchResult}
     */
    public static SearchResult searchByPosition(final String searchText,
                                                final int searchPosFrom,
-                                               final int searchPosTo) {
+                                               final int searchPosTo,
+                                               final boolean isNewSearch) {
 
       final SearchResult searchResult = new SearchResult();
 
-      search(searchText, searchPosFrom, searchPosTo, searchResult);
+      search(searchText, searchPosFrom, searchPosTo, isNewSearch, searchResult);
 
       return searchResult;
    }
@@ -1586,6 +1705,7 @@ public class FTSearchManager {
     *
     * @param conn
     * @param monitor
+    *
     * @throws SQLException
     */
    private static void setupIndex() {
@@ -1851,6 +1971,7 @@ public class FTSearchManager {
          }
       }
 
+      // force to reload the suggester
       closeIndexReaderSuggester();
 
       final long end = System.nanoTime();

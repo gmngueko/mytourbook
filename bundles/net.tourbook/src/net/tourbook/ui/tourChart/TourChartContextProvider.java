@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -57,6 +57,9 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
 
    private final ITourChartViewer           _tourChartViewer;
 
+   private TagMenuManager                   _tagMenuMgr;
+   private TourTypeMenuManager              _tourTypeMenuManager;
+
    private ActionCreateRefTour              _actionCreateRefTour;
    private ActionCreateMarkerFromSlider     _actionCreateMarkerFromSlider;
    private ActionCreateMarkerFromSlider     _actionCreateMarkerFromSliderLeft;
@@ -73,8 +76,6 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
    private ActionSetTourTypeMenu            _actionSetTourType;
    private ActionSetMarkerVisible           _actionSetMarkerVisible;
    private ActionSetMarkerLabelPositionMenu _actionSetMarkerPosition;
-
-   private TagMenuManager                   _tagMenuMgr;
 
    private ChartXSlider                     _leftSlider;
    private ChartXSlider                     _rightSlider;
@@ -103,22 +104,22 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
 
       _actionCreateMarkerFromSlider = new ActionCreateMarkerFromSlider(
             this,
-            Messages.tourCatalog_view_action_create_marker,
+            Messages.RefTour_Action_CreateMarker,
             true);
 
       _actionCreateMarkerFromSliderLeft = new ActionCreateMarkerFromSlider(
             this,
-            Messages.tourCatalog_view_action_create_left_marker,
+            Messages.RefTour_Action_CreateLeftMarker,
             true);
 
       _actionCreateMarkerFromSliderRight = new ActionCreateMarkerFromSlider(
             this,
-            Messages.tourCatalog_view_action_create_right_marker,
+            Messages.RefTour_Action_CreateRightMarker,
             false);
 
       _actionCreateMarkerFromValuePoint = new ActionCreateMarkerFromValuePoint(
             this,
-            Messages.tourCatalog_view_action_create_marker);
+            Messages.RefTour_Action_CreateMarker);
 
       _actionDeleteMarker = new ActionDeleteMarker(tourChart);
       _actionSetMarkerVisible = new ActionSetMarkerVisible(tourChart);
@@ -135,6 +136,7 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
       _actionSetTourType = new ActionSetTourTypeMenu(this);
 
       _tagMenuMgr = new TagMenuManager(this, true);
+      _tourTypeMenuManager = new TourTypeMenuManager(this);
 
       _actionPrefDialog = new ActionOpenPrefDialog(
             Messages.Tour_Action_EditChartPreferences,
@@ -192,12 +194,12 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
       menuMgr.add(_actionExportTour);
 
       // tour tag actions
-      _tagMenuMgr.fillTagMenu(menuMgr, false);
+      _tagMenuMgr.fillTagMenu(menuMgr);
 
       // tour type actions
       menuMgr.add(new Separator());
       menuMgr.add(_actionSetTourType);
-      TourTypeMenuManager.fillMenuWithRecentTourTypes(menuMgr, this, true);
+      _tourTypeMenuManager.fillMenuWithRecentTourTypes(menuMgr, tourChart);
 
       menuMgr.add(new Separator());
       menuMgr.add(_actionPrefDialog);
@@ -235,7 +237,7 @@ public class TourChartContextProvider implements IChartContextProvider, ITourPro
             tourTags);
 
       _actionSetTourType.setEnabled(isTourSaved);
-      TourTypeMenuManager.enableRecentTourTypeActions(isTourSaved, existingTourTypeId);
+      _tourTypeMenuManager.enableTourTypeActions(isTourSaved, existingTourTypeId);
    }
 
    private void fillContextMenu_TourMarker(final IMenuManager menuMgr,

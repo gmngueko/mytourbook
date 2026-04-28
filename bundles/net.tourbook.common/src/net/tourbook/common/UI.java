@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,20 +16,23 @@
 package net.tourbook.common;
 
 import static org.eclipse.swt.events.ControlListener.controlResizedAdapter;
-import static org.eclipse.swt.events.MouseTrackListener.mouseEnterAdapter;
-import static org.eclipse.swt.events.MouseTrackListener.mouseExitAdapter;
-import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 import net.tourbook.common.color.ThemeUtil;
+import net.tourbook.common.formatter.FormatManager;
 import net.tourbook.common.measurement_system.MeasurementSystem;
 import net.tourbook.common.measurement_system.MeasurementSystem_Manager;
 import net.tourbook.common.measurement_system.Unit_Distance;
@@ -40,18 +43,26 @@ import net.tourbook.common.measurement_system.Unit_Pace;
 import net.tourbook.common.measurement_system.Unit_Pressure_Atmosphere;
 import net.tourbook.common.measurement_system.Unit_Temperature;
 import net.tourbook.common.measurement_system.Unit_Weight;
+import net.tourbook.common.preferences.ICommonPreferences;
+import net.tourbook.common.util.StatusUtil;
+import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ContributionItem;
 import org.eclipse.jface.action.IStatusLineManager;
 import org.eclipse.jface.action.StatusLineManager;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IDialogSettings;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.preference.PreferenceConverter;
 import org.eclipse.jface.preference.StringFieldEditor;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
@@ -70,7 +81,14 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.ScrolledComposite;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseTrackListener;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
@@ -84,7 +102,9 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Resource;
 import org.eclipse.swt.graphics.TextLayout;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -108,7 +128,9 @@ import org.eclipse.ui.IMemento;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchPart;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.menus.UIElement;
 import org.epics.css.dal.Timestamp;
 import org.epics.css.dal.Timestamp.Format;
@@ -117,115 +139,177 @@ import org.joda.time.format.PeriodFormatterBuilder;
 
 public class UI {
 
-   public static final int          SHELL_MARGIN                       = 5;
+   public static final String       SYSTEM_NEW_LINE                      = System.lineSeparator();
+   public static final String       SYSTEM_NEW_LINE2                     = SYSTEM_NEW_LINE + SYSTEM_NEW_LINE;
 
-   public static final char         SPACE                              = ' ';
-   public static final char         NEW_LINE                           = '\n';
-   public static final char         TAB                                = '\t';
+   public static final int          SHELL_MARGIN                         = 5;
 
-   public static final char         SYMBOL_BRACKET_LEFT                = '(';
-   public static final char         SYMBOL_BRACKET_RIGHT               = ')';
+   public static final char         SPACE                                = ' ';
+   public static final char         NEW_LINE                             = '\n';
+   public static final char         TAB                                  = '\t';
 
-   public static final String       COMMA_SPACE                        = ", ";            //$NON-NLS-1$
-   public static final String       DASH                               = "-";             //$NON-NLS-1$
-   public static final String       DASH_WITH_SPACE                    = " - ";           //$NON-NLS-1$
-   public static final String       DASH_WITH_DOUBLE_SPACE             = "   -   ";       //$NON-NLS-1$
-   public static final String       DIMENSION                          = " x ";           //$NON-NLS-1$
-   public static final String       EMPTY_STRING                       = "";              //$NON-NLS-1$
-   public static final String       NEW_LINE_TEXT_WIDGET               = "\r\n";          //$NON-NLS-1$
-   public static final String       NEW_LINE1                          = "\n";            //$NON-NLS-1$
-   public static final String       NEW_LINE2                          = "\n\n";          //$NON-NLS-1$
-   public static final String       NEW_LINE3                          = "\n\n\n";        //$NON-NLS-1$
-   public static final String       RESET_LABEL                        = " X ";           //$NON-NLS-1$
-   public static final String       SLASH                              = "/";             //$NON-NLS-1$
-   public static final String       SLASH_WITH_SPACE                   = " / ";           //$NON-NLS-1$
-   public static final String       SPACE1                             = " ";             //$NON-NLS-1$
-   public static final String       SPACE2                             = "  ";            //$NON-NLS-1$
-   public static final String       SPACE3                             = "   ";           //$NON-NLS-1$
-   public static final String       SPACE4                             = "    ";          //$NON-NLS-1$
-   public static final String       TAB1                               = "\t";            //$NON-NLS-1$
-   public static final String       ZERO                               = "0";             //$NON-NLS-1$
+   public static final char         SYMBOL_BRACKET_LEFT                  = '(';
+   public static final char         SYMBOL_BRACKET_RIGHT                 = ')';
 
-   private static final String      JS_APOSTROPHE                      = "'";             //$NON-NLS-1$
-   private static final String      JS_APOSTROPHE_REPLACEMENT          = "\\'";           //$NON-NLS-1$
-   private static final String      JS_QUOTA_MARK                      = "\"";            //$NON-NLS-1$
-   private static final String      JS_QUOTA_MARK_REPLACEMENT          = "\\\"";          //$NON-NLS-1$
-   private static final String      JS_BACKSLASH_REPLACEMENT           = "\\\\";          //$NON-NLS-1$
-   private static final String      HTML_NEW_LINE                      = "\\n";           //$NON-NLS-1$
+   public static final String       COLON_SPACE                          = ": ";                                        //$NON-NLS-1$
+   public static final String       COMMA_SPACE                          = ", ";                                        //$NON-NLS-1$
+   /** This is not a real dash it's the negative sign character */
+   public static final String       DASH                                 = "-";                                         //$NON-NLS-1$
+   public static final String       DASH_WITH_SPACE                      = " - ";                                       //$NON-NLS-1$
+   public static final String       DASH_WITH_DOUBLE_SPACE               = "   -   ";                                   //$NON-NLS-1$
+   public static final String       DIMENSION                            = " x ";                                       //$NON-NLS-1$
+   public static final String       EMPTY_STRING                         = "";                                          //$NON-NLS-1$
+   public static final String       MNEMONIC                             = "&";                                         //$NON-NLS-1$
+   public static final String       NEW_LINE_TEXT_WIDGET                 = "\r\n";                                      //$NON-NLS-1$
+   public static final String       NEW_LINE1                            = "\n";                                        //$NON-NLS-1$
+   public static final String       NEW_LINE2                            = "\n\n";                                      //$NON-NLS-1$
+   public static final String       NEW_LINE3                            = "\n\n\n";                                    //$NON-NLS-1$
+   public static final String       NULL                                 = "null";                                      //$NON-NLS-1$
+   public static final String       RESET_LABEL                          = " X ";                                       //$NON-NLS-1$
+   public static final String       SLASH                                = "/";                                         //$NON-NLS-1$
+   public static final String       SLASH_WITH_SPACE                     = " / ";                                       //$NON-NLS-1$
+   public static final String       SPACE1                               = " ";                                         //$NON-NLS-1$
+   public static final String       SPACE2                               = "  ";                                        //$NON-NLS-1$
+   public static final String       SPACE3                               = "   ";                                       //$NON-NLS-1$
+   public static final String       SPACE4                               = "    ";                                      //$NON-NLS-1$
+   public static final String       SPACE6                               = "      ";                                    //$NON-NLS-1$
+   public static final String       SPACE8                               = "        ";                                  //$NON-NLS-1$
+   public static final String       TAB1                                 = "\t";                                        //$NON-NLS-1$
+   public static final String       ZERO                                 = "0";                                         //$NON-NLS-1$
 
-   public static final String       SYMBOL_ARROW_UP                    = "\u2191";        //$NON-NLS-1$
-   public static final String       SYMBOL_ARROW_DOWN                  = "\u2193";        //$NON-NLS-1$
-   public static final String       SYMBOL_ARROW_LEFT                  = "\u2190";        //$NON-NLS-1$
-   public static final String       SYMBOL_ARROW_RIGHT                 = "\u2192";        //$NON-NLS-1$
-   public static final String       SYMBOL_ARROW_LEFT_RIGHT            = "\u2194";        //$NON-NLS-1$
-   public static final String       SYMBOL_ARROW_UP_DOWN               = "\u2195";        //$NON-NLS-1$
-   public static final String       SYMBOL_AVERAGE                     = "\u00f8";        //$NON-NLS-1$
-   public static final String       SYMBOL_AVERAGE_WITH_SPACE          = "\u00f8 ";       //$NON-NLS-1$
-   public static final String       SYMBOL_BOX                         = "\u25a0";        //$NON-NLS-1$
-   public static final String       SYMBOL_BULLET                      = "\u2022";        //$NON-NLS-1$
-   public static final String       SYMBOL_DASH                        = "\u2212";        //$NON-NLS-1$
-   public static final String       SYMBOL_DEGREE                      = "\u00B0";        //$NON-NLS-1$
-   public static final String       SYMBOL_DBL_ANGLE_QMARK_LEFT        = "\u00AB";        //$NON-NLS-1$
-   public static final String       SYMBOL_DBL_ANGLE_QMARK_RIGHT       = "\u00BB";        //$NON-NLS-1$
-   public static final String       SYMBOL_DIFFERENCE                  = "\u0394";        //$NON-NLS-1$
-   public static final String       SYMBOL_DIFFERENCE_WITH_SPACE       = "\u0394 ";       //$NON-NLS-1$
-   public static final String       SYMBOL_DOUBLE_HORIZONTAL           = "\u2550";        //$NON-NLS-1$
-   public static final String       SYMBOL_ELLIPSIS                    = "\u2026";        //$NON-NLS-1$
-   public static final String       SYMBOL_FIGURE_DASH                 = "\u2012";        //$NON-NLS-1$
-   public static final String       SYMBOL_FOOT_NOTE                   = "\u20F0";        //$NON-NLS-1$
-   public static final String       SYMBOL_FULL_BLOCK                  = "\u2588";        //$NON-NLS-1$
-   public static final String       SYMBOL_HOURGLASS_WITH_FLOWING_SAND = "\u231B";        //$NON-NLS-1$
-   public static final String       SYMBOL_IDENTICAL_TO                = "\u2261";        //$NON-NLS-1$
-   public static final String       SYMBOL_INFINITY_MAX                = "\u221E";        //$NON-NLS-1$
-   public static final String       SYMBOL_INFINITY_MIN                = "-\u221E";       //$NON-NLS-1$
-   public static final String       SYMBOL_MIN                         = "\u1D5B";        //$NON-NLS-1$
-   public static final String       SYMBOL_MAX                         = "^";             //$NON-NLS-1$
-   public static final String       SYMBOL_PLUS_MINUS                  = "\u00B1";        //$NON-NLS-1$
-   public static final String       SYMBOL_SUM_WITH_SPACE              = "\u2211 ";       //$NON-NLS-1$
-   public static final String       SYMBOL_SUMMARIZED_AVERAGE          = "\u2211 \u00D8"; //$NON-NLS-1$
-   public static final String       SYMBOL_SUN                         = "\u263C";        //$NON-NLS-1$
-   public static final String       SYMBOL_TAU                         = "\u03c4";        //$NON-NLS-1$
-   public static final String       SYMBOL_TILDE                       = "\u007e";        //$NON-NLS-1$
-   public static final String       SYMBOL_WHITE_HEAVY_CHECK_MARK      = "\u2705";        //$NON-NLS-1$
+   private static final String      JS_APOSTROPHE                        = "'";                                         //$NON-NLS-1$
+   private static final String      JS_APOSTROPHE_REPLACEMENT            = "\\'";                                       //$NON-NLS-1$
 
-   public static final CharSequence SYMBOL_BACKSLASH                   = "\\";            //$NON-NLS-1$
-   public static final String       SYMBOL_COLON                       = ":";             //$NON-NLS-1$
-   public static final String       SYMBOL_COMMA                       = ",";             //$NON-NLS-1$
-   public static final String       SYMBOL_DOT                         = ".";             //$NON-NLS-1$
-   public static final String       SYMBOL_DOUBLE_VERTICAL             = "||";            //$NON-NLS-1$   // this looks ugly "\u2551";
-   public static final String       SYMBOL_EQUAL                       = "=";             //$NON-NLS-1$
-   public static final String       SYMBOL_EXCLAMATION_POINT           = "!";             //$NON-NLS-1$
-   public static final String       SYMBOL_GREATER_THAN                = ">";             //$NON-NLS-1$
-   public static final String       SYMBOL_LESS_THAN                   = "<";             //$NON-NLS-1$
-   public static final String       SYMBOL_MIDDLE_DOT                  = "·";             //$NON-NLS-1$
-   public static final String       SYMBOL_MNEMONIC                    = "&";             //$NON-NLS-1$
-   public static final String       SYMBOL_NUMBER_SIGN                 = "#";             //$NON-NLS-1$
-   public static final String       SYMBOL_PERCENTAGE                  = "%";             //$NON-NLS-1$
-   public static final String       SYMBOL_PLUS                        = "+";             //$NON-NLS-1$
-   public static final String       SYMBOL_QUESTION_MARK               = "?";             //$NON-NLS-1$
-   public static final char         SYMBOL_SEMICOLON                   = ';';
-   public static final String       SYMBOL_STAR                        = "*";             //$NON-NLS-1$
-   public static final String       SYMBOL_TEMPERATURE_CELSIUS         = "\u00b0C";       //$NON-NLS-1$
-   public static final String       SYMBOL_TEMPERATURE_FAHRENHEIT      = "\u00b0F";       //$NON-NLS-1$
-   public static final String       SYMBOL_UNDERSCORE                  = "_";             //$NON-NLS-1$
-   public static final String       SYMBOL_WIND_WITH_SPACE             = "W ";            //$NON-NLS-1$
+   /**
+    * Suddenly SYMBOL_QUOTA causes this Eclipse exception when opening the string externalization
+    * dialog
+    *
+    * <pre>
+    *
+    *  java.lang.StringIndexOutOfBoundsException: begin 3, end 0, length 3
+    *          at java.base/java.lang.String.checkBoundsBeginEnd(String.java:4606)
+    *          at java.base/java.lang.String.substring(String.java:2709)
+    *          at org.eclipse.jdt.internal.corext.refactoring.nls.NLSHint.stripQuotes(NLSHint.java:266)
+    *          at org.eclipse.jdt.internal.corext.refactoring.nls.NLSHint.createSubstitutions(NLSHint.java:221)
+    *          at org.eclipse.jdt.internal.corext.refactoring.nls.NLSHint.<init>(NLSHint.java:106)
+    *          at org.eclipse.jdt.internal.corext.refactoring.nls.NLSRefactoring.<init>(NLSRefactoring.java:92)
+    *          at org.eclipse.jdt.internal.corext.refactoring.nls.NLSRefactoring.create(NLSRefactoring.java:113)
+    *          at org.eclipse.jdt.internal.ui.refactoring.nls.ExternalizeWizard.lambda$0(ExternalizeWizard.java:84)
+    *          at org.eclipse.swt.custom.BusyIndicator.showWhile(BusyIndicator.java:67)
+    *          at org.eclipse.jdt.internal.ui.refactoring.nls.ExternalizeWizard.open(ExternalizeWizard.java:81)
+    *          at org.eclipse.jdt.ui.actions.ExternalizeStringsAction.run(ExternalizeStringsAction.java:191)
+    *          at org.eclipse.jdt.ui.actions.ExternalizeStringsAction.run(ExternalizeStringsAction.java:156)
+    *          at org.eclipse.jdt.ui.actions.SelectionDispatchAction.dispatchRun(SelectionDispatchAction.java:278)
+    * </pre>
+    *
+    * @see <a href=
+    *      "https://github.com/eclipse-jdt/eclipse.jdt.ui/issues/1803">https://github.com/eclipse-jdt/eclipse.jdt.ui/issues/1803</a>
+    *
+    */
+// public static final String       SYMBOL_QUOTA                         = "\"";
+   public static final String       SYMBOL_QUOTATION_MARK                = new StringBuilder().append('"').toString();
+   //
+   private static final String      JS_QUOTA_MARK_REPLACEMENT            = "\\\"";                                      //$NON-NLS-1$
+   private static final String      JS_BACKSLASH_REPLACEMENT             = "\\\\";                                      //$NON-NLS-1$
+   private static final String      HTML_NEW_LINE                        = "\\n";                                       //$NON-NLS-1$
 
-   public static final CharSequence SYMBOL_HTML_BACKSLASH              = "&#92;";         //$NON-NLS-1$
+   public static final String       SYMBOL_AMPERSAND                     = "&";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_AMPERSAND_AMPERSAND           = "&&";                                        //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_UP                      = "\u2191";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_DOWN                    = "\u2193";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_LEFT                    = "\u2190";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_RIGHT                   = "\u2192";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_LEFT_RIGHT              = "\u2194";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_UP_DOWN                 = "\u2195";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ARROW_UP_DOWN_II              = "\u21c5";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_AVERAGE                       = "\u00f8";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_AVERAGE_WITH_SPACE            = "\u00f8 ";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_BLACK_LARGE_CIRCLE            = "\u2B24";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_BOX                           = "\u25a0";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_BULLET                        = "\u2022";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_CROSS_MARK                    = "\u274C";                                    //$NON-NLS-1$
+   /** This is the real dash and not the negative sign character */
+   public static final String       SYMBOL_DASH                          = "\u2212";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_DEGREE                        = "\u00B0";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_DBL_ANGLE_QMARK_LEFT          = "\u00AB";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_DBL_ANGLE_QMARK_RIGHT         = "\u00BB";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_DIFFERENCE                    = "\u0394";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_DIFFERENCE_WITH_SPACE         = "\u0394 ";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_DOUBLE_HORIZONTAL             = "\u2550";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_ELLIPSIS                      = "\u2026";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_FIGURE_DASH                   = "\u2012";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_FLOPPY_DISK                   = "\ue222";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_FOOT_NOTE                     = "\u20F0";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_FULL_BLOCK                    = "\u2588";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_HEAVY_CHECK_MARK              = "\u2714";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_HOURGLASS_WITH_FLOWING_SAND   = "\u231B";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_IDENTICAL_TO                  = "\u2261";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_INFINITY_MAX                  = "\u221E";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_INFINITY_MIN                  = "-\u221E";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_MIN                           = "\u1D5B";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_MAX                           = "^";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_PLUS_MINUS                    = "\u00B1";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_SUM_WITH_SPACE                = "\u2211 ";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_SUMMARIZED_AVERAGE            = "\u2211 \u00D8";                             //$NON-NLS-1$
+   public static final String       SYMBOL_SUN                           = "\u263C";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_TAU                           = "\u03c4";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_TILDE                         = "\u007e";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_WHITE_RIGHT_POINTING_TRIANGLE = "\u25B7";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_WHITE_HEAVY_CHECK_MARK        = "\u2705";                                    //$NON-NLS-1$
+   public static final String       SYMBOL_WHITE_HARD_SHELL_FLOPPY_DISK  = convertUnicodeCodepointToSurrogate("1F5AB"); //$NON-NLS-1$
+   public static final String       SYMBOL_SOFT_SHELL_FLOPPY_DISK        = convertUnicodeCodepointToSurrogate("1F5AC"); //$NON-NLS-1$
 
-   public static final String       LINK_TAG_END                       = "</a>";          //$NON-NLS-1$
-   public static final String       LINK_TAG_START                     = "<a>";           //$NON-NLS-1$
+   public static final CharSequence SYMBOL_BACKSLASH                     = "\\";                                        //$NON-NLS-1$
+   public static final String       SYMBOL_COLON                         = ":";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_COMMA                         = ",";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_DOT                           = ".";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_DOUBLE_VERTICAL               = "||";                                        //$NON-NLS-1$   // this looks ugly "\u2551";
+   public static final String       SYMBOL_EQUAL                         = "=";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_EXCLAMATION_POINT             = "!";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_GREATER_THAN                  = ">";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_LESS_THAN                     = "<";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_MIDDLE_DOT                    = "·";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_MINUS                         = "-";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_MNEMONIC                      = "&";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_NUMBER_SIGN                   = "#";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_PERCENTAGE                    = "%";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_PLUS                          = "+";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_QUESTION_MARK                 = "?";                                         //$NON-NLS-1$
+   public static final char         SYMBOL_SEMICOLON                     = ';';
+   public static final String       SYMBOL_STAR                          = "*";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_TEMPERATURE_CELSIUS           = "\u00b0C";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_TEMPERATURE_FAHRENHEIT        = "\u00b0F";                                   //$NON-NLS-1$
+   public static final String       SYMBOL_UNDERSCORE                    = "_";                                         //$NON-NLS-1$
+   public static final String       SYMBOL_WIND_WITH_SPACE               = "W ";                                        //$NON-NLS-1$
+   public static final String       SYMBOL_ZERO                          = "0";                                         //$NON-NLS-1$
 
-   public static final int          FORM_FIRST_COLUMN_INDENT           = 16;
+   public static final CharSequence SYMBOL_HTML_BACKSLASH                = "&#92;";                                     //$NON-NLS-1$
+
+   public static final String       LINK_TAG_START                       = "<a>";                                       //$NON-NLS-1$
+   public static final String       LINK_TAG_END                         = "</a>";                                      //$NON-NLS-1$
+
+   public static final int          FORM_FIRST_COLUMN_INDENT             = 16;
+
+   private static final String      Format_TimeDuration_mmss             = "% 03d:%02d";                                //$NON-NLS-1$
 
    /**
     * The ellipsis is the string that is used to represent shortened text.
     *
     * @since 3.0
     */
-   public static final String       ELLIPSIS                           = "...";           //$NON-NLS-1$
-   public static final String       ELLIPSIS_WITH_SPACE                = " ... ";         //$NON-NLS-1$
+   public static final String       ELLIPSIS                             = "...";                                       //$NON-NLS-1$
+   public static final String       ELLIPSIS_WITH_SPACE                  = " ... ";                                     //$NON-NLS-1$
 
-   private static final char[]      INVALID_FILENAME_CHARS             = new char[] {
+   public static final String       INCREMENTER_0_1                      = "0.1";                                       //$NON-NLS-1$
+   public static final String       INCREMENTER_0_01                     = "0.01";                                      //$NON-NLS-1$
+   public static final String       INCREMENTER_1                        = "1";                                         //$NON-NLS-1$
+   public static final String       INCREMENTER_10                       = "10";                                        //$NON-NLS-1$
+   public static final String       INCREMENTER_100                      = "100";                                       //$NON-NLS-1$
+   public static final String       INCREMENTER_1_000                    = FormatManager.formatNumber_0(1_000);
+   public static final String       INCREMENTER_10_000                   = FormatManager.formatNumber_0(10_000);
+   public static final String       INCREMENTER_100_000                  = FormatManager.formatNumber_0(100_000);
+
+   private static final char[]      INVALID_FILENAME_CHARS               = new char[] {
          '\\',
          '/',
          ':',
@@ -235,7 +319,7 @@ public class UI {
          '<',
          '>',
          '|', };
-   private static final char[]      INVALID_FILEPATH_CHARS             = new char[] {
+   private static final char[]      INVALID_FILEPATH_CHARS               = new char[] {
          '*',
          '?',
          '"',
@@ -249,12 +333,46 @@ public class UI {
    public static final boolean   IS_OSX      = "carbon".equals(SWT.getPlatform())   || "cocoa".equals(SWT.getPlatform());                        //$NON-NLS-1$ //$NON-NLS-2$
    public static final boolean   IS_WIN      = "win32".equals(SWT.getPlatform())    || "wpf".equals(SWT.getPlatform());                           //$NON-NLS-1$ //$NON-NLS-2$
 
+
 // SET_FORMATTING_ON
+
+   public static final String  TRUE              = Boolean.toString(true);
+   public static final String  FALSE             = Boolean.toString(false);
 
    /**
     * Is <code>true</code> when the dark theme in the UI is selected
     */
    public static boolean       IS_DARK_THEME;
+
+   /**
+    * Is <code>true</code> when the bright theme in the UI is selected
+    */
+   public static boolean       IS_BRIGHT_THEME;
+
+   /**
+    * When <code>true</code> then HRD images are displayed on windows when the dark theme is
+    * selected.
+    * <p>
+    * This is a central switch to enable/disable it which is more or less used for debugging
+    */
+   public static final boolean IS_USE_HDR_IMAGES = true;
+
+   // https://eclipse.dev/eclipse/markdown/?f=news/4.36/platform.md#themes-and-styling
+   public static String        DISABLED_ICONS_DESATURATED     = "desaturated";               //$NON-NLS-1$
+   public static String        DISABLED_ICONS_GTK             = "gtk";                       //$NON-NLS-1$
+   public static String        DISABLED_ICONS_GRAYED          = "grayed";                    //$NON-NLS-1$
+
+   /**
+    * Is <code>true</code> when a 4k display is used
+    */
+   public static boolean       IS_4K_DISPLAY;
+
+   /**
+    * e.g. 1.0, 1.5 or 2.0
+    */
+   public static float         HIDPI_SCALING;
+   public static String        HIDPI_NAME_15x                 = "@1.5x";                     //$NON-NLS-1$
+   public static String        HIDPI_NAME_2x                  = "@2x";                       //$NON-NLS-1$
 
    /**
     * On Linux an async selection event is fired since e4
@@ -282,12 +400,6 @@ public class UI {
     */
    public static final int     DEFAULT_DESCRIPTION_WIDTH      = 350;
    public static final int     DEFAULT_FIELD_WIDTH            = 40;
-
-   /**
-    * The opacity can be set in SWT from 0...255 but no user want's so many steps. In the UI the
-    * user can select this max opacity value which will be converted into 255 when appied.
-    */
-   public static final int     MAX_OPACITY                    = 10;
 
    /**
     * Convert Joule in Calorie
@@ -353,6 +465,12 @@ public class UI {
    public static final float   UNIT_METER_TO_INCHES           = 39.37007874f;
 
    public static final float   UNIT_KILOGRAM_TO_POUND         = 2.204623f;
+
+   /**
+    * 1 lbs = 16 oz
+    * 1 oz = 0.0625 lbs
+    */
+   public static final float   UNIT_OZ_TO_POUND               = 16.0f;
 
    /**
     * Hash code including all system measurement data. This can be used to easily find out if the
@@ -483,15 +601,22 @@ public class UI {
     * Contains the unit label in the current measurement system for the distance values
     */
    public static String       UNIT_LABEL_ALTIMETER;
+   /** km or mile */
    public static String       UNIT_LABEL_DISTANCE;
    public static String       UNIT_LABEL_DISTANCE_M_OR_YD;
    public static String       UNIT_LABEL_DISTANCE_MM_OR_INCH;
+
+   /**
+    * m (meter) or ft (feet)
+    */
    public static String       UNIT_LABEL_ELEVATION;
    public static String       UNIT_LABEL_PRESSURE_MBAR_OR_INHG;
    public static String       UNIT_LABEL_TEMPERATURE;
    public static String       UNIT_LABEL_SPEED;
    public static String       UNIT_LABEL_PACE;
+   public static String       UNIT_LABEL_PACE_SWIMMING;
    public static String       UNIT_LABEL_WEIGHT;
+   public static String       UNIT_LABEL_WEIGHT_SMALL;
 
    public static final String UNIT_LABEL_TIME      = "h";      //$NON-NLS-1$
    public static final String UNIT_LABEL_DIRECTION = "\u00B0"; //$NON-NLS-1$
@@ -499,50 +624,85 @@ public class UI {
    /*
     * Labels for the different measurement systems
     */
-   public static final String          UNIT_ALTIMETER_M_H         = "m/h";                      //$NON-NLS-1$
-   public static final String          UNIT_ALTIMETER_FT_H        = "ft/h";                     //$NON-NLS-1$
-   public static final String          UNIT_DISTANCE_KM           = "km";                       //$NON-NLS-1$
-   public static final String          UNIT_DISTANCE_MI           = "mi";                       //$NON-NLS-1$
-   public static final String          UNIT_DISTANCE_NMI          = "nmi";                      //$NON-NLS-1$
-   public static final String          UNIT_DISTANCE_YARD         = "yd";                       //$NON-NLS-1$
-   public static final String          UNIT_DISTANCE_INCH         = "inch";                     //$NON-NLS-1$
-   public static final String          UNIT_ELEVATION_M           = "m";                        //$NON-NLS-1$
-   public static final String          UNIT_ELEVATION_FT          = "ft";                       //$NON-NLS-1$
-   public static final String          UNIT_HEIGHT_FT             = "ft";                       //$NON-NLS-1$
-   public static final String          UNIT_HEIGHT_IN             = "in";                       //$NON-NLS-1$
-   public static final String          UNIT_JOULE                 = "J";                        //$NON-NLS-1$
-   public static final String          UNIT_JOULE_KILO            = "kJ";                       //$NON-NLS-1$
-   public static final String          UNIT_JOULE_MEGA            = "MJ";                       //$NON-NLS-1$
-   public static final String          UNIT_KBYTE                 = "kByte";                    //$NON-NLS-1$
-   public static final String          UNIT_MBYTE                 = "MByte";                    //$NON-NLS-1$
-   public static final String          UNIT_METER                 = "m";                        //$NON-NLS-1$
-   public static final String          UNIT_MM                    = "mm";                       //$NON-NLS-1$
-   public static final String          UNIT_MS                    = "ms";                       //$NON-NLS-1$
-   public static final String          UNIT_PERCENT               = "%";                        //$NON-NLS-1$
-   public static final String          UNIT_POWER                 = "Watt";                     //$NON-NLS-1$
-   public static final String          UNIT_POWER_SHORT           = "W";                        //$NON-NLS-1$
-   public static final String          UNIT_POWER_TO_WEIGHT_RATIO = "W/Kg";                     //$NON-NLS-1$
-   public static final String          UNIT_PACE_MIN_P_KM         = "min/km";                   //$NON-NLS-1$
-   public static final String          UNIT_PACE_MIN_P_MILE       = "min/mi";                   //$NON-NLS-1$
-   public static final String          UNIT_PRESSURE_MBAR         = "mbar";                     //$NON-NLS-1$
-   public static final String          UNIT_PRESSURE_INHG         = "inHg";                     //$NON-NLS-1$
-   public static final String          UNIT_SPEED_KM_H            = "km/h";                     //$NON-NLS-1$
-   public static final String          UNIT_SPEED_KNOT            = "knot";                     //$NON-NLS-1$
-   public static final String          UNIT_SPEED_MPH             = "mph";                      //$NON-NLS-1$
-   public static final String          UNIT_TEMPERATURE_C         = "\u00B0C";                  //$NON-NLS-1$
-   public static final String          UNIT_TEMPERATURE_F         = "\u00B0F";                  //$NON-NLS-1$
-   public static final String          UNIT_VOLT                  = "V";                        //$NON-NLS-1$
-   public static final String          UNIT_VOLTAGE               = "Volt";                     //$NON-NLS-1$
-   public static final String          UNIT_WEIGHT_KG             = "kg";                       //$NON-NLS-1$
-   public static final String          UNIT_WEIGHT_LBS            = "lbs";                      //$NON-NLS-1$
+   public static final String                   UNIT_ALTIMETER_M_H         = "m/h";                      //$NON-NLS-1$
+   public static final String                   UNIT_ALTIMETER_FT_H        = "ft/h";                     //$NON-NLS-1$
+   public static final String                   UNIT_DISTANCE_KM           = "km";                       //$NON-NLS-1$
+   public static final String                   UNIT_DISTANCE_MI           = "mi";                       //$NON-NLS-1$
+   public static final String                   UNIT_DISTANCE_NMI          = "nmi";                      //$NON-NLS-1$
+   public static final String                   UNIT_DISTANCE_YARD         = "yd";                       //$NON-NLS-1$
+   public static final String                   UNIT_DISTANCE_INCH         = "inch";                     //$NON-NLS-1$
+   public static final String                   UNIT_ELEVATION_M           = "m";                        //$NON-NLS-1$
+   public static final String                   UNIT_ELEVATION_FT          = "ft";                       //$NON-NLS-1$
+   public static final String                   UNIT_FLUIDS_ML             = "mL";                       //$NON-NLS-1$
+   public static final String                   UNIT_FLUIDS_L              = "L";                        //$NON-NLS-1$
+   public static final String                   UNIT_HEIGHT_FT             = "ft";                       //$NON-NLS-1$
+   public static final String                   UNIT_HEIGHT_IN             = "in";                       //$NON-NLS-1$
+   public static final String                   UNIT_JOULE                 = "J";                        //$NON-NLS-1$
+   public static final String                   UNIT_JOULE_KILO            = "kJ";                       //$NON-NLS-1$
+   public static final String                   UNIT_JOULE_MEGA            = "MJ";                       //$NON-NLS-1$
+   public static final String                   UNIT_KBYTE                 = "kByte";                    //$NON-NLS-1$
+   public static final String                   UNIT_MBYTE                 = "MByte";                    //$NON-NLS-1$
+   public static final String                   UNIT_METER                 = "m";                        //$NON-NLS-1$
+   public static final String                   UNIT_MM                    = "mm";                       //$NON-NLS-1$
+   public static final String                   UNIT_MS                    = "ms";                       //$NON-NLS-1$
+   public static final String                   UNIT_PERCENT               = "%";                        //$NON-NLS-1$
+   public static final String                   UNIT_POWER                 = "Watt";                     //$NON-NLS-1$
+   public static final String                   UNIT_POWER_SHORT           = "W";                        //$NON-NLS-1$
+   public static final String                   UNIT_POWER_TO_WEIGHT_RATIO = "W/Kg";                     //$NON-NLS-1$
+   public static final String                   UNIT_PACE_MIN_P_100M       = "min/100m";                 //$NON-NLS-1$
+   public static final String                   UNIT_PACE_MIN_P_100YARD    = "min/100yd";                //$NON-NLS-1$
+   public static final String                   UNIT_PACE_MIN_P_KM         = "min/km";                   //$NON-NLS-1$
+   public static final String                   UNIT_PACE_MIN_P_MILE       = "min/mi";                   //$NON-NLS-1$
+   public static final String                   UNIT_PRESSURE_MBAR         = "mbar";                     //$NON-NLS-1$
+   public static final String                   UNIT_PRESSURE_INHG         = "inHg";                     //$NON-NLS-1$
+   public static final String                   UNIT_SPEED_KM_H            = "km/h";                     //$NON-NLS-1$
+   public static final String                   UNIT_SPEED_KNOT            = "knot";                     //$NON-NLS-1$
+   public static final String                   UNIT_SPEED_MPH             = "mph";                      //$NON-NLS-1$
+   public static final String                   UNIT_TEMPERATURE_C         = "\u00B0C";                  //$NON-NLS-1$
+   public static final String                   UNIT_TEMPERATURE_F         = "\u00B0F";                  //$NON-NLS-1$
+   public static final String                   UNIT_VOLT                  = "V";                        //$NON-NLS-1$
+   public static final String                   UNIT_VOLTAGE               = "Volt";                     //$NON-NLS-1$
+   public static final String                   UNIT_WEIGHT_G              = "g";                        //$NON-NLS-1$
+   public static final String                   UNIT_WEIGHT_KG             = "kg";                       //$NON-NLS-1$
+   public static final String                   UNIT_WEIGHT_LBS            = "lbs";                      //$NON-NLS-1$
+   public static final String                   UNIT_WEIGHT_MG             = "mg";                       //$NON-NLS-1$
+   public static final String                   UNIT_WEIGHT_OZ             = "oz";                       //$NON-NLS-1$
 
-   public static final PeriodFormatter DEFAULT_DURATION_FORMATTER;
-   public static final PeriodFormatter DEFAULT_DURATION_FORMATTER_SHORT;
+   private static final String                  DISTANCE_MILES_1_8         = "1/8";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_1_4         = "1/4";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_3_8         = "3/8";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_1_2         = "1/2";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_5_8         = "5/8";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_3_4         = "3/4";                      //$NON-NLS-1$
+   private static final String                  DISTANCE_MILES_7_8         = "7/8";                      //$NON-NLS-1$
+   //
+   public static final PeriodFormatter          DEFAULT_DURATION_FORMATTER;
+   public static final PeriodFormatter          DEFAULT_DURATION_FORMATTER_SHORT;
+   public static final PeriodFormatter          DURATION_FORMATTER_YEAR_MONTH_DAY;
 
-   private static StringBuilder        _formatterSB               = new StringBuilder();
-   private static Formatter            _formatter                 = new Formatter(_formatterSB);
+   private static StringBuilder                 _formatterSB               = new StringBuilder();
+   private static Formatter                     _formatter                 = new Formatter(_formatterSB);
 
-   private static FontMetrics          _dialogFont_Metrics;
+   private static FontMetrics                   _dialogFont_Metrics;
+   private static org.eclipse.swt.graphics.Font _swtUIDrawingFont;
+
+   /**
+    * This is an eclipse parameter
+    */
+// private static final String                  SYS_PROP__SWT_AUTO_SCALE       = "swt.autoScale";                             //$NON-NLS-1$
+
+   /**
+    * When <code>true</code> then the commandline parameter <code>-DautoScale=nnn</code> is set.
+    * This will force to use the font in {@link ITourbookPreferences.UI_DRAWING_FONT} for text
+    * drawing, e.g. the tour chart texts
+    * <p>
+    * Commandline parameter: <code>-Dswt.autoScale=nnn</code>
+    */
+// private static String                        SYS_PROP__SWT_AUTO_SCALE_VALUE = System.getProperty(SYS_PROP__SWT_AUTO_SCALE);
+// private static boolean                       IS_SWT_AUTO_SCALE              = SYS_PROP__SWT_AUTO_SCALE_VALUE != NULL;
+
+   // this feature is enabled always !!!
+   private static boolean IS_SWT_AUTO_SCALE = true;
 
 // SET_FORMATTING_OFF
 
@@ -574,14 +734,14 @@ public class UI {
     *
     * @since 3.2
     */
-   private static final String DIALOG_WIDTH              = "DIALOG_WIDTH";                //$NON-NLS-1$
+   public static final String  DIALOG_WIDTH              = "DIALOG_WIDTH";                //$NON-NLS-1$
 
    /**
     * The dialog settings key name for stored dialog height.
     *
     * @since 3.2
     */
-   private static final String DIALOG_HEIGHT             = "DIALOG_HEIGHT";               //$NON-NLS-1$
+   public static final String  DIALOG_HEIGHT             = "DIALOG_HEIGHT";               //$NON-NLS-1$
 
    /**
     * The dialog settings key name for the font used when the dialog height and width was stored.
@@ -602,6 +762,9 @@ public class UI {
    public static final Font    AWT_FONT_ARIAL_BOLD_12    = Font.decode("Arial-bold-12");  //$NON-NLS-1$
    public static final Font    AWT_FONT_ARIAL_BOLD_24    = Font.decode("Arial-bold-24");  //$NON-NLS-1$
 
+   /**
+    * Is "Segoe UI" with Win10
+    */
    public static Font          AWT_DIALOG_FONT;
 
 // SET_FORMATTING_OFF
@@ -616,14 +779,13 @@ public class UI {
    public static final String    IMAGE_ACTION_PHOTO_FILTER              = "IMAGE_ACTION_PHOTO_FILTER";               //$NON-NLS-1$
    public static final String    IMAGE_ACTION_PHOTO_FILTER_NO_PHOTOS    = "IMAGE_ACTION_PHOTO_FILTER_NO_PHOTOS";     //$NON-NLS-1$
    public static final String    IMAGE_ACTION_PHOTO_FILTER_WITH_PHOTOS  = "IMAGE_ACTION_PHOTO_FILTER_WITH_PHOTOS";   //$NON-NLS-1$
-   public static final String    IMAGE_ACTION_PHOTO_FILTER_DISABLED     = "IMAGE_ACTION_PHOTO_FILTER_DISABLED";      //$NON-NLS-1$
    public static final String    IMAGE_CONFIGURE_COLUMNS                = "IMAGE_CONFIGURE_COLUMNS";                 //$NON-NLS-1$
    public static final String    IMAGE_EMPTY_16                         = "_empty16";                                //$NON-NLS-1$
 
 
    public static Color           SYS_COLOR_BLACK;
    public static Color           SYS_COLOR_BLUE;
-   public static Color           SYS_COLOR_DARK_GRAY;
+   public static Color           SYS_COLOR_CYAN;
    public static Color           SYS_COLOR_GRAY;
    public static Color           SYS_COLOR_GREEN;
    public static Color           SYS_COLOR_MAGENTA;
@@ -631,13 +793,61 @@ public class UI {
    public static Color           SYS_COLOR_WHITE;
    public static Color           SYS_COLOR_YELLOW;
 
+   public static Color           SYS_COLOR_DARK_GRAY;
+   public static Color           SYS_COLOR_DARK_GREEN;
+   public static Color           SYS_COLOR_DARK_RED;
+   public static Color           SYS_COLOR_DARK_YELLOW;
+
+   public static Color           SYS_COLOR_LIST_BACKGROUND;
+
+   public static Color           SYS_COLOR_WIDGET_FOREGROUND;
+   public static Color           SYS_COLOR_WIDGET_DARK_SHADOW;
+   public static Color           SYS_COLOR_WIDGET_BACKGROUND;
+
 // SET_FORMATTING_ON
 
-   public static final ImageRegistry IMAGE_REGISTRY;
+   public static final ImageRegistry     IMAGE_REGISTRY;
 
-   public static final int           DECORATOR_HORIZONTAL_INDENT = 2;
+   public static final int               DECORATOR_HORIZONTAL_INDENT = 2;
+
+   /**
+    * Contains the value that opacity is 100% opaque
+    */
+   public static int                     TRANSFORM_OPACITY_MAX;
+
+   private static final GridDataFactory  _gridDataHint_Zero          = GridDataFactory.fillDefaults().hint(0, 0);
+   private static final GridDataFactory  _gridDataHint_Default       = GridDataFactory.fillDefaults().hint(SWT.DEFAULT, SWT.DEFAULT);
+
+   private static final IPreferenceStore _prefStore_Common           = CommonActivator.getPrefStore();
+
+   private static final String           SYS_PROP__SWT_AUTOSCALE     = "swt.autoScale";                                              //$NON-NLS-1$
+   private static final String           SYS_PROP__SWT_AUTOSCALE_NO  = "noAutoScale";                                                //$NON-NLS-1$
+   private static final String           _swtAutoScale               = System.getProperty(SYS_PROP__SWT_AUTOSCALE);
+   private static final String           _swtAutoScale_No            = System.getProperty(SYS_PROP__SWT_AUTOSCALE_NO);
 
    static {
+
+      if (_swtAutoScale == null) {
+
+         if (_swtAutoScale_No == null) {
+
+            System.setProperty(SYS_PROP__SWT_AUTOSCALE, "100"); //$NON-NLS-1$
+
+            StatusUtil.logInfo(UI.EMPTY_STRING
+                  + "\"swt.autoScale\" is not set externally, " //$NON-NLS-1$
+                  + " therefore the default value is used \"swt.autoScale=100\"." //$NON-NLS-1$
+                  + " The default can be prevented by setting \"noAutoScale\"");//$NON-NLS-1$
+         } else {
+
+            StatusUtil.logInfo(UI.EMPTY_STRING
+                  + "\"swt.autoScale\" is not set externally," //$NON-NLS-1$
+                  + " the default value was prevented with \"noAutoScale\"");//$NON-NLS-1$
+         }
+
+      } else {
+
+         StatusUtil.logInfo("\"swt.autoScale=%s\" is set externally".formatted(_swtAutoScale));//$NON-NLS-1$
+      }
 
       /**
        * This creates a display which may contain also sleak options, otherwise sleak would not
@@ -650,45 +860,92 @@ public class UI {
 
       updateUnits();
 
-      setupUI_FontMetrics();
-      setupUI_AWTFonts();
+      final int deviceZoom = DPIUtil.getDeviceZoom();
+      final int monitorZoom = DPIUtil.getNativeDeviceZoom();
+
+      // log UI scaling
+      StatusUtil.logInfo("App zoom = %d".formatted(deviceZoom));//$NON-NLS-1$
+      StatusUtil.logInfo("Monitor zoom = %d".formatted(monitorZoom));//$NON-NLS-1$
+
+      IS_4K_DISPLAY = deviceZoom >= 140;
+      HIDPI_SCALING = deviceZoom / 100f;
+
+      setupFonts_SWTDrawingFonts();
+      setupFonts_SWTFontMetrics();
+      setupFonts_AWTFonts();
+
+      /**
+       * In addition, the algorithm for the calculation of disabled versions of icons became
+       * configurable. The algorithm can be changed via the system property
+       * org.eclipse.swt.image.disablement with the following options:
+       *
+       * grayed (default): produces a gray-scaled version of the icon, which is aligned with the
+       * existing, pre-generated disabled versions of icons for Eclipse bundles
+       *
+       * desaturated (preview): produces a desaturated version of the icon, comparable to the grayed
+       * version but still keeping some color in it; the configuration of this option may be subject
+       * to change in future releases of Eclipse
+       *
+       * gtk: produces an icon version that conforms with the default disablement algorithm of GTK
+       *
+       * https://eclipse.dev/eclipse/markdown/?f=news/4.36/platform.md#themes-and-styling
+       */
+      System.setProperty("org.eclipse.swt.image.disablement", _prefStore_Common.getString(ICommonPreferences.UI_DISABLED_ICONS)); //$NON-NLS-1$
 
       IMAGE_REGISTRY = CommonActivator.getDefault().getImageRegistry();
 
 // SET_FORMATTING_OFF
 
-      IMAGE_REGISTRY.put(IMAGE_CONFIGURE_COLUMNS,                    CommonActivator.getImageDescriptor(CommonImages.CustomizeProfilesColumns));
-      IMAGE_REGISTRY.put(IMAGE_EMPTY_16,                             CommonActivator.getImageDescriptor(CommonImages.App_EmptyIcon_Placeholder));
+      IMAGE_REGISTRY.put(IMAGE_CONFIGURE_COLUMNS,  CommonActivator.getImageDescriptor(CommonImages.CustomizeProfilesColumns));
+      IMAGE_REGISTRY.put(IMAGE_EMPTY_16,           CommonActivator.getImageDescriptor(CommonImages.App_EmptyIcon_Placeholder));
 
-      // weather images
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_CLEAR,                  CommonActivator.getImageDescriptor(CommonImages.Weather_Sunny));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_PART_CLOUDS,            CommonActivator.getImageDescriptor(CommonImages.Weather_Cloudy));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_OVERCAST,               CommonActivator.getImageDescriptor(CommonImages.Weather_Clouds));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_LIGHTNING,              CommonActivator.getImageDescriptor(CommonImages.Weather_Lightning));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_RAIN,                   CommonActivator.getImageDescriptor(CommonImages.Weather_Rain));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SNOW,                   CommonActivator.getImageDescriptor(CommonImages.Weather_Snow));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SCATTERED_SHOWERS,      CommonActivator.getImageDescriptor(CommonImages.Weather_ScatteredShowers));
-      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SEVERE_WEATHER_ALERT,   CommonActivator.getImageDescriptor(CommonImages.Weather_Severe));
+      final Display display = Display.getCurrent();
 
-      SYS_COLOR_BLACK       = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
-      SYS_COLOR_BLUE        = Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
-      SYS_COLOR_DARK_GRAY   = Display.getCurrent().getSystemColor(SWT.COLOR_DARK_GRAY);
-      SYS_COLOR_GRAY        = Display.getCurrent().getSystemColor(SWT.COLOR_GRAY);
-      SYS_COLOR_GREEN       = Display.getCurrent().getSystemColor(SWT.COLOR_GREEN);
-      SYS_COLOR_MAGENTA     = Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA);
-      SYS_COLOR_RED         = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
-      SYS_COLOR_WHITE       = Display.getCurrent().getSystemColor(SWT.COLOR_WHITE);
-      SYS_COLOR_YELLOW      = Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW);
+      SYS_COLOR_BLACK               = display.getSystemColor(SWT.COLOR_BLACK);
+      SYS_COLOR_BLUE                = display.getSystemColor(SWT.COLOR_BLUE);
+      SYS_COLOR_CYAN                = display.getSystemColor(SWT.COLOR_CYAN);
+      SYS_COLOR_GRAY                = display.getSystemColor(SWT.COLOR_GRAY);
+      SYS_COLOR_GREEN               = display.getSystemColor(SWT.COLOR_GREEN);
+      SYS_COLOR_MAGENTA             = display.getSystemColor(SWT.COLOR_MAGENTA);
+      SYS_COLOR_RED                 = display.getSystemColor(SWT.COLOR_RED);
+      SYS_COLOR_WHITE               = display.getSystemColor(SWT.COLOR_WHITE);
+      SYS_COLOR_YELLOW              = display.getSystemColor(SWT.COLOR_YELLOW);
+
+      SYS_COLOR_DARK_GRAY           = display.getSystemColor(SWT.COLOR_DARK_GRAY);
+      SYS_COLOR_DARK_GREEN          = display.getSystemColor(SWT.COLOR_DARK_GREEN);
+      SYS_COLOR_DARK_RED            = display.getSystemColor(SWT.COLOR_DARK_RED);
+      SYS_COLOR_DARK_YELLOW         = display.getSystemColor(SWT.COLOR_DARK_YELLOW);
+
+      SYS_COLOR_LIST_BACKGROUND     = display.getSystemColor(SWT.COLOR_LIST_BACKGROUND);
+      SYS_COLOR_WIDGET_BACKGROUND   = display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND);
+      SYS_COLOR_WIDGET_DARK_SHADOW  = display.getSystemColor(SWT.COLOR_WIDGET_DARK_SHADOW);
+      SYS_COLOR_WIDGET_FOREGROUND   = display.getSystemColor(SWT.COLOR_WIDGET_FOREGROUND);
+
+      TRANSFORM_OPACITY_MAX = _prefStore_Common.getInt(ICommonPreferences.TRANSFORM_VALUE_OPACITY_MAX);
+
+      // add prop listener
+      _prefStore_Common.addPropertyChangeListener(propertyChangeEvent -> {
+
+         final String property = propertyChangeEvent.getProperty();
+
+         if (property.equals(ICommonPreferences.TRANSFORM_VALUE_OPACITY_MAX)) {
+
+            TRANSFORM_OPACITY_MAX = (int) propertyChangeEvent.getNewValue();
+         }
+      });
 
 // SET_FORMATTING_ON
 
       final String commaSpace = Messages.Period_Format_CommaSpace;
       final String space2 = Messages.Period_Format_SpaceAndSpace;
+
       final String[] variants = {
+
             Messages.Period_Format_Space,
             Messages.Period_Format_Comma,
             Messages.Period_Format_CommaAndAnd,
-            Messages.Period_Format_CommaSpaceAnd };
+            Messages.Period_Format_CommaSpaceAnd
+      };
 
       DEFAULT_DURATION_FORMATTER = new PeriodFormatterBuilder()
 
@@ -759,6 +1016,22 @@ public class UI {
             .appendSuffix(Messages.Period_Format_Millisecond_Short, Messages.Period_Format_Millisecond_Short)
 
             .toFormatter();
+
+      DURATION_FORMATTER_YEAR_MONTH_DAY = new PeriodFormatterBuilder()
+
+            .appendYears()
+            .appendSuffix(Messages.Period_Format_Year_Short, Messages.Period_Format_Year_Short)
+            .appendSeparator(commaSpace, commaSpace, variants)
+
+            .appendMonths()
+            .appendSuffix(Messages.Period_Format_Month_Short, Messages.Period_Format_Month_Short)
+            .appendSeparator(commaSpace, commaSpace, variants)
+
+            .appendDays()
+            .appendSuffix(Messages.Period_Format_Day_Short, Messages.Period_Format_Day_Short)
+            .appendSeparator(commaSpace, commaSpace, variants)
+
+            .toFormatter();
    }
 
    /**
@@ -783,11 +1056,46 @@ public class UI {
 
    static {
 
+//    if (IS_SWT_AUTO_SCALE) {
+//
+//      Util.logSystemProperty_Value(UI.class,
+//            SYS_PROP__SWT_AUTO_SCALE,
+//            SYS_PROP__SWT_AUTO_SCALE_VALUE,
+//            "MyTourbook is auto scaled" //$NON-NLS-1$
+//      );
+//    }
+
       if (IS_SCRAMBLE_DATA) {
 
          Util.logSystemProperty_IsEnabled(UI.class,
                SYS_PROP__SCRAMBLE_DATA,
                "Visible data are scrambled"); //$NON-NLS-1$
+      }
+   }
+
+   /**
+    * Activate provided view when it is not yet active
+    *
+    * @param viewPart
+    * @param viewPartID
+    */
+   public static void activateView(final IViewPart viewPart, final String viewPartID) {
+
+      final IWorkbenchPart activePart = PlatformUI.getWorkbench()
+            .getActiveWorkbenchWindow()
+            .getActivePage()
+            .getActivePart();
+
+      if (activePart != viewPart) {
+
+         try {
+
+            viewPart.getSite().getPage().showView(viewPartID, null, IWorkbenchPage.VIEW_ACTIVATE);
+
+         } catch (final PartInitException e) {
+
+            StatusUtil.log(e);
+         }
       }
    }
 
@@ -810,13 +1118,13 @@ public class UI {
             ? ThemeUtil.getDefaultForegroundColor_Shell()
             : display.getSystemColor(SWT.COLOR_WIDGET_DARK_SHADOW);
 
-      sash.addMouseTrackListener(mouseEnterAdapter(mouseEvent -> sash.setBackground(mouseEnterColor)));
-      sash.addMouseTrackListener(mouseExitAdapter(mouseEvent -> sash.setBackground(mouseExitColor)));
+      sash.addMouseTrackListener(MouseTrackListener.mouseEnterAdapter(mouseEvent -> sash.setBackground(mouseEnterColor)));
+      sash.addMouseTrackListener(MouseTrackListener.mouseExitAdapter(mouseEvent -> sash.setBackground(mouseExitColor)));
 
       // set color when sash is initially displayed
       sash.addControlListener(controlResizedAdapter(controlEvent -> sash.setBackground(mouseExitColor)));
 
-      sash.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+      sash.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> {
 
          // hide background when sash is dragged
 
@@ -827,6 +1135,50 @@ public class UI {
          }
 
       }));
+   }
+
+   /**
+    * @param event
+    * @param isDirectionUp
+    *           Is <code>true</code> when direction is up, right or forward
+    *
+    * @return Returns <code>true</code> when the scale value was adjusted, otherwise
+    *         <code>false</code>
+    */
+   public static boolean adjustScaleValueOnKey(final KeyEvent event, final boolean isDirectionUp) {
+
+      boolean isCtrlKey;
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (event.stateMask & SWT.MOD3) > 0;
+      } else {
+         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (event.stateMask & SWT.MOD2) > 0;
+      }
+
+      // skip when not accelerated otherwise it would add at least 1 which increments by 2 as minimum
+      if (isCtrlKey == false && isShiftKey == false) {
+         return false;
+      }
+
+      // accelerate with Ctrl + Shift key
+      int accelerator = isCtrlKey ? 10 : 1;
+      accelerator *= isShiftKey ? 5 : 1;
+
+      final Scale scale = (Scale) event.widget;
+      final int increment = scale.getIncrement();
+      final int oldValue = scale.getSelection();
+      final int valueDiff = (isDirectionUp
+            ? increment
+            : -increment)
+
+            * accelerator;
+
+      scale.setSelection(oldValue + valueDiff);
+
+      return true;
    }
 
    public static void adjustScaleValueOnMouseScroll(final MouseEvent event) {
@@ -858,27 +1210,70 @@ public class UI {
 
    public static void adjustSpinnerValueOnMouseScroll(final MouseEvent event) {
 
+      adjustSpinnerValueOnMouseScroll(event, 1);
+   }
+
+   /**
+    * @param event
+    * @param defaultAccelerator
+    *           Could be 10 to increase e.g. image size by 10 without pressing an accelerator key
+    */
+   public static void adjustSpinnerValueOnMouseScroll(final MouseEvent event, final int defaultAccelerator) {
+
+      adjustSpinnerValueOnMouseScroll(event, defaultAccelerator, false);
+   }
+
+   /**
+    * @param event
+    * @param defaultAccelerator
+    *           Could be 10 to increase e.g. image size by 10 without pressing an accelerator key
+    * @param isSmallValueAdjustment
+    *           When <code>true</code> then small values have another accelerator than bigger values
+    */
+   public static void adjustSpinnerValueOnMouseScroll(final MouseEvent event,
+                                                      final int defaultAccelerator,
+                                                      final boolean isSmallValueAdjustment) {
+
       boolean isCtrlKey;
       boolean isShiftKey;
 
       if (IS_OSX) {
          isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
          isShiftKey = (event.stateMask & SWT.MOD3) > 0;
-         //         isAltKey = (event.stateMask & SWT.MOD3) > 0;
       } else {
          isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
          isShiftKey = (event.stateMask & SWT.MOD2) > 0;
-         //         isAltKey = (event.stateMask & SWT.MOD3) > 0;
       }
+
+      final int valueSign = event.count > 0 ? 1 : -1;
 
       // accelerate with Ctrl + Shift key
       int accelerator = isCtrlKey ? 10 : 1;
       accelerator *= isShiftKey ? 5 : 1;
 
+      accelerator *= defaultAccelerator;
+
       final Spinner spinner = (Spinner) event.widget;
-      final int valueAdjustment = ((event.count > 0 ? 1 : -1) * accelerator);
+      int valueAdjustment = valueSign * accelerator;
 
       final int oldValue = spinner.getSelection();
+
+      if (isSmallValueAdjustment) {
+
+         if (oldValue < 10) {
+
+            valueAdjustment = 1 * valueSign;
+
+         } else if (oldValue < 20) {
+
+            valueAdjustment = 2 * valueSign;
+
+         } else if (oldValue < 100) {
+
+            valueAdjustment = 5 * valueSign;
+         }
+      }
+
       spinner.setSelection(oldValue + valueAdjustment);
    }
 
@@ -901,8 +1296,44 @@ public class UI {
    }
 
    /**
+    * Computes the BMI (Body Mass Index) for a given user's height and weight.
+    *
+    * @param weight
+    *           The user's weight in kilograms or pounds.
+    * @param height
+    *           The user's height in meters or feet.
+    * @param heightInches
+    *           The second part of the user's height in inches if the measurement
+    *           system is in inches.
+    *
+    * @return The BMI value.
+    */
+   public static float computeBodyMassIndex(double weight, double height, final int heightInches) {
+
+      if (UNIT_IS_LENGTH_SMALL_INCH) {
+
+         height *= 12;
+         height += heightInches;
+         height = height / UNIT_INCH / 10;
+         height = Math.round(height * 10 / 10);
+      }
+      if (UNIT_IS_WEIGHT_POUND) {
+
+         weight /= UNIT_VALUE_WEIGHT;
+         weight = Math.round(weight * 10 / 10);
+      }
+
+      height = height / 100;
+
+      final double bmi = height == 0 ? 0 : weight / Math.pow(height, 2);
+
+      return Math.round(bmi * 10.0) / 10.0f;
+   }
+
+   /**
     * @param averageElevationChange
     *           In m/km
+    *
     * @return Returns the average elevation change in the current measurement system.
     */
    public static float convertAverageElevationChangeFromMetric(final float averageElevationChange) {
@@ -914,7 +1345,15 @@ public class UI {
       return averageElevationChange * UNIT_VALUE_DISTANCE / UNIT_VALUE_ELEVATION;
    }
 
+   /**
+    * Convert height from metric into inches
+    *
+    * @param height
+    *
+    * @return
+    */
    public static float convertBodyHeightFromMetric(final float height) {
+
       if (UNIT_IS_ELEVATION_METER) {
          return height;
       }
@@ -922,17 +1361,21 @@ public class UI {
       return height * UNIT_METER_TO_INCHES;
    }
 
-   public static float convertBodyHeightToMetric(final float primaryHeight, final int subHeight) {
+   public static float convertBodyHeightToMetric(final float heightMeterOrFeet, final int heightInch) {
 
       if (UNIT_IS_ELEVATION_METER) {
-         return primaryHeight;
+         return heightMeterOrFeet;
       }
 
-      return 100 * (primaryHeight * 12 + subHeight) / UNIT_METER_TO_INCHES;
+      final float heightFeetToInch = heightMeterOrFeet * 12;
+      final float heightInchTotal = heightFeetToInch + heightInch;
+
+      return 100 * heightInchTotal / UNIT_METER_TO_INCHES;
    }
 
    /**
     * @param bodyWeight
+    *
     * @return Returns the weight in the current measurement system.
     */
    public static float convertBodyWeightFromMetric(final float bodyWeight) {
@@ -946,6 +1389,7 @@ public class UI {
 
    /**
     * @param weight
+    *
     * @return Returns the weight from the current measurement system converted into metric
     *         system.
     */
@@ -973,7 +1417,9 @@ public class UI {
     *           used in performing the conversion
     * @param dlus
     *           the number of horizontal dialog units
+    *
     * @return the number of pixels
+    *
     * @since 2.0
     */
    private static int convertHorizontalDLUsToPixels(final FontMetrics fontMetrics, final int dlus) {
@@ -994,11 +1440,12 @@ public class UI {
     *
     * @param dlus
     *           the number of horizontal dialog units
+    *
     * @return the number of pixels
     */
    private static int convertHorizontalDLUsToPixels(final int dlus) {
 
-      if (setupUI_FontMetrics() == false) {
+      if (setupFonts_SWTFontMetrics() == false) {
 
          // create default
          return dlus * 4;
@@ -1008,41 +1455,103 @@ public class UI {
    }
 
    /**
-    * Convert opacity value into 0...255 where 255 corresponds with {@link #MAX_OPACITY}
-    * <p>
-    * The tooltip should display
+    * Create distance for imperials which shows the fraction with 1/8, 1/4, 3/8 ...
     *
-    * <pre>
-    * 0 = transparent ... max = opaque
-    * </pre>
+    * @param distanceMeter
     *
-    * that {@link #MAX_OPACITY} could be adjusted or customized by the user.
-    *
-    * @param opacity
     * @return
     */
-   public static int convertOpacity(final float opacity) {
+   public static String convertKmIntoMiles(final float distanceMeter) {
 
-      final float opacityConverted = opacity / MAX_OPACITY * 0xff;
+      final float distanceKm = distanceMeter / 1000;
 
-      return (int) Math.min(0xff, opacityConverted);
+      int distanceKmInt = (int) distanceKm;
+      float distanceKmFract = distanceKm - distanceKmInt;
+
+      // fix rounding
+      if (distanceKmFract >= 0.9999) {
+
+         distanceKmInt++;
+         distanceKmFract = 0;
+      }
+
+      final StringBuilder sb = new StringBuilder();
+
+      // set whole mile
+      if (distanceKmInt > 0) {
+
+         sb.append(Integer.toString(distanceKmInt));
+         sb.append(SPACE);
+      }
+
+      // set partial mile
+      if (Math.abs(distanceKmFract - 0.125f) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_1_8);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.25f) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_1_4);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.375) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_3_8);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.5f) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_1_2);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.625) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_5_8);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.75f) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_3_4);
+         sb.append(SPACE);
+
+      } else if (Math.abs(distanceKmFract - 0.875) <= 0.01) {
+
+         sb.append(DISTANCE_MILES_7_8);
+         sb.append(SPACE);
+      }
+
+      // ensure a value is displayed
+      if (sb.isEmpty()) {
+
+         sb.append(SYMBOL_ZERO);
+         sb.append(SPACE);
+      }
+
+      sb.append(UNIT_LABEL_DISTANCE);
+
+      return sb.toString();
    }
 
    /**
     * @param precipitation
+    *           in mm or inch
+    *
     * @return Returns the precipitation amount in the current measurement system.
     */
    public static float convertPrecipitation_FromMetric(final float precipitation) {
 
-      if (UNIT_IS_TEMPERATURE_CELSIUS) {
+      if (UNIT_IS_LENGTH_SMALL_MILLIMETER) {
          return precipitation;
       }
 
-      return precipitation * UNIT_METER_TO_INCHES;
+      return precipitation * UNIT_METER_TO_INCHES / 1000;
    }
 
    /**
     * @param precipitation
+    *           in mm or inch
+    *
     * @return Returns the precipitation amount in the current measurement system.
     */
    public static float convertPrecipitation_ToMetric(final float precipitation) {
@@ -1051,11 +1560,12 @@ public class UI {
          return precipitation;
       }
 
-      return precipitation / UNIT_METER_TO_INCHES;
+      return precipitation / UNIT_METER_TO_INCHES * 1000;
    }
 
    /**
     * @param weatherPressure
+    *
     * @return Returns the atmospheric pressure value in the current measurement system.
     */
    public static float convertPressure_FromMetric(final float weatherPressure) {
@@ -1069,6 +1579,7 @@ public class UI {
 
    /**
     * @param weatherPressure
+    *
     * @return Returns the atmospheric pressure value in the current measurement system.
     */
    public static float convertPressure_ToMetric(final float weatherPressure) {
@@ -1081,7 +1592,60 @@ public class UI {
    }
 
    /**
+    * @param speed
+    *
+    * @return Returns the speed value in the current measurement system.
+    */
+   public static float convertSpeed_FromMetric(final float speed) {
+
+      if (UNIT_IS_DISTANCE_MILE) {
+
+         return speed / UI.UNIT_MILE;
+
+      } else if (UNIT_IS_DISTANCE_NAUTICAL_MILE) {
+
+         return speed / UI.UNIT_NAUTICAL_MILE;
+
+      }
+
+      return speed;
+   }
+
+   /**
+    * Convert a speed value from km/h to m/s
+    *
+    * @param speed
+    *
+    * @return Returns the speed value in m/s.
+    */
+   public static float convertSpeed_KmhToMs(final float speed) {
+
+      return speed * 0.277777778f;
+   }
+
+   /**
+    * @param speed
+    *
+    * @return Returns the speed value from the current measurement system into metric
+    */
+   public static float convertSpeed_ToMetric(final float speed) {
+
+      if (UNIT_IS_DISTANCE_MILE) {
+
+         return speed * UI.UNIT_MILE;
+
+      } else if (UNIT_IS_DISTANCE_NAUTICAL_MILE) {
+
+         return speed * UI.UNIT_NAUTICAL_MILE;
+
+      }
+
+      return speed;
+   }
+
+   /**
     * @param temperature
+    *
     * @return Returns the temperature in the current measurement system.
     */
    public static float convertTemperatureFromMetric(final float temperature) {
@@ -1095,6 +1659,7 @@ public class UI {
 
    /**
     * @param temperature
+    *
     * @return Returns the temperature from the current measurement system converted into metric
     *         system.
     */
@@ -1108,20 +1673,65 @@ public class UI {
    }
 
    /**
+    * Converts a hexadecimal Unicode into its surrogate string
+    *
+    * @param hexUnicode
+    *
+    * @return
+    */
+   public static String convertUnicodeCodepointToSurrogate(final String hexUnicode) {
+
+      final int codePoint = Integer.parseInt(hexUnicode, 16);
+
+      final StringBuilder sb = new StringBuilder();
+
+      if (Character.isBmpCodePoint(codePoint)) {
+
+         sb.append((char) codePoint);
+
+      } else if (Character.isValidCodePoint(codePoint)) {
+
+         sb.append(Character.highSurrogate(codePoint));
+         sb.append(Character.lowSurrogate(codePoint));
+
+      } else {
+
+         sb.append('?');
+      }
+
+      return sb.toString();
+   }
+
+   public static void copyTextIntoClipboard(final String text, final String statusMessage) {
+
+      final Display display = Display.getDefault();
+      final TextTransfer textTransfer = TextTransfer.getInstance();
+
+      final Clipboard clipBoard = new Clipboard(display);
+      {
+         clipBoard.setContents(
+
+               new Object[] { text },
+               new Transfer[] { textTransfer });
+      }
+      clipBoard.dispose();
+
+      // show info that data are copied "Data were copied into the clipboard"
+      showStatusLineMessage(statusMessage);
+   }
+
+   /**
     * Create a cursor resource from an image descriptor. Cursor must be disposed.
     *
     * @param imageName
+    *
     * @return
     */
    public static Cursor createCursorFromImage(final ImageDescriptor imageDescriptor) {
 
-      Cursor cursor;
+      final ImageData imageData = imageDescriptor.getImageData(100);
 
-      final Image cursorImage = imageDescriptor.createImage();
-      {
-         cursor = new Cursor(Display.getDefault(), cursorImage.getImageData(), 0, 0);
-      }
-      cursorImage.dispose();
+      final Cursor cursor = new Cursor(Display.getDefault(), imageData, 0, 0);
 
       return cursor;
    }
@@ -1147,28 +1757,157 @@ public class UI {
    }
 
    /**
+    * Creates a {@link Label} without text.
+    *
+    * @param parent
+    *
+    * @return
+    */
+   public static Label createLabel(final Composite parent) {
+
+      return new Label(parent, SWT.NONE);
+   }
+
+   /**
     * Creates a {@link Label} with text.
     *
     * @param parent
     * @param text
+    *
     * @return
     */
    public static Label createLabel(final Composite parent, final String text) {
 
       final Label label = new Label(parent, SWT.NONE);
+
       label.setText(text);
 
       return label;
    }
 
-   public static void createSpacer_Horizontal(final Composite parent, final int columns) {
+   /**
+    * Creates a {@link Label} with text and style
+    *
+    * @param parent
+    * @param text
+    * @param style
+    *
+    * @return
+    */
+   public static Label createLabel(final Composite parent, final String text, final int style) {
+
+      final Label label = new Label(parent, style);
+
+      label.setText(text);
+
+      return label;
+   }
+
+   public static Label createLabel(final Composite parent, final String text, final String tooltip) {
+
+      final Label label = new Label(parent, SWT.NONE);
+
+      label.setText(text);
+      label.setToolTipText(tooltip);
+
+      return label;
+   }
+
+   /**
+    * @param text
+    *
+    * @return
+    */
+   public static String createLinkText(final String text) {
+
+      return "<a>%s</a>".formatted(text); //$NON-NLS-1$
+   }
+
+   /**
+    * @param href
+    * @param text
+    *
+    * @return
+    */
+   public static String createLinkText(final String href, final String text) {
+
+      return "<a href=\"%s\">%s</a>".formatted(href, text); //$NON-NLS-1$
+   }
+
+   /**
+    * Creates a page with a static text by using a {@link FormToolkit}
+    *
+    * @param formToolkit
+    * @param parent
+    * @param labelText
+    *
+    * @return
+    */
+   public static Composite createPage(final FormToolkit formToolkit,
+                                      final Composite parent,
+                                      final String labelText) {
+
+      final Composite container = formToolkit.createComposite(parent);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      GridLayoutFactory.swtDefaults().numColumns(1).applyTo(container);
+      {
+         final Label label = formToolkit.createLabel(container, labelText, SWT.WRAP);
+         GridDataFactory.fillDefaults().grab(true, false).applyTo(label);
+      }
+
+      return container;
+   }
+
+   /**
+    * Create a spacer for one column
+    *
+    * @param parent
+    *
+    * @return
+    */
+   public static Label createSpacer_Horizontal(final Composite parent) {
+
+      return createSpacer_Horizontal(parent, 1);
+   }
+
+   public static Label createSpacer_Horizontal(final Composite parent, final int columns) {
 
       final Label label = new Label(parent, SWT.NONE);
 
       GridDataFactory.fillDefaults().span(columns, 1).applyTo(label);
+
+      return label;
    }
 
-   public static void createSpacer_Vertical(final Composite parent, final int height, final int spanHorizontal) {
+   public static Label createSpacer_Horizontal(final Composite parent,
+                                               final int width,
+                                               final int columns) {
+
+      final Label label = new Label(parent, SWT.NONE);
+
+      GridDataFactory.fillDefaults()
+            .hint(width, SWT.DEFAULT)
+            .span(columns, 1)
+            .applyTo(label);
+
+      return label;
+   }
+
+   public static Label createSpacer_Horizontal(final Composite parent,
+                                               final int columns,
+                                               final int alignHorizontal,
+                                               final int alignVertical) {
+
+      final Label label = new Label(parent, SWT.NONE);
+
+      GridDataFactory.fillDefaults().align(alignHorizontal, alignVertical).span(columns, 1).applyTo(label);
+
+      return label;
+   }
+
+   public static void createSpacer_Vertical(final Composite parent,
+                                            final int height,
+                                            final int spanHorizontal) {
 
       final Label label = new Label(parent, SWT.NONE);
 
@@ -1179,17 +1918,68 @@ public class UI {
    }
 
    /**
-    * Creates one action in a toolbar.
+    * Creates a {@link Spinner} with minimum, maximum, increment, page increment, number of digits
+    *
+    * @param parent
+    * @param digits
+    * @param minimum
+    * @param maximum
+    * @param increment
+    * @param pageIncrement
+    *
+    * @return
+    */
+   public static Spinner createSpinner(final Composite parent,
+                                       final int digits,
+                                       final int minimum,
+                                       final int maximum,
+                                       final int increment,
+                                       final int pageIncrement) {
+
+      final Spinner spinner = new Spinner(parent, SWT.BORDER);
+
+      spinner.setDigits(digits);
+      spinner.setMinimum(minimum);
+      spinner.setMaximum(maximum);
+      spinner.setIncrement(increment);
+      spinner.setPageIncrement(pageIncrement);
+
+      return spinner;
+   }
+
+   /**
+    * Creates one {@link Action} in it's own toolbar.
     *
     * @param parent
     * @param action
+    *
+    * @return Returns the created {@link ToolBar} for the action
     */
-   public static void createToolbarAction(final Composite parent, final Action action) {
+   public static ToolBar createToolbarAction(final Composite parent, final Action action) {
 
       final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
-
       final ToolBarManager tbm = new ToolBarManager(toolbar);
+
       tbm.add(action);
+
+      tbm.update(true);
+
+      return toolbar;
+   }
+
+   /**
+    * Creates one {@link ContributionItem} in it' own toolbar.
+    *
+    * @param parent
+    * @param contribItem
+    */
+   public static void createToolbarAction(final Composite parent, final ContributionItem contribItem) {
+
+      final ToolBar toolbar = new ToolBar(parent, SWT.FLAT);
+      final ToolBarManager tbm = new ToolBarManager(toolbar);
+
+      tbm.add(contribItem);
+
       tbm.update(true);
    }
 
@@ -1198,6 +1988,7 @@ public class UI {
     * @param imageHeight
     * @param existingImage
     * @param gcPainter
+    *
     * @return Returns create image or reused image
     */
    public static Image createTransparentImage(final int imageWidth,
@@ -1217,7 +2008,7 @@ public class UI {
           * effects.
           */
 
-         final ImageData imageData = new ImageData(//
+         final ImageData imageData = new ImageData(
                imageWidth,
                imageHeight,
                24,
@@ -1250,53 +2041,108 @@ public class UI {
    public static Composite createUI_PageNoData(final Composite parent, final String message) {
 
       final Composite pageNoData = new Composite(parent, SWT.NONE);
+
       // use a dimmed color, default is white
       pageNoData.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+
       GridDataFactory.fillDefaults().grab(true, true).applyTo(pageNoData);
       GridLayoutFactory.swtDefaults().numColumns(1).applyTo(pageNoData);
       {
          final Label lblNoData = new Label(pageNoData, SWT.WRAP);
-         GridDataFactory.fillDefaults().grab(true, true).applyTo(lblNoData);
          lblNoData.setText(message);
+         GridDataFactory.fillDefaults().grab(true, true).applyTo(lblNoData);
       }
 
       return pageNoData;
    }
 
-   public static Color disposeResource(final Color resource) {
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
+   public static void disposeResource(final BufferedImage awtImage) {
+
+      if (awtImage != null) {
+         awtImage.flush();
       }
-      return null;
    }
 
    public static Cursor disposeResource(final Cursor resource) {
-      if ((resource != null) && !resource.isDisposed()) {
+
+      if (resource != null) {
          resource.dispose();
       }
+
       return null;
    }
 
    /**
-    * disposes a resource
+    * Disposes an image resource
     *
     * @param image
+    *
     * @return
     */
-   public static Image disposeResource(final Image resource) {
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
+   public static Image disposeResource(final Image image) {
+
+      if (image != null) {
+
+         // sometimes the device of the image is null which causes an exception
+
+         try {
+
+            image.dispose();
+
+         } catch (final Exception e) {
+
+            // ignore
+         }
       }
+
       return null;
    }
 
    public static org.eclipse.swt.graphics.Font disposeResource(final org.eclipse.swt.graphics.Font font) {
 
-      if (font != null && font.isDisposed() == false) {
+      if (font != null) {
          font.dispose();
       }
 
       return null;
+   }
+
+   public static Resource disposeResource(final Resource resource) {
+
+      if (resource != null) {
+         resource.dispose();
+      }
+
+      return null;
+   }
+
+   public static void dumpAllFonts() {
+
+      System.out.println("All available font family names"); //$NON-NLS-1$
+
+      // all fonts available in AWT
+      final Font[] allFonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+
+      for (final Font font : allFonts) {
+
+         String style;
+
+         if (font.isBold()) {
+            style = font.isItalic() ? "bolditalic" : "bold"; //$NON-NLS-1$ //$NON-NLS-2$
+         } else {
+            style = font.isItalic() ? "italic" : "plain"; //$NON-NLS-1$ //$NON-NLS-2$
+         }
+
+         System.out.println(EMPTY_STRING
+
+               + "%-35s - %s".formatted( //$NON-NLS-1$
+
+                     font.getFamily(),
+//                           font.getName(),
+                     style
+
+               ));
+      }
    }
 
    public static void dumpSuperClasses(final Object o) {
@@ -1315,11 +2161,36 @@ public class UI {
       }
    }
 
+   /**
+    * Escape the ampersand symbol when it's not a mnemonic but is displayed in a
+    * {@link Label#setText(String)}
+    * <p>
+    * "The mnemonic indicator character'&' can be escaped by doubling it in the string, causing a
+    * single '&' to be displayed."
+    *
+    * @param text
+    *
+    * @return
+    */
+   public static String escapeAmpersand(final String text) {
+
+      return text.replace(SYMBOL_AMPERSAND, SYMBOL_AMPERSAND_AMPERSAND);
+   }
+
+   public static void fillUI_Combobox(final Combo combo, final ConcurrentSkipListSet<String> allValues) {
+
+      for (final String value : allValues) {
+         if (value != null) {
+            combo.add(value);
+         }
+      }
+   }
+
    public static String format_hh(final long time) {
 
       _formatterSB.setLength(0);
 
-      return _formatter.format(Messages.Format_hh,
+      return _formatter.format(Messages.Format_TimeDuration_hh,
 
             time / 3600
 
@@ -1330,7 +2201,7 @@ public class UI {
 
       _formatterSB.setLength(0);
 
-      return _formatter.format(Messages.Format_hhmm,
+      return _formatter.format(Messages.Format_TimeDuration_hhmm,
 
             time / 3600,
             time % 3600 / 60
@@ -1343,6 +2214,7 @@ public class UI {
     *
     * @param time
     *           in seconds
+    *
     * @return
     */
    public static String format_hh_mm_ss(final long time) {
@@ -1357,7 +2229,7 @@ public class UI {
 
          // display hours
 
-         return _formatter.format(Messages.Format_hhmmss,
+         return _formatter.format(Messages.Format_TimeDuration_hhmmss,
 
                time / 3600,
                time % 3600 / 60,
@@ -1369,7 +2241,7 @@ public class UI {
 
          // ignore hours
 
-         return _formatter.format(Messages.Format_hhmm,
+         return _formatter.format(Messages.Format_TimeDuration_hhmm,
 
                time % 3600 / 60,
                time % 3600 % 60
@@ -1383,13 +2255,14 @@ public class UI {
     *
     * @param time
     *           in seconds
+    *
     * @return
     */
    public static String format_hhh_mm_ss(final long time) {
 
       _formatterSB.setLength(0);
 
-      return _formatter.format(Messages.Format_hhmmss,
+      return _formatter.format(Messages.Format_TimeDuration_hhmmss,
             time / 3600,
             (time % 3600) / 60,
             (time % 3600) % 60)
@@ -1406,7 +2279,32 @@ public class UI {
 
       final long timeAbs = time < 0 ? 0 - time : time;
 
-      return _formatter.format(Messages.Format_hhmm,
+      return _formatter.format(Messages.Format_TimeDuration_hhmm,
+
+            timeAbs / 60,
+            timeAbs % 60
+
+      ).toString();
+   }
+
+   /**
+    * Format time with {@link #Format_TimeDuration_mmss}
+    *
+    * @param time
+    *
+    * @return
+    */
+   public static String format_mm_ss_WithSign(final long time) {
+
+      _formatterSB.setLength(0);
+
+      if (time < 0) {
+         _formatterSB.append(DASH);
+      }
+
+      final long timeAbs = time < 0 ? 0 - time : time;
+
+      return _formatter.format(Format_TimeDuration_mmss,
 
             timeAbs / 60,
             timeAbs % 60
@@ -1423,7 +2321,7 @@ public class UI {
 
       _formatterSB.setLength(0);
 
-      return _formatter.format(Messages.Format_yyyymmdd_hhmmss,
+      return _formatter.format(Messages.Format_DateTime_yyyymmdd_hhmmss,
 
             year,
             month,
@@ -1435,18 +2333,7 @@ public class UI {
       ).toString();
    }
 
-   public static String FormatDoubleMinMax(final double value) {
-
-      if (value == -Double.MAX_VALUE) {
-         return SYMBOL_INFINITY_MIN;
-      } else if (value == Double.MAX_VALUE) {
-         return SYMBOL_INFINITY_MAX;
-      }
-
-      return Double.toString(value);
-   }
-
-   public static String FormatDoubleMinMaxElevationMeter(final double value) {
+   public static String formatDoubleMinMaxElevationMeter(final double value) {
 
       if (value == -Double.MAX_VALUE) {
          return SYMBOL_INFINITY_MIN;
@@ -1462,6 +2349,7 @@ public class UI {
     *
     * @param time
     *           Time in seconds.
+    *
     * @return
     */
    public static String formatHhMmSs(long time) {
@@ -1484,7 +2372,7 @@ public class UI {
 
          // display hours
 
-         timeText = _formatter.format(Messages.Format_hhmmss,
+         timeText = _formatter.format(Messages.Format_TimeDuration_hhmmss,
 
                time / 3600,
                time % 3600 / 60,
@@ -1496,7 +2384,7 @@ public class UI {
 
          // ignore hours
 
-         timeText = _formatter.format(Messages.Format_hhmm,
+         timeText = _formatter.format(Messages.Format_TimeDuration_hhmm,
 
                time % 3600 / 60,
                time % 3600 % 60
@@ -1509,12 +2397,63 @@ public class UI {
    }
 
    /**
+    * @param mouseEvent
+    * @param defaultAccelerator
+    *           Could be 10 to increase e.g. image size by 10 without pressing an accelerator key
+    *
+    * @return
+    */
+   public static int getAcceleratorFromMouseWheel(final MouseEvent mouseEvent, final int defaultAccelerator) {
+
+      boolean isCtrlKey;
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isCtrlKey = (mouseEvent.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (mouseEvent.stateMask & SWT.MOD3) > 0;
+      } else {
+         isCtrlKey = (mouseEvent.stateMask & SWT.MOD1) > 0;
+         isShiftKey = (mouseEvent.stateMask & SWT.MOD2) > 0;
+      }
+
+      // accelerate with Ctrl + Shift key
+      int accelerator = isCtrlKey ? 10 : 1;
+      accelerator *= isShiftKey ? 5 : 1;
+
+      accelerator *= defaultAccelerator;
+
+      return accelerator;
+   }
+
+   public static Font getAWT4kScaledDefaultFont() {
+
+      final float defaultFontSize = AWT_DIALOG_FONT.getSize2D();
+
+      final float fontSize = //
+
+            UI.HIDPI_SCALING <= 1.5 ? defaultFontSize * 1.5f
+
+                  : UI.HIDPI_SCALING <= 2 ? defaultFontSize * 1.7f
+
+                        : UI.HIDPI_SCALING <= 3 ? defaultFontSize * 1.8f
+
+                              : defaultFontSize * 1.8f;
+
+      return AWT_DIALOG_FONT.deriveFont(fontSize);
+   }
+
+   /**
     * Get best-fit size for an image drawn in an area of maxX, maxY
+    * <p>
+    *
+    * Original:
+    * org.eclipse.nebula.widgets.gallery/src/org/eclipse/nebula/widgets/gallery/RendererHelper.java
     *
     * @param imageWidth
     * @param imageHeight
     * @param canvasWidth
     * @param canvasHeight
+    *
     * @return
     */
    public static Point getBestFitCanvasSize(final int imageWidth,
@@ -1527,15 +2466,36 @@ public class UI {
 
       final double bestRatio = widthRatio > heightRatio ? widthRatio : heightRatio;
 
-      final int newWidth = (int) (imageWidth / bestRatio);
-      final int newHeight = (int) (imageHeight / bestRatio);
+      final int ratioWidth = (int) (imageWidth / bestRatio) + 1;
+      final int ratioHeight = (int) (imageHeight / bestRatio) + 1;
 
-      return new Point(newWidth, newHeight);
+      /*
+       * This will fix a 1 pixel issues because of the ratio rounding
+       */
+// this do not work, also the previous algorithm :-(
+//      if (widthRatio > heightRatio) {
+//
+//         if (ratioHeight == canvasHeight - 1) {
+//            System.out.println("W  %5.3f %5.3f w: %d  h: %d".formatted(widthRatio, heightRatio, ratioWidth, ratioHeight));
+//            ratioHeight = canvasHeight;
+//         }
+//
+//      } else {
+//
+//         if (ratioWidth == canvasWidth - 1) {
+//            System.out.println("H  %5.3f %5.3f w: %d  h: %d".formatted(widthRatio, heightRatio, ratioWidth, ratioHeight));
+//            ratioWidth = canvasWidth;
+//         }
+//
+//      }
+
+      return new Point(ratioWidth, ratioHeight);
    }
 
    /**
     * @param degreeDirection
-    *           The degree value is multiplied by 10, 0°...3600°
+    *           The degree value, 0°...360°
+    *
     * @return Returns cardinal direction text
     */
    public static String getCardinalDirectionText(final int degreeDirection) {
@@ -1545,47 +2505,63 @@ public class UI {
 
    /**
     * @param degreeDirection
-    *           The degree value is multiplied by 10, 0°...3600°
+    *           The degree value, 0°...360°
+    *
     * @return Returns cardinal direction index for {@link IWeather#windDirectionText}
     */
    public static int getCardinalDirectionTextIndex(final int degreeDirection) {
 
-      final float degree = (degreeDirection / 10.0f + 11.25f) / 22.5f;
+      if (degreeDirection == -1) {
+         return 0;
+      }
+
+      final float degree = (degreeDirection + 11.25f) / 22.5f;
 
       final int directionIndex = ((int) degree) % 16;
 
-      return directionIndex;
+      // We increment the index because the first element is the "empty" direction
+      return directionIndex + 1;
    }
 
    public static FontMetrics getDialogFontMetrics() {
 
       // ensure that font metrics are setup
-      setupUI_FontMetrics();
+      setupFonts_SWTFontMetrics();
 
       return _dialogFont_Metrics;
    }
 
+   /**
+    * @param composite
+    * @param location
+    *
+    * @return Returns the unscaled display bounds
+    */
    public static Rectangle getDisplayBounds(final Control composite, final Point location) {
 
       Rectangle displayBounds;
+
       final Monitor[] allMonitors = composite.getDisplay().getMonitors();
 
       if (allMonitors.length > 1) {
+
          // By default present in the monitor of the control
          displayBounds = composite.getMonitor().getBounds();
-         final Point p = new Point(location.x, location.y);
 
          // Search on which monitor the event occurred
-         Rectangle tmp;
-         for (final Monitor element : allMonitors) {
-            tmp = element.getBounds();
-            if (tmp.contains(p)) {
-               displayBounds = tmp;
+         for (final Monitor monitor : allMonitors) {
+
+            final Rectangle monitorBounds = monitor.getBounds();
+
+            if (monitorBounds.contains(location)) {
+
+               displayBounds = monitorBounds;
                break;
             }
          }
 
       } else {
+
          displayBounds = composite.getDisplay().getBounds();
       }
 
@@ -1594,31 +2570,34 @@ public class UI {
 
    /**
     * @param allVisibleItems
-    * @param allExpandedItems
+    * @param allExpandedPaths
+    *
     * @return Returns {@link TreePath}'s which are expanded and open (not hidden).
     */
-   public static TreePath[] getExpandedOpenedItems(final Object[] allVisibleItems, final TreePath[] allExpandedItems) {
+   public static TreePath[] getExpandedAndOpenedItems(final Object[] allVisibleItems,
+                                                      final TreePath[] allExpandedPaths) {
 
-      final ArrayList<TreePath> expandedOpened = new ArrayList<>();
+      final List<TreePath> allExpandedAndOpenedPaths = new ArrayList<>();
 
-      for (final TreePath expandedPath : allExpandedItems) {
+      for (final TreePath expandedPath : allExpandedPaths) {
 
          /*
-          * The last expanded segment must be in the visible list otherwise it is hidden.
+          * The last expanded segment must be in the visible list otherwise it is hidden
           */
-         final Object lastExpandedItem = expandedPath.getLastSegment();
+         final Object lastExpandedSegment = expandedPath.getLastSegment();
 
          for (final Object visibleItem : allVisibleItems) {
 
-            if (lastExpandedItem == visibleItem) {
+            if (lastExpandedSegment == visibleItem) {
 
-               expandedOpened.add(expandedPath);
+               allExpandedAndOpenedPaths.add(expandedPath);
+
                break;
             }
          }
       }
 
-      return expandedOpened.toArray(new TreePath[expandedOpened.size()]);
+      return allExpandedAndOpenedPaths.toArray(new TreePath[allExpandedAndOpenedPaths.size()]);
    }
 
    /**
@@ -1654,6 +2633,7 @@ public class UI {
 
    /**
     * @param url
+    *
     * @return Returns the url with surrounding < a > tags which can be used for the {@link Link}
     *         control.
     */
@@ -1670,17 +2650,13 @@ public class UI {
       final IWorkbenchPage activePage = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 
       final IWorkbenchPart activePart = activePage.getActivePart();
-      if (activePart instanceof IViewPart) {
-
-         final IViewPart viewPart = (IViewPart) activePart;
+      if (activePart instanceof final IViewPart viewPart) {
 
          return viewPart.getViewSite().getActionBars().getStatusLineManager();
       }
 
       final IWorkbenchPart activeEditor = activePage.getActiveEditor();
-      if (activeEditor instanceof IEditorSite) {
-
-         final IEditorSite editorSite = (IEditorSite) activeEditor;
+      if (activeEditor instanceof final IEditorSite editorSite) {
 
          return editorSite.getActionBars().getStatusLineManager();
       }
@@ -1688,34 +2664,49 @@ public class UI {
       return null;
    }
 
+   public static org.eclipse.swt.graphics.Font getUIDrawingFont() {
+
+      return _swtUIDrawingFont;
+   }
+
+   public static GridDataFactory gridLayoutData_AlignBeginningFill() {
+
+      return GridDataFactory.fillDefaults().align(SWT.BEGINNING, SWT.FILL);
+   }
+
+   public static GridDataFactory gridLayoutData_AlignFillCenter() {
+
+      return GridDataFactory.fillDefaults().align(SWT.FILL, SWT.CENTER);
+   }
+
+   public static GridDataFactory gridLayoutData_Span_2_1() {
+
+      return GridDataFactory.fillDefaults().span(2, 1);
+   }
+
    /**
     * @param event
+    *
     * @return Returns <code>true</code> when <Ctrl> key is pressed.
     */
    public static boolean isCtrlKey(final Event event) {
 
-      boolean isCtrlKey;
+      return (event.stateMask & SWT.MOD1) > 0;
+   }
 
-      if (UI.IS_OSX) {
-         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
-      } else {
-         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
-      }
+   public static boolean isCtrlKey(final KeyEvent keyEvent) {
 
-      return isCtrlKey;
+      return (keyEvent.stateMask & SWT.MOD1) > 0;
    }
 
    public static boolean isCtrlKey(final MouseEvent event) {
 
-      boolean isCtrlKey;
+      return (event.stateMask & SWT.MOD1) > 0;
+   }
 
-      if (IS_OSX) {
-         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
-      } else {
-         isCtrlKey = (event.stateMask & SWT.MOD1) > 0;
-      }
+   public static boolean isCtrlKey(final SelectionEvent selectionEvent) {
 
-      return isCtrlKey;
+      return (selectionEvent.stateMask & SWT.MOD1) > 0;
    }
 
    /**
@@ -1743,7 +2734,7 @@ public class UI {
       return false;
    }
 
-   public static boolean isShiftKey(final MouseEvent event) {
+   public static boolean isShiftKey(final Event event) {
 
       boolean isShiftKey;
 
@@ -1754,6 +2745,69 @@ public class UI {
       }
 
       return isShiftKey;
+   }
+
+   public static boolean isShiftKey(final KeyEvent keyEvent) {
+
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isShiftKey = (keyEvent.stateMask & SWT.MOD3) > 0;
+      } else {
+         isShiftKey = (keyEvent.stateMask & SWT.MOD2) > 0;
+      }
+
+      return isShiftKey;
+   }
+
+   public static boolean isShiftKey(final MouseEvent mouseEvent) {
+
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isShiftKey = (mouseEvent.stateMask & SWT.MOD3) > 0;
+      } else {
+         isShiftKey = (mouseEvent.stateMask & SWT.MOD2) > 0;
+      }
+
+      return isShiftKey;
+   }
+
+   public static boolean isShiftKey(final SelectionEvent selectionEvent) {
+
+      boolean isShiftKey;
+
+      if (IS_OSX) {
+         isShiftKey = (selectionEvent.stateMask & SWT.MOD3) > 0;
+      } else {
+         isShiftKey = (selectionEvent.stateMask & SWT.MOD2) > 0;
+      }
+
+      return isShiftKey;
+   }
+
+   /**
+    * Log RGB values as Java code:
+    * <p>
+    * <code>
+    *  new RGB(0x5B, 0x5B, 0x5B),
+    * </code>
+    *
+    * @param rgb
+    *
+    * @return
+    */
+   public static String logRGB(final RGB rgb) {
+
+      if (rgb == null) {
+         return "null"; //$NON-NLS-1$
+      }
+
+      return "new RGB(" //$NON-NLS-1$
+            + "0x" + Integer.toHexString(rgb.red) + ", " //$NON-NLS-1$ //$NON-NLS-2$
+            + "0x" + Integer.toHexString(rgb.green) + ", " //$NON-NLS-1$ //$NON-NLS-2$
+            + "0x" + Integer.toHexString(rgb.blue) //$NON-NLS-1$
+            + "),"; //$NON-NLS-1$
    }
 
    public static String nanoTime(final int nanoValue) {
@@ -1857,9 +2911,146 @@ public class UI {
       }
    }
 
+   /**
+    * Open a notification popup for the number of seconds configured by the user
+    *
+    * @param title
+    * @param imageDescriptor
+    * @param text
+    */
+   public static void openNotificationPopup(final String title,
+                                            final ImageDescriptor imageDescriptor,
+                                            final String text) {
+
+      final Display display = PlatformUI.getWorkbench().getDisplay();
+
+      if (display.getThread() == Thread.currentThread()) {
+
+         openNotificationPopup_InUIThread(title, imageDescriptor, text);
+
+      } else {
+
+         display.asyncExec(() -> {
+            openNotificationPopup_InUIThread(title, imageDescriptor, text);
+         });
+      }
+   }
+
+   /**
+    * Open a notification popup for the number of seconds configured by the user
+    *
+    * @param title
+    * @param imageDescriptor
+    * @param text
+    */
+   private static void openNotificationPopup_InUIThread(final String title, final ImageDescriptor imageDescriptor, final String text) {
+
+      final int delay = _prefStore_Common.getInt(ICommonPreferences.APPEARANCE_NOTIFICATION_MESSAGES_DURATION) * 1000;
+
+      final MTNotificationPopup notification = new MTNotificationPopup(
+            Display.getCurrent(),
+            imageDescriptor,
+            title,
+            text);
+      notification.setDelayClose(delay);
+      notification.open();
+   }
+
+   /**
+    * @param event
+    * @param image
+    * @param availableWidth
+    * @param horizontalAlignment
+    *           SWT.* alignment values
+    * @param horizontalOffset
+    *           Horizontal offset when image is centered
+    */
+   public static void paintImage(final Event event,
+                                 final Image image,
+                                 final int availableWidth,
+                                 final int horizontalAlignment,
+                                 final int horizontalOffset) {
+
+      paintImage(
+
+            event,
+            image,
+            availableWidth,
+            horizontalAlignment,
+            SWT.TOP,
+            horizontalOffset);
+   }
+
+   /**
+    * @param event
+    * @param image
+    * @param availableWidth
+    * @param horizontalAlignment
+    *           SWT.* alignment values
+    * @param verticalAlignment
+    *           SWT.* alignment values
+    * @param horizontalOffset
+    *           Horizontal offset when image is centered
+    */
+   public static void paintImage(final Event event,
+                                 final Image image,
+                                 final int availableWidth,
+                                 final int horizontalAlignment,
+                                 final int verticalAlignment,
+                                 final int horizontalOffset) {
+
+      final Rectangle imageRect = image.getBounds();
+
+      final int imageWidth = imageRect.width;
+
+      /*
+       * Horizontal alignment
+       */
+      int xOffset = 0;
+
+      switch (horizontalAlignment) {
+
+      case SWT.CENTER -> xOffset = ((availableWidth - imageWidth) / 2) + horizontalOffset;
+      case SWT.RIGHT  -> xOffset = availableWidth - imageWidth;
+
+      // == left alignment
+      default -> xOffset = 2;
+
+      }
+
+      /*
+       * Vertical alignment
+       */
+      final int cellHeight = event.height;
+      final int imageHeight = imageRect.height;
+
+      int yOffset;
+
+      switch (verticalAlignment) {
+
+      case SWT.CENTER -> yOffset = (cellHeight - imageHeight) / 2;
+      case SWT.BOTTOM -> yOffset = cellHeight - imageHeight;
+      default         -> yOffset = 0; // == top alignment
+
+      }
+
+      /*
+       * Paint image
+       */
+      final int devX = event.x + xOffset;
+      final int devY = event.y + yOffset;
+
+      final GC gc = event.gc;
+
+//      gc.setBackground(UI.SYS_COLOR_YELLOW);
+//      gc.fillRectangle(event.x, event.y, availableWidth, imageRect.height);
+
+      gc.drawImage(image, devX, devY);
+   }
+
    public static String replaceHTML_BackSlash(final String filePath) {
 
-      return filePath.replace(//
+      return filePath.replace(
             SYMBOL_BACKSLASH,
             SYMBOL_HTML_BACKSLASH);
    }
@@ -1876,14 +3067,14 @@ public class UI {
 
    public static String replaceJS_BackSlash(final String filePath) {
 
-      return filePath.replace(//
+      return filePath.replace(
             SYMBOL_BACKSLASH,
             JS_BACKSLASH_REPLACEMENT);
    }
 
    public static String replaceJS_QuotaMark(final String js) {
 
-      return js.replace(JS_QUOTA_MARK, JS_QUOTA_MARK_REPLACEMENT);
+      return js.replace(SYMBOL_QUOTATION_MARK, JS_QUOTA_MARK_REPLACEMENT);
    }
 
    public static void resetInitialLocation(final IDialogSettings _state, final String statePrefix) {
@@ -2063,16 +3254,18 @@ public class UI {
 
    public static String scrambleText(final String text) {
 
-      if (text == null) {
+      if (StringUtils.isNullOrEmpty(text)) {
          return text;
       }
 
-      final int allLowerCharSize = ALL_SCRAMBLED_CHARS_LOWER.length();
-      final int allUpperCharSize = ALL_SCRAMBLED_CHARS_UPPER.length();
+      final int numCharacters = text.length();
+
+      final int numLowerChars = ALL_SCRAMBLED_CHARS_LOWER.length();
+      final int numUpperChars = ALL_SCRAMBLED_CHARS_UPPER.length();
 
       final char[] scrambledText = text.toCharArray();
 
-      for (int charIndex = 0; charIndex < text.length(); charIndex++) {
+      for (int charIndex = 0; charIndex < numCharacters; charIndex++) {
 
          final char c = text.charAt(charIndex);
 
@@ -2080,12 +3273,19 @@ public class UI {
 
             // scramble upper chars
 
-            scrambledText[charIndex] = ALL_SCRAMBLED_CHARS_UPPER.charAt(RANDOM_GENERATOR.nextInt(allUpperCharSize));
+            scrambledText[charIndex] = ALL_SCRAMBLED_CHARS_UPPER.charAt(RANDOM_GENERATOR.nextInt(numUpperChars));
+
+         } else if (c == 0x0a || c == '\u2022') {
+
+            // do not scamble: new lines, symbols
+
+            scrambledText[charIndex] = c;
 
          } else if (c != ' ') {
 
             // scramble other chars except spaces
-            scrambledText[charIndex] = ALL_SCRAMBLED_CHARS_LOWER.charAt(RANDOM_GENERATOR.nextInt(allLowerCharSize));
+
+            scrambledText[charIndex] = ALL_SCRAMBLED_CHARS_LOWER.charAt(RANDOM_GENERATOR.nextInt(numLowerChars));
          }
       }
 
@@ -2112,6 +3312,26 @@ public class UI {
    }
 
    /**
+    * Set the layout data of the button to a GridData with appropriate heights and widths.
+    *
+    * @param button
+    */
+   public static void setButtonLayoutWidth(final Button button) {
+
+      // keep existing layout data
+      final GridData data = (GridData) button.getLayoutData();
+
+      final int widthHint = convertHorizontalDLUsToPixels(IDialogConstants.BUTTON_WIDTH);
+
+      final Point minSize = button.computeSize(SWT.DEFAULT, SWT.DEFAULT, true);
+      final int defaultWidth = minSize.x;
+
+      data.widthHint = Math.max(widthHint, defaultWidth);
+
+      button.setLayoutData(data);
+   }
+
+   /**
     * Initialize cell editing.
     *
     * @param viewer
@@ -2126,20 +3346,26 @@ public class UI {
          @Override
          protected boolean isEditorActivationEvent(final ColumnViewerEditorActivationEvent event) {
 
-            return (event.eventType == ColumnViewerEditorActivationEvent.TRAVERSAL)
-                  || (event.eventType == ColumnViewerEditorActivationEvent.MOUSE_CLICK_SELECTION)
-                  || ((event.eventType == ColumnViewerEditorActivationEvent.KEY_PRESSED)
+            final int eventType = event.eventType;
+
+            return eventType == ColumnViewerEditorActivationEvent.TRAVERSAL // 5
+                  || eventType == ColumnViewerEditorActivationEvent.MOUSE_CLICK_SELECTION // 2
+
+                  || ((eventType == ColumnViewerEditorActivationEvent.KEY_PRESSED) // 1
                         && (event.keyCode == SWT.CR))
-                  || (event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC);
+
+                  || eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC // 4
+
+            ;
          }
       };
 
-      TableViewerEditor.create(//
+      TableViewerEditor.create(
             viewer,
             focusCellManager,
             actSupport,
-            ColumnViewerEditor.TABBING_HORIZONTAL //
-                  | ColumnViewerEditor.TABBING_MOVE_TO_ROW_NEIGHBOR //
+            ColumnViewerEditor.TABBING_HORIZONTAL
+                  | ColumnViewerEditor.TABBING_MOVE_TO_ROW_NEIGHBOR
                   | ColumnViewerEditor.TABBING_VERTICAL
                   | ColumnViewerEditor.KEYBOARD_ACTIVATION);
    }
@@ -2157,7 +3383,7 @@ public class UI {
        * ignore these controls because they do not look very good on Linux & OSX
        */
       if (child instanceof Spinner || child instanceof Combo) {
-         return;
+//         return;
       }
 
       /*
@@ -2194,9 +3420,9 @@ public class UI {
       child.setForeground(fgColor);
       child.setBackground(bgColor);
 
-      if (child instanceof Composite) {
+      if (child instanceof final Composite composite) {
 
-         for (final Control element : ((Composite) child).getChildren()) {
+         for (final Control element : composite.getChildren()) {
 
             if (element != null && element.isDisposed() == false) {
                setChildColors(element, fgColor, bgColor);
@@ -2214,27 +3440,59 @@ public class UI {
     * @param backgroundColor
     *           Background color
     */
-   public static void setColorForAllChildren(final Control parent, final Color foregroundColor, final Color backgroundColor) {
+   public static void setColorForAllChildren(final Control parent,
+                                             final Color foregroundColor,
+                                             final Color backgroundColor) {
+
+      setColorForAllChildren(parent, foregroundColor, backgroundColor, null);
+   }
+
+   /**
+    * Set color for all children controls of the parent.
+    *
+    * @param parent
+    * @param foregroundColor
+    *           Foreground color
+    * @param backgroundColor
+    *           Background color
+    * @param allSkippedControls
+    *           Contains all controls which must be skipped
+    *
+    */
+   public static void setColorForAllChildren(final Control parent,
+                                             final Color foregroundColor,
+                                             final Color backgroundColor,
+                                             final Object[] allSkippedControls) {
+
+      if (allSkippedControls != null) {
+
+         for (final Object skippedControl : allSkippedControls) {
+
+            if (parent == skippedControl) {
+               return;
+            }
+         }
+      }
 
       parent.setForeground(foregroundColor);
       parent.setBackground(backgroundColor);
 
-      if (parent instanceof Composite) {
+      if (parent instanceof final Composite composite) {
 
-         final Control[] children = ((Composite) parent).getChildren();
+         final Control[] children = composite.getChildren();
 
          for (final Control child : children) {
 
             if (child != null
-                  && child.isDisposed() == false //
+                  && child.isDisposed() == false
 
                   // exclude controls which look ugly
                   && !child.getClass().equals(Combo.class)
                   && !child.getClass().equals(Spinner.class)
-            //
+
             ) {
 
-               setColorForAllChildren(child, foregroundColor, backgroundColor);
+               setColorForAllChildren(child, foregroundColor, backgroundColor, allSkippedControls);
             }
          }
       }
@@ -2244,9 +3502,9 @@ public class UI {
 
       parent.setEnabled(isEnabled);
 
-      if (parent instanceof Composite) {
+      if (parent instanceof final Composite composite) {
 
-         final Control[] children = ((Composite) parent).getChildren();
+         final Control[] children = composite.getChildren();
 
          for (final Control child : children) {
 
@@ -2306,9 +3564,8 @@ public class UI {
       for (final Control control : columnControls) {
 
          final Object layoutData = control.getLayoutData();
-         if (layoutData instanceof GridData) {
+         if (layoutData instanceof final GridData gd) {
 
-            final GridData gd = (GridData) layoutData;
             gd.widthHint = SWT.DEFAULT;
          }
          control.pack(true);
@@ -2335,9 +3592,8 @@ public class UI {
       for (final Control control : columnControls) {
 
          final Object layoutData = control.getLayoutData();
-         if (layoutData instanceof GridData) {
+         if (layoutData instanceof final GridData gd) {
 
-            final GridData gd = (GridData) layoutData;
             gd.widthHint = maxWidth;
          }
       }
@@ -2356,6 +3612,12 @@ public class UI {
    public static void setIsDarkTheme(final boolean isDarkThemeSelected) {
 
       IS_DARK_THEME = isDarkThemeSelected;
+      IS_BRIGHT_THEME = isDarkThemeSelected == false;
+   }
+
+   public static void setIsScrambleData(final boolean isScrambleData) {
+
+      IS_SCRAMBLE_DATA = isScrambleData;
    }
 
    /**
@@ -2370,19 +3632,7 @@ public class UI {
       uiElement.setIcon(CommonActivator.getThemedImageDescriptor(imageName));
    }
 
-   public static void setupThemedImages() {
-
-// SET_FORMATTING_OFF
-
-      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER,               CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter));
-      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER_DISABLED,      CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter_Disabled));
-      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER_NO_PHOTOS,     CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter_NoPhotos));
-      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER_WITH_PHOTOS,   CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter_WithPhotos));
-
-// SET_FORMATTING_ON
-   }
-
-   private static void setupUI_AWTFonts() {
+   private static void setupFonts_AWTFonts() {
 
       if (IS_WIN) {
 
@@ -2404,7 +3654,74 @@ public class UI {
       }
    }
 
-   private static boolean setupUI_FontMetrics() {
+   private static void setupFonts_SWTDrawingFonts() {
+
+      final Display display = Display.getCurrent();
+      Assert.isNotNull(display);
+
+      // hookup dispose
+      display.disposeExec(() -> {
+         if (_swtUIDrawingFont != null) {
+            _swtUIDrawingFont.dispose();
+         }
+      });
+
+      _swtUIDrawingFont = setupFonts_SWTDrawingFonts_10(display);
+
+      // update font after it is modified
+      _prefStore_Common.addPropertyChangeListener(propertyChangeEvent -> {
+
+         final String property = propertyChangeEvent.getProperty();
+
+         if (property.equals(ICommonPreferences.UI_DRAWING_FONT)) {
+
+            if (_swtUIDrawingFont != null) {
+
+               /**
+                * Delay old font disposal because org.eclipse.swt.custom.StyledTextRenderer is
+                * using the old font in setFont(...) before the new font is initialized
+                * -> really bad behavior !!!
+                */
+               final org.eclipse.swt.graphics.Font oldFont = _swtUIDrawingFont;
+
+               display.timerExec(10_000, () -> oldFont.dispose());
+            }
+
+            _swtUIDrawingFont = setupFonts_SWTDrawingFonts_10(display);
+
+            // fire event after the font is recreated to update the UI
+            _prefStore_Common.setValue(ICommonPreferences.UI_DRAWING_FONT_IS_MODIFIED, Math.random());
+         }
+      });
+
+   }
+
+   private static org.eclipse.swt.graphics.Font setupFonts_SWTDrawingFonts_10(final Display display) {
+
+      if (IS_SWT_AUTO_SCALE) {
+
+         final FontData[] allFontData = PreferenceConverter.getFontDataArray(
+               _prefStore_Common,
+               ICommonPreferences.UI_DRAWING_FONT);
+
+// rescaling the font is not working smoothly
+//
+//         final FontData fontData = allFontData[0];
+//
+//         final float height = fontData.getHeight();
+//         final float unscaledHeight = height / (DPIUtil.getDeviceZoom() / 100);
+//
+//         fontData.setHeight((int) unscaledHeight);
+
+         return new org.eclipse.swt.graphics.Font(display, allFontData);
+
+      } else {
+
+         return JFaceResources.getDialogFont();
+      }
+   }
+
+   private static boolean setupFonts_SWTFontMetrics() {
 
       if (_dialogFont_Metrics != null) {
          return true;
@@ -2416,7 +3733,8 @@ public class UI {
       final Shell shell = new Shell(display);
       final GC gc = new GC(shell);
       {
-         gc.setFont(JFaceResources.getDialogFont());
+         final org.eclipse.swt.graphics.Font dialogFont = JFaceResources.getDialogFont();
+         gc.setFont(dialogFont);
 
          _dialogFont_Metrics = gc.getFontMetrics();
       }
@@ -2426,42 +3744,77 @@ public class UI {
       return true;
    }
 
+   public static void setupThemedImages() {
+
+// SET_FORMATTING_OFF
+
+      // weather images
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_CLEAR,                  CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Sunny));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_PART_CLOUDS,            CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Cloudy));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_OVERCAST,               CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Clouds));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_FOG,                    CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Fog));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_LIGHTNING,              CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Lightning));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_RAIN,                   CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Rain));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_DRIZZLE,                CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Drizzle));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SNOW,                   CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Snow));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SCATTERED_SHOWERS,      CommonActivator.getThemedImageDescriptor(CommonImages.Weather_ScatteredShowers));
+      IMAGE_REGISTRY.put(IWeather.WEATHER_ID_SEVERE_WEATHER_ALERT,   CommonActivator.getThemedImageDescriptor(CommonImages.Weather_Severe));
+
+      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER,                  CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter));
+      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER_NO_PHOTOS,        CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter_NoPhotos));
+      IMAGE_REGISTRY.put(IMAGE_ACTION_PHOTO_FILTER_WITH_PHOTOS,      CommonActivator.getThemedImageDescriptor(CommonImages.PhotoFilter_WithPhotos));
+
+// SET_FORMATTING_ON
+   }
+
    /**
-    * copy from {@link CTabItem}
+    * Copy from {@link CTabItem}
     *
     * @param gc
     * @param text
     * @param width
-    * @param isUseEllipses
+    * @param isUseEllipsis
+    *
     * @return
     */
-   public static String shortenText(final GC gc, final String text, final int width, final boolean isUseEllipses) {
-      return isUseEllipses ? //
-            shortenText(gc, text, width, ELLIPSIS) : shortenText(gc, text, width, EMPTY_STRING);
+   public static String shortenText(final GC gc, final String text, final int width, final boolean isUseEllipsis) {
+
+      return isUseEllipsis
+            ? shortenText(gc, text, width, ELLIPSIS)
+            : shortenText(gc, text, width, EMPTY_STRING);
    }
 
-   public static String shortenText(final GC gc, String text, final int width, final String ellipses) {
+   public static String shortenText(final GC gc, String text, final int width, final String ellipsis) {
 
       if (gc.textExtent(text, 0).x <= width) {
          return text;
       }
 
-      final int ellipseWidth = gc.textExtent(ellipses, 0).x;
+      final int ellipseWidth = gc.textExtent(ellipsis, 0).x;
       final int length = text.length();
+
       final TextLayout layout = new TextLayout(gc.getDevice());
       layout.setText(text);
 
       int end = layout.getPreviousOffset(length, SWT.MOVEMENT_CLUSTER);
+
       while (end > 0) {
+
          text = text.substring(0, end);
+
          final int l = gc.textExtent(text, 0).x;
          if (l + ellipseWidth <= width) {
             break;
          }
+
          end = layout.getPreviousOffset(end, SWT.MOVEMENT_CLUSTER);
       }
+
       layout.dispose();
-      return end == 0 ? text.substring(0, 1) : text + ellipses;
+
+      return end == 0
+            ? text.substring(0, 1)
+            : text + ellipsis;
    }
 
    /**
@@ -2476,7 +3829,9 @@ public class UI {
     *           the original string or <code>null</code>
     * @param control
     *           the control the string will be displayed on
+    *
     * @return the string to display, or <code>null</code> if null was passed in
+    *
     * @since 3.0
     */
    public static String shortenText(final String textValue, final Control control) {
@@ -2562,6 +3917,119 @@ public class UI {
    }
 
    /**
+    * Set control visible or hidden
+    *
+    * @param control
+    * @param isVisible
+    */
+   public static void showHideControl(final Control control,
+                                      final boolean isVisible) {
+
+      showHideControl(control, isVisible, SWT.DEFAULT, SWT.DEFAULT);
+   }
+
+   /**
+    * Set control visible or hidden
+    *
+    * @param control
+    * @param isVisible
+    * @param defaultWidth
+    */
+   public static void showHideControl(final Control control,
+                                      final boolean isVisible,
+                                      final int defaultWidth) {
+
+      showHideControl(control, isVisible, defaultWidth, SWT.DEFAULT);
+   }
+
+   /**
+    * Set control visible or hidden
+    *
+    * @param control
+    * @param isVisible
+    * @param defaultWidth
+    * @param defaultHeight
+    */
+   public static void showHideControl(final Control control,
+                                      final boolean isVisible,
+                                      final int defaultWidth,
+                                      final int defaultHeight) {
+
+      if (isVisible) {
+
+         if (control.getLayoutData() instanceof final GridData gridData) {
+
+            gridData.widthHint = defaultWidth;
+            gridData.heightHint = defaultHeight;
+
+         } else {
+
+            _gridDataHint_Default.applyTo(control);
+         }
+
+         // allow tab access
+         control.setVisible(true);
+
+      } else {
+
+         if (control.getLayoutData() instanceof final GridData gridData) {
+
+            gridData.widthHint = 0;
+            gridData.heightHint = 0;
+
+         } else {
+
+            _gridDataHint_Zero.applyTo(control);
+         }
+
+         // deny tab access
+         control.setVisible(false);
+      }
+   }
+
+   public static void showSQLException(final SQLException ex) {
+
+      Display.getDefault().asyncExec(() -> {
+
+         SQLException e = ex;
+
+         while (e != null) {
+
+            final String sqlExceptionText = Util.getSQLExceptionText(e);
+
+            // log also the stacktrace
+            StatusUtil.logError(sqlExceptionText + Util.getStackTrace(e));
+
+            MessageDialog.openError(
+                  Display.getDefault().getActiveShell(),
+                  "SQL Error", //$NON-NLS-1$
+                  sqlExceptionText);
+
+            e = e.getNextException();
+         }
+      });
+   }
+
+   /**
+    * Show a status line message for 3 seconds
+    *
+    * @param statusMessage
+    */
+   public static void showStatusLineMessage(final String statusMessage) {
+
+      final IStatusLineManager statusLineMgr = UI.getStatusLineManager();
+
+      if (statusLineMgr != null) {
+
+         statusLineMgr.setMessage(statusMessage);
+
+         final int delay = _prefStore_Common.getInt(ICommonPreferences.APPEARANCE_NOTIFICATION_MESSAGES_DURATION) * 1000;
+         // cleanup message
+         Display.getDefault().timerExec(delay, () -> statusLineMgr.setMessage(null));
+      }
+   }
+
+   /**
     * Show worked values in progress monitor with the format
     *
     * <pre>
@@ -2599,6 +4067,7 @@ public class UI {
     * Converts {@link java.awt.Point} into {@link org.eclipse.swt.graphics.Point}
     *
     * @param awtPoint
+    *
     * @return
     */
    public static Point SWT_Point(final java.awt.Point awtPoint) {
@@ -2610,7 +4079,45 @@ public class UI {
    }
 
    public static String timeStampNano() {
-      return (new Timestamp()).toString();
+      return (new Timestamp()).logWithNano();
+   }
+
+   /**
+    * Transform from 0...255 to {@link #TRANSFORM_OPACITY_MAX}
+    *
+    * @param opacity
+    *
+    * @return
+    */
+   public static int transformOpacity_WhenRestored(final int opacity) {
+
+      int transformedValue = Math.round(opacity / 255.0f * TRANSFORM_OPACITY_MAX);
+
+      // ensure valid opacity
+      if (transformedValue > 255) {
+         transformedValue = 255;
+      }
+
+      return transformedValue;
+   }
+
+   /**
+    * Transform value from {@link #TRANSFORM_OPACITY_MAX} to 0...255
+    *
+    * @param opacity
+    *
+    * @return
+    */
+   public static int transformOpacity_WhenSaved(final int opacity) {
+
+      int transformedValue = Math.round(255.0f / TRANSFORM_OPACITY_MAX * opacity);
+
+      // ensure valid opacity
+      if (transformedValue > 255) {
+         transformedValue = 255;
+      }
+
+      return transformedValue;
    }
 
    public static void updateScrolledContent(final Composite composite) {
@@ -2622,9 +4129,7 @@ public class UI {
 
          // go up until the first scrolled container
 
-         if (parent instanceof ScrolledComposite) {
-
-            final ScrolledComposite scrolledContainer = (ScrolledComposite) parent;
+         if (parent instanceof final ScrolledComposite scrolledContainer) {
 
             /*
              * update layout: both methods must be called because the size can be modified and a
@@ -2723,6 +4228,8 @@ public class UI {
 
          UNIT_IS_PACE_MIN_PER_MILE        = true;
          UNIT_LABEL_PACE                  = UNIT_PACE_MIN_P_MILE;
+         UNIT_LABEL_PACE_SWIMMING         = UNIT_PACE_MIN_P_100YARD;
+
 
       } else {
 
@@ -2730,6 +4237,7 @@ public class UI {
 
          UNIT_IS_PACE_MIN_PER_KILOMETER   = true;
          UNIT_LABEL_PACE                  = UNIT_PACE_MIN_P_KM;
+         UNIT_LABEL_PACE_SWIMMING         = UNIT_PACE_MIN_P_100M;
       }
 
       /*
@@ -2846,7 +4354,10 @@ public class UI {
          UNIT_IS_WEIGHT_POUND             = true;
 
          UNIT_LABEL_WEIGHT                = UNIT_WEIGHT_LBS;
+         UNIT_LABEL_WEIGHT_SMALL          = UNIT_WEIGHT_OZ;
+
          UNIT_VALUE_WEIGHT                = UNIT_POUND;
+
 
       } else {
 
@@ -2855,6 +4366,8 @@ public class UI {
          UNIT_IS_WEIGHT_KILOGRAM         = true;
 
          UNIT_LABEL_WEIGHT                = UNIT_WEIGHT_KG;
+         UNIT_LABEL_WEIGHT_SMALL          = UNIT_WEIGHT_G;
+
          UNIT_VALUE_WEIGHT                = 1;
       }
 
@@ -2958,7 +4471,6 @@ public class UI {
          }
       };
    }
-
 }
 
 //this conversion is not working for all png images, found SWT2Dutil.java

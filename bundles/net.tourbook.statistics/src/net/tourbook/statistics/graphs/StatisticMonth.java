@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -33,6 +33,7 @@ import net.tourbook.chart.IChartInfoProvider;
 import net.tourbook.chart.MinMaxKeeper_YData;
 import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
+import net.tourbook.common.tooltip.ICanHideTooltip;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourPerson;
@@ -155,10 +156,10 @@ public abstract class StatisticMonth extends TourbookStatistic {
     * @param hoveredBar_HorizontalIndex
     *           valueIndex
     */
-   private void createToolTipUI(final IToolTipProvider toolTipProvider,
-                                final Composite parent,
-                                final int serieIndex,
-                                final int valueIndex) {
+   private ICanHideTooltip createToolTipUI(final IToolTipProvider toolTipProvider,
+                                           final Composite parent,
+                                           final int serieIndex,
+                                           final int valueIndex) {
 
       /*
        * Create tooltip title
@@ -171,7 +172,7 @@ public abstract class StatisticMonth extends TourbookStatistic {
             .getDisplayName(TextStyle.FULL, Locale.getDefault());
 
       final String toolTip_Title = String.format(TOOLTIP_TITLE_FORMAT, monthText, monthDate.getYear());
-      final String totalColumnHeaderTitel = monthText;
+      final String totalColumnHeaderTitle = monthText;
 
       final boolean isShowPercentageValues = _prefStore.getBoolean(ITourbookPreferences.STAT_MONTH_TOOLTIP_IS_SHOW_PERCENTAGE_VALUES);
       final boolean isShowSummaryValues = _prefStore.getBoolean(ITourbookPreferences.STAT_MONTH_TOOLTIP_IS_SHOW_SUMMARY_VALUES);
@@ -184,9 +185,11 @@ public abstract class StatisticMonth extends TourbookStatistic {
             valueIndex,
             toolTip_Title,
             null,
-            totalColumnHeaderTitel,
+            totalColumnHeaderTitle,
             isShowSummaryValues,
             isShowPercentageValues);
+
+      return null;
    }
 
    void createXData_Months(final ChartDataModel chartDataModel) {
@@ -324,9 +327,31 @@ public abstract class StatisticMonth extends TourbookStatistic {
       chartDataModel.addYData(_yData_DurationTime);
    }
 
-   void createYData_Elevation(final ChartDataModel chartDataModel) {
+   void createYData_ElevationDown(final ChartDataModel chartDataModel) {
 
-      // elevation
+      // elevation down
+
+      final ChartDataYSerie yData = new ChartDataYSerie(
+            ChartType.BAR,
+            getChartType(_chartType),
+            _statisticData_Month.elevationDown_Low_Resorted,
+            _statisticData_Month.elevationDown_High_Resorted);
+
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_DOWN);
+      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
+      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
+      yData.setShowYSlider(true);
+      yData.setYAxisDirection(false);
+
+      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
+      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Month.typeIds_Resorted, _appTourTypeFilter);
+
+      chartDataModel.addYData(yData);
+   }
+
+   void createYData_ElevationUp(final ChartDataModel chartDataModel) {
+
+      // elevation up
 
       final ChartDataYSerie yData = new ChartDataYSerie(
             ChartType.BAR,
@@ -334,7 +359,7 @@ public abstract class StatisticMonth extends TourbookStatistic {
             _statisticData_Month.elevationUp_Low_Resorted,
             _statisticData_Month.elevationUp_High_Resorted);
 
-      yData.setYTitle(Messages.LABEL_GRAPH_ALTITUDE);
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_UP);
       yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
       yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
       yData.setShowYSlider(true);
@@ -450,7 +475,13 @@ public abstract class StatisticMonth extends TourbookStatistic {
 
       // set tool tip info
       chartModel.setCustomData(ChartDataModel.BAR_TOOLTIP_INFO_PROVIDER,
-            (IChartInfoProvider) StatisticMonth.this::createToolTipUI);
+
+            (IChartInfoProvider) (toolTipProvider, parent, serieIndex, valueIndex) -> createToolTipUI(
+
+                  toolTipProvider,
+                  parent,
+                  serieIndex,
+                  valueIndex));
    }
 
    @Override
@@ -521,7 +552,7 @@ public abstract class StatisticMonth extends TourbookStatistic {
          setGraphLabel_Duration(_yData_DurationTime, durationTime);
       }
 
-      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix());
+      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix(), getLayoutPrefPrefix());
 
       // update title segment config AFTER defaults are set above
       final ChartTitleSegmentConfig ctsConfig = _chart.getChartTitleSegmentConfig();

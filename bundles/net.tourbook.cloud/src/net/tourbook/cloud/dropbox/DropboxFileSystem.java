@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020, 2021 Frédéric Bard
+ * Copyright (C) 2020, 2024 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -54,6 +54,10 @@ public class DropboxFileSystem extends TourbookFileSystem {
 
       super("Dropbox"); //$NON-NLS-1$
 
+      if (isEnabled() == false) {
+         return;
+      }
+
       createDropboxFileSystem();
 
       _prefChangeListenerCommon = event -> {
@@ -100,7 +104,7 @@ public class DropboxFileSystem extends TourbookFileSystem {
    @Override
    protected File copyFileLocally(final String dropboxFilePath) {
 
-      final Path localFilePath = DropboxClient.CopyLocally(dropboxFilePath);
+      final Path localFilePath = DropboxClient.copyLocally(dropboxFilePath);
 
       return localFilePath != null ? localFilePath.toFile() : null;
    }
@@ -173,6 +177,7 @@ public class DropboxFileSystem extends TourbookFileSystem {
     * Get the Dropbox {@link Path} of a given filename
     *
     * @param fileName
+    *
     * @return
     */
    @Override
@@ -189,6 +194,12 @@ public class DropboxFileSystem extends TourbookFileSystem {
    @Override
    public String getPreferencePageId() {
       return PrefPageDropbox.ID;
+   }
+
+   @Override
+   protected boolean isEnabled() {
+
+      return _prefStore.getBoolean(Preferences.DROPBOX_IS_ENABLED);
    }
 
    /**

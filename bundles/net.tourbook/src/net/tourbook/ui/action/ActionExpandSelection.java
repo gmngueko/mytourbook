@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,6 @@ public class ActionExpandSelection extends Action {
       setText(Messages.app_action_expand_selection_tooltip);
 
       setImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.App_ExpandAll));
-      setDisabledImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.App_ExpandAll_Disabled));
    }
 
    /**
@@ -87,6 +86,10 @@ public class ActionExpandSelection extends Action {
       final Tree tree = treeViewer.getTree();
 
       final ITreeSelection selection = (ITreeSelection) treeViewer.getSelection();
+
+//      treeViewer.expandAll(true);
+//
+// TODO customize expand "all"
 
       if (selection.isEmpty()) {
 

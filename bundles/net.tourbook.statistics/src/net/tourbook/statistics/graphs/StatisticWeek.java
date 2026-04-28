@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,7 @@ import net.tourbook.chart.MinMaxKeeper_YData;
 import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
 import net.tourbook.common.time.TimeTools;
+import net.tourbook.common.tooltip.ICanHideTooltip;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourPerson;
@@ -126,7 +127,11 @@ public abstract class StatisticWeek extends TourbookStatistic {
       _chart.setShowZoomActions(true);
       _chart.setToolBarManager(viewSite.getActionBars().getToolBarManager(), false);
 
-      _chartInfoProvider = StatisticWeek.this::createToolTipUI;
+      _chartInfoProvider = (toolTipProvider, parent1, serieIndex, valueIndex) -> createToolTipUI(
+            toolTipProvider,
+            parent1,
+            serieIndex,
+            valueIndex);
    }
 
    /**
@@ -137,10 +142,10 @@ public abstract class StatisticWeek extends TourbookStatistic {
     * @param hoveredBar_HorizontalIndex
     *           valueIndex
     */
-   private void createToolTipUI(final IToolTipProvider toolTipProvider,
-                                final Composite parent,
-                                final int colorIndex,
-                                final int weekIndex) {
+   private ICanHideTooltip createToolTipUI(final IToolTipProvider toolTipProvider,
+                                           final Composite parent,
+                                           final int colorIndex,
+                                           final int weekIndex) {
 
       /*
        * Get calendar week from year/weekindex
@@ -183,7 +188,7 @@ public abstract class StatisticWeek extends TourbookStatistic {
        * Create tooltip title
        */
       final String toolTip_Title = String.format(Messages.Statistic_Week_Tooltip_Title, weekOfYear, weekYear);
-      final String totalColumnHeaderTitel = String.format(Messages.Statistic_Week_Tooltip_ColumnHeaderTitle, weekOfYear);
+      final String totalColumnHeaderTitle = String.format(Messages.Statistic_Week_Tooltip_ColumnHeaderTitle, weekOfYear);
 
       String toolTip_SubTitle;
       if (isShowSummaryValues && isShowPercentageValues) {
@@ -202,9 +207,11 @@ public abstract class StatisticWeek extends TourbookStatistic {
             weekIndex,
             toolTip_Title,
             toolTip_SubTitle,
-            totalColumnHeaderTitel,
+            totalColumnHeaderTitle,
             isShowSummaryValues,
             isShowPercentageValues);
+
+      return null;
    }
 
    private double[] createWeekData() {
@@ -227,28 +234,6 @@ public abstract class StatisticWeek extends TourbookStatistic {
       xData.setChartSegments(createChartSegments());
 
       chartDataModel.setXData(xData);
-   }
-
-   void createYData_Altitude(final ChartDataModel chartDataModel) {
-
-      // altitude
-      final ChartDataYSerie yData = new ChartDataYSerie(
-            ChartType.BAR,
-            getChartType(_chartType),
-            _statisticData_Week.elevationUp_Low,
-            _statisticData_Week.elevationUp_High);
-
-      yData.setYTitle(Messages.LABEL_GRAPH_ALTITUDE);
-      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
-      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
-      yData.setAllValueColors(0);
-      yData.setVisibleMinValue(0);
-      yData.setShowYSlider(true);
-
-      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
-      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Week.typeIds, _appTourTypeFilter);
-
-      chartDataModel.addYData(yData);
    }
 
    /**
@@ -378,6 +363,53 @@ public abstract class StatisticWeek extends TourbookStatistic {
       chartDataModel.addYData(_yData_Duration);
    }
 
+   void createYData_ElevationDown(final ChartDataModel chartDataModel) {
+
+      // elevation down
+
+      final ChartDataYSerie yData = new ChartDataYSerie(
+            ChartType.BAR,
+            getChartType(_chartType),
+            _statisticData_Week.elevationDown_Low,
+            _statisticData_Week.elevationDown_High);
+
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_DOWN);
+      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
+      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
+      yData.setAllValueColors(0);
+      yData.setVisibleMinValue(0);
+      yData.setShowYSlider(true);
+      yData.setYAxisDirection(false);
+
+      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
+      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Week.typeIds, _appTourTypeFilter);
+
+      chartDataModel.addYData(yData);
+   }
+
+   void createYData_ElevationUp(final ChartDataModel chartDataModel) {
+
+      // elevation up
+
+      final ChartDataYSerie yData = new ChartDataYSerie(
+            ChartType.BAR,
+            getChartType(_chartType),
+            _statisticData_Week.elevationUp_Low,
+            _statisticData_Week.elevationUp_High);
+
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_UP);
+      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
+      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
+      yData.setAllValueColors(0);
+      yData.setVisibleMinValue(0);
+      yData.setShowYSlider(true);
+
+      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
+      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Week.typeIds, _appTourTypeFilter);
+
+      chartDataModel.addYData(yData);
+   }
+
    /**
     * Number of tours
     *
@@ -414,7 +446,7 @@ public abstract class StatisticWeek extends TourbookStatistic {
 
    private void getPreferences() {
 
-      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix());
+      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix(), getLayoutPrefPrefix());
    }
 
    @Override

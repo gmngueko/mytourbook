@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2016, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -85,8 +85,11 @@ public class ChartOptions_Grid {
       final Group group = new Group(parent, SWT.NONE);
       group.setText(Messages.Pref_Graphs_Group_Grid);
       GridDataFactory.fillDefaults().grab(true, false).span(2, 1).applyTo(group);
-      GridLayoutFactory.swtDefaults().numColumns(3).applyTo(group);
-//      group.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
+      GridLayoutFactory.swtDefaults()
+            .extendedMargins(0, 0, -8, 0)
+            .numColumns(3)
+            .applyTo(group);
+//      group.setBackground(UI.SYS_COLOR_GREEN);
       {
          {
             Label label = new Label(group, SWT.NONE);
@@ -116,7 +119,6 @@ public class ChartOptions_Grid {
              * spinner: horizontal grid
              */
             _spinnerGridHorizontalDistance = new Spinner(group, SWT.BORDER);
-            _spinnerGridHorizontalDistance.setToolTipText(Messages.Pref_Graphs_Dialog_GridLine_Warning_Message);
             _spinnerGridHorizontalDistance.setMinimum(10);
             _spinnerGridHorizontalDistance.setMaximum(1000);
             _spinnerGridHorizontalDistance.addMouseWheelListener(_defaultMouseWheelListener);
@@ -146,7 +148,6 @@ public class ChartOptions_Grid {
              * spinner: vertical grid
              */
             _spinnerGridVerticalDistance = new Spinner(group, SWT.BORDER);
-            _spinnerGridVerticalDistance.setToolTipText(Messages.Pref_Graphs_Dialog_GridLine_Warning_Message);
             _spinnerGridVerticalDistance.setMinimum(10);
             _spinnerGridVerticalDistance.setMaximum(1000);
             _spinnerGridVerticalDistance.addMouseWheelListener(_defaultMouseWheelListener);
@@ -203,7 +204,8 @@ public class ChartOptions_Grid {
       };
 
       _defaultMouseWheelListener = mouseEvent -> {
-         net.tourbook.common.UI.adjustSpinnerValueOnMouseScroll(mouseEvent);
+
+         net.tourbook.common.UI.adjustSpinnerValueOnMouseScroll(mouseEvent, 10);
          onChangeUI();
       };
    }
@@ -228,38 +230,34 @@ public class ChartOptions_Grid {
 
    public void resetToDefaults() {
 
-      _chkShowGrid_HorizontalLines.setSelection(_prefStore.getDefaultBoolean(ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES));
-      _chkShowGrid_VerticalLines.setSelection(_prefStore.getDefaultBoolean(ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES));
+// SET_FORMATTING_OFF
+
+      _chkShowGrid_HorizontalLines  .setSelection(_prefStore.getDefaultBoolean(ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES));
+      _chkShowGrid_VerticalLines    .setSelection(_prefStore.getDefaultBoolean(ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES));
 
       _spinnerGridHorizontalDistance.setSelection(_prefStore.getDefaultInt(ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE));
-      _spinnerGridVerticalDistance.setSelection(_prefStore.getDefaultInt(ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE));
+      _spinnerGridVerticalDistance  .setSelection(_prefStore.getDefaultInt(ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE));
 
       onChangeUI();
    }
 
    public void restoreState() {
 
-      _chkShowGrid_HorizontalLines.setSelection(
-            Util.getPrefixPrefBoolean(_prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES));
-      _chkShowGrid_VerticalLines.setSelection(
-            Util.getPrefixPrefBoolean(_prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES));
+      _chkShowGrid_HorizontalLines.setSelection(   Util.getPrefixPref_Boolean( _prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES));
+      _chkShowGrid_VerticalLines.setSelection(     Util.getPrefixPref_Boolean( _prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES));
 
-      _spinnerGridHorizontalDistance.setSelection(
-            Util.getPrefixPrefInt(_prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE));
-      _spinnerGridVerticalDistance.setSelection(
-            Util.getPrefixPrefInt(_prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE));
+      _spinnerGridHorizontalDistance.setSelection( Util.getPrefixPref_Int(     _prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE));
+      _spinnerGridVerticalDistance.setSelection(   Util.getPrefixPref_Int(     _prefStore, _prefStorePrefix, ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE));
    }
 
-   public void saveState() {
+   private void saveState() {
 
-      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES,
-            _chkShowGrid_HorizontalLines.getSelection());
-      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES,
-            _chkShowGrid_VerticalLines.getSelection());
+      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_IS_SHOW_HORIZONTAL_GRIDLINES,  _chkShowGrid_HorizontalLines.getSelection());
+      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_IS_SHOW_VERTICAL_GRIDLINES,    _chkShowGrid_VerticalLines.getSelection());
 
-      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE,
-            _spinnerGridHorizontalDistance.getSelection());
-      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE,
-            _spinnerGridVerticalDistance.getSelection());
+      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_HORIZONTAL_DISTANCE,           _spinnerGridHorizontalDistance.getSelection());
+      _prefStore.setValue(_prefStorePrefix + ITourbookPreferences.CHART_GRID_VERTICAL_DISTANCE,             _spinnerGridVerticalDistance.getSelection());
+
+// SET_FORMATTING_ON
    }
 }

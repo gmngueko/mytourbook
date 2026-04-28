@@ -23,6 +23,7 @@ define(
    'dgrid/Keyboard',
    'dgrid/OnDemandList',
    'dgrid/Selection',
+   'dgrid/util/touch',        // fix https://github.com/mytourbook/mytourbook/issues/1562
    'dstore/QueryResults',
    'dstore/RequestMemory',
 
@@ -64,6 +65,7 @@ TooltipDialog, //
 dgridKeyboard, //
 dgridOnDemandList, //
 dgridSelection, //
+touch, //
 dstoreQueryResults, //
 dstoreRequestMemory, //
 
@@ -81,6 +83,11 @@ Messages //
       createUI : function() {
 
          this.createUI_Actions();
+         
+         // force the use of 'touch'
+         var touchIsUsed = touch;
+         var dbltapTime = touchIsUsed.dbltapTime;
+         dbltapTime++;
 
          /**
           * Dialog: Search options
@@ -156,10 +163,10 @@ Messages //
                this._showDialog();
             },
 
-            // show dialog when action button is hovered
-            onMouseOver : function() {
-               this._showDialog();
-            },
+//            // show dialog when action button is hovered
+//            onMouseOver : function() {
+//               this._showDialog();
+//            },
 
             _showDialog : function() {
 
@@ -190,7 +197,7 @@ Messages //
 
             // show dialog when button is pressed with the keyboard
             onClick : function() {
-               app._searchInput.startSearch();
+               app._searchInput.startSearch(true);
             }
 
          }, 'domAction_StartSearch');

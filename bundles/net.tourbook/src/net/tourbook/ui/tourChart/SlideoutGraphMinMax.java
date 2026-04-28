@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -19,6 +19,7 @@ import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
 
 import net.tourbook.Images;
 import net.tourbook.Messages;
+import net.tourbook.OtherMessages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.action.ActionResetToDefaults;
@@ -26,7 +27,6 @@ import net.tourbook.common.action.IActionResetToDefault;
 import net.tourbook.common.color.IColorSelectorListener;
 import net.tourbook.common.font.MTFont;
 import net.tourbook.common.tooltip.ToolbarSlideout;
-import net.tourbook.common.util.Util;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.preferences.PrefPagePeople;
 
@@ -52,12 +52,6 @@ import org.eclipse.swt.widgets.ToolBar;
  */
 public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelectorListener, IActionResetToDefault {
 
-   private static final String    GRAPH_LABEL_CADENCE_UNIT         = net.tourbook.common.Messages.Graph_Label_Cadence_Unit;
-   private static final String    GRAPH_LABEL_HEARTBEAT_UNIT       = net.tourbook.common.Messages.Graph_Label_Heartbeat_Unit;
-   private static final String    GRAPH_LABEL_POWER_UNIT           = net.tourbook.common.Messages.Graph_Label_Power_Unit;
-   private static final String    GRAPH_LABEL_SWIM_STROKES         = net.tourbook.common.Messages.Graph_Label_Swim_Strokes;
-   private static final String    GRAPH_LABEL_SWIM_SWOLF           = net.tourbook.common.Messages.Graph_Label_Swim_Swolf;
-
    private static final int       ALTIMETER_MIN                    = -10000;
    private static final int       ALTIMETER_MAX                    = 10000;
    private static final int       ALTITUDE_MIN                     = -1000;
@@ -71,11 +65,11 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
    private static final int       TEMPERATURE_MIN                  = -100;
    private static final int       TEMPERATURE_MAX                  = 100;
 
-   private static final int       RUN_DYN_STANCE_TIME_MAX          = 10000;                                                  // ms
-   private static final int       RUN_DYN_STANCE_TIME_BALANCED_MAX = 100;                                                    // %
-   private static final int       RUN_DYN_STEP_LENGTH_MAX          = 10000;                                                  // mm
-   private static final int       RUN_DYN_VERTICAL_OSCILLATION_MAX = 1000;                                                   // mm
-   private static final int       RUN_DYN_VERTICAL_RATIO_MAX       = 100;                                                    // %
+   private static final int       RUN_DYN_STANCE_TIME_MAX          = 10000;                        // ms
+   private static final int       RUN_DYN_STANCE_TIME_BALANCED_MAX = 100;                          // %
+   private static final int       RUN_DYN_STEP_LENGTH_MAX          = 10000;                        // mm
+   private static final int       RUN_DYN_VERTICAL_OSCILLATION_MAX = 1000;                         // mm
+   private static final int       RUN_DYN_VERTICAL_RATIO_MAX       = 100;                          // %
 
    private static final int       SWIM_STROKES_MAX                 = 10000;
    private static final int       SWIM_SWOLF_MAX                   = 10000;
@@ -223,31 +217,14 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
    private Image     _imageSpeed;
    private Image     _imageTemperature;
 
-   private Image     _imageAltimeterDisabled;
-   private Image     _imageAltitudeDisabled;
-   private Image     _imageCadenceDisabled;
-   private Image     _imageGradientDisabled;
-   private Image     _imagePaceDisabled;
-   private Image     _imagePowerDisabled;
-   private Image     _imagePulseDisabled;
-   private Image     _imageSpeedDisabled;
-   private Image     _imageTemperatureDisabled;
-
    private Image     _imageRunDyn_StanceTime;
-   private Image     _imageRunDyn_StanceTime_Disabled;
    private Image     _imageRunDyn_StanceTimeBalance;
-   private Image     _imageRunDyn_StanceTimeBalance_Disabled;
    private Image     _imageRunDyn_StepLength;
-   private Image     _imageRunDyn_StepLength_Disabled;
    private Image     _imageRunDyn_VerticalOscillation;
-   private Image     _imageRunDyn_VerticalOscillation_Disabled;
    private Image     _imageRunDyn_VerticalRatio;
-   private Image     _imageRunDyn_VerticalRatio_Disabled;
 
    private Image     _imageSwim_Strokes;
-   private Image     _imageSwim_Strokes_Disabled;
    private Image     _imageSwim_Swolf;
-   private Image     _imageSwim_Swolf_Disabled;
 
    private CLabel    _iconAltimeter;
    private CLabel    _iconAltitude;
@@ -508,7 +485,7 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
       _chkMax_Pulse = createUI_Checkbox(parent);
       _spinnerMax_Pulse = createUI_Spinner(parent, 0, PrefPagePeople.HEART_BEAT_MAX);
 
-      _lblMinMax_Pulse_Unit = createUI_Label(parent, GRAPH_LABEL_HEARTBEAT_UNIT);
+      _lblMinMax_Pulse_Unit = createUI_Label(parent, OtherMessages.GRAPH_LABEL_HEARTBEAT_UNIT);
    }
 
    private void createUI_65_MinMax_Speed(final Composite parent) {
@@ -553,7 +530,7 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
       _chkMax_Cadence = createUI_Checkbox(parent);
       _spinnerMax_Cadence = createUI_Spinner(parent, 0, CADENCE_MAX);
 
-      _lblMinMax_Cadence_Unit = createUI_Label(parent, GRAPH_LABEL_CADENCE_UNIT);
+      _lblMinMax_Cadence_Unit = createUI_Label(parent, OtherMessages.GRAPH_LABEL_CADENCE_UNIT);
    }
 
    private void createUI_68_MinMax_Power(final Composite parent) {
@@ -568,7 +545,7 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
       _chkMax_Power = createUI_Checkbox(parent);
       _spinnerMax_Power = createUI_Spinner(parent, 0, POWER_MAX);
 
-      _lblMinMax_Power_Unit = createUI_Label(parent, GRAPH_LABEL_POWER_UNIT);
+      _lblMinMax_Power_Unit = createUI_Label(parent, OtherMessages.GRAPH_LABEL_POWER_UNIT);
    }
 
    private void createUI_69_MinMax_Temperature(final Composite parent) {
@@ -677,7 +654,7 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
       _chkMax_Swim_Strokes = createUI_Checkbox(parent);
       _spinnerMax_Swim_Strokes = createUI_Spinner(parent, 0, SWIM_STROKES_MAX);
 
-      _lblMinMax_Swim_Strokes_Unit = createUI_Label(parent, GRAPH_LABEL_SWIM_STROKES);
+      _lblMinMax_Swim_Strokes_Unit = createUI_Label(parent, OtherMessages.GRAPH_LABEL_SWIM_STROKES);
    }
 
    private void createUI_86_MinMax_Swim_Swolf(final Composite parent) {
@@ -692,7 +669,7 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
       _chkMax_Swim_Swolf = createUI_Checkbox(parent);
       _spinnerMax_Swim_Swolf = createUI_Spinner(parent, 0, SWIM_SWOLF_MAX);
 
-      _lblMinMax_Swim_Swolf_Unit = createUI_Label(parent, GRAPH_LABEL_SWIM_SWOLF);
+      _lblMinMax_Swim_Swolf_Unit = createUI_Label(parent, OtherMessages.GRAPH_LABEL_SWIM_SWOLF);
    }
 
    private Button createUI_Checkbox(final Composite parent) {
@@ -826,22 +803,22 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
 
 // SET_FORMATTING_OFF
 
-		_iconAltimeter.setImage(						isMinMaxEnabled ? _imageAltimeter 	: _imageAltimeterDisabled);
-		_iconAltitude.setImage(							isMinMaxEnabled ? _imageAltitude 	: _imageAltitudeDisabled);
-		_iconCadence.setImage(							isMinMaxEnabled ? _imageCadence 		: _imageCadenceDisabled);
-		_iconGradient.setImage(							isMinMaxEnabled ? _imageGradient 	: _imageGradientDisabled);
-		_iconPace.setImage(								isMinMaxEnabled ? _imagePace 			: _imagePaceDisabled);
-		_iconPower.setImage(								isMinMaxEnabled ? _imagePower 		: _imagePowerDisabled);
-		_iconPulse.setImage(								isMinMaxEnabled ? _imagePulse 		: _imagePulseDisabled);
-		_iconSpeed.setImage(								isMinMaxEnabled ? _imageSpeed 		: _imageSpeedDisabled);
-		_iconTemperature.setImage(						isMinMaxEnabled ? _imageTemperature 					: _imageTemperatureDisabled);
-		_iconRunDyn_StanceTime.setImage(				isMinMaxEnabled ? _imageRunDyn_StanceTime 			: _imageRunDyn_StanceTime_Disabled);
-		_iconRunDyn_StanceTimeBalance.setImage(	isMinMaxEnabled ? _imageRunDyn_StanceTimeBalance 	: _imageRunDyn_StanceTimeBalance_Disabled);
-		_iconRunDyn_StepLength.setImage(				isMinMaxEnabled ? _imageRunDyn_StepLength 			: _imageRunDyn_StepLength_Disabled);
-		_iconRunDyn_VerticalOscillation.setImage(	isMinMaxEnabled ? _imageRunDyn_VerticalOscillation : _imageRunDyn_VerticalOscillation_Disabled);
-		_iconRunDyn_VerticalRatio.setImage(			isMinMaxEnabled ? _imageRunDyn_VerticalRatio 		: _imageRunDyn_VerticalRatio_Disabled);
-		_iconSwim_Strokes.setImage(					isMinMaxEnabled ? _imageSwim_Strokes					: _imageSwim_Strokes_Disabled);
-		_iconSwim_Swolf.setImage(						isMinMaxEnabled ? _imageSwim_Swolf						: _imageSwim_Swolf_Disabled);
+		_iconAltimeter.setImage(						_imageAltimeter);
+		_iconAltitude.setImage(							_imageAltitude);
+		_iconCadence.setImage(							_imageCadence);
+		_iconGradient.setImage(							_imageGradient);
+		_iconPace.setImage(								_imagePace);
+		_iconPower.setImage(								_imagePower);
+		_iconPulse.setImage(								_imagePulse);
+		_iconSpeed.setImage(								_imageSpeed);
+		_iconTemperature.setImage(						_imageTemperature);
+		_iconRunDyn_StanceTime.setImage(				_imageRunDyn_StanceTime);
+		_iconRunDyn_StanceTimeBalance.setImage(	_imageRunDyn_StanceTimeBalance);
+		_iconRunDyn_StepLength.setImage(				_imageRunDyn_StepLength);
+		_iconRunDyn_VerticalOscillation.setImage(	_imageRunDyn_VerticalOscillation);
+		_iconRunDyn_VerticalRatio.setImage(			_imageRunDyn_VerticalRatio);
+		_iconSwim_Strokes.setImage(					_imageSwim_Strokes);
+		_iconSwim_Swolf.setImage(						_imageSwim_Swolf);
 
 		_spinnerMin_Altimeter.setEnabled(			isMinMaxEnabled && _chkMin_Altimeter.getSelection());
 		_spinnerMax_Altimeter.setEnabled(			isMinMaxEnabled && _chkMax_Altimeter.getSelection());
@@ -890,39 +867,23 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
 // SET_FORMATTING_OFF
 
 		_imageAltimeter 									= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Altimeter).createImage();
-		_imageAltimeterDisabled 						= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Altimeter_Disabled).createImage();
 		_imageAltitude 									= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Elevation).createImage();
-		_imageAltitudeDisabled 							= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Elevation_Disabled).createImage();
 		_imageCadence 										= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Cadence).createImage();
-		_imageCadenceDisabled 							= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Cadence_Disabled).createImage();
 		_imageGradient 									= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Gradient).createImage();
-		_imageGradientDisabled 							= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Gradient_Disabled).createImage();
 		_imagePace 											= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Pace).createImage();
-		_imagePaceDisabled 								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Pace_Disabled).createImage();
 		_imagePower 										= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Power).createImage();
-		_imagePowerDisabled 								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Power_Disabled).createImage();
 		_imagePulse 										= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Heartbeat).createImage();
-		_imagePulseDisabled 								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Heartbeat_Disabled).createImage();
 		_imageSpeed 										= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Speed).createImage();
-		_imageSpeedDisabled 								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Speed_Disabled).createImage();
 		_imageTemperature 								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Temperature).createImage();
-		_imageTemperatureDisabled 						= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Temperature_Disabled).createImage();
 
 		_imageRunDyn_StanceTime							= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StanceTime).createImage();
-		_imageRunDyn_StanceTime_Disabled				= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StanceTime_Disabled).createImage();
 		_imageRunDyn_StanceTimeBalance				= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StanceTimeBalance).createImage();
-		_imageRunDyn_StanceTimeBalance_Disabled	= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StanceTimeBalance_Disabled).createImage();
 		_imageRunDyn_StepLength							= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StepLength).createImage();
-		_imageRunDyn_StepLength_Disabled				= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_StepLength_Disabled).createImage();
 		_imageRunDyn_VerticalOscillation				= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_VerticalOscillation).createImage();
-		_imageRunDyn_VerticalOscillation_Disabled	= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_VerticalOscillation_Disabled).createImage();
 		_imageRunDyn_VerticalRatio						= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_VerticalRatio).createImage();
-		_imageRunDyn_VerticalRatio_Disabled			= TourbookPlugin.getThemedImageDescriptor(Images.Graph_RunDyn_VerticalRatio_Disabled).createImage();
 
 		_imageSwim_Strokes								= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Swim_Strokes).createImage();
-		_imageSwim_Strokes_Disabled					= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Swim_Strokes_Disabled).createImage();
 		_imageSwim_Swolf									= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Swim_Swolf).createImage();
-		_imageSwim_Swolf_Disabled						= TourbookPlugin.getThemedImageDescriptor(Images.Graph_Swim_Swolf_Disabled).createImage();
 
 // SET_FORMATTING_ON
    }
@@ -939,40 +900,24 @@ public class SlideoutGraphMinMax extends ToolbarSlideout implements IColorSelect
    @Override
    public void onDispose() {
 
-      Util.disposeResource(_imageAltimeter);
-      Util.disposeResource(_imageAltimeterDisabled);
-      Util.disposeResource(_imageAltitude);
-      Util.disposeResource(_imageAltitudeDisabled);
-      Util.disposeResource(_imageCadence);
-      Util.disposeResource(_imageCadenceDisabled);
-      Util.disposeResource(_imageGradient);
-      Util.disposeResource(_imageGradientDisabled);
-      Util.disposeResource(_imagePace);
-      Util.disposeResource(_imagePaceDisabled);
-      Util.disposeResource(_imagePower);
-      Util.disposeResource(_imagePowerDisabled);
-      Util.disposeResource(_imagePulse);
-      Util.disposeResource(_imagePulseDisabled);
-      Util.disposeResource(_imageSpeed);
-      Util.disposeResource(_imageSpeedDisabled);
-      Util.disposeResource(_imageTemperature);
-      Util.disposeResource(_imageTemperatureDisabled);
+      UI.disposeResource(_imageAltimeter);
+      UI.disposeResource(_imageAltitude);
+      UI.disposeResource(_imageCadence);
+      UI.disposeResource(_imageGradient);
+      UI.disposeResource(_imagePace);
+      UI.disposeResource(_imagePower);
+      UI.disposeResource(_imagePulse);
+      UI.disposeResource(_imageSpeed);
+      UI.disposeResource(_imageTemperature);
 
-      Util.disposeResource(_imageRunDyn_StanceTime);
-      Util.disposeResource(_imageRunDyn_StanceTime_Disabled);
-      Util.disposeResource(_imageRunDyn_StanceTimeBalance);
-      Util.disposeResource(_imageRunDyn_StanceTimeBalance_Disabled);
-      Util.disposeResource(_imageRunDyn_StepLength);
-      Util.disposeResource(_imageRunDyn_StepLength_Disabled);
-      Util.disposeResource(_imageRunDyn_VerticalOscillation);
-      Util.disposeResource(_imageRunDyn_VerticalOscillation_Disabled);
-      Util.disposeResource(_imageRunDyn_VerticalRatio);
-      Util.disposeResource(_imageRunDyn_VerticalRatio_Disabled);
+      UI.disposeResource(_imageRunDyn_StanceTime);
+      UI.disposeResource(_imageRunDyn_StanceTimeBalance);
+      UI.disposeResource(_imageRunDyn_StepLength);
+      UI.disposeResource(_imageRunDyn_VerticalOscillation);
+      UI.disposeResource(_imageRunDyn_VerticalRatio);
 
-      Util.disposeResource(_imageSwim_Strokes);
-      Util.disposeResource(_imageSwim_Strokes_Disabled);
-      Util.disposeResource(_imageSwim_Swolf);
-      Util.disposeResource(_imageSwim_Swolf_Disabled);
+      UI.disposeResource(_imageSwim_Strokes);
+      UI.disposeResource(_imageSwim_Swolf);
    }
 
    private void prefRestoreDefault(final Button button, final String prefName) {

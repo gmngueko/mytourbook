@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2011  Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@ package net.tourbook.training;
 import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
-import net.tourbook.ui.UI;
+import net.tourbook.common.UI;
 
 import org.eclipse.jface.action.Action;
 
@@ -31,7 +31,7 @@ public class ActionShowAllPulseValues extends Action {
       super(UI.EMPTY_STRING, AS_CHECK_BOX);
 
       setToolTipText(Messages.Training_View_Action_ShowAllPulseValues);
-      setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.Zoom_FitGraph));
+      setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.Zoom_ShowEntireTour));
 
       _trainingView = trainingView;
    }

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -19,8 +19,10 @@ import org.eclipse.osgi.util.NLS;
 
 public class Messages extends NLS {
 
-   private static final String BUNDLE_NAME = "net.tourbook.common.messages";             //$NON-NLS-1$
+   private static final String BUNDLE_NAME = "net.tourbook.common.messages";               //$NON-NLS-1$
 
+   public static String        App_Action_Add_WithConfirm;
+   public static String        App_Action_ApplyAndClose;
    public static String        App_Action_Close_Tooltip;
    public static String        App_Action_New_WithConfirm;
    public static String        App_Action_Remove_NoConfirm;
@@ -28,16 +30,39 @@ public class Messages extends NLS {
    public static String        App_Action_RestoreDefault;
    public static String        App_Action_RestoreDefault_Tooltip;
 
+   public static String        App_Alignment_Center;
+   public static String        App_Alignment_Left;
+   public static String        App_Alignment_Right;
+
    public static String        App_Error_NotSupportedValueFormatter;
+
+   public static String        App_Size_Large_Label;
+   public static String        App_Size_Large_Shortcut;
+   public static String        App_Size_Large_Text;
+   public static String        App_Size_Medium_Label;
+   public static String        App_Size_Medium_Shortcut;
+   public static String        App_Size_Medium_Text;
+   public static String        App_Size_Small_Label;
+   public static String        App_Size_Small_Shortcut;
+   public static String        App_Size_Small_Text;
+   public static String        App_Size_Tiny_Label;
+   public static String        App_Size_Tiny_Shortcut;
+   public static String        App_Size_Tiny_Text;
 
    public static String        App_Theme_BackgroundColor_Light_Tooltip;
    public static String        App_Theme_BackgroundColor_Dark_Tooltip;
+   public static String        App_Theme_BrightTheme;
+   public static String        App_Theme_BrightTheme_Tooltip;
+   public static String        App_Theme_DarkTheme;
+   public static String        App_Theme_DarkTheme_Tooltip;
    public static String        App_Theme_ForegroundColor_Light_Tooltip;
    public static String        App_Theme_ForegroundColor_Dark_Tooltip;
    public static String        App_Theme_ValueFor_Light_Tooltip;
    public static String        App_Theme_ValueFor_Dark_Tooltip;
 
    public static String        Action_App_CustomizeColumnsAndProfiles;
+   public static String        Action_App_RestartApp_Tooltip;
+   public static String        Action_App_ScrambleData_Tooltip;
    public static String        Action_App_SizeAllColumnsToFit;
 
    public static String        Action_ColumnManager_Column_Info;
@@ -46,12 +71,13 @@ public class Messages extends NLS {
    public static String        Action_ColumnManager_FreezeCurrentColumn_Tooltip;
    public static String        Action_ColumnManager_HideCurrentColumn;
    public static String        Action_ColumnManager_Profile_Info;
+   public static String        Action_ColumnManager_SetColumnAlignment;
    public static String        Action_ColumnManager_ShowAllColumns;
    public static String        Action_ColumnManager_ShowDefaultColumns;
    public static String        Action_ColumnManager_UnFreezeAllColumns;
-   public static String        Action_ColumnManager_ValueFormatter_Category;
-   public static String        Action_ColumnManager_ValueFormatter_Detail;
-   public static String        Action_ColumnManager_ValueFormatter_Tour;
+   public static String        Action_ColumnManager_ValueFormatter_Category2;
+   public static String        Action_ColumnManager_ValueFormatter_Detail2;
+   public static String        Action_ColumnManager_ValueFormatter_Tour2;
 
    public static String        Advanced_Menu_AnimationSymbol;
 
@@ -71,6 +97,8 @@ public class Messages extends NLS {
    public static String        Column_Profile_Dialog_Title;
    public static String        Column_Profile_Name_Default;
 
+   public static String        ColumnFactory_Category_Quirky;
+
    public static String        ColumnModifyDialog_Button_default;
    public static String        ColumnModifyDialog_Button_Default2_Tooltip;
    public static String        ColumnModifyDialog_Button_DefaultWidth;
@@ -84,6 +112,7 @@ public class Messages extends NLS {
    public static String        ColumnModifyDialog_Button_Sort_Tooltip;
    public static String        ColumnModifyDialog_Checkbox_ShowFormatAnnotations;
    public static String        ColumnModifyDialog_Checkbox_ShowSortingAnnotations;
+   public static String        ColumnModifyDialog_Column_Alignment;
    public static String        ColumnModifyDialog_Column_Category;
    public static String        ColumnModifyDialog_Column_FormatCategory;
    public static String        ColumnModifyDialog_Column_FormatTour;
@@ -122,12 +151,22 @@ public class Messages extends NLS {
    public static String        Color_Chooser_Link_CustomColors_Tooltip;
    public static String        Color_Chooser_SelectedColor_Tooltip;
 
+   public static String        Direction_ArrowDesign_MiddleFin;
+   public static String        Direction_ArrowDesign_Wings;
+   public static String        Direction_ArrowDesign_Wings_MiddleFin;
+   public static String        Direction_ArrowDesign_Wings_OuterFins;
+   public static String        Direction_ArrowLayout_OuterFins;
+
+   public static String        FirstColumn_AlignmentHack_Label;
+   public static String        FirstColumn_AlignmentHack_Label_Tooltip;
+
    public static String        Font_Editor_Label_FontSize;
 
-   public static String        Format_hh;
-   public static String        Format_hhmm;
-   public static String        Format_hhmmss;
-   public static String        Format_yyyymmdd_hhmmss;
+   public static String        Format_DateTime_yyyymmdd_hhmmss;
+
+   public static String        Format_TimeDuration_hh;
+   public static String        Format_TimeDuration_hhmm;
+   public static String        Format_TimeDuration_hhmmss;
 
    public static String        Graph_Label_Altimeter;
    public static String        Graph_Label_Altitude;
@@ -141,19 +180,25 @@ public class Messages extends NLS {
    public static String        Graph_Label_Distance;
    public static String        Graph_Label_ElevationGain;
    public static String        Graph_Label_Gears;
+   public static String        Graph_Label_GearNumber;
    public static String        Graph_Label_Gradient;
    public static String        Graph_Label_Gradient_Unit;
    public static String        Graph_Label_Heartbeat;
+   public static String        Graph_Label_Heartbeat_Avg;
+   public static String        Graph_Label_Heartbeat_AvgMax;
    public static String        Graph_Label_Heartbeat_Unit;
    public static String        Graph_Label_HeartRateVariability;
    public static String        Graph_Label_HeartRateVariability_Unit;
    public static String        Graph_Label_History;
+   public static String        Graph_Label_HrZone;
    public static String        Graph_Label_Pace;
+   public static String        Graph_Label_Pace_Interval;
    public static String        Graph_Label_Pace_Summarized;
    public static String        Graph_Label_Power;
    public static String        Graph_Label_Power_Unit;
    public static String        Graph_Label_Sensor;
    public static String        Graph_Label_Speed;
+   public static String        Graph_Label_Speed_Interval;
    public static String        Graph_Label_Speed_Summarized;
    public static String        Graph_Label_Temperature;
    public static String        Graph_Label_Time;
@@ -163,12 +208,18 @@ public class Messages extends NLS {
    public static String        Graph_Label_TimeStart;
    public static String        Graph_Label_Tour;
    public static String        Graph_Label_Tour_Compare;
+   public static String        Graph_Label_Tour_Compare_ReferenceTour;
    public static String        Graph_Label_Tour_Compare_Unit;
    public static String        Graph_Label_Geo_Compare_Unit;
    public static String        Graph_Label_Prefix_AthleteData;
+   public static String        Graph_Label_Prefix_Radar;
    public static String        Graph_Label_Prefix_RunningDynamics;
    public static String        Graph_Label_Prefix_Swimming;
    public static String        Graph_Label_Prefix_Training;
+   public static String        Graph_Label_Radar_PassedVehicles;
+   public static String        Graph_Label_Radar_DistanceToVehicle;
+   public static String        Graph_Label_Radar_PassingSpeed_Absolute;
+   public static String        Graph_Label_Radar_PassingSpeed_Relative;
    public static String        Graph_Label_RunDyn_StanceTime;
    public static String        Graph_Label_RunDyn_StanceTimeBalance;
    public static String        Graph_Label_RunDyn_StepLength;
@@ -277,15 +328,24 @@ public class Messages extends NLS {
    public static String        Pref_System_Option_Temperature_Celsius;
    public static String        Pref_System_Option_Temperature_Fahrenheit;
 
-   public static String        Weather_Clounds_Clouds;
-   public static String        Weather_Clounds_Clouny;
-   public static String        Weather_Clounds_IsNotDefined;
-   public static String        Weather_Clounds_Lightning;
-   public static String        Weather_Clounds_Rain;
-   public static String        Weather_Clounds_ScatteredShowers;
-   public static String        Weather_Clounds_SevereWeatherAlert;
-   public static String        Weather_Clounds_Snow;
-   public static String        Weather_Clounds_Sunny;
+   public static String        Weather_AirQuality_0_IsNotDefined;
+   public static String        Weather_AirQuality_1_Good;
+   public static String        Weather_AirQuality_2_Fair;
+   public static String        Weather_AirQuality_3_Moderate;
+   public static String        Weather_AirQuality_4_Poor;
+   public static String        Weather_AirQuality_5_VeryPoor;
+
+   public static String        Weather_Clouds_Clouds;
+   public static String        Weather_Clouds_Cloudy;
+   public static String        Weather_Clouds_Drizzle;
+   public static String        Weather_Clouds_Fog;
+   public static String        Weather_Clouds_IsNotDefined;
+   public static String        Weather_Clouds_Lightning;
+   public static String        Weather_Clouds_Rain;
+   public static String        Weather_Clouds_ScatteredShowers;
+   public static String        Weather_Clouds_SevereWeatherAlert;
+   public static String        Weather_Clouds_Snow;
+   public static String        Weather_Clouds_Sunny;
 
    public static String        Weather_WindDirection_N;
    public static String        Weather_WindDirection_NNE;
@@ -335,11 +395,21 @@ public class Messages extends NLS {
    public static String        legend_color_keep_color;
    public static String        legend_color_lighten_color;
 
+   public static String        Legend_UnitLayout_BrightBackground_NoShadow;
+   public static String        Legend_UnitLayout_BrightBackground_WithShadow;
+   public static String        Legend_UnitLayout_DarkBackground_NoShadow;
+   public static String        Legend_UnitLayout_DarkBackground_WithShadow;
+
    public static String        rgv_vertex_class_cast_exception;
 
    public static String        Slideout_Dialog_Action_DragSlideout_ToolTip;
    public static String        Slideout_Dialog_Action_KeepSlideoutOpen_Tooltip;
    public static String        Slideout_Dialog_Action_PinSlideoutLocation_Tooltip;
+   public static String        Slideout_Dialog_Action_ResetSlideoutLocation_Tooltip;
+
+   public static String        Slideout_Map_TrackColors_Label_Title;
+   public static String        Slideout_Map_TrackColors_Label_VisibleColorProfiles;
+   public static String        Slideout_Map_TrackColors_Label_VisibleColorProfiles_Tooltip;
 
    public static String        Swim_Stroke_Backstroke;
    public static String        Swim_Stroke_Breaststroke;
@@ -358,6 +428,8 @@ public class Messages extends NLS {
    public static String        Value_Formatter_Number_1_2;
    public static String        Value_Formatter_Number_1_3;
    public static String        Value_Formatter_Pace_MM_SS;
+   public static String        Value_Formatter_Time_DD_MM_YYY;
+   public static String        Value_Formatter_Time_DD_MM_YYY__HH_MM_SS;
    public static String        Value_Formatter_Time_HH;
    public static String        Value_Formatter_Time_HH_MM;
    public static String        Value_Formatter_Time_HH_MM_SS;

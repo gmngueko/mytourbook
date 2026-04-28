@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,8 +15,6 @@
  *******************************************************************************/
 package net.tourbook.common.util;
 
-import gnu.trove.list.array.TIntArrayList;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -27,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import net.tourbook.common.Messages;
 import net.tourbook.common.UI;
@@ -43,6 +42,8 @@ import net.tourbook.common.formatter.ValueFormatter_Time_HHMMSS;
 import net.tourbook.common.formatter.ValueFormatter_Time_SSS;
 import net.tourbook.common.tooltip.AdvancedSlideoutShell;
 
+import org.apache.commons.text.StringEscapeUtils;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.layout.AbstractColumnLayout;
@@ -62,20 +63,18 @@ import org.eclipse.nebula.widgets.nattable.freeze.command.UnFreezeGridCommand;
 import org.eclipse.nebula.widgets.nattable.grid.layer.ColumnHeaderLayer;
 import org.eclipse.nebula.widgets.nattable.hideshow.ColumnHideShowLayer;
 import org.eclipse.nebula.widgets.nattable.layer.DataLayer;
-import org.eclipse.nebula.widgets.nattable.layer.ILayer;
-import org.eclipse.nebula.widgets.nattable.painter.IOverlayPainter;
 import org.eclipse.nebula.widgets.nattable.print.command.TurnViewportOffCommand;
 import org.eclipse.nebula.widgets.nattable.print.command.TurnViewportOnCommand;
 import org.eclipse.nebula.widgets.nattable.reorder.ColumnReorderLayer;
 import org.eclipse.nebula.widgets.nattable.resize.command.InitializeAutoResizeColumnsCommand;
 import org.eclipse.nebula.widgets.nattable.util.GCFactory;
+import org.eclipse.nebula.widgets.nattable.util.GUIHelper;
 import org.eclipse.nebula.widgets.nattable.viewport.ViewportLayer;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Composite;
@@ -99,7 +98,7 @@ import org.eclipse.ui.XMLMemento;
 /**
  * Manages the columns for a tree/table-viewer
  * <p>
- * created: 2007-05-27 by Wolfgang Schramm
+ * Created: 2007-05-27 by Wolfgang Schramm
  */
 public class ColumnManager {
 
@@ -116,6 +115,7 @@ public class ColumnManager {
    private static final String ATTR_IS_SHOW_COLUMN_ANNOTATION_SORTING    = "isShowColumnAnnotation_Sorting";    //$NON-NLS-1$
    //
    private static final String ATTR_COLUMN_ID                            = "columnId";                          //$NON-NLS-1$
+   private static final String ATTR_COLUMN_ALIGNMENT                     = "alignment";                         //$NON-NLS-1$
    private static final String ATTR_COLUMN_FORMAT_CATEGORY               = "categoryFormat";                    //$NON-NLS-1$
    private static final String ATTR_COLUMN_FORMAT_DETAIL                 = "detailFormat";                      //$NON-NLS-1$
    private static final String ATTR_NAME                                 = "name";                              //$NON-NLS-1$
@@ -124,15 +124,19 @@ public class ColumnManager {
    private static final String ATTR_VISIBLE_COLUMN_IDS                   = "visibleColumnIds";                  //$NON-NLS-1$
    private static final String ATTR_VISIBLE_COLUMN_IDS_AND_WIDTH         = "visibleColumnIdsAndWidth";          //$NON-NLS-1$
    //
-   static final String         COLUMN_CATEGORY_SEPARATOR                 = "   \u00bb   ";                      //$NON-NLS-1$
+   private static final String COLUMN_CATEGORY_SEPARATOR                 = "   \u00bb   ";                      //$NON-NLS-1$
    static final String         COLUMN_TEXT_SEPARATOR                     = "   \u00B7   ";                      //$NON-NLS-1$
    //
    public static final String  CUSTOM_TRACKS_TIME_SLICES_ID              = "CUSTOM_TRACKS_TIME_SLICES";         //$NON-NLS-1$
 
+   private static final String ALIGNMENT_LEFT                            = "left";                              //$NON-NLS-1$
+   private static final String ALIGNMENT_CENTER                          = "center";                            //$NON-NLS-1$
+   private static final String ALIGNMENT_RIGHT                           = "right";                             //$NON-NLS-1$
+   //
    /**
     * Minimum column width, when the column width is 0, there was a bug that this happened.
     */
-   private static final int    COLUMN_WIDTH_MINIMUM                      = 7;
+   private static final int    COLUMN_WIDTH_MINIMUM                      = 0;
 
    /**
     * There was a case when the column width in a NatTable was 393'515'928 which required a computer
@@ -141,6 +145,12 @@ public class ColumnManager {
     * 1000 would be too small on high-dpi displays
     */
    static final int            COLUMN_WIDTH_MAXIMUM                      = 5_000;
+
+   /**
+    * This is needed to adjust 4k display column widths, otherwise they get smaler and smaler every
+    * time when they are retrieved from the NatTable
+    */
+   private static float        _dpiScaleFactor                           = -1;
 
    /*
     * Value formatter
@@ -218,19 +228,9 @@ public class ColumnManager {
    private IValueFormatter                   _valueFormatter_Time_SSS      = new ValueFormatter_Time_SSS();
 
    {
-      _colMenuItem_Listener = new Listener() {
-         @Override
-         public void handleEvent(final Event event) {
-            onSelectColumnItem(event);
-         }
-      };
+      _colMenuItem_Listener = event -> onSelectColumnItem(event);
 
-      _profileSorter = new Comparator<>() {
-         @Override
-         public int compare(final ColumnProfile colProfile1, final ColumnProfile colProfile2) {
-            return colProfile1.name.compareTo(colProfile2.name);
-         }
-      };
+      _profileSorter = (colProfile1, colProfile2) -> colProfile1.name.compareTo(colProfile2.name);
    }
 
    /**
@@ -259,7 +259,30 @@ public class ColumnManager {
       restoreState(viewState);
    }
 
-   public static IValueFormatter getDefaultDefaultValueFormatter() {
+   static String getAlignmentText(final int alignment) {
+
+      return switch (alignment) {
+
+      case SWT.CENTER -> ALIGNMENT_CENTER;
+      case SWT.TRAIL  -> ALIGNMENT_RIGHT;
+      default         -> ALIGNMENT_LEFT;
+
+      };
+   }
+
+   private static int getAlignmentValue(final String alignment) {
+
+      return switch (alignment) {
+
+      case ALIGNMENT_CENTER -> SWT.CENTER;
+      case ALIGNMENT_RIGHT  -> SWT.TRAIL;
+      default               -> SWT.LEAD;
+
+      };
+   }
+
+   static IValueFormatter getDefaultDefaultValueFormatter() {
+
       return _defaultDefaultValueFormatter;
    }
 
@@ -303,6 +326,30 @@ public class ColumnManager {
 
    }
 
+   void action_SetColumnAlignment(final ColumnDefinition colDef, final int style) {
+
+      /*
+       * Update model
+       */
+      colDef.setStyle(style);
+
+      final String columnId = colDef.getColumnId();
+      for (final ColumnProperties columnProperties : _activeProfile.columnProperties) {
+
+         if (columnId.equals(columnProperties.columnId)) {
+
+            columnProperties.alignment = style;
+
+            break;
+         }
+      }
+
+      /*
+       * Update UI
+       */
+      _tourViewer.recreateViewer(_tourViewer.getViewer());
+   }
+
    void action_SetValueFormatter(final ColumnDefinition colDef,
                                  final ValueFormat valueFormat,
                                  final boolean isDetailFormat) {
@@ -337,7 +384,6 @@ public class ColumnManager {
       /*
        * Update UI
        */
-
       if (isNatTableColumnManager()) {
 
          _natTablePropertiesProvider.getNatTable().redraw();
@@ -383,77 +429,70 @@ public class ColumnManager {
 
          final NatTable natTable = _natTablePropertiesProvider.getNatTable();
 
-         BusyIndicator.showWhile(natTable.getDisplay(), new Runnable() {
-            @Override
-            public void run() {
+         BusyIndicator.showWhile(natTable.getDisplay(), () -> {
 
-               _isDoAResizeForAllColumnsToFit = true;
+            _isDoAResizeForAllColumnsToFit = true;
 
-               natTable.redraw();
-               natTable.update();
-            }
+            natTable.redraw();
+            natTable.update();
          });
 
       } else {
 
          // larger tables/trees are needing more time to resize
 
-         BusyIndicator.showWhile(_columnViewer.getControl().getDisplay(), new Runnable() {
+         BusyIndicator.showWhile(_columnViewer.getControl().getDisplay(), () -> {
 
-            @Override
-            public void run() {
+            boolean isColumn0Visible = true;
 
-               boolean isColumn0Visible = true;
+            if (_tourViewer instanceof final ITourViewer2 tourViewer) {
+               isColumn0Visible = tourViewer.isColumn0Visible(_columnViewer);
+            }
 
-               if (_tourViewer instanceof ITourViewer2) {
-                  isColumn0Visible = ((ITourViewer2) _tourViewer).isColumn0Visible(_columnViewer);
+            if (_columnViewer instanceof final TableViewer tableViewer) {
+
+               final Table table = tableViewer.getTable();
+               if (table.isDisposed()) {
+                  return;
                }
 
-               if (_columnViewer instanceof TableViewer) {
+               table.setRedraw(false);
+               {
+                  final TableColumn[] allColumns = table.getColumns();
 
-                  final Table table = ((TableViewer) _columnViewer).getTable();
-                  if (table.isDisposed()) {
-                     return;
-                  }
+                  for (int columnIndex = 0; columnIndex < allColumns.length; columnIndex++) {
 
-                  table.setRedraw(false);
-                  {
-                     final TableColumn[] allColumns = table.getColumns();
+                     final TableColumn tableColumn = allColumns[columnIndex];
 
-                     for (int columnIndex = 0; columnIndex < allColumns.length; columnIndex++) {
+                     if (columnIndex == 0) {
 
-                        final TableColumn tableColumn = allColumns[columnIndex];
-
-                        if (columnIndex == 0) {
-
-                           if (isColumn0Visible) {
-                              tableColumn.pack();
-                           } else {
-                              tableColumn.setWidth(0);
-                           }
-                        } else {
+                        if (isColumn0Visible) {
                            tableColumn.pack();
+                        } else {
+                           tableColumn.setWidth(0);
                         }
-                     }
-                  }
-                  table.setRedraw(true);
-
-               } else if (_columnViewer instanceof TreeViewer) {
-
-                  final Tree tree = ((TreeViewer) _columnViewer).getTree();
-                  if (tree.isDisposed()) {
-                     return;
-                  }
-
-                  tree.setRedraw(false);
-                  {
-                     final TreeColumn[] allColumns = tree.getColumns();
-                     for (final TreeColumn tableColumn : allColumns) {
+                     } else {
                         tableColumn.pack();
                      }
                   }
-                  tree.setRedraw(true);
                }
+               table.setRedraw(true);
+
+            } else if (_columnViewer instanceof final TreeViewer treeViewer) {
+
+               final Tree tree = treeViewer.getTree();
+               if (tree.isDisposed()) {
+                  return;
+               }
+
+               tree.setRedraw(false);
+               {
+                  final TreeColumn[] allColumns = tree.getColumns();
+                  for (final TreeColumn tableColumn : allColumns) {
+                     tableColumn.pack();
+                  }
+               }
+               tree.setRedraw(true);
             }
          });
       }
@@ -494,12 +533,12 @@ public class ColumnManager {
       viewportLayer.doCommand(new TurnViewportOnCommand());
    }
 
-   public void addColumn(final ColumnDefinition colDef) {
+   void addColumn(final ColumnDefinition colDef) {
       _allDefinedColumnDefinitions.add(colDef);
    }
 
    /**
-    * @return Returns <code>true</code> when at least one column is freezed.
+    * @return Returns <code>true</code> when at least one column is frozen.
     */
    private boolean areColumnFreezed() {
 
@@ -558,7 +597,7 @@ public class ColumnManager {
       _activeProfile.setVisibleColumnIds(columnIds.toArray(new String[columnIds.size()]));
    }
 
-   private String createColumnLabel(final ColumnDefinition colDef, final boolean isWithCategory) {
+   private String createColumnLabel(final ColumnDefinition colDef) {
 
       final String category = colDef.getColumnCategory();
       final String label = colDef.getColumnLabel();
@@ -567,13 +606,13 @@ public class ColumnManager {
       final StringBuilder sb = new StringBuilder();
 
       // add category
-      if (isWithCategory && _isCategoryAvailable && _isShowCategory && category != null) {
+      if (_isCategoryAvailable && _isShowCategory && category != null) {
          sb.append(category);
       }
 
       // add label
       if (label != null) {
-         if (isWithCategory && sb.length() > 0) {
+         if (sb.length() > 0) {
             sb.append(COLUMN_CATEGORY_SEPARATOR);
          }
          sb.append(label);
@@ -598,7 +637,7 @@ public class ColumnManager {
 
          final MenuItem colMenuItem = new MenuItem(contextMenu, SWT.CHECK);
 
-         final String columnLabel = createColumnLabel(colDef, true);
+         final String columnLabel = createColumnLabel(colDef);
 
          colMenuItem.setText(columnLabel);
          colMenuItem.setEnabled(colDef.canModifyVisibility());
@@ -618,26 +657,27 @@ public class ColumnManager {
 
       _columnViewer = columnViewer;
 
-      setupVisibleColDefs(_activeProfile);
+      setupColumns_01_VisibleColDefs(_activeProfile);
+      setupColumns_02_ColumnAlignment(_activeProfile);
 
-      if (columnViewer instanceof TableViewer) {
+      if (columnViewer instanceof final TableViewer tableViewer) {
 
          // create all columns in the table
 
          for (final ColumnDefinition colDef : _activeProfile.visibleColumnDefinitions) {
-            createColumns_Table((TableColumnDefinition) colDef, (TableViewer) columnViewer);
+            createColumns_Table((TableColumnDefinition) colDef, tableViewer);
          }
 
-      } else if (columnViewer instanceof TreeViewer) {
+      } else if (columnViewer instanceof final TreeViewer treeViewer) {
 
          // create all columns in the tree
 
          for (final ColumnDefinition colDef : _activeProfile.visibleColumnDefinitions) {
-            createColumns_Tree((TreeColumnDefinition) colDef, (TreeViewer) columnViewer);
+            createColumns_Tree((TreeColumnDefinition) colDef, treeViewer);
          }
       }
 
-      setupValueFormatter(_activeProfile);
+      setupColumns_03_ValueFormatter(_activeProfile);
    }
 
    /**
@@ -696,8 +736,7 @@ public class ColumnManager {
             }
          }
 
-         if (columnLayoutData instanceof ColumnPixelData) {
-            final ColumnPixelData columnPixelData = (ColumnPixelData) columnLayoutData;
+         if (columnLayoutData instanceof final ColumnPixelData columnPixelData) {
 
             // overwrite the width
             columnPixelData.width = getColumnWidth(colDef);
@@ -797,6 +836,7 @@ public class ColumnManager {
     *
     * @param composite
     * @param defaultContextMenuProvider
+    *
     * @return
     */
    private Menu createHCM_0_Menu(final Composite composite, final Shell shell, final IContextMenuProvider defaultContextMenuProvider) {
@@ -807,15 +847,12 @@ public class ColumnManager {
        * IMPORTANT: Dispose the menus (only the current menu, when menu is set with setMenu() it
        * will be disposed automatically)
        */
-      composite.addListener(SWT.Dispose, new Listener() {
-         @Override
-         public void handleEvent(final Event event) {
+      composite.addListener(SWT.Dispose, event -> {
 
-            headerContextMenu.dispose();
+         headerContextMenu.dispose();
 
-            if (defaultContextMenuProvider != null) {
-               defaultContextMenuProvider.disposeContextMenu();
-            }
+         if (defaultContextMenuProvider != null) {
+            defaultContextMenuProvider.disposeContextMenu();
          }
       });
 
@@ -832,98 +869,94 @@ public class ColumnManager {
       }
 
       final Shell contextMenuShell = natTable.getShell();
-      final Menu headerContextMenu[] = { createHCM_0_Menu(natTable, contextMenuShell, defaultContextMenuProvider) };
+      final Menu[] headerContextMenu = { createHCM_0_Menu(natTable, contextMenuShell, defaultContextMenuProvider) };
 
       // add the context menu to the table
-      _table_MenuDetect_Listener = new Listener() {
+      _table_MenuDetect_Listener = event -> {
 
-         @Override
-         public void handleEvent(final Event event) {
+         final Display display = natTable.getShell().getDisplay();
+         final Point mousePosition = display.map(null, natTable, new Point(event.x, event.y));
 
-            final Display display = natTable.getShell().getDisplay();
-            final Point mousePosition = display.map(null, natTable, new Point(event.x, event.y));
+         final Rectangle clientArea = natTable.getClientArea();
 
-            final Rectangle clientArea = natTable.getClientArea();
+         final int headerHeight = columnHeaderLayer.getHeight();
+         final int headerBottom = clientArea.y + headerHeight;
 
-            final int headerHeight = columnHeaderLayer.getHeight();
-            final int headerBottom = clientArea.y + headerHeight;
+         final boolean isTableHeaderHit = clientArea.y <= mousePosition.y
+               && mousePosition.y < (clientArea.y + headerHeight);
 
-            final boolean isTableHeaderHit = clientArea.y <= mousePosition.y
-                  && mousePosition.y < (clientArea.y + headerHeight);
+         // !!! header column must be set BEFORE the menu is created !!!
+         _headerColumnItem = getHeaderColumn(natTable, mousePosition, isTableHeaderHit, columnHeaderLayer);
 
-            // !!! header column must be set BEFORE the menu is created !!!
-            _headerColumnItem = getHeaderColumn(natTable, mousePosition, isTableHeaderHit, columnHeaderLayer);
+         Menu contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
 
-            Menu contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+         if (contextMenu != null) {
 
-            if (contextMenu != null) {
+            // can be null when context menu is not set
 
-               // can be null when context menu is not set
+            if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != natTable.getShell()) {
 
-               if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != natTable.getShell()) {
+               /**
+                * java.lang.IllegalArgumentException: Widget has the wrong parent
+                * <p>
+                * When a view is minimized, then the context menu is already created
+                * but has the wrong parent when the view is displayed later on.
+                */
 
-                  /**
-                   * java.lang.IllegalArgumentException: Widget has the wrong parent
-                   * <p>
-                   * When a view is minimized, then the context menu is already created
-                   * but has the wrong parent when the view is displayed lateron.
-                   */
+               headerContextMenu[0].dispose();
 
-                  headerContextMenu[0].dispose();
+               headerContextMenu[0] = createHCM_0_Menu(natTable, natTable.getShell(), defaultContextMenuProvider);
 
-                  headerContextMenu[0] = createHCM_0_Menu(natTable, natTable.getShell(), defaultContextMenuProvider);
+               contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
 
-                  contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+               StatusUtil.logInfo("Table header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
 
-                  StatusUtil.logError("Table header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
+            } else if (defaultContextMenuProvider != null
+                  && contextMenu == defaultContextMenuProvider.getContextMenu()
+                  && contextMenu.getShell() != natTable.getShell()) {
 
-               } else if (defaultContextMenuProvider != null
-                     && contextMenu == defaultContextMenuProvider.getContextMenu()
-                     && contextMenu.getShell() != natTable.getShell()) {
+               contextMenu = defaultContextMenuProvider.recreateContextMenu();
 
-                  contextMenu = defaultContextMenuProvider.recreateContextMenu();
-
-                  StatusUtil.logError("Table context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
-               }
+               StatusUtil.logInfo("Table context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
             }
+         }
 
-            try {
+         try {
 
-               natTable.setMenu(contextMenu);
+            natTable.setMenu(contextMenu);
 
-            } catch (final IllegalArgumentException e) {
+         } catch (final IllegalArgumentException e) {
 
-               StatusUtil.showStatus(e);
+            StatusUtil.showStatus(e);
+         }
+
+         /*
+          * Set context menu position to the right border of the column
+          */
+         if (_headerColumnItem != null) {
+
+            int posX = _headerColumnItem.columnRightBorder;
+            int xOffset = 0;
+
+            final ScrollBar hBar = natTable.getHorizontalBar();
+
+            if (hBar != null) {
+               xOffset = hBar.getSelection();
             }
 
             /*
-             * Set context menu position to the right border of the column
+             * It is possible that the context menu is outside of the tree, this occurs when the
+             * column is very wide and horizontal scrolled.
              */
-            if (_headerColumnItem != null) {
-
-               int posX = _headerColumnItem.columnRightBorder;
-               int xOffset = 0;
-
-               final ScrollBar hBar = natTable.getHorizontalBar();
-
-               if (hBar != null) {
-                  xOffset = hBar.getSelection();
-               }
-
-               /*
-                * It is possible that the context menu is outside of the tree, this occures when the
-                * column is very wide and horizonal scrolled.
-                */
-               if (posX - xOffset > clientArea.width) {
-                  posX = xOffset + clientArea.width;
-               }
-
-               final Point displayPosition = natTable.toDisplay(posX, headerBottom);
-
-               // micro adjust position to show exactly on the header lines otherwise it looks ugly
-               event.x = displayPosition.x - 1;
-               event.y = displayPosition.y - 1;
+            if (posX - xOffset > clientArea.width) {
+               posX = xOffset + clientArea.width;
             }
+
+            final Point displayPosition = natTable.toDisplay(posX, headerBottom);
+
+            // micro adjust position to show exactly on the header lines otherwise it looks ugly
+            event.x = displayPosition.x - 1;
+            event.y = displayPosition.y - 1;
          }
       };
 
@@ -935,11 +968,12 @@ public class ColumnManager {
     *
     * @param table
     *           Table control
-    * @param defaultContextMenu
+    * @param defaultContextMenuProvider
     *           Can be <code>null</code> when a default context menu is not available
     */
    public void createHeaderContextMenu(final Table table, final IContextMenuProvider defaultContextMenuProvider) {
-      this.createHeaderContextMenu(table, defaultContextMenuProvider, table.getShell());
+
+      createHeaderContextMenu(table, defaultContextMenuProvider, table.getShell());
    }
 
    /**
@@ -960,96 +994,92 @@ public class ColumnManager {
          table.removeListener(SWT.MenuDetect, _table_MenuDetect_Listener);
       }
 
-      final Menu headerContextMenu[] = { createHCM_0_Menu(table, contextMenuShell, defaultContextMenuProvider) };
+      final Menu[] headerContextMenu = { createHCM_0_Menu(table, contextMenuShell, defaultContextMenuProvider) };
 
       // add the context menu to the table
-      _table_MenuDetect_Listener = new Listener() {
+      _table_MenuDetect_Listener = event -> {
 
-         @Override
-         public void handleEvent(final Event event) {
+         final Display display = table.getShell().getDisplay();
+         final Point mousePosition = display.map(null, table, new Point(event.x, event.y));
 
-            final Display display = table.getShell().getDisplay();
-            final Point mousePosition = display.map(null, table, new Point(event.x, event.y));
+         final Rectangle clientArea = table.getClientArea();
 
-            final Rectangle clientArea = table.getClientArea();
+         final int headerHeight = table.getHeaderHeight();
+         final int headerBottom = clientArea.y + headerHeight;
 
-            final int headerHeight = table.getHeaderHeight();
-            final int headerBottom = clientArea.y + headerHeight;
+         final boolean isTableHeaderHit = clientArea.y <= mousePosition.y
+               && mousePosition.y < (clientArea.y + headerHeight);
 
-            final boolean isTableHeaderHit = clientArea.y <= mousePosition.y
-                  && mousePosition.y < (clientArea.y + headerHeight);
+         _headerColumnItem = getHeaderColumn(table, mousePosition, isTableHeaderHit);
 
-            _headerColumnItem = getHeaderColumn(table, mousePosition, isTableHeaderHit);
+         Menu contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
 
-            Menu contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+         if (contextMenu != null) {
 
-            if (contextMenu != null) {
+            // can be null when context menu is not set
 
-               // can be null when context menu is not set
+            if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != table.getShell()) {
 
-               if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != table.getShell()) {
+               /**
+                * java.lang.IllegalArgumentException: Widget has the wrong parent
+                * <p>
+                * When a view is minimized, then the context menu is already created
+                * but has the wrong parent when the view is displayed later on.
+                */
 
-                  /**
-                   * java.lang.IllegalArgumentException: Widget has the wrong parent
-                   * <p>
-                   * When a view is minimized, then the context menu is already created
-                   * but has the wrong parent when the view is displayed lateron.
-                   */
+               headerContextMenu[0].dispose();
 
-                  headerContextMenu[0].dispose();
+               headerContextMenu[0] = createHCM_0_Menu(table, table.getShell(), defaultContextMenuProvider);
 
-                  headerContextMenu[0] = createHCM_0_Menu(table, table.getShell(), defaultContextMenuProvider);
+               contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
 
-                  contextMenu = getContextMenu(isTableHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+               StatusUtil.logInfo("Table header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
 
-                  StatusUtil.logError("Table header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
+            } else if (defaultContextMenuProvider != null
+                  && contextMenu == defaultContextMenuProvider.getContextMenu()
+                  && contextMenu.getShell() != table.getShell()) {
 
-               } else if (defaultContextMenuProvider != null
-                     && contextMenu == defaultContextMenuProvider.getContextMenu()
-                     && contextMenu.getShell() != table.getShell()) {
+               contextMenu = defaultContextMenuProvider.recreateContextMenu();
 
-                  contextMenu = defaultContextMenuProvider.recreateContextMenu();
-
-                  StatusUtil.logError("Table context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
-               }
+               StatusUtil.logInfo("Table context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
             }
+         }
 
-            try {
+         try {
 
-               table.setMenu(contextMenu);
+            table.setMenu(contextMenu);
 
-            } catch (final IllegalArgumentException e) {
+         } catch (final IllegalArgumentException e) {
 
-               StatusUtil.showStatus(e);
+            StatusUtil.showStatus(e);
+         }
+
+         /*
+          * Set context menu position to the right border of the column
+          */
+         if (_headerColumnItem != null) {
+
+            int posX = _headerColumnItem.columnRightBorder;
+            int xOffset = 0;
+
+            final ScrollBar hBar = table.getHorizontalBar();
+
+            if (hBar != null) {
+               xOffset = hBar.getSelection();
             }
 
             /*
-             * Set context menu position to the right border of the column
+             * It is possible that the context menu is outside of the tree, this occurs when the
+             * column is very wide and horizontal scrolled.
              */
-            if (_headerColumnItem != null) {
-
-               int posX = _headerColumnItem.columnRightBorder;
-               int xOffset = 0;
-
-               final ScrollBar hBar = table.getHorizontalBar();
-
-               if (hBar != null) {
-                  xOffset = hBar.getSelection();
-               }
-
-               /*
-                * It is possible that the context menu is outside of the tree, this occures when the
-                * column is very wide and horizonal scrolled.
-                */
-               if (posX - xOffset > clientArea.width) {
-                  posX = xOffset + clientArea.width;
-               }
-
-               final Point displayPosition = table.toDisplay(posX, headerBottom);
-
-               event.x = displayPosition.x - 1;
-               event.y = displayPosition.y - 2;
+            if (posX - xOffset > clientArea.width) {
+               posX = xOffset + clientArea.width;
             }
+
+            final Point displayPosition = table.toDisplay(posX, headerBottom);
+
+            event.x = displayPosition.x - 1;
+            event.y = displayPosition.y - 2;
          }
       };
 
@@ -1087,106 +1117,103 @@ public class ColumnManager {
          tree.removeListener(SWT.MenuDetect, _tree_MenuDetect_Listener);
       }
 
-      final Menu headerContextMenu[] = { createHCM_0_Menu(tree, contextMenuShell, defaultContextMenuProvider) };
+      final Menu[] headerContextMenu = { createHCM_0_Menu(tree, contextMenuShell, defaultContextMenuProvider) };
 
       // add the context menu to the tree viewer
-      _tree_MenuDetect_Listener = new Listener() {
-         @Override
-         public void handleEvent(final Event event) {
+      _tree_MenuDetect_Listener = event -> {
 
-            final Decorations shell = tree.getShell();
-            final Display display = shell.getDisplay();
+         final Decorations shell = tree.getShell();
+         final Display display = shell.getDisplay();
 
-            final Point mousePosition = display.map(null, tree, new Point(event.x, event.y));
+         final Point mousePosition = display.map(null, tree, new Point(event.x, event.y));
 
-            final Rectangle clientArea = tree.getClientArea();
+         final Rectangle clientArea = tree.getClientArea();
 
-            final int headerHeight = tree.getHeaderHeight();
-            final int headerBottom = clientArea.y + headerHeight;
+         final int headerHeight = tree.getHeaderHeight();
+         final int headerBottom = clientArea.y + headerHeight;
 
-            final boolean isTreeHeaderHit = clientArea.y <= mousePosition.y && mousePosition.y < headerBottom;
+         final boolean isTreeHeaderHit = clientArea.y <= mousePosition.y && mousePosition.y < headerBottom;
 
-            _headerColumnItem = getHeaderColumn(tree, mousePosition, isTreeHeaderHit);
+         _headerColumnItem = getHeaderColumn(tree, mousePosition, isTreeHeaderHit);
 
-            Menu contextMenu = getContextMenu(isTreeHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+         Menu contextMenu = getContextMenu(isTreeHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
 
-            if (contextMenu != null) {
+         if (contextMenu != null) {
 
-               // can be null when context menu is not set
+            // can be null when context menu is not set
 
-               if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != tree.getShell()) {
+            if (contextMenu == headerContextMenu[0] && contextMenu.getShell() != tree.getShell()) {
 
-                  /**
-                   * java.lang.IllegalArgumentException: Widget has the wrong parent
-                   * <p>
-                   * When a view is minimized, then the context menu is already created
-                   * but has the wrong parent when the view is displayed lateron.
-                   */
-
-                  headerContextMenu[0].dispose();
-
-                  headerContextMenu[0] = createHCM_0_Menu(tree, tree.getShell(), defaultContextMenuProvider);
-
-                  contextMenu = getContextMenu(isTreeHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
-
-                  StatusUtil.logError("Tree header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
-
-               } else if (defaultContextMenuProvider != null
-                     && contextMenu == defaultContextMenuProvider.getContextMenu()
-                     && contextMenu.getShell() != tree.getShell()) {
-
-                  contextMenu = defaultContextMenuProvider.recreateContextMenu();
-
-                  StatusUtil.logError("Tree context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
-               }
-            }
-
-            try {
-
-               tree.setMenu(contextMenu);
-
-            } catch (final IllegalArgumentException e) {
-
-               // This occured: Widget has the wrong parent
-
-               // after some debugging, could not find the reason, this view is very similar to the tourbook view
-
-               /*
-                * The problem can occure when tours are compared with 2 different perspectives (ref
-                * tour and compare result), the system measurement is changed and the context menu
-                * for the ref tours will be opened
+               /**
+                * java.lang.IllegalArgumentException: Widget has the wrong parent
+                * <p>
+                * When a view is minimized, then the context menu is already created
+                * but has the wrong parent when the view is displayed later on.
                 */
 
-               StatusUtil.showStatus(e);
+               headerContextMenu[0].dispose();
+
+               headerContextMenu[0] = createHCM_0_Menu(tree, tree.getShell(), defaultContextMenuProvider);
+
+               contextMenu = getContextMenu(isTreeHeaderHit, headerContextMenu[0], defaultContextMenuProvider);
+
+               StatusUtil.logInfo("Tree header context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
+
+            } else if (defaultContextMenuProvider != null
+                  && contextMenu == defaultContextMenuProvider.getContextMenu()
+                  && contextMenu.getShell() != tree.getShell()) {
+
+               contextMenu = defaultContextMenuProvider.recreateContextMenu();
+
+               StatusUtil.logInfo("Tree context menu has had the wrong parent and is recreated."); //$NON-NLS-1$
+            }
+         }
+
+         try {
+
+            tree.setMenu(contextMenu);
+
+         } catch (final IllegalArgumentException e) {
+
+            // This occurred: Widget has the wrong parent
+
+            // after some debugging, could not find the reason, this view is very similar to the tourbook view
+
+            /*
+             * The problem can occur when tours are compared with 2 different perspectives (ref
+             * tour and compare result), the system measurement is changed and the context menu
+             * for the ref tours will be opened
+             */
+
+            StatusUtil.showStatus(e);
+         }
+
+         /*
+          * Set context menu position to the right border of the column
+          */
+         if (_headerColumnItem != null) {
+
+            int posX = _headerColumnItem.columnRightBorder;
+            int xOffset = 0;
+
+            final ScrollBar hBar = tree.getHorizontalBar();
+
+            if (hBar != null) {
+               xOffset = hBar.getSelection();
             }
 
             /*
-             * Set context menu position to the right border of the column
+             * It is possible that the context menu is outside of the tree, this occurs when the
+             * column is very wide and horizontal scrolled.
              */
-            if (_headerColumnItem != null) {
-
-               int posX = _headerColumnItem.columnRightBorder;
-               int xOffset = 0;
-
-               final ScrollBar hBar = tree.getHorizontalBar();
-
-               if (hBar != null) {
-                  xOffset = hBar.getSelection();
-               }
-
-               /*
-                * It is possible that the context menu is outside of the tree, this occures when the
-                * column is very wide and horizonal scrolled.
-                */
-               if (posX - xOffset > clientArea.width) {
-                  posX = xOffset + clientArea.width;
-               }
-
-               final Point displayPosition = tree.toDisplay(posX, headerBottom);
-
-               event.x = displayPosition.x - 1;
-               event.y = displayPosition.y - 2;
+            if (posX - xOffset > clientArea.width) {
+               posX = xOffset + clientArea.width;
             }
+
+            final Point displayPosition = tree.toDisplay(posX, headerBottom);
+
+            event.x = displayPosition.x - 1;
+            event.y = displayPosition.y - 2;
          }
       };
 
@@ -1222,7 +1249,7 @@ public class ColumnManager {
 
       final ColumnDefinition colDef = getColDef_FromHeaderColumn();
       if (colDef == null) {
-         // this should not occure
+         // this should not occur
          return;
       }
 
@@ -1232,7 +1259,12 @@ public class ColumnManager {
       final ValueFormat[] availableFormatter = colDef.getAvailableFormatter();
       final boolean isValueFormatterAvailable = availableFormatter != null && availableFormatter.length > 0;
 
-      if (!isValueFormatterAvailable && !canColumnBeSetToHidden) {
+      final int columnStyle = colDef.getColumnStyle();
+
+      if (isValueFormatterAvailable == false
+            && canColumnBeSetToHidden == false
+            && columnStyle == 0) {
+
          // nothing can be done
          return;
       }
@@ -1243,13 +1275,12 @@ public class ColumnManager {
           */
 
          // create menu item text
-         final String menuItemText = NLS.bind(Messages.Action_ColumnManager_ColumnActions_Info, createColumnLabel(colDef, false));
+         final String menuItemText = NLS.bind(Messages.Action_ColumnManager_ColumnActions_Info, createColumnLabel(colDef));
 
          final MenuItem menuItem = new MenuItem(contextMenu, SWT.PUSH);
          menuItem.setText(menuItemText);
          menuItem.setEnabled(false);
       }
-
       {
          /*
           * Action: Hide current column
@@ -1258,12 +1289,7 @@ public class ColumnManager {
 
             final MenuItem menuItem = new MenuItem(contextMenu, SWT.PUSH);
             menuItem.setText(Messages.Action_ColumnManager_HideCurrentColumn);
-            menuItem.addListener(SWT.Selection, new Listener() {
-               @Override
-               public void handleEvent(final Event event) {
-                  setVisibleColumnIds_Column_Hide(colDef);
-               }
-            });
+            menuItem.addListener(SWT.Selection, event -> setVisibleColumnIds_Column_Hide(colDef));
 
             if (colDef.canModifyVisibility() == false) {
 
@@ -1301,7 +1327,6 @@ public class ColumnManager {
             menuItem.setEnabled(areColumnFreezed());
          }
       }
-
       {
          /*
           * Actions: Value Formatter
@@ -1309,6 +1334,15 @@ public class ColumnManager {
          if (isValueFormatterAvailable) {
 
             new ColumnFormatSubMenu(contextMenu, colDef, this);
+         }
+      }
+      {
+         /*
+          * Actions: Column alignment
+          */
+         if (columnStyle != 0) {
+
+            new ColumnAlignmentSubMenu(contextMenu, colDef, this);
          }
       }
 
@@ -1323,12 +1357,7 @@ public class ColumnManager {
           */
          final MenuItem fitMenuItem = new MenuItem(contextMenu, SWT.PUSH);
          fitMenuItem.setText(Messages.Action_App_SizeAllColumnsToFit);
-         fitMenuItem.addListener(SWT.Selection, new Listener() {
-            @Override
-            public void handleEvent(final Event event) {
-               action_SizeAllColumnToFit();
-            }
-         });
+         fitMenuItem.addListener(SWT.Selection, event -> action_SizeAllColumnToFit());
       }
 
       {
@@ -1337,12 +1366,7 @@ public class ColumnManager {
           */
          final MenuItem allColumnsMenuItem = new MenuItem(contextMenu, SWT.PUSH);
          allColumnsMenuItem.setText(Messages.Action_ColumnManager_ShowAllColumns);
-         allColumnsMenuItem.addListener(SWT.Selection, new Listener() {
-            @Override
-            public void handleEvent(final Event event) {
-               action_ShowAllColumns();
-            }
-         });
+         allColumnsMenuItem.addListener(SWT.Selection, event -> action_ShowAllColumns());
       }
 
       {
@@ -1351,12 +1375,7 @@ public class ColumnManager {
           */
          final MenuItem defaultColumnsMenuItem = new MenuItem(contextMenu, SWT.PUSH);
          defaultColumnsMenuItem.setText(Messages.Action_ColumnManager_ShowDefaultColumns);
-         defaultColumnsMenuItem.addListener(SWT.Selection, new Listener() {
-            @Override
-            public void handleEvent(final Event event) {
-               action_ShowDefaultColumns();
-            }
-         });
+         defaultColumnsMenuItem.addListener(SWT.Selection, event -> action_ShowDefaultColumns());
       }
 
       {
@@ -1366,12 +1385,7 @@ public class ColumnManager {
          final MenuItem configMenuItem = new MenuItem(contextMenu, SWT.PUSH);
          configMenuItem.setText(Messages.Action_App_CustomizeColumnsAndProfiles);
          configMenuItem.setImage(UI.IMAGE_REGISTRY.get(UI.IMAGE_CONFIGURE_COLUMNS));
-         configMenuItem.addListener(SWT.Selection, new Listener() {
-            @Override
-            public void handleEvent(final Event event) {
-               openColumnDialog();
-            }
-         });
+         configMenuItem.addListener(SWT.Selection, event -> openColumnDialog());
       }
 
       createMenuSeparator(contextMenu);
@@ -1400,6 +1414,7 @@ public class ColumnManager {
          final boolean isChecked = columnProfile == _activeProfile;
 
          String menuText = columnProfile.name
+
                + COLUMN_TEXT_SEPARATOR
 
                // show number of visible columns
@@ -1490,6 +1505,7 @@ public class ColumnManager {
    /**
     * @param columnId
     *           column id
+    *
     * @return Returns the column definition for the column id, or <code>null</code> when the column
     *         for the column id is not available
     */
@@ -1508,6 +1524,7 @@ public class ColumnManager {
    /**
     * @param createIndex
     *           column create id
+    *
     * @return Returns the column definition for the column create index, or <code>null</code> when
     *         the column is not available
     */
@@ -1532,21 +1549,17 @@ public class ColumnManager {
 
       final Object columnItem = _headerColumnItem.columnItem;
 
-      if (columnItem instanceof TableColumn) {
-
-         final TableColumn tableColumn = (TableColumn) columnItem;
+      if (columnItem instanceof final TableColumn tableColumn) {
 
          colDef = (ColumnDefinition) tableColumn.getData();
 
-      } else if (columnItem instanceof TreeColumn) {
-
-         final TreeColumn treeColumn = (TreeColumn) columnItem;
+      } else if (columnItem instanceof final TreeColumn treeColumn) {
 
          colDef = (ColumnDefinition) treeColumn.getData();
 
-      } else if (columnItem instanceof ColumnDefinition) {
+      } else if (columnItem instanceof final ColumnDefinition columnDefinition) {
 
-         colDef = (ColumnDefinition) columnItem;
+         colDef = columnDefinition;
       }
 
       return colDef;
@@ -1588,17 +1601,16 @@ public class ColumnManager {
             final ColumnDefinition colDef = getColDef_ByCreateIndex(colIndexByPos);
             if (colDef != null) {
 
-               final int colWidthByPos = dataLayer.getColumnWidthByPosition(reorderColIndex);
-
+               final int columnWidth = getColumnWidth_NatTable(dataLayer, reorderColIndex);
                final String columnId = colDef.getColumnId();
 
-               setColumnIdAndWidth(allColumnIdsAndWidth, columnId, colWidthByPos);
+               setColumnIdAndWidth(allColumnIdsAndWidth, columnId, columnWidth);
             }
          }
 
-      } else if (_columnViewer instanceof TableViewer) {
+      } else if (_columnViewer instanceof final TableViewer tableViewer) {
 
-         final Table table = ((TableViewer) _columnViewer).getTable();
+         final Table table = tableViewer.getTable();
          if (table.isDisposed()) {
             return null;
          }
@@ -1611,9 +1623,9 @@ public class ColumnManager {
             setColumnIdAndWidth(allColumnIdsAndWidth, columnId, columnWidth);
          }
 
-      } else if (_columnViewer instanceof TreeViewer) {
+      } else if (_columnViewer instanceof final TreeViewer treeViewer) {
 
-         final Tree tree = ((TreeViewer) _columnViewer).getTree();
+         final Tree tree = treeViewer.getTree();
          if (tree.isDisposed()) {
             return null;
          }
@@ -1682,17 +1694,17 @@ public class ColumnManager {
 
       } else {
 
-         if (_columnViewer instanceof TableViewer) {
+         if (_columnViewer instanceof final TableViewer tableViewer) {
 
-            final Table table = ((TableViewer) _columnViewer).getTable();
+            final Table table = tableViewer.getTable();
             if (table.isDisposed()) {
                return null;
             }
             columnOrder = table.getColumnOrder();
 
-         } else if (_columnViewer instanceof TreeViewer) {
+         } else if (_columnViewer instanceof final TreeViewer treeViewer) {
 
-            final Tree tree = ((TreeViewer) _columnViewer).getTree();
+            final Tree tree = treeViewer.getTree();
             if (tree.isDisposed()) {
                return null;
             }
@@ -1765,13 +1777,35 @@ public class ColumnManager {
       return columnWidth;
    }
 
+   private int getColumnWidth_NatTable(final DataLayer dataLayer, final int createdColumnIndex) {
+
+      int colWidthByPos = dataLayer.getColumnWidthByPosition(createdColumnIndex);
+
+      if (UI.IS_4K_DISPLAY) {
+
+         if (_dpiScaleFactor == -1) {
+
+            final int displayDpi = Display.getDefault().getDPI().x;
+
+            _dpiScaleFactor = GUIHelper.getDpiFactor(displayDpi);
+         }
+
+         colWidthByPos = (int) (colWidthByPos / _dpiScaleFactor);
+      }
+
+      return colWidthByPos;
+   }
+
    /**
     * @param isHeaderHit
     * @param headerContextMenu
     * @param defaultContextMenuProvider
+    *
     * @return
     */
-   private Menu getContextMenu(final boolean isHeaderHit, final Menu headerContextMenu, final IContextMenuProvider defaultContextMenuProvider) {
+   private Menu getContextMenu(final boolean isHeaderHit,
+                               final Menu headerContextMenu,
+                               final IContextMenuProvider defaultContextMenuProvider) {
 
       Menu contextMenu;
 
@@ -1801,6 +1835,7 @@ public class ColumnManager {
     * @param mousePosition
     * @param isTableHeaderHit
     * @param columnHeaderLayer
+    *
     * @return Returns a column item or <code>null</code> when the header is not hit or the columns
     *         is not found
     */
@@ -1921,7 +1956,7 @@ public class ColumnManager {
 
          final int numColumns = dataLayer.getColumnCount();
 
-         final TIntArrayList allOrderedColumns = new TIntArrayList();
+         final IntArrayList allOrderedColumns = new IntArrayList();
 
          for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
 
@@ -1948,17 +1983,17 @@ public class ColumnManager {
 
       } else {
 
-         if (_columnViewer instanceof TableViewer) {
+         if (_columnViewer instanceof final TableViewer tableViewer) {
 
-            final Table table = ((TableViewer) _columnViewer).getTable();
+            final Table table = tableViewer.getTable();
             if (table.isDisposed()) {
                return null;
             }
             columnOrder = table.getColumnOrder();
 
-         } else if (_columnViewer instanceof TreeViewer) {
+         } else if (_columnViewer instanceof final TreeViewer treeViewer) {
 
-            final Tree tree = ((TreeViewer) _columnViewer).getTree();
+            final Tree tree = treeViewer.getTree();
             if (tree.isDisposed()) {
                return null;
             }
@@ -2024,6 +2059,7 @@ public class ColumnManager {
     * Get a value formatter for a {@link ValueFormat}.
     *
     * @param valueFormat_Category
+    *
     * @return Returns the {@link IValueFormatter} or <code>null</code> when not available.
     */
    IValueFormatter getValueFormatter(final ValueFormat valueFormat) {
@@ -2097,9 +2133,7 @@ public class ColumnManager {
 
    private void onSelectColumnItem(final Event event) {
 
-      if (event.widget instanceof MenuItem) {
-
-         final MenuItem menuItem = (MenuItem) event.widget;
+      if (event.widget instanceof final MenuItem menuItem) {
 
          final Object data = menuItem.getData();
 
@@ -2107,9 +2141,7 @@ public class ColumnManager {
 
             updateColumns(menuItem.getParent().getItems());
 
-         } else if (data instanceof ColumnProfile) {
-
-            final ColumnProfile profile = (ColumnProfile) data;
+         } else if (data instanceof final ColumnProfile profile) {
 
             updateColumns(profile);
          }
@@ -2129,6 +2161,7 @@ public class ColumnManager {
             _allProfiles);
 
       if (_slideoutShell != null) {
+
          // prevent that the column dialog will freeze the app
          _slideoutShell.setIsAnotherDialogOpened(true);
       }
@@ -2136,6 +2169,7 @@ public class ColumnManager {
       columnDialog.open();
 
       if (_slideoutShell != null) {
+
          _slideoutShell.setIsAnotherDialogOpened(false);
       }
    }
@@ -2170,6 +2204,15 @@ public class ColumnManager {
 
             final Reader reader = new StringReader(stateValue);
             final XMLMemento xmlMemento = XMLMemento.createReadRoot(reader);
+
+            boolean isDumpXML = false;
+            isDumpXML = false;
+//          isDumpXML = true;
+            if (isDumpXML) {
+               System.out.println();
+               System.out.println(StringEscapeUtils.unescapeHtml4(xmlMemento.toString()));
+               System.out.println();
+            }
 
             // get category column state
             final Boolean xmlIsShowCategory = xmlMemento.getBoolean(ATTR_IS_SHOW_CATEGORY);
@@ -2248,7 +2291,7 @@ public class ColumnManager {
                   }
 
                   /*
-                   * Column properties
+                   * Column properties, all properties are optional
                    */
                   final ArrayList<ColumnProperties> allColumnProperties = new ArrayList<>();
                   currentProfile.columnProperties = allColumnProperties;
@@ -2261,35 +2304,39 @@ public class ColumnManager {
 
                         final String columnId = xmlColumn.getString(ATTR_COLUMN_ID);
 
+                        if (columnId == null ||
+                              columnId.startsWith(CUSTOM_TRACKS_TIME_SLICES_ID)) {
+                           continue;
+                        }
+
+                        final ColumnProperties columnProperties = new ColumnProperties();
+
+                        columnProperties.columnId = columnId;
+
                         final Enum<ValueFormat> valueFormat_Category = Util.getXmlEnum(
                               xmlColumn,
                               ATTR_COLUMN_FORMAT_CATEGORY,
                               ValueFormat.DUMMY_VALUE);
-
                         final Enum<ValueFormat> valueFormat_Detail = Util.getXmlEnum(
                               xmlColumn,
                               ATTR_COLUMN_FORMAT_DETAIL,
                               ValueFormat.DUMMY_VALUE);
 
-                        if (columnId != null //
-                              && !columnId.startsWith(CUSTOM_TRACKS_TIME_SLICES_ID)
-                              && (valueFormat_Category != ValueFormat.DUMMY_VALUE //
-                                    || valueFormat_Detail != ValueFormat.DUMMY_VALUE)) {
+                        final String alignment = Util.getXmlString(xmlColumn, ATTR_COLUMN_ALIGNMENT, null);
 
-                           final ColumnProperties columnProperties = new ColumnProperties();
-
-                           columnProperties.columnId = columnId;
-
-                           if (valueFormat_Category != ValueFormat.DUMMY_VALUE) {
-                              columnProperties.valueFormat_Category = (ValueFormat) valueFormat_Category;
-                           }
-
-                           if (valueFormat_Detail != ValueFormat.DUMMY_VALUE) {
-                              columnProperties.valueFormat_Detail = (ValueFormat) valueFormat_Detail;
-                           }
-
-                           allColumnProperties.add(columnProperties);
+                        if (valueFormat_Category != ValueFormat.DUMMY_VALUE) {
+                           columnProperties.valueFormat_Category = (ValueFormat) valueFormat_Category;
                         }
+
+                        if (valueFormat_Detail != ValueFormat.DUMMY_VALUE) {
+                           columnProperties.valueFormat_Detail = (ValueFormat) valueFormat_Detail;
+                        }
+
+                        if (alignment != null) {
+                           columnProperties.alignment = getAlignmentValue(alignment);
+                        }
+
+                        allColumnProperties.add(columnProperties);
                      }
                   }
 
@@ -2340,7 +2387,7 @@ public class ColumnManager {
          _activeProfile.setVisibleColumnIds(visibleColumnIds);
       }
 
-      // save columns width and keep it for internal use
+      // save columns width
       final String[] visibleColumnIdsAndWidth = getColumns_FromViewer_IdAndWidth();
       if (visibleColumnIdsAndWidth != null) {
          _activeProfile.visibleColumnIdsAndWidth = visibleColumnIdsAndWidth;
@@ -2367,6 +2414,17 @@ public class ColumnManager {
       final ArrayList<String> allOrderedColumnIds = new ArrayList<>();
       final ArrayList<String> allColumnIdsAndWidth = new ArrayList<>();
 
+//// TODO
+//      System.out.println("All columns in _allDefinedColumnDefinitions, number of entries: " + _allDefinedColumnDefinitions.size()); //$NON-NLS-1$
+//      System.out.println();
+//
+//      for (final ColumnDefinition colDefLog : _allDefinedColumnDefinitions) {
+//         System.out.println("  \"" + colDefLog.getColumnId() + UI.SYMBOL_QUOTATION_MARK); //$NON-NLS-1$ //$NON-NLS-2$
+//      }
+//
+//      System.out.println();
+//      System.out.println();
+
       for (int uiColumnPos = 0; uiColumnPos < numColumns; uiColumnPos++) {
 
          /*
@@ -2388,15 +2446,14 @@ public class ColumnManager {
          final ColumnDefinition colDef = getColDef_ByCreateIndex(colIndexByPos);
          if (colDef != null) {
 
-            final int colWidthByPos = dataLayer.getColumnWidthByPosition(createdColumnIndex);
-
+            final int columnWidth = getColumnWidth_NatTable(dataLayer, createdColumnIndex);
             final String columnId = colDef.getColumnId();
 
             if (columnId.startsWith(CUSTOM_TRACKS_TIME_SLICES_ID)) {
                continue;
             }
             allOrderedColumnIds.add(columnId);
-            setColumnIdAndWidth(allColumnIdsAndWidth, columnId, colWidthByPos);
+            setColumnIdAndWidth(allColumnIdsAndWidth, columnId, columnWidth);
          }
       }
 
@@ -2517,14 +2574,37 @@ public class ColumnManager {
                if (columnFormat_Detail != null) {
                   xmlColumn.putString(ATTR_COLUMN_FORMAT_DETAIL, columnFormat_Detail.name());
                }
+
+               final int alignment = columnProperty.alignment;
+               if (alignment != 0) {
+                  xmlColumn.putString(ATTR_COLUMN_ALIGNMENT, getAlignmentText(alignment));
+               }
             }
          }
       }
    }
 
+   /**
+    * @param columnIdsAndWidth
+    *           Columns are in the format: id/width ...
+    * @param columnId
+    * @param columnWidth
+    */
    private void setColumnIdAndWidth(final ArrayList<String> columnIdsAndWidth, final String columnId, int columnWidth) {
 
       final ColumnDefinition colDef = getColDef_ByColumnId(columnId);
+
+      if (colDef == null) {
+
+         final String errorMessage = String.format("\"colDef\" is null for columnId = \"%s\"", columnId); //$NON-NLS-1$
+
+         System.out.println(errorMessage);
+// TODO remove SYSTEM.OUT.PRINTLN
+
+//       StatusUtil.log(new Throwable(errorMessage));
+
+         return;
+      }
 
       if (colDef.isColumnHidden()) {
 
@@ -2626,60 +2706,192 @@ public class ColumnManager {
       _slideoutShell = slideoutShell;
    }
 
-   public void setupNatTable(final INatTable_PropertiesProvider natTablePropertiesProvider) {
+   /**
+    * Sync column definitions in the {@link ColumnProfile} from the visible id's.
+    *
+    * @param columnProfile
+    */
+   void setupColumns_01_VisibleColDefs(final ColumnProfile columnProfile) {
 
-      _natTablePropertiesProvider = natTablePropertiesProvider;
+      final List<ColumnDefinition> allVisibleColDefs = columnProfile.visibleColumnDefinitions;
 
-      setupVisibleColDefs(_activeProfile);
-      setupValueFormatter(_activeProfile);
+      allVisibleColDefs.clear();
+
+      final String[] visibleColumnIds = columnProfile.getVisibleColumnIds();
+      if (visibleColumnIds != null) {
+
+         // fill columns with the visible order
+
+         int createIndex = 0;
+
+         for (final String columnId : visibleColumnIds) {
+
+            final ColumnDefinition colDef = getColDef_ByColumnId(columnId);
+            if (colDef != null) {
+
+               colDef.setCreateIndex(createIndex++);
+
+               allVisibleColDefs.add(colDef);
+            }
+         }
+      }
+
+      final String[] visibleColumnIdsAndWidth = columnProfile.visibleColumnIdsAndWidth;
+      if (visibleColumnIdsAndWidth != null) {
+
+         // set the width for all columns
+
+         for (int dataIdx = 0; dataIdx < visibleColumnIdsAndWidth.length; dataIdx++) {
+
+            final String columnId = visibleColumnIdsAndWidth[dataIdx++];
+            final int columnWidth = Integer.valueOf(visibleColumnIdsAndWidth[dataIdx]);
+
+            final ColumnDefinition colDef = getColDef_ByColumnId(columnId);
+            if (colDef != null) {
+               colDef.setColumnWidth(columnWidth);
+            }
+         }
+      }
+
+      /*
+       * When no columns are visible (which is the first time), show only the default columns
+       * because every column reduces performance
+       */
+      if ((allVisibleColDefs.isEmpty()) && (_allDefinedColumnDefinitions.size() > 0)) {
+
+         final ArrayList<String> columnIds = new ArrayList<>();
+         int createIndex = 0;
+
+         for (final ColumnDefinition colDef : _allDefinedColumnDefinitions) {
+            if (colDef.isDefaultColumn()) {
+
+               colDef.setCreateIndex(createIndex++);
+
+               allVisibleColDefs.add(colDef);
+               columnIds.add(colDef.getColumnId());
+            }
+         }
+
+         columnProfile.setVisibleColumnIds(columnIds.toArray(new String[columnIds.size()]));
+      }
+
+      /*
+       * When no default columns are set, use the first column
+       */
+      if ((allVisibleColDefs.isEmpty()) && (_allDefinedColumnDefinitions.size() > 0)) {
+
+         final ColumnDefinition firstColumn = _allDefinedColumnDefinitions.get(0);
+         firstColumn.setCreateIndex(0);
+
+         allVisibleColDefs.add(firstColumn);
+
+         columnProfile.setVisibleColumnIds(new String[1]);
+         visibleColumnIds[0] = firstColumn.getColumnId();
+      }
+
+      /*
+       * Ensure that all columns which must be visible, are also displayed. This case can happen
+       * when new columns are added.
+       */
+      final ArrayList<ColumnDefinition> notAddedColumns = new ArrayList<>();
+
+      for (final ColumnDefinition colDef : _allDefinedColumnDefinitions) {
+
+         if (colDef.canModifyVisibility() == false) {
+
+            if (allVisibleColDefs.contains(colDef) == false) {
+               notAddedColumns.add(colDef);
+            }
+         }
+      }
+
+      if (notAddedColumns.size() > 0) {
+
+         allVisibleColDefs.addAll(notAddedColumns);
+
+         /*
+          * Set create index, otherwise save/restore do not work!!!
+          */
+         int createIndex = 0;
+         for (final ColumnDefinition colDef : allVisibleColDefs) {
+            colDef.setCreateIndex(createIndex++);
+         }
+
+         /*
+          * Set visible id's
+          */
+         final ArrayList<String> columnIds = new ArrayList<>();
+
+         for (final ColumnDefinition colDef : allVisibleColDefs) {
+            columnIds.add(colDef.getColumnId());
+         }
+
+         columnProfile.setVisibleColumnIds(columnIds.toArray(new String[columnIds.size()]));
+      }
+
+      /*
+       * Ensure that each visible column has also set it's column width
+       */
+      int numCheckedColumns = 0;
+      for (final ColumnDefinition colDef : allVisibleColDefs) {
+
+         if (colDef.getColumnWidth() == 0) {
+            colDef.setColumnWidth(colDef.getDefaultColumnWidth());
+         }
+
+         if (colDef.isColumnCheckedInContextMenu()) {
+            numCheckedColumns++;
+         }
+      }
+      if (numCheckedColumns == 0) {
+
+         // nothing is displayed -> show all columns
+
+         for (final ColumnDefinition colDef : allVisibleColDefs) {
+            colDef.setIsColumnChecked(true);
+         }
+      }
    }
 
    /**
-    * Setup {@link NatTable} for autoresizing all columns after the table was created.
+    * Setup alignment for newly created columns
+    *
+    * @param activeProfile
     */
-   public void setupNatTable_PostCreate() {
+   private void setupColumns_02_ColumnAlignment(final ColumnProfile activeProfile) {
 
-      final NatTable natTable = _natTablePropertiesProvider.getNatTable();
+      final ArrayList<ColumnProperties> allProfileColumnProperties = activeProfile.columnProperties;
 
-      /**
-       * Found this solution in https://www.eclipse.org/nattable/documentation.php?page=faq
-       */
-      natTable.addOverlayPainter(new IOverlayPainter() {
+      // loop: all defined columns
+      for (final ColumnDefinition colDef : _allDefinedColumnDefinitions) {
 
-         @Override
-         public void paintOverlay(final GC gc, final ILayer layer) {
+         final String colDefID = colDef.getColumnId();
 
-            if (!_isDoAResizeForAllColumnsToFit) {
-               return;
-            }
+         /*
+          * Reset current style to the default style which will be overwritten when profile
+          * properties are available
+          */
+         colDef.setStyle(colDef.getDefaultColumnStyle());
 
-            // reset flag, resizing is done only once when the corresponding action is selected
-            _isDoAResizeForAllColumnsToFit = false;
+         // loop: all column properties in a profile -> find column and it's properties
+         for (final ColumnProperties profileColumnProperties : allProfileColumnProperties) {
 
-            final int numColumns = natTable.getColumnCount();
+            if (colDefID.equals(profileColumnProperties.columnId)) {
 
-            final IConfigRegistry configRegistry = natTable.getConfigRegistry();
-            final GCFactory gcFactory = new GCFactory(natTable);
+               // column properties are available
 
-            for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
+               if (profileColumnProperties.alignment != 0) {
 
-               if (natTable.isColumnPositionResizable(columnIndex) == false) {
-                  continue;
+                  colDef.setStyle(profileColumnProperties.alignment);
                }
 
-               final InitializeAutoResizeColumnsCommand columnCommand = new InitializeAutoResizeColumnsCommand(
-                     natTable,
-                     columnIndex,
-                     configRegistry,
-                     gcFactory);
-
-               natTable.doCommand(columnCommand);
+               break;
             }
          }
-      });
+      }
    }
 
-   private void setupValueFormatter(final ColumnProfile activeProfile) {
+   private void setupColumns_03_ValueFormatter(final ColumnProfile activeProfile) {
 
       final ArrayList<ColumnProperties> profileColumnProperties = new ArrayList<>();
 
@@ -2739,10 +2951,10 @@ public class ColumnManager {
          colDef.setValueFormatter_Category(valueFormat_Category, valueFormatter_Category);
          colDef.setValueFormatter_Detail(valueFormat_Detail, valueFormatter_Detail);
 
-         // ensure all column properties are created
+         // ensure all column properties for all visible columns are created
          if (currentColumnProperties == null) {
 
-            // column properties are not defined
+            // column properties are not available
 
             final ColumnProperties columnProperties = new ColumnProperties();
 
@@ -2753,6 +2965,7 @@ public class ColumnManager {
             profileColumnProperties.add(columnProperties);
 
          } else {
+
             profileColumnProperties.add(currentColumnProperties);
          }
       }
@@ -2762,151 +2975,54 @@ public class ColumnManager {
       activeProfile.columnProperties.addAll(profileColumnProperties);
    }
 
+   public void setupNatTable(final INatTable_PropertiesProvider natTablePropertiesProvider) {
+
+      _natTablePropertiesProvider = natTablePropertiesProvider;
+
+      setupColumns_01_VisibleColDefs(_activeProfile);
+      setupColumns_02_ColumnAlignment(_activeProfile);
+      setupColumns_03_ValueFormatter(_activeProfile);
+   }
+
    /**
-    * Sync column definitions in the {@link ColumnProfile} from the visible id's.
-    *
-    * @param columnProfile
+    * Setup {@link NatTable} for autoresizing all columns after the table was created.
     */
-   void setupVisibleColDefs(final ColumnProfile columnProfile) {
+   public void setupNatTable_PostCreate() {
 
-      final ArrayList<ColumnDefinition> visibleColDefs = columnProfile.visibleColumnDefinitions;
+      final NatTable natTable = _natTablePropertiesProvider.getNatTable();
 
-      visibleColDefs.clear();
-
-      final String[] visibleColumnIds = columnProfile.getVisibleColumnIds();
-      if (visibleColumnIds != null) {
-
-         // fill columns with the visible order
-
-         int createIndex = 0;
-
-         for (final String columnId : visibleColumnIds) {
-
-            final ColumnDefinition colDef = getColDef_ByColumnId(columnId);
-            if (colDef != null) {
-
-               colDef.setCreateIndex(createIndex++);
-
-               visibleColDefs.add(colDef);
-            }
-         }
-      }
-
-      final String[] visibleColumnIdsAndWidth = columnProfile.visibleColumnIdsAndWidth;
-      if (visibleColumnIdsAndWidth != null) {
-
-         // set the width for all columns
-
-         for (int dataIdx = 0; dataIdx < visibleColumnIdsAndWidth.length; dataIdx++) {
-
-            final String columnId = visibleColumnIdsAndWidth[dataIdx++];
-            final int columnWidth = Integer.valueOf(visibleColumnIdsAndWidth[dataIdx]);
-
-            final ColumnDefinition colDef = getColDef_ByColumnId(columnId);
-            if (colDef != null) {
-               colDef.setColumnWidth(columnWidth);
-            }
-         }
-      }
-
-      /*
-       * When no columns are visible (which is the first time), show only the default columns
-       * because every column reduces performance
+      /**
+       * Found this solution in https://www.eclipse.org/nattable/documentation.php?page=faq
        */
-      if ((visibleColDefs.isEmpty()) && (_allDefinedColumnDefinitions.size() > 0)) {
+      natTable.addOverlayPainter((gc, layer) -> {
 
-         final ArrayList<String> columnIds = new ArrayList<>();
-         int createIndex = 0;
+         if (!_isDoAResizeForAllColumnsToFit) {
+            return;
+         }
 
-         for (final ColumnDefinition colDef : _allDefinedColumnDefinitions) {
-            if (colDef.isDefaultColumn()) {
+         // reset flag, resizing is done only once when the corresponding action is selected
+         _isDoAResizeForAllColumnsToFit = false;
 
-               colDef.setCreateIndex(createIndex++);
+         final int numColumns = natTable.getColumnCount();
 
-               visibleColDefs.add(colDef);
-               columnIds.add(colDef.getColumnId());
+         final IConfigRegistry configRegistry = natTable.getConfigRegistry();
+         final GCFactory gcFactory = new GCFactory(natTable);
+
+         for (int columnIndex = 0; columnIndex < numColumns; columnIndex++) {
+
+            if (natTable.isColumnPositionResizable(columnIndex) == false) {
+               continue;
             }
+
+            final InitializeAutoResizeColumnsCommand columnCommand = new InitializeAutoResizeColumnsCommand(
+                  natTable,
+                  columnIndex,
+                  configRegistry,
+                  gcFactory);
+
+            natTable.doCommand(columnCommand);
          }
-
-         columnProfile.setVisibleColumnIds(columnIds.toArray(new String[columnIds.size()]));
-      }
-
-      /*
-       * When no default columns are set, use the first column
-       */
-      if ((visibleColDefs.isEmpty()) && (_allDefinedColumnDefinitions.size() > 0)) {
-
-         final ColumnDefinition firstColumn = _allDefinedColumnDefinitions.get(0);
-         firstColumn.setCreateIndex(0);
-
-         visibleColDefs.add(firstColumn);
-
-         columnProfile.setVisibleColumnIds(new String[1]);
-         visibleColumnIds[0] = firstColumn.getColumnId();
-      }
-
-      /*
-       * Ensure that all columns which must be visible, are also displayed. This case can happen
-       * when new columns are added.
-       */
-      final ArrayList<ColumnDefinition> notAddedColumns = new ArrayList<>();
-
-      for (final ColumnDefinition colDef : _allDefinedColumnDefinitions) {
-
-         if (colDef.canModifyVisibility() == false) {
-
-            if (visibleColDefs.contains(colDef) == false) {
-               notAddedColumns.add(colDef);
-            }
-         }
-      }
-
-      if (notAddedColumns.size() > 0) {
-
-         visibleColDefs.addAll(notAddedColumns);
-
-         /*
-          * Set create index, otherwise save/restore do not work!!!
-          */
-         int createIndex = 0;
-         for (final ColumnDefinition colDef : visibleColDefs) {
-            colDef.setCreateIndex(createIndex++);
-         }
-
-         /*
-          * Set visible id's
-          */
-         final ArrayList<String> columnIds = new ArrayList<>();
-
-         for (final ColumnDefinition colDef : visibleColDefs) {
-            columnIds.add(colDef.getColumnId());
-         }
-
-         columnProfile.setVisibleColumnIds(columnIds.toArray(new String[columnIds.size()]));
-      }
-
-      /*
-       * Ensure that each visible column has also set it's column width
-       */
-      int numCheckedColumns = 0;
-      for (final ColumnDefinition colDef : visibleColDefs) {
-
-         if (colDef.getColumnWidth() == 0) {
-            colDef.setColumnWidth(colDef.getDefaultColumnWidth());
-         }
-
-         if (colDef.isColumnCheckedInContextMenu()) {
-            numCheckedColumns++;
-         }
-      }
-      if (numCheckedColumns == 0) {
-
-         // nothing is displayed -> show all columns
-
-         for (final ColumnDefinition colDef : visibleColDefs) {
-            colDef.setIsColumnChecked(true);
-         }
-      }
+      });
    }
 
    private void setVisibleColumnIds_All() {
@@ -2999,7 +3115,7 @@ public class ColumnManager {
          // ensure the column is also displayed, it could be hidden when it was previously displayed and then set to hidden !!!
          colDef.setIsColumnChecked(true);
 
-         if (columnId_New == colDef.getColumnId() && isNewColumnAdded) {
+         if (columnId_New.equals(colDef.getColumnId()) && isNewColumnAdded) {
 
             // column is already added
             continue;
@@ -3012,7 +3128,7 @@ public class ColumnManager {
          allNewVisibleIdsAndWidth.add(columnId);
          allNewVisibleIdsAndWidth.add(Integer.toString(colDef.getColumnWidth()));
 
-         if (columnId_New == colDef.getColumnId()) {
+         if (columnId_New.equals(colDef.getColumnId())) {
             isNewColumnAdded = true;
          }
       }
@@ -3118,12 +3234,10 @@ public class ColumnManager {
 
          final Object itemData = menuItem.getData();
 
-         if (itemData instanceof ColumnDefinition) {
+         // data in the table item contains the input items for the viewer
+         if (itemData instanceof final ColumnDefinition colDef) {
 
             final boolean isChecked = menuItem.getSelection();
-
-            // data in the table item contains the input items for the viewer
-            final ColumnDefinition colDef = (ColumnDefinition) itemData;
 
             if (isChecked) {
 
@@ -3153,7 +3267,7 @@ public class ColumnManager {
     *
     * @param columnViewerModel
     */
-   void setVisibleColumnIds_FromModel(final ColumnProfile profile, final ArrayList<ColumnDefinition> columnViewerModel) {
+   void setVisibleColumnIds_FromModel(final ColumnProfile profile, final List<ColumnDefinition> columnViewerModel) {
 
       final ArrayList<String> visibleColumnIds = new ArrayList<>();
       final ArrayList<String> columnIdsAndWidth = new ArrayList<>();
@@ -3227,7 +3341,7 @@ public class ColumnManager {
    /**
     * Read the sorting order and column width from the viewer/nattable.
     */
-   public void setVisibleColumnIds_FromViewer() {
+   private void setVisibleColumnIds_FromViewer() {
 
       final String[] visibleColumnIds = getColumns_FromViewer_Ids();
 
@@ -3285,4 +3399,5 @@ public class ColumnManager {
       recreateViewer();
 
    }
+
 }

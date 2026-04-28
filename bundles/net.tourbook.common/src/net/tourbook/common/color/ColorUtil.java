@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2013, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -25,6 +25,7 @@ public class ColorUtil {
     * Converts SWT color into AWT color
     *
     * @param swtColor
+    *
     * @return
     */
    public static Color convertSWTColor_into_AWTColor(final org.eclipse.swt.graphics.Color swtColor) {
@@ -36,6 +37,7 @@ public class ColorUtil {
     * Splits an integer color values in it's red, green and blue components.
     *
     * @param rgbValue
+    *
     * @return Returns a {@link RGB} from an integer color value
     */
    public static RGB createRGB(final int rgbValue) {
@@ -51,6 +53,7 @@ public class ColorUtil {
     * @param color
     * @param alpha
     *           0xff is opaque, 0 is transparent
+    *
     * @return
     */
    public static int getARGB(final RGB color, final int alpha) {
@@ -63,8 +66,41 @@ public class ColorUtil {
       return graphColor;
    }
 
+   public static org.eclipse.swt.graphics.Color getColorSWT(final int rgbValue) {
+
+      final int red = (rgbValue & 0xFF0000) >> 16;
+      final int green = (rgbValue & 0xFF00) >> 8;
+      final int blue = (rgbValue & 0xFF) >> 0;
+
+      return new org.eclipse.swt.graphics.Color(red, green, blue);
+   }
+
+   public static Color getColorAWT(final int rgbValue) {
+
+      final int red = (rgbValue & 0xFF0000) >> 16;
+      final int green = (rgbValue & 0xFF00) >> 8;
+      final int blue = (rgbValue & 0xFF) >> 0;
+
+      return new Color(red, green, blue);
+   }
+
+   /**
+    * @param red
+    * @param green
+    * @param blue
+    *
+    * @return Returns an integer value from the color components
+    */
+   public static int getColorValue(final int red, final int green, final int blue) {
+
+      return ((blue & 0xFF) << 0)
+            | ((green & 0xFF) << 8)
+            | ((red & 0xFF) << 16);
+   }
+
    /**
     * @param rgb
+    *
     * @return Returns an integer value from a {@link RGB}
     */
    public static int getColorValue(final RGB rgb) {
@@ -72,6 +108,13 @@ public class ColorUtil {
       return ((rgb.blue & 0xFF) << 0)
             | ((rgb.green & 0xFF) << 8)
             | ((rgb.red & 0xFF) << 16);
+   }
+
+   public static org.eclipse.swt.graphics.Color getComplimentColor(final org.eclipse.swt.graphics.Color color) {
+
+      final RGB complimentColor = getComplimentColor(color.getRGB());
+
+      return new org.eclipse.swt.graphics.Color(complimentColor);
    }
 
    public static RGB getComplimentColor(final RGB color) {
@@ -104,6 +147,7 @@ public class ColorUtil {
     * @param red
     * @param green
     * @param blue
+    *
     * @return Returns white or black that contrasts with the background color.
     */
    public static org.eclipse.swt.graphics.Color getContrastColor(final int red,
@@ -130,6 +174,7 @@ public class ColorUtil {
     * @param red
     * @param green
     * @param blue
+    *
     * @return Returns white or black that contrasts with the background color.
     */
    public static Color getContrastColorAWT(final int red, final int green, final int blue, final int alpha) {
@@ -151,6 +196,7 @@ public class ColorUtil {
     * @param red
     * @param green
     * @param blue
+    *
     * @return Returns white or black that contrasts with the background color.
     */
    public static RGB getContrastRGB(
@@ -172,18 +218,4 @@ public class ColorUtil {
       return getContrastRGB(rgb.red, rgb.green, rgb.blue);
    }
 
-   /**
-    * Converts a percentage value to a transparency value: 0 to 255
-    *
-    * @param percentageValue
-    * @return
-    */
-   public static int getTransparencyFromPercentage(final int percentageValue) {
-
-      final int opacity = 0xff * percentageValue / 100;
-
-      //This occurred where 303 was returned. Not sure how it is possible and how
-      //to reproduce it but to avoid this, we bound the returned value
-      return Math.min(255, opacity);
-   }
 }

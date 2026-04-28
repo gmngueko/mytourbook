@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,7 @@ import net.tourbook.data.TourData;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourLogManager;
+import net.tourbook.tour.TourLogManager.AutoOpenEvent;
 import net.tourbook.tour.TourManager;
 import net.tourbook.ui.ITourProvider;
 
@@ -56,7 +57,7 @@ public class ActionComputeMinMaxTemperature extends Action {
          return;
       }
 
-      TourLogManager.showLogView();
+      TourLogManager.showLogView(AutoOpenEvent.TOUR_ADJUSTMENTS);
 
       // Loading selected tours...
       TourLogManager.log_TITLE(Messages.Log_App_LoadingSelectedTours);
@@ -73,7 +74,7 @@ public class ActionComputeMinMaxTemperature extends Action {
 
       if (selectedTours == null || selectedTours.isEmpty()) {
 
-         // tours are not selected -> this can occure when loading tour data is canceled
+         // tours are not selected -> this can occur when loading tour data is canceled
 
          return;
       }
@@ -124,13 +125,10 @@ public class ActionComputeMinMaxTemperature extends Action {
 
             TourManager.getInstance().clearTourDataCache();
 
-            Display.getDefault().asyncExec(new Runnable() {
-               @Override
-               public void run() {
+            Display.getDefault().asyncExec(() -> {
 
-                  TourManager.fireEvent(TourEventId.CLEAR_DISPLAYED_TOUR);
-                  TourManager.fireEvent(TourEventId.ALL_TOURS_ARE_MODIFIED);
-               }
+               TourManager.fireEvent(TourEventId.CLEAR_DISPLAYED_TOUR);
+               TourManager.fireEvent(TourEventId.ALL_TOURS_ARE_MODIFIED);
             });
 
          }
@@ -158,8 +156,8 @@ public class ActionComputeMinMaxTemperature extends Action {
 
             + " SET" //                                     //$NON-NLS-1$
 
-            + " weather_Temperature_Min=?, " //             //$NON-NLS-1$
-            + " weather_Temperature_Max=? " //              //$NON-NLS-1$
+            + " weather_Temperature_Min_Device=?, " //             //$NON-NLS-1$
+            + " weather_Temperature_Max_Device=? " //              //$NON-NLS-1$
 
             + " WHERE tourId=?"); //                        //$NON-NLS-1$
 
@@ -179,8 +177,8 @@ public class ActionComputeMinMaxTemperature extends Action {
             tourData.computeAvg_Temperature();
 
             // update min/max temperature in the database
-            stmtUpdate.setFloat(1, tourData.getWeather_Temperature_Min());
-            stmtUpdate.setFloat(2, tourData.getWeather_Temperature_Max());
+            stmtUpdate.setFloat(1, tourData.getWeather_Temperature_Min_Device());
+            stmtUpdate.setFloat(2, tourData.getWeather_Temperature_Max_Device());
             stmtUpdate.setLong(3, tourData.getTourId());
 
             stmtUpdate.executeUpdate();

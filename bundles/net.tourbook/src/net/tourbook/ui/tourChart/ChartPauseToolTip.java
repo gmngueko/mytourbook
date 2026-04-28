@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Frédéric Bard
+ * Copyright (C) 2021, 2023 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,10 +16,10 @@
 package net.tourbook.ui.tourChart;
 
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 import net.tourbook.Messages;
+import net.tourbook.OtherMessages;
 import net.tourbook.chart.ChartComponentGraph;
 import net.tourbook.common.UI;
 import net.tourbook.common.time.TimeTools;
@@ -42,9 +42,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
 public class ChartPauseToolTip extends AnimatedToolTipShell implements ITourProvider {
-
-   private static final String     GRAPH_LABEL_TIMESTART = net.tourbook.common.Messages.Graph_Label_TimeStart;
-   private static final String     GRAPH_LABEL_TIMEEND   = net.tourbook.common.Messages.Graph_Label_TimeEnd;
 
    /**
     * Visual position for the pause tooltip, they must correspond to the position id
@@ -152,7 +149,7 @@ public class ChartPauseToolTip extends AnimatedToolTipShell implements ITourProv
       GridLayoutFactory.fillDefaults()
             .extendedMargins(1, 1, 1, 1)
             .applyTo(_shellContainer);
-      _shellContainer.addPaintListener(this::onPaintShellContainer);
+      _shellContainer.addPaintListener(event -> onPaintShellContainer(event));
       {
          _tooltipContainer = new Composite(_shellContainer, SWT.NONE);
          GridLayoutFactory.fillDefaults()
@@ -178,13 +175,13 @@ public class ChartPauseToolTip extends AnimatedToolTipShell implements ITourProv
             .spacing(5, 1)
             .applyTo(container);
       {
-         UI.createLabel(container, GRAPH_LABEL_TIMESTART);
+         UI.createLabel(container, OtherMessages.GRAPH_LABEL_TIME_START);
          createUI_11_TimeField(
                container,
                _hoveredLabel.getPausedTime_Start(),
                _hoveredLabel.getTimeZoneId());
 
-         UI.createLabel(container, GRAPH_LABEL_TIMEEND);
+         UI.createLabel(container, OtherMessages.GRAPH_LABEL_TIME_END);
          createUI_11_TimeField(
                container,
                _hoveredLabel.getPausedTime_End(),
@@ -205,7 +202,7 @@ public class ChartPauseToolTip extends AnimatedToolTipShell implements ITourProv
 
       if (_tourData.isMultipleTours()) {
 
-         labelBuilder.append(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(tourZonedDateTime)); //$NON-NLS-1$
+         labelBuilder.append(TimeTools.Formatter_YearMonthDay.format(tourZonedDateTime));
       }
 
       final String format_hh_mm_ss = UI.format_hh_mm_ss(

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,6 +15,11 @@
  *******************************************************************************/
 package net.tourbook.data;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.Basic;
@@ -31,7 +36,10 @@ import net.tourbook.database.TourDatabase;
 import org.eclipse.swt.graphics.RGB;
 
 @Entity
-public class TourType implements Comparable<Object> {
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "typeId")
+public class TourType implements Comparable<Object>, Serializable {
+
+   private static final long          serialVersionUID                      = 1L;
 
    private static final char          NL                                    = UI.NEW_LINE;
 
@@ -39,14 +47,6 @@ public class TourType implements Comparable<Object> {
 
    /** Width/height of the tour type image. */
    public static final int            TOUR_TYPE_IMAGE_SIZE                  = 16;
-
-   /**
-    * Color which is transparent in the tour type image.
-    * <p>
-    * The color is used in the easy import view, the previous color looked really ugly with a dark
-    * background.
-    */
-   public static final RGB            TRANSPARENT_COLOR                     = new RGB(67, 67, 67);
 
    public static final long           IMAGE_KEY_DIALOG_SELECTION            = -2;
 
@@ -71,9 +71,11 @@ public class TourType implements Comparable<Object> {
     */
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @JsonProperty
    private long                       typeId                                = TourDatabase.ENTITY_IS_NOT_SAVED;
 
    @Basic(optional = false)
+   @JsonProperty
    private String                     name;
 
    private int                        color_Gradient_Bright;
@@ -84,6 +86,17 @@ public class TourType implements Comparable<Object> {
 
    private int                        color_Text_LightTheme;
    private int                        color_Text_DarkTheme;
+
+   /**
+    * This name is used to apply a tour type during the tour import to a tour when this name fits
+    */
+   private String                     importCategory;
+
+   /**
+    *
+    * This name is used to apply a tour type during the tour import to a tour when this name fits
+    */
+   private String                     importSubCategory;
 
    /**
     * unique id for manually created tour types because the {@link #typeId} is -1 when it's not
@@ -109,8 +122,8 @@ public class TourType implements Comparable<Object> {
 
       // default sorting for tour types is by name
 
-      if (other instanceof TourType) {
-         final TourType otherTourType = (TourType) other;
+      if (other instanceof final TourType otherTourType) {
+
          return name.compareTo(otherTourType.getName());
       }
 
@@ -158,6 +171,24 @@ public class TourType implements Comparable<Object> {
 
    public long getCreateId() {
       return _createId;
+   }
+
+   /**
+    * @return This name is used to apply a tour type during the tour import to a tour when this name
+    *         fits
+    */
+   public String getImportCategory() {
+
+      return importCategory;
+   }
+
+   /**
+    * @return This name is used to apply a tour type during the tour import to a tour when this name
+    *         fits
+    */
+   public String getImportSubCategory() {
+
+      return importSubCategory;
    }
 
    /**
@@ -278,6 +309,16 @@ public class TourType implements Comparable<Object> {
 
       setColor_Line(line_LightTheme, line_DarkTheme);
       setColor_Text(text_LightTheme, text_DarkTheme);
+   }
+
+   public void setImportCategory(final String importCategory) {
+
+      this.importCategory = importCategory;
+   }
+
+   public void setImportSubCategory(final String importSubCategory) {
+
+      this.importSubCategory = importSubCategory;
    }
 
    public void setName(final String name) {

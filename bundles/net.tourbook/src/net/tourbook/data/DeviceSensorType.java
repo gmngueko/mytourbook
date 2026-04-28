@@ -34,5 +34,11 @@ public enum DeviceSensorType {
    CADENCE, //
    HEARTBEAT, //
    PACE, //
+   POWER_METER, //
+   RADAR, //
    SPEED, //
+   WIND, //
+
+   LIGHT_FRONT, //
+   LIGHT_REAR, //
 }

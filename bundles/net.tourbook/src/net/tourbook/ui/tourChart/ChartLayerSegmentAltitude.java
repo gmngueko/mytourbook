@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -28,6 +28,7 @@ import net.tourbook.chart.GraphDrawingData;
 import net.tourbook.chart.IChartLayer;
 import net.tourbook.chart.IChartOverlay;
 import net.tourbook.chart.SelectionChartXSliderPosition;
+import net.tourbook.common.UI;
 import net.tourbook.common.graphics.Line2D;
 import net.tourbook.data.TourData;
 import net.tourbook.tour.TourManager;
@@ -49,6 +50,9 @@ import org.eclipse.swt.widgets.Display;
  */
 public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
 
+   private static final RGB            FLAT_GAIN_LOSS_BRIGHT_RGB = new RGB(0, 0, 0);
+   private static final RGB            FLAT_GAIN_LOSS_DARK_RGB   = new RGB(0xFF, 0xff, 0xff);
+
    private TourChart                   _tourChart;
    private TourData                    _tourData;
 
@@ -56,7 +60,7 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
     * Contains only chart labels which are painted (visible) all hidden labels are NOT in this
     * list.
     */
-   private ArrayList<SegmenterSegment> _paintedSegments = new ArrayList<>();
+   private ArrayList<SegmenterSegment> _paintedSegments          = new ArrayList<>();
 
    // hide small values
    private boolean _isHideSmallValues;
@@ -69,7 +73,7 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
    private boolean            _isShowDecimalPlaces;
    private boolean            _isShowSegmenterMarker;
    private boolean            _isShowSegmenterValue;
-   private int                _stackedValues;
+   private int                _numStackedValues;
    private double[]           _xDataSerie;
 
    /**
@@ -116,6 +120,12 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
          return;
       }
 
+      final int[] segmentSerieIndex = _tourData.segmentSerieIndex;
+      if (segmentSerieIndex == null) {
+         // this happened after deleting a time slice in the tour editor
+         return;
+      }
+
       _tourChart.setLineSelectionDirty();
 
       final int graphWidth = graphDrawingData.getChartDrawingData().devVisibleChartWidth;
@@ -133,7 +143,6 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
       final double maxValue = yData.getOriginalMaxValue();
       final double hideThreshold = maxValue * _smallValue * minValueAdjustment;
 
-      final int[] segmentSerieIndex = _tourData.segmentSerieIndex;
       final int numSegments = segmentSerieIndex.length;
 
       final Long[] multipleTourIds = _tourData.multipleTourIds;
@@ -141,13 +150,17 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
       int tourIndex = 0;
       int nextTourStartIndex = 0;
 
-      final ValueOverlapChecker overlapChecker = new ValueOverlapChecker(_stackedValues);
+      final ValueOverlapChecker overlapChecker = new ValueOverlapChecker(_numStackedValues);
 
       int devXPrev = Integer.MIN_VALUE;
       int devYPrev = Integer.MIN_VALUE;
 
-      final float[] segmentSerieAltitudeDiff = _tourData.segmentSerie_Altitude_Diff;
-      final float[] segmentSerieComputedAltitudeDiff = _tourData.segmentSerie_Altitude_Diff_Computed;
+      final float[] segmentSerie_ElevationDiff = _tourData.segmentSerie_Elevation_Diff;
+      final float[] segmentSerie_ElevationDiff_Computed = _tourData.segmentSerie_Elevation_Diff_Computed;
+      final float[] segmentSerie_Gradient = _tourData.segmentSerie_Gradient;
+
+      final float segmentSerie_FlatGainLoss_Gradient = _tourData.segmentSerie_FlatGainLoss_Gradient;
+      final boolean canApplyFlatColor = segmentSerie_FlatGainLoss_Gradient != -1;
 
       final LineAttributes defaultLineAttributes = gc.getLineAttributes();
       final LineAttributes markerLineAttribute = new LineAttributes(5);
@@ -168,9 +181,12 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
       gc.setTextAntialias(chart.graphAntialiasing);
 
       final RGB segmentRGB = segmentConfig.segmentLineRGB;
-      final RGB upRGB = new RGB(0xff, 0x5e, 0x62);
+      final RGB gainRGB = new RGB(0xff, 0x5e, 0x62);
+      final RGB flatRGB = UI.IS_DARK_THEME ? FLAT_GAIN_LOSS_DARK_RGB : FLAT_GAIN_LOSS_BRIGHT_RGB;
+
       final Color segmentColor = new Color(segmentRGB);
-      final Color upColor = new Color(upRGB);
+      final Color gainColor = new Color(gainRGB);
+      final Color flatColor = new Color(flatRGB);
 
       // loop: all segments
       for (int segmentIndex = 0; segmentIndex < numSegments; segmentIndex++) {
@@ -218,16 +234,19 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
          final int segmentHeight = devYSegment - devYPrev;
 
          /*
-          * Get up/down value
+          * Get gain/loss value
           */
          float altiDiff = 0;
          if (segmentIndex > 0) {
-            if (segmentSerieComputedAltitudeDiff != null) {
-               altiDiff = segmentSerieComputedAltitudeDiff[segmentIndex];
+            if (segmentSerie_ElevationDiff_Computed != null) {
+               altiDiff = segmentSerie_ElevationDiff_Computed[segmentIndex];
             } else {
-               altiDiff = segmentSerieAltitudeDiff[segmentIndex];
+               altiDiff = segmentSerie_ElevationDiff[segmentIndex];
             }
          }
+
+         altiDiff /= UI.UNIT_VALUE_ELEVATION;
+
          final boolean isValueUp = altiDiff >= 0;
 
          boolean isShowValueText = true;
@@ -263,14 +282,29 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
          final int textWidth = textExtent.x;
          final int textHeight = textExtent.y;
 
-         Color paintedColor;
+         Color textAndLineColor;
          RGB paintedRGB;
-         if (altiDiff < 0) {
-            paintedColor = segmentColor;
+
+         final float segmentGradient = segmentSerie_Gradient[segmentIndex];
+
+         if (canApplyFlatColor
+               && (segmentGradient >= 0 && segmentGradient <= segmentSerie_FlatGainLoss_Gradient
+                     || segmentGradient < 0 && segmentGradient >= -segmentSerie_FlatGainLoss_Gradient)
+
+         ) {
+
+            textAndLineColor = flatColor;
+            paintedRGB = flatRGB;
+
+         } else if (altiDiff < 0) {
+
+            textAndLineColor = segmentColor;
             paintedRGB = segmentRGB;
+
          } else {
-            paintedColor = upColor;
-            paintedRGB = upRGB;
+
+            textAndLineColor = gainColor;
+            paintedRGB = gainRGB;
          }
 
          final SegmenterSegment segmenterSegment = new SegmenterSegment();
@@ -289,8 +323,11 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
 
             if (_isShowSegmenterLine /* && isShowValueText */) {
 
+               // fix https://github.com/mytourbook/mytourbook/issues/1533
+               defaultLineAttributes.width = 1;
+
                gc.setAlpha(_lineOpacity);
-               gc.setForeground(paintedColor);
+               gc.setForeground(textAndLineColor);
                gc.setLineAttributes(defaultLineAttributes);
 
                gc.drawLine(
@@ -327,8 +364,11 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
                   devYLine = devYSegment + 1 * textHeight;
                }
 
+               // fix https://github.com/mytourbook/mytourbook/issues/1533
+               markerLineAttribute.width = 1f;
+
                gc.setAlpha(0xff);
-               gc.setForeground(paintedColor);
+               gc.setForeground(textAndLineColor);
                gc.setLineAttributes(markerLineAttribute);
 
                gc.drawLine(
@@ -383,7 +423,7 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
                      overlapChecker.setupNext(validRect);
 
                      gc.setAlpha(0xff);
-                     gc.setForeground(paintedColor);
+                     gc.setForeground(textAndLineColor);
                      gc.drawText(
                            valueText,
                            devXText - borderWidth,
@@ -573,6 +613,7 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
 
    /**
     * @param mouseEvent
+    *
     * @return Returns the hovered {@link ChartLabel} or <code>null</code> when a {@link ChartLabel}
     *         is not hovered.
     */
@@ -580,7 +621,7 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
 
       if (_graphArea == null) {
 
-         // this happened, propably when not initialized
+         // this happened, probably when not initialized
          return null;
       }
 
@@ -632,32 +673,48 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
       return _paintedSegments;
    }
 
-   void setIsShowDecimalPlaces(final boolean isShowDecimalPlaces) {
+   ChartLayerSegmentAltitude setIsShowDecimalPlaces(final boolean isShowDecimalPlaces) {
+
       _isShowDecimalPlaces = isShowDecimalPlaces;
+
+      return this;
    }
 
-   void setIsShowSegmenterMarker(final boolean isShowSegmenterMarker) {
+   ChartLayerSegmentAltitude setIsShowSegmenterMarker(final boolean isShowSegmenterMarker) {
+
       _isShowSegmenterMarker = isShowSegmenterMarker;
+
+      return this;
    }
 
-   void setIsShowSegmenterValue(final boolean isShowSegmenterValue) {
+   ChartLayerSegmentAltitude setIsShowSegmenterValue(final boolean isShowSegmenterValue) {
+
       _isShowSegmenterValue = isShowSegmenterValue;
+
+      return this;
    }
 
-   void setLineProperties(final boolean isShowSegmenterLine, final int lineOpacity) {
+   ChartLayerSegmentAltitude setLineProperties(final boolean isShowSegmenterLine, final int lineOpacity) {
 
       _isShowSegmenterLine = isShowSegmenterLine;
-      _lineOpacity = (int) (lineOpacity / 100.0 * 255);
+      _lineOpacity = lineOpacity;
+
+      return this;
    }
 
-   void setSmallHiddenValuesProperties(final boolean isHideSmallValues, final int smallValue) {
+   ChartLayerSegmentAltitude setSmallHiddenValuesProperties(final boolean isHideSmallValues, final int smallValue) {
 
       _isHideSmallValues = isHideSmallValues;
       _smallValue = smallValue / 100.0;
+
+      return this;
    }
 
-   void setStackedValues(final int stackedValues) {
-      _stackedValues = stackedValues;
+   ChartLayerSegmentAltitude setStackedValues(final int stackedValues) {
+
+      _numStackedValues = stackedValues;
+
+      return this;
    }
 
    /**
@@ -665,15 +722,20 @@ public class ChartLayerSegmentAltitude implements IChartLayer, IChartOverlay {
     *
     * @param tourData
     */
-   void setTourData(final TourData tourData) {
+   ChartLayerSegmentAltitude setTourData(final TourData tourData) {
 
       _tourData = tourData;
 
       _paintedSegments.clear();
+
+      return this;
    }
 
-   void setXDataSerie(final double[] dataSerie) {
+   ChartLayerSegmentAltitude setXDataSerie(final double[] dataSerie) {
+
       _xDataSerie = dataSerie;
+
+      return this;
    }
 
 }

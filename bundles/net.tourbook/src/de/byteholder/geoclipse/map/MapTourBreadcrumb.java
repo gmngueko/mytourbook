@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -20,14 +20,13 @@ import de.byteholder.geoclipse.Messages;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.tourbook.common.UI;
 import net.tourbook.common.color.ThemeUtil;
 import net.tourbook.data.TourData;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
@@ -35,15 +34,15 @@ import org.eclipse.swt.widgets.Display;
 
 public class MapTourBreadcrumb {
 
-   private static final String        CRUMB_ACTION_REMOVE_ALL        = " X ";                                                               //$NON-NLS-1$
-   private static final String        CRUMB_ACTION_UPLIFT_LAST_CRUMB = " << ";                                                              //$NON-NLS-1$
+   private static final String        CRUMB_ACTION_REMOVE_ALL        = " X ";                                               //$NON-NLS-1$
+   private static final String        CRUMB_ACTION_UPLIFT_LAST_CRUMB = " << ";                                              //$NON-NLS-1$
 
    private static final Color         SYSTEM_COLOR_BLUE              = Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
    private static final Color         SYSTEM_COLOR_BLACK             = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
    private static final Color         SYSTEM_COLOR_RED               = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
    private static final Color         SYSTEM_COLOR_WHITE             = Display.getCurrent().getSystemColor(SWT.COLOR_WHITE);
 
-   private static final String        CRUMB_SEPARATOR                = UI.SPACE + net.tourbook.common.UI.SYMBOL_BULLET;
+   private static final String        CRUMB_SEPARATOR                = UI.SPACE + UI.SYMBOL_BULLET;
 
    private static final int           NOT_HOVERED_INDEX              = -1;
 
@@ -69,9 +68,7 @@ public class MapTourBreadcrumb {
     */
    private int                        _hoveredCrumbIndex             = NOT_HOVERED_INDEX;
 
-   private Font                       _boldFont                      = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
-
-   private Map2                        _map;
+   private Map2                       _map;
 
    public MapTourBreadcrumb(final Map2 map) {
 
@@ -85,25 +82,33 @@ public class MapTourBreadcrumb {
     */
    public void addBreadcrumTour(final Long tourId) {
 
-      Long lastCrumbTour = null;
-      ArrayList<Long> allLastCrumbTours = null;
-
       final int numTourCrumbs = _allCrumbsWithAllTours.size();
+
+      if (numTourCrumbs == 0) {
+
+         // do not add one single tour to an empty crumb bar
+
+         return;
+      }
+
+      Long tourIdInLastCrumb = null;
+      ArrayList<Long> allToursInLastCrumb = null;
+
       if (numTourCrumbs > 0) {
 
-         allLastCrumbTours = _allCrumbsWithAllTours.get(numTourCrumbs - 1);
+         allToursInLastCrumb = _allCrumbsWithAllTours.get(numTourCrumbs - 1);
 
-         if (allLastCrumbTours.size() == 1) {
-            lastCrumbTour = allLastCrumbTours.get(0);
+         if (allToursInLastCrumb.size() == 1) {
+            tourIdInLastCrumb = allToursInLastCrumb.get(0);
          }
       }
 
-      if (lastCrumbTour != null) {
+      if (tourIdInLastCrumb != null) {
 
          // replace last tour with current tour
 
-         allLastCrumbTours.clear();
-         allLastCrumbTours.add(tourId);
+         allToursInLastCrumb.clear();
+         allToursInLastCrumb.add(tourId);
 
       } else {
 
@@ -122,12 +127,19 @@ public class MapTourBreadcrumb {
     *
     * @param allTourData
     */
-   public void addBreadcrumTours(final ArrayList<TourData> allTourData) {
+   public void addBreadcrumTours(final List<TourData> allTourData) {
 
-      // keep only tour id's, allTourData list is be reused outside !!!
+      // keep only tour id's, allTourData list is reused outside !!!
 
       final int numNewTours = allTourData.size();
       final int numTourCrumbs = _allCrumbsWithAllTours.size();
+
+      if (numTourCrumbs == 0 && numNewTours <= 1) {
+
+         // do not add one single tour to an empty crumb bar
+
+         return;
+      }
 
       int numPreviousTours = -1;
 
@@ -254,6 +266,7 @@ public class MapTourBreadcrumb {
 
    /**
     * @param devMousePosition
+    *
     * @return Returns <code>true</code> when a bread crumb is hit
     */
    public boolean onMouseDown(final Point devMousePosition) {
@@ -317,6 +330,7 @@ public class MapTourBreadcrumb {
 
    /**
     * @param devMousePosition
+    *
     * @return Returns <code>true</code> when a breadcrumb is hovered and the map must be repainted
     */
    public boolean onMouseMove(final Point devMousePosition) {
@@ -390,207 +404,189 @@ public class MapTourBreadcrumb {
       return false;
    }
 
-   public void paint(final GC gc, final boolean isShowTourPaintMethodEnhancedWarning) {
-
-      if (_allCrumbsWithAllTours.isEmpty()) {
-         return;
-      }
-
-      Color bgColor;
-      Color fgColor;
-      Color bgColorHovered;
-      Color fgColorHovered;
-
-      if (net.tourbook.common.UI.IS_DARK_THEME) {
-
-         bgColor = ThemeUtil.getDefaultBackgroundColor_Table();
-         fgColor = ThemeUtil.getDefaultForegroundColor_Table();
-
-      } else {
-
-         if (_map.isMapBackgroundDark()) {
-
-            bgColor = new Color(0x40, 0x40, 0x40);
-            fgColor = SYSTEM_COLOR_WHITE;
-
-         } else {
-
-            bgColor = SYSTEM_COLOR_WHITE;
-            fgColor = SYSTEM_COLOR_BLACK;
-         }
-      }
-
-      bgColorHovered = SYSTEM_COLOR_BLUE;
-      fgColorHovered = SYSTEM_COLOR_WHITE;
+   public void paint(final GC gc,
+                     final boolean isPaintBreadcrumbs) {
 
       final int marginVertical = 2;
       final int marginHorizontal_Crumb = 6;
       final int marginHorizontal_Separator = 1;
 
       int devX = 0;
-      final int devY = 0;
 
-      // this is VERY important otherwise hovered tours have another spacing !!!
-      gc.setAntialias(SWT.ON);
-
-      final String crumbSepText = CRUMB_SEPARATOR;
-      final Point crumbSepSize = gc.textExtent(crumbSepText);
-      final int crumbHeight = crumbSepSize.y + 2 * marginVertical;
-
-      /*
-       * Draw remove all button
-       */
-      final String crumbResetAllText = CRUMB_ACTION_REMOVE_ALL;
-      final Point crumbResetSize = gc.textExtent(crumbResetAllText);
-      final Rectangle crumbAction_RemoveAll = new Rectangle(
-            devX,
-            devY,
-            crumbResetSize.x + 2 * marginHorizontal_Separator,
-            crumbHeight);
-
-      gc.setBackground(_isAction_RemoveAll_Hovered ? SYSTEM_COLOR_RED : bgColor);
-      gc.fillRectangle(crumbAction_RemoveAll);
-
-      gc.setForeground(fgColor);
-      gc.drawString(crumbResetAllText,
-            devX + marginHorizontal_Separator,
-            devY + marginVertical);
-
-      _crumbOutline_Action_RemoveAllCrumbs = crumbAction_RemoveAll;
-
-      devX += crumbAction_RemoveAll.width;
-
-      /*
-       * Draw breadcrumbs
-       */
-      _allTourCrumbRectangles.clear();
-
-      final int numTourCrumbs = _allCrumbsWithAllTours.size();
-
-      for (int crumbIndex = 0; crumbIndex < numTourCrumbs; crumbIndex++) {
-
-         if (crumbIndex > 0) {
-
-            /*
-             * Paint separator between crumbs
-             */
-
-            final Rectangle crumbSeparator = new Rectangle(
-                  devX,
-                  devY,
-                  crumbSepSize.x + 2 * marginHorizontal_Separator,
-                  crumbHeight);
-
-            gc.setBackground(bgColor);
-            gc.fillRectangle(crumbSeparator);
-
-            gc.setForeground(fgColor);
-            gc.drawString(crumbSepText,
-                  devX + marginHorizontal_Separator,
-                  devY + marginVertical);
-
-            devX += crumbSeparator.width;
-         }
+      if (isPaintBreadcrumbs && _allCrumbsWithAllTours.isEmpty() == false) {
 
          /*
-          * Paint crumb
+          * Crumbs are available -> Paint crumbs
           */
 
-         final ArrayList<Long> tourDataCrumb = _allCrumbsWithAllTours.get(crumbIndex);
-         final String numTourDataCrumbs = Integer.toString(tourDataCrumb.size());
+         final int devY = 0;
 
-         final String crumbText = crumbIndex == 0
+         // this is VERY important otherwise hovered tours have another spacing !!!
+         gc.setAntialias(SWT.ON);
 
-               ? Messages.Map2_TourBreadcrumb_Label_Tours
-                     + UI.SPACE
-                     + UI.SPACE
-                     + UI.SPACE
-                     + numTourDataCrumbs
+         final String crumbSepText = CRUMB_SEPARATOR;
+         final Point crumbSepSize = gc.textExtent(crumbSepText);
+         final int crumbHeight = crumbSepSize.y + 2 * marginVertical;
 
-               : numTourDataCrumbs;
+         /*
+          * Setup colors
+          */
+         Color bgColor;
+         Color fgColor;
+         Color bgColorHovered;
+         Color fgColorHovered;
 
-         final Point crumTextSize = gc.textExtent(crumbText);
+         if (net.tourbook.common.UI.IS_DARK_THEME) {
 
-         final Rectangle crumbRectangle = new Rectangle(
+            bgColor = ThemeUtil.getDefaultBackgroundColor_Table();
+            fgColor = ThemeUtil.getDefaultForegroundColor_Table();
+
+         } else {
+
+            if (_map.isMapBackgroundDark()) {
+
+               bgColor = new Color(0x40, 0x40, 0x40);
+               fgColor = SYSTEM_COLOR_WHITE;
+
+            } else {
+
+               bgColor = SYSTEM_COLOR_WHITE;
+               fgColor = SYSTEM_COLOR_BLACK;
+            }
+         }
+
+         bgColorHovered = SYSTEM_COLOR_BLUE;
+         fgColorHovered = SYSTEM_COLOR_WHITE;
+
+         /*
+          * Draw remove all button
+          */
+         final String crumbResetAllText = CRUMB_ACTION_REMOVE_ALL;
+         final Point crumbResetSize = gc.textExtent(crumbResetAllText);
+         final Rectangle crumbAction_RemoveAll = new Rectangle(
                devX,
                devY,
-               crumTextSize.x + 2 * marginHorizontal_Crumb,
-               crumTextSize.y + 2 * marginVertical);
-
-         _allTourCrumbRectangles.add(crumbRectangle);
-
-         final Color crumbFgColor = crumbIndex == _hoveredCrumbIndex ? fgColorHovered : fgColor;
-         final Color crumbBgColor = crumbIndex == _hoveredCrumbIndex ? bgColorHovered : bgColor;
-
-         gc.setBackground(crumbBgColor);
-         gc.fillRectangle(crumbRectangle);
-
-         gc.setForeground(crumbFgColor);
-         gc.drawString(crumbText,
-               devX + marginHorizontal_Crumb,
-               devY + marginVertical);
-
-         devX += crumbRectangle.width;
-      }
-
-      /*
-       * Paint button to uplift the last crumb
-       */
-      if (numTourCrumbs > 1) {
-
-         final String crumbUpliftLast_Text = CRUMB_ACTION_UPLIFT_LAST_CRUMB;
-         final Point crumbUpliftLast_Size = gc.textExtent(crumbUpliftLast_Text);
-         final Rectangle crumbUpliftLast_Rect = new Rectangle(
-               devX,
-               devY,
-               crumbUpliftLast_Size.x + 2 * marginHorizontal_Separator,
+               crumbResetSize.x + 2 * marginHorizontal_Separator,
                crumbHeight);
 
-         gc.setBackground(_isAction_UpliftLastCrumb_Hovered ? SYSTEM_COLOR_RED : bgColor);
-         gc.fillRectangle(crumbUpliftLast_Rect);
+         gc.setBackground(_isAction_RemoveAll_Hovered ? SYSTEM_COLOR_RED : bgColor);
+         gc.fillRectangle(crumbAction_RemoveAll);
 
          gc.setForeground(fgColor);
-         gc.drawString(crumbUpliftLast_Text,
+         gc.drawString(crumbResetAllText,
                devX + marginHorizontal_Separator,
                devY + marginVertical);
 
-         _crumbOutline_Action_UpliftLastCrumb = crumbUpliftLast_Rect;
+         _crumbOutline_Action_RemoveAllCrumbs = crumbAction_RemoveAll;
 
-         devX += crumbUpliftLast_Rect.width;
+         devX += crumbAction_RemoveAll.width;
+
+         /*
+          * Draw breadcrumbs
+          */
+         _allTourCrumbRectangles.clear();
+
+         final int numTourCrumbs = _allCrumbsWithAllTours.size();
+
+         for (int crumbIndex = 0; crumbIndex < numTourCrumbs; crumbIndex++) {
+
+            if (crumbIndex > 0) {
+
+               /*
+                * Paint separator between crumbs
+                */
+
+               final Rectangle crumbSeparator = new Rectangle(
+                     devX,
+                     devY,
+                     crumbSepSize.x + 2 * marginHorizontal_Separator,
+                     crumbHeight);
+
+               gc.setBackground(bgColor);
+               gc.fillRectangle(crumbSeparator);
+
+               gc.setForeground(fgColor);
+               gc.drawString(crumbSepText,
+                     devX + marginHorizontal_Separator,
+                     devY + marginVertical);
+
+               devX += crumbSeparator.width;
+            }
+
+            /*
+             * Paint crumb
+             */
+
+            final ArrayList<Long> tourDataCrumb = _allCrumbsWithAllTours.get(crumbIndex);
+            final String numTourDataCrumbs = Integer.toString(tourDataCrumb.size());
+
+            final String crumbText = crumbIndex == 0
+
+                  ? Messages.Map2_TourBreadcrumb_Label_Tours
+                        + UI.SPACE
+                        + UI.SPACE
+                        + UI.SPACE
+                        + numTourDataCrumbs
+
+                  : numTourDataCrumbs;
+
+            final Point crumTextSize = gc.textExtent(crumbText);
+
+            final Rectangle crumbRectangle = new Rectangle(
+                  devX,
+                  devY,
+                  crumTextSize.x + 2 * marginHorizontal_Crumb,
+                  crumTextSize.y + 2 * marginVertical);
+
+            _allTourCrumbRectangles.add(crumbRectangle);
+
+            final Color crumbFgColor = crumbIndex == _hoveredCrumbIndex ? fgColorHovered : fgColor;
+            final Color crumbBgColor = crumbIndex == _hoveredCrumbIndex ? bgColorHovered : bgColor;
+
+            gc.setBackground(crumbBgColor);
+            gc.fillRectangle(crumbRectangle);
+
+            gc.setForeground(crumbFgColor);
+            gc.drawString(crumbText,
+                  devX + marginHorizontal_Crumb,
+                  devY + marginVertical);
+
+            devX += crumbRectangle.width;
+         }
+
+         /*
+          * Paint button to uplift the last crumb
+          */
+         if (numTourCrumbs > 1) {
+
+            final String crumbUpliftLast_Text = CRUMB_ACTION_UPLIFT_LAST_CRUMB;
+            final Point crumbUpliftLast_Size = gc.textExtent(crumbUpliftLast_Text);
+            final Rectangle crumbUpliftLast_Rect = new Rectangle(
+                  devX,
+                  devY,
+                  crumbUpliftLast_Size.x + 2 * marginHorizontal_Separator,
+                  crumbHeight);
+
+            gc.setBackground(_isAction_UpliftLastCrumb_Hovered ? SYSTEM_COLOR_RED : bgColor);
+            gc.fillRectangle(crumbUpliftLast_Rect);
+
+            gc.setForeground(fgColor);
+            gc.drawString(crumbUpliftLast_Text,
+                  devX + marginHorizontal_Separator,
+                  devY + marginVertical);
+
+            _crumbOutline_Action_UpliftLastCrumb = crumbUpliftLast_Rect;
+
+            devX += crumbUpliftLast_Rect.width;
+         }
+
+         _crumbOutline_Bar = new Rectangle(0, 0, devX, crumbHeight);
+
+      } else {
+
+         // I'm not sure if this is necessary
+         _crumbOutline_Bar = null;
       }
-
-      /*
-       * Show message that enhanced painting method is used and a tour cannot be selected
-       */
-      if (isShowTourPaintMethodEnhancedWarning) {
-
-         final Font oldFont = gc.getFont();
-         gc.setFont(_boldFont);
-         gc.setAntialias(SWT.OFF);
-
-         final String warningText = Messages.Map2_TourBreadcrumb_Info_EnhancedPaintingWarning;
-         final Point warningSize = gc.textExtent(warningText);
-
-         final int devXWarning = devX + 0;
-         final int devYWarning = 0;
-
-         gc.setBackground(SYSTEM_COLOR_RED);
-         gc.fillRectangle(
-               devXWarning,
-               devYWarning,
-               warningSize.x + 2 * marginHorizontal_Crumb,
-               warningSize.y + 2 * marginVertical);
-
-         gc.setForeground(SYSTEM_COLOR_WHITE);
-         gc.drawString(
-               warningText,
-               devXWarning + marginHorizontal_Crumb,
-               devYWarning + marginVertical);
-
-         gc.setFont(oldFont);
-      }
-
-      _crumbOutline_Bar = new Rectangle(0, 0, devX, crumbHeight);
    }
 
    public void removeAllCrumbs() {
@@ -647,6 +643,21 @@ public class MapTourBreadcrumb {
       _numVisibleCrumbs = numVisibleBreadcrumbs;
 
       checkVisibleCrumbs();
+   }
+
+   @Override
+   public String toString() {
+
+      return "MapTourBreadcrumb" //$NON-NLS-1$
+
+            + "\n" //$NON-NLS-1$
+            + "[" //$NON-NLS-1$
+            + "\n" //$NON-NLS-1$
+
+            + "_numVisibleCrumbs       =" + _numVisibleCrumbs + "\n" //$NON-NLS-1$ //$NON-NLS-2$
+            + "_allCrumbsWithAllTours  =" + _allCrumbsWithAllTours + "\n" //$NON-NLS-1$ //$NON-NLS-2$
+
+            + "]"; //$NON-NLS-1$
    }
 
 }

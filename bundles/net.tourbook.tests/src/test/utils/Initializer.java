@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020, 2021 Frédéric Bard
+ * Copyright (C) 2020, 2024 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,59 +15,136 @@
  *******************************************************************************/
 package utils;
 
+import com.pgssoft.httpclient.HttpClientMock;
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLConnection;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 
 import javax.persistence.Persistence;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
-import net.tourbook.common.UI;
+import net.tourbook.cloud.oauth2.OAuth2Utils;
+import net.tourbook.cloud.oauth2.TokensRetrievalHandler;
+import net.tourbook.common.time.TimeTools;
+import net.tourbook.common.util.StatusUtil;
+import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
-import net.tourbook.device.garmin.GarminTCX_DeviceDataReader;
-import net.tourbook.device.gpx.GPX_SAX_Handler;
-import net.tourbook.importdata.DeviceData;
+import net.tourbook.data.TourType;
+import net.tourbook.device.garmin.fit.FitDataReader;
+import net.tourbook.device.gpx.GPXDeviceDataReader;
 import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
 
-import org.xml.sax.SAXException;
-
 public class Initializer {
+
+   public static void authorizeVendor(final int callBackPort, final TokensRetrievalHandler tokensRetrievalHandler) {
+
+      BufferedReader bufferedReader = null;
+      try {
+         // create the HttpServer
+         HttpServer httpServer;
+
+         httpServer = HttpServer.create(new InetSocketAddress(callBackPort), 0);
+
+         httpServer.createContext("/", tokensRetrievalHandler); //$NON-NLS-1$
+
+         // start the server
+         httpServer.start();
+
+         // authorize and retrieve the tokens
+         final URL url = new URL("http://localhost:" + callBackPort + "/?code=12345"); //$NON-NLS-1$ //$NON-NLS-2$
+         final URLConnection conn = url.openConnection();
+         bufferedReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+         // stop the server
+         httpServer.stop(0);
+
+      } catch (final IOException e) {
+         StatusUtil.log(e);
+      } finally {
+         Util.closeReader(bufferedReader);
+      }
+   }
+
+   public static TourData createManualTour() {
+
+      final TourData manualTour = new TourData();
+      final ZonedDateTime zonedDateTime = ZonedDateTime.of(
+            2022,
+            1,
+            3,
+            17,
+            16,
+            0,
+            0,
+            TimeTools.UTC);
+      manualTour.setTourStartTime(zonedDateTime);
+      manualTour.setTourDistance(10);
+      manualTour.setTourDeviceTime_Elapsed(3600);
+      manualTour.setTourTitle("Manual Tour"); //$NON-NLS-1$
+
+      final TourType tourType = new TourType();
+      tourType.setName("Running"); //$NON-NLS-1$
+      manualTour.setTourType(tourType);
+
+      return manualTour;
+   }
+
+   public static Object getInitialHttpClient() {
+
+      Field field = null;
+      try {
+         field = OAuth2Utils.class.getDeclaredField("httpClient"); //$NON-NLS-1$
+         field.setAccessible(true);
+         return field.get(null);
+      } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+         StatusUtil.log(e);
+      }
+
+      return field;
+   }
 
    public static TourData importTour() {
 
-      final SAXParser parser = Initializer.initializeParser();
-      final DeviceData deviceData = new DeviceData();
+      return importTour_GPX(FilesUtils.rootPath + "/utils/files/LongsPeak-Manual.gpx"); //$NON-NLS-1$
+   }
+
+   public static TourData importTour_FIT(final String importFilePath) {
+
       final HashMap<Long, TourData> newlyImportedTours = new HashMap<>();
       final HashMap<Long, TourData> alreadyImportedTours = new HashMap<>();
-      final GarminTCX_DeviceDataReader deviceDataReader = new GarminTCX_DeviceDataReader();
+      final FitDataReader fitDataReader = new FitDataReader();
 
-      final String IMPORT_FILE_PATH = "/utils/files/LongsPeak-Manual.gpx"; //$NON-NLS-1$
-
-      final InputStream gpx = Initializer.class.getResourceAsStream(IMPORT_FILE_PATH);
-
-      final GPX_SAX_Handler handler = new GPX_SAX_Handler(
-
-            IMPORT_FILE_PATH,
-            deviceData,
+      fitDataReader.processDeviceData(importFilePath,
+            null,
             alreadyImportedTours,
             newlyImportedTours,
-
             new ImportState_File(),
-            new ImportState_Process(),
+            new ImportState_Process());
 
-            deviceDataReader);
+      return Comparison.retrieveImportedTour(newlyImportedTours);
+   }
 
-      if (parser != null) {
-         try {
-            parser.parse(gpx, handler);
-         } catch (SAXException | IOException e) {
-            e.printStackTrace();
-         }
-      }
+   public static TourData importTour_GPX(final String importFilePath) {
+
+      final HashMap<Long, TourData> newlyImportedTours = new HashMap<>();
+      final HashMap<Long, TourData> alreadyImportedTours = new HashMap<>();
+      final GPXDeviceDataReader deviceDataReader = new GPXDeviceDataReader();
+      final String testFilePath = FilesUtils.getAbsoluteFilePath(importFilePath);
+
+      deviceDataReader.processDeviceData(testFilePath,
+            null,
+            alreadyImportedTours,
+            newlyImportedTours,
+            new ImportState_File(),
+            new ImportState_Process());
 
       return Comparison.retrieveImportedTour(newlyImportedTours);
    }
@@ -77,19 +154,24 @@ public class Initializer {
       Persistence.createEntityManagerFactory("tourdatabase").createEntityManager(); //$NON-NLS-1$
    }
 
-   public static SAXParser initializeParser() {
+   public static HttpClientMock initializeHttpClientMock() {
 
+      final HttpClientMock httpClientMock = new HttpClientMock();
+
+      setHttpClient(httpClientMock);
+
+      return httpClientMock;
+   }
+
+   public static void setHttpClient(final Object httpClient) {
+
+      Field field;
       try {
-
-         final SAXParserFactory factory = SAXParserFactory.newInstance();
-         final SAXParser parser = factory.newSAXParser();
-         parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, UI.EMPTY_STRING);
-         parser.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, UI.EMPTY_STRING);
-         return parser;
-      } catch (final ParserConfigurationException | SAXException e) {
-         e.printStackTrace();
+         field = OAuth2Utils.class.getDeclaredField("httpClient"); //$NON-NLS-1$
+         field.setAccessible(true);
+         field.set(null, httpClient);
+      } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
+         StatusUtil.log(e);
       }
-
-      return null;
    }
 }

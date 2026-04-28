@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,10 +15,13 @@
  *******************************************************************************/
 package de.byteholder.geoclipse.mapprovider;
 
+import static org.eclipse.swt.events.KeyListener.keyPressedAdapter;
+import static org.eclipse.swt.events.SelectionListener.widgetSelectedAdapter;
+import static org.eclipse.ui.forms.events.IExpansionListener.expansionStateChangedAdapter;
+
 import de.byteholder.geoclipse.Messages;
 import de.byteholder.geoclipse.map.Map2;
 import de.byteholder.geoclipse.map.Tile;
-import de.byteholder.geoclipse.map.UI;
 import de.byteholder.geoclipse.map.event.ITileListener;
 import de.byteholder.geoclipse.map.event.TileEventId;
 import de.byteholder.geoclipse.preferences.PrefPage_Map2_Providers;
@@ -30,6 +33,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import net.tourbook.Images;
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.common.map.GeoPosition;
 import net.tourbook.common.util.Util;
 
@@ -73,11 +77,7 @@ import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.Transfer;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseWheelListener;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
@@ -101,8 +101,6 @@ import org.eclipse.swt.widgets.TreeColumn;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.swt.widgets.Widget;
 import org.eclipse.ui.dialogs.ContainerCheckedTreeViewer;
-import org.eclipse.ui.forms.events.ExpansionEvent;
-import org.eclipse.ui.forms.events.IExpansionListener;
 import org.eclipse.ui.forms.widgets.ExpandableComposite;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
@@ -110,13 +108,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
    private static final int    MAP_MAX_ZOOM_LEVEL                     = Map2.UI_MAX_ZOOM_LEVEL - Map2.UI_MIN_ZOOM_LEVEL;
 
-   public static final String  DEFAULT_URL                            = "http://";                                    //$NON-NLS-1$
+   public static final String  DEFAULT_URL                            = "http://";                                      //$NON-NLS-1$
 
-   private static final String DIALOG_SETTINGS_VIEWER_WIDTH           = "ViewerWidth";                                //$NON-NLS-1$
-   private static final String DIALOG_SETTINGS_IS_SHOW_TILE_INFO      = "IsShowTileInfo";                             //$NON-NLS-1$
-   private static final String DIALOG_SETTINGS_IS_LIVE_VIEW           = "IsLiveView";                                 //$NON-NLS-1$
-   private static final String DIALOG_SETTINGS_IS_SHOW_TILE_IMAGE_LOG = "IsShowTileImageLogging";                     //$NON-NLS-1$
-   private static final String DIALOG_SETTINGS_IS_PROPERTIES_EXPANDED = "IsPropertiesExpanded";                       //$NON-NLS-1$
+   private static final String DIALOG_SETTINGS_VIEWER_WIDTH           = "ViewerWidth";                                  //$NON-NLS-1$
+   private static final String DIALOG_SETTINGS_IS_SHOW_TILE_INFO      = "IsShowTileInfo";                               //$NON-NLS-1$
+   private static final String DIALOG_SETTINGS_IS_LIVE_VIEW           = "IsLiveView";                                   //$NON-NLS-1$
+   private static final String DIALOG_SETTINGS_IS_SHOW_TILE_IMAGE_LOG = "IsShowTileImageLogging";                       //$NON-NLS-1$
+   private static final String DIALOG_SETTINGS_IS_PROPERTIES_EXPANDED = "IsPropertiesExpanded";                         //$NON-NLS-1$
 
    /*
     * UI controls
@@ -280,18 +278,21 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
    @Override
    public void actionZoomIn() {
-      _map.setZoom(_map.getZoom() + 1);
+
+      _map.setZoom(_map.getZoomLevel() + 1);
       _map.paint();
    }
 
    @Override
    public void actionZoomOut() {
-      _map.setZoom(_map.getZoom() - 1);
+
+      _map.setZoom(_map.getZoomLevel() - 1);
       _map.paint();
    }
 
    @Override
    public void actionZoomOutToMinZoom() {
+
       _map.setZoom(_map.getMapProvider().getMinimumZoomLevel());
       _map.paint();
    }
@@ -308,6 +309,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
    /**
     * @param mapProvider
     *           {@link MPWms}
+    *
     * @return Returns <code>true</code> when the wms map provider can be displayed, this is
     *         possible when a layer is displayed
     */
@@ -438,7 +440,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
    private void createResources() {
 
       _imageMap = TourbookPlugin.getImageDescriptor(Images.Map).createImage();
-      _imagePlaceholder = TourbookPlugin.getImageDescriptor(Images.App_Placeholder16).createImage();
+      _imagePlaceholder = TourbookPlugin.getImageDescriptor(Images.App_IconPlaceholder).createImage();
       _imageLayer = TourbookPlugin.getImageDescriptor(Images.Zoom_ShowEntireLayer).createImage();
    }
 
@@ -507,16 +509,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
          _propContainer.setBackground(parentBackground);
          _propContainer.setText(Messages.Dialog_MapConfig_Label_Properties);
-         _propContainer.addExpansionListener(new IExpansionListener() {
-
-            @Override
-            public void expansionStateChanged(final ExpansionEvent e) {
-               _propContainer.getParent().layout(true);
-            }
-
-            @Override
-            public void expansionStateChanging(final ExpansionEvent e) {}
-         });
+         _propContainer.addExpansionListener(expansionStateChangedAdapter(expansionEvent -> _propContainer.getParent().layout(true)));
 
          {
             _propInnerContainer = _formTk.createComposite(_propContainer);
@@ -560,11 +553,11 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             final Object selectedItem = ((IStructuredSelection) _treeViewer.getSelection()).getFirstElement();
             if (selectedItem != null) {
 
-               if (selectedItem instanceof TVIMapProvider) {
+               if (selectedItem instanceof final TVIMapProvider tviMapProvider) {
 
                   // expand/collapse current item
 
-                  final MP mapProvider = ((TVIMapProvider) selectedItem).getMapProviderWrapper().getMP();
+                  final MP mapProvider = tviMapProvider.getMapProviderWrapper().getMP();
 
                   if ((mapProvider instanceof MPWms) == false) {
 
@@ -635,22 +628,15 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                new Transfer[] { LocalSelectionTransfer.getTransfer() },
                new ProfileDropAdapter(this, _treeViewer));
 
-         tree.addKeyListener(new KeyListener() {
+         tree.addKeyListener(keyPressedAdapter(keyEvent -> {
 
-            @Override
-            public void keyPressed(final KeyEvent e) {
-
-               /*
-                * toggle the visibility with the space key
-                */
-               if (e.keyCode == ' ') {
-                  toggleMapVisibility(tree);
-               }
+            /*
+             * toggle the visibility with the space key
+             */
+            if (keyEvent.keyCode == ' ') {
+               toggleMapVisibility(tree);
             }
-
-            @Override
-            public void keyReleased(final KeyEvent e) {}
-         });
+         }));
 
          /*
           * add editing support for the tree
@@ -711,18 +697,18 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                final StyledString styledString = new StyledString();
                final Object element = cell.getElement();
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
                   final MP mapProvider = mpWrapper.getMP();
 
                   styledString.append(mapProvider.getName());
 
                   cell.setImage(mpWrapper.isDisplayedInMap() ? _imageMap : _imagePlaceholder);
 
-               } else if (element instanceof TVIWmsLayer) {
+               } else if (element instanceof final TVIWmsLayer tviWmsLayer) {
 
-                  final MtLayer mtLayer = ((TVIWmsLayer) element).getMtLayer();
+                  final MtLayer mtLayer = tviWmsLayer.getMtLayer();
 
                   styledString.append(mtLayer.getGeoLayer().getTitle());
 
@@ -757,16 +743,16 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
                final Object element = cell.getElement();
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
                   final boolean isVisible = mpWrapper.isDisplayedInMap();
 
                   cell.setText(isVisible ? Boolean.toString(isVisible) : UI.EMPTY_STRING);
 
-               } else if (element instanceof TVIWmsLayer) {
+               } else if (element instanceof final TVIWmsLayer tviWmsLayer) {
 
-                  final MtLayer mtLayer = ((TVIWmsLayer) element).getMtLayer();
+                  final MtLayer mtLayer = tviWmsLayer.getMtLayer();
                   final boolean isVisible = mtLayer.isDisplayedInMap();
 
                   cell.setText(isVisible ? Boolean.toString(isVisible) : UI.EMPTY_STRING);
@@ -784,16 +770,15 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             @Override
             protected boolean canEdit(final Object element) {
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tvi) {
 
-                  final TVIMapProvider tvi = (TVIMapProvider) element;
                   final MP mapProvider = tvi.getMapProviderWrapper().getMP();
 
-                  if (mapProvider instanceof MPWms) {
+                  if (mapProvider instanceof final MPWms mpWms) {
 
                      // wms can be toggled when at least one layer is displayed
 
-                     return canWmsBeDisplayed((MPWms) mapProvider);
+                     return canWmsBeDisplayed(mpWms);
                   }
                }
 
@@ -808,15 +793,15 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             @Override
             protected Object getValue(final Object element) {
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
 
                   return mpWrapper.isDisplayedInMap();
 
-               } else if (element instanceof TVIWmsLayer) {
+               } else if (element instanceof final TVIWmsLayer tviWmsLayer) {
 
-                  final MtLayer mtLayer = ((TVIWmsLayer) element).getMtLayer();
+                  final MtLayer mtLayer = tviWmsLayer.getMtLayer();
 
                   return mtLayer.isDisplayedInMap();
                }
@@ -829,9 +814,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
                final boolean isChecked = ((Boolean) value);
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
 
                   mpWrapper.setIsDisplayedInMap(isChecked);
 
@@ -846,9 +831,8 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
                   enableProfileMapButton();
 
-               } else if (element instanceof TVIWmsLayer) {
+               } else if (element instanceof final TVIWmsLayer tviLayer) {
 
-                  final TVIWmsLayer tviLayer = (TVIWmsLayer) element;
                   final MtLayer mtLayer = tviLayer.getMtLayer();
 
                   mtLayer.setIsDisplayedInMap(isChecked);
@@ -879,9 +863,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
                final Object element = cell.getElement();
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = (tviMapProvider).getMapProviderWrapper();
                   final boolean isVisible = mpWrapper.isDisplayedInMap();
 
                   cell.setText(isVisible ? Integer.toString(mpWrapper.getAlpha()) : UI.EMPTY_STRING);
@@ -909,9 +893,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
                final Object element = cell.getElement();
 
-               if (element instanceof TVIMapProvider) {
+               if (element instanceof final TVIMapProvider tviMapProvider) {
 
-                  final MPWrapper mpWrapper = ((TVIMapProvider) element).getMapProviderWrapper();
+                  final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
 
                   cell.setText(mpWrapper.isBrightnessForNextMp()
                         ? Integer.toString(mpWrapper.getBrightnessValueForNextMp())
@@ -956,12 +940,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          GridDataFactory.fillDefaults().span(2, 1).applyTo(_chkBrightness);
          _chkBrightness.setText(Messages.Dialog_MapProfile_Button_Brightness);
          _chkBrightness.setToolTipText(Messages.Dialog_MapProfile_Button_Brightness_Tooltip);
-         _chkBrightness.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               updateMVBrightness();
-            }
-         });
+         _chkBrightness.addSelectionListener(widgetSelectedAdapter(selectionEvent -> updateMVBrightness()));
 
          // scale: brightness
          _scaleBright = new Scale(group, SWT.NONE);
@@ -969,12 +948,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          _scaleBright.setMinimum(0);
          _scaleBright.setMaximum(100);
          _scaleBright.setToolTipText(Messages.Dialog_MapProfile_Scale_Brightness_Tooltip);
-         _scaleBright.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onModifyBrightScale();
-            }
-         });
+         _scaleBright.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyBrightScale()));
 
          // spinner: brightness
          _spinBright = new Spinner(group, SWT.BORDER);
@@ -988,12 +962,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
          _spinBright.addMouseWheelListener(mouseEvent -> Util.adjustSpinnerValueOnMouseScroll(mouseEvent));
 
-         _spinBright.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onModifyBrightSpinner();
-            }
-         });
+         _spinBright.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyBrightSpinner()));
 
          _spinBright.addModifyListener(modifyEvent -> onModifyBrightSpinner());
 
@@ -1011,12 +980,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          _scaleAlpha.setMinimum(0);
          _scaleAlpha.setMaximum(100);
          _scaleAlpha.setToolTipText(Messages.Dialog_CustomConfig_Label_Alpha_Tooltip);
-         _scaleAlpha.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onModifyAlphaScale();
-            }
-         });
+         _scaleAlpha.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyAlphaScale()));
 
          /*
           * this do not work !!!
@@ -1046,14 +1010,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          _spinAlpha.setMaximum(100);
          _spinAlpha.setToolTipText(Messages.Dialog_CustomConfig_Label_Alpha_Tooltip);
 
-         _spinAlpha.addMouseWheelListener(Util::adjustSpinnerValueOnMouseScroll);
+         _spinAlpha.addMouseWheelListener(mouseEvent -> Util.adjustSpinnerValueOnMouseScroll(mouseEvent));
 
-         _spinAlpha.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onModifyAlphaSpinner();
-            }
-         });
+         _spinAlpha.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyAlphaSpinner()));
 
          _spinAlpha.addModifyListener(modifyEvent -> onModifyAlphaSpinner());
 
@@ -1067,23 +1026,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             _chkTransparentPixel = new Button(containerOptions, SWT.CHECK);
             _chkTransparentPixel.setText(Messages.Dialog_MapConfig_Button_TransparentPixel);
             _chkTransparentPixel.setToolTipText(Messages.Dialog_MapConfig_Button_TransparentPixel_Tooltip);
-            _chkTransparentPixel.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  onModifyTransparentColor();
-               }
-            });
+            _chkTransparentPixel.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyTransparentColor()));
 
             // check: is black transparent
             _chkTransparentBlack = new Button(containerOptions, SWT.CHECK);
             _chkTransparentBlack.setText(Messages.Dialog_MapConfig_Button_TransparentBlack);
             _chkTransparentBlack.setToolTipText(Messages.Dialog_MapConfig_Button_TransparentBlack_Tooltip);
-            _chkTransparentBlack.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  onModifyTransparentColor();
-               }
-            });
+            _chkTransparentBlack.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onModifyTransparentColor()));
          }
 
          // ################################################
@@ -1114,17 +1063,11 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
       GridLayoutFactory.fillDefaults().applyTo(_transparentContainer);
 
       _transparentContainer.setBackground(parentBackground);
-      _transparentContainer.addExpansionListener(new IExpansionListener() {
-
-         @Override
-         public void expansionStateChanged(final ExpansionEvent e) {
+      _transparentContainer.addExpansionListener(expansionStateChangedAdapter(expansionEvent -> {
 //            fPropInnerContainer.layout(true);
-            _innerContainer.layout(true);
-         }
+         _innerContainer.layout(true);
 
-         @Override
-         public void expansionStateChanging(final ExpansionEvent e) {}
-      });
+      }));
 
       {
          final Composite clientContainer = _formTk.createComposite(_transparentContainer);
@@ -1228,15 +1171,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             _spinMinZoom.setMaximum(Map2.UI_MAX_ZOOM_LEVEL);
             _spinMinZoom.setSelection(Map2.UI_MIN_ZOOM_LEVEL);
             _spinMinZoom.addMouseWheelListener(mouseWheelListener);
-            _spinMinZoom.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  if (_isInitUI) {
-                     return;
-                  }
-                  onModifyZoomSpinnerMin();
+            _spinMinZoom.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+
+               if (_isInitUI) {
+                  return;
                }
-            });
+               onModifyZoomSpinnerMin();
+            }));
             _spinMinZoom.addModifyListener(modifyEvent -> {
                if (_isInitUI) {
                   return;
@@ -1258,15 +1199,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             _spinMaxZoom.setMaximum(Map2.UI_MAX_ZOOM_LEVEL);
             _spinMaxZoom.setSelection(Map2.UI_MAX_ZOOM_LEVEL);
             _spinMaxZoom.addMouseWheelListener(mouseWheelListener);
-            _spinMaxZoom.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  if (_isInitUI) {
-                     return;
-                  }
-                  onModifyZoomSpinnerMax();
+            _spinMaxZoom.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+
+               if (_isInitUI) {
+                  return;
                }
-            });
+               onModifyZoomSpinnerMax();
+            }));
             _spinMaxZoom.addModifyListener(modifyEvent -> {
                if (_isInitUI) {
                   return;
@@ -1310,16 +1249,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                .applyTo(_chkLiveView);
          _chkLiveView.setText(Messages.Dialog_MapConfig_Button_LiveView);
          _chkLiveView.setToolTipText(Messages.Dialog_MapConfig_Button_LiveView_Tooltip);
-         _chkLiveView.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
+         _chkLiveView.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
 
-               _isLiveView = _chkLiveView.getSelection();
-               _map.setLiveView(_isLiveView);
+            _isLiveView = _chkLiveView.getSelection();
+            _map.setLiveView(_isLiveView);
 
-               updateLiveView();
-            }
-         });
+            updateLiveView();
+         }));
 
          // ################################################
 
@@ -1329,13 +1265,11 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                .align(SWT.FILL, SWT.END)
                .applyTo(_chkShowTileInfo);
          _chkShowTileInfo.setText(Messages.Dialog_MapConfig_Button_ShowTileInfo);
-         _chkShowTileInfo.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               final boolean isTileInfo = _chkShowTileInfo.getSelection();
-               _map.setShowDebugInfo(isTileInfo, isTileInfo);
-            }
-         });
+         _chkShowTileInfo.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+
+            final boolean isTileInfo = _chkShowTileInfo.getSelection();
+            _map.setShowDebugInfo(isTileInfo, isTileInfo);
+         }));
 
          // ############################################################
 
@@ -1345,12 +1279,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                .applyTo(_chkShowTileImageLog);
          _chkShowTileImageLog.setText(Messages.Dialog_MapConfig_Button_ShowTileLog);
          _chkShowTileImageLog.setToolTipText(Messages.Dialog_MapConfig_Button_ShowTileLog_Tooltip);
-         _chkShowTileImageLog.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               enableControls();
-            }
-         });
+         _chkShowTileImageLog.addSelectionListener(widgetSelectedAdapter(selectionEvent -> enableControls()));
       }
    }
 
@@ -1364,12 +1293,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          _btnShowProfileMap = new Button(toolbarContainer, SWT.NONE);
          _btnShowProfileMap.setText(Messages.Dialog_MapProfile_Button_UpdateMap);
          _btnShowProfileMap.setToolTipText(Messages.Dialog_MapProfile_Button_UpdateMap_Tooltip);
-         _btnShowProfileMap.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onSelectMapProfile();
-            }
-         });
+         _btnShowProfileMap.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onSelectMapProfile()));
 
          // ############################################################
 
@@ -1377,12 +1301,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          _btnShowOsmMap = new Button(toolbarContainer, SWT.NONE);
          _btnShowOsmMap.setText(Messages.Dialog_MapConfig_Button_ShowOsmMap);
          _btnShowOsmMap.setToolTipText(Messages.Dialog_MapConfig_Button_ShowOsmMap_Tooltip);
-         _btnShowOsmMap.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onSelectMapOSM();
-            }
-         });
+         _btnShowOsmMap.addSelectionListener(widgetSelectedAdapter(selectionEvent -> onSelectMapOSM()));
 
          // ############################################################
 
@@ -1415,9 +1334,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
          double lon = mousePosition.longitude % 360;
          lon = lon > 180 ? //
-         lon - 360
+               lon - 360
                : lon < -180 ? //
-         lon + 360
+                     lon + 360
                      : lon;
 
          _lblMapInfo.setText(NLS.bind(
@@ -1467,16 +1386,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
       _logContainer.setBackground(parentBackground);
       _logContainer.setText(Messages.Dialog_MapConfig_Label_LoadedImageUrl);
       _logContainer.setToolTipText(Messages.Dialog_MapConfig_Button_ShowTileLog_Tooltip);
-      _logContainer.addExpansionListener(new IExpansionListener() {
-
-         @Override
-         public void expansionStateChanged(final ExpansionEvent e) {
-            _logContainer.getParent().layout(true);
-         }
-
-         @Override
-         public void expansionStateChanging(final ExpansionEvent e) {}
-      });
+      _logContainer.addExpansionListener(expansionStateChangedAdapter(expansionEvent -> _logContainer.getParent().layout(true)));
 
       {
          final Composite clientContainer = _formTk.createComposite(_logContainer);
@@ -1496,16 +1406,14 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             _formTk.adapt(_cboTileImageLog, true, true);
             _cboTileImageLog.setFont(monoFont);
 
-            _cboTileImageLog.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  // display selected item in the text field below
-                  final int selectionIndex = _cboTileImageLog.getSelectionIndex();
-                  if (selectionIndex != -1) {
-                     _txtLogDetail.setText(_cboTileImageLog.getItem(selectionIndex));
-                  }
+            _cboTileImageLog.addSelectionListener(widgetSelectedAdapter(selectionEvent -> {
+
+               // display selected item in the text field below
+               final int selectionIndex = _cboTileImageLog.getSelectionIndex();
+               if (selectionIndex != -1) {
+                  _txtLogDetail.setText(_cboTileImageLog.getItem(selectionIndex));
                }
-            });
+            }));
 
             // label: selected log entry
             _txtLogDetail = new Text(clientContainer, SWT.READ_ONLY | SWT.BORDER | SWT.MULTI | SWT.WRAP);
@@ -1547,9 +1455,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          isMpSelected = false;
       }
 
-      final boolean isBrightness = isMpSelected & _chkBrightness.getSelection();
-      final boolean isNoBrightness = isMpSelected & !isBrightness;
-      final boolean isTransparent = isMpSelected & _chkTransparentPixel.getSelection() & !isBrightness;
+      final boolean isBrightness = isMpSelected && _chkBrightness.getSelection();
+      final boolean isNoBrightness = isMpSelected && !isBrightness;
+      final boolean isTransparent = isMpSelected && _chkTransparentPixel.getSelection() && !isBrightness;
 
       _chkBrightness.setEnabled(isMpSelected);
       _spinBright.setEnabled(isBrightness);
@@ -1646,6 +1554,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
    /**
     * @param colorSelector
+    *
     * @return Returns the color value of the {@link ColorSelector} or -1 when the color is black
     */
    private int getColorValue(final ColorSelector colorSelector) {
@@ -1755,23 +1664,21 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
    private String getMpUrl(final MP mp) {
 
-      if (mp instanceof MPWms) {
+      if (mp instanceof final MPWms mpWms) {
 
          // wms map provider
 
-         return ((MPWms) mp).getCapabilitiesUrl();
+         return mpWms.getCapabilitiesUrl();
 
-      } else if (mp instanceof MPCustom) {
+      } else if (mp instanceof final MPCustom mpCustom) {
 
          // custom map provider
 
-         return ((MPCustom) mp).getCustomUrl();
+         return mpCustom.getCustomUrl();
 
-      } else if (mp instanceof MPPlugin) {
+      } else if (mp instanceof final MPPlugin pluginMapProvider) {
 
          // plugin map provider
-
-         final MPPlugin pluginMapProvider = (MPPlugin) mp;
 
          return pluginMapProvider.getBaseURL();
       }
@@ -1904,11 +1811,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
    private void onModifyTransparentColor() {
 
       final Object firstElement = ((StructuredSelection) _treeViewer.getSelection()).getFirstElement();
-      if (firstElement instanceof TVIMapProvider) {
+      if (firstElement instanceof final TVIMapProvider tviMapProvider) {
 
          // map provider is selected
-
-         final TVIMapProvider tviMapProvider = (TVIMapProvider) firstElement;
 
          // update alpha in the map provider
 
@@ -2080,15 +1985,15 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
       Object firstElement = ((StructuredSelection) selection).getFirstElement();
 
-      if (firstElement instanceof TVIWmsLayer) {
+      if (firstElement instanceof final TVIWmsLayer tviItem) {
+
          // get map provider item
-         final TVIWmsLayer tviItem = (TVIWmsLayer) firstElement;
          firstElement = tviItem.getParentItem();
       }
 
-      if (firstElement instanceof TVIMapProvider) {
+      if (firstElement instanceof final TVIMapProvider tviMapProvider) {
 
-         final MPWrapper selectedMpWrapper = ((TVIMapProvider) firstElement).getMapProviderWrapper();
+         final MPWrapper selectedMpWrapper = tviMapProvider.getMapProviderWrapper();
 
          _isInitUI = true;
          {
@@ -2201,10 +2106,11 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
       final int factoryMinZoom = mp.getMinimumZoomLevel();
       final int factoryMaxZoom = mp.getMaximumZoomLevel();
 
-      final int mapZoom = _map.getZoom();
+      final int mapZoom = _map.getZoomLevel();
       final GeoPosition mapCenter = _map.getMapGeoCenter();
 
       if (mapZoom < factoryMinZoom) {
+
          _map.setZoom(factoryMinZoom);
          _map.setMapCenter(mapCenter);
       }
@@ -2272,7 +2178,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
             // check if this is the last created runnable
             if (fRunnableCounter != _statUpdateCounter) {
-               // a new update event occured
+               // a new update event occurred
                return;
             }
 
@@ -2317,13 +2223,13 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
          // get tree custom item
          final Object itemData = items[0].getData();
 
-         if (itemData instanceof TVIMapProvider) {
+         if (itemData instanceof final TVIMapProvider tviMapProvider) {
 
-            final MPWrapper mpWrapper = ((TVIMapProvider) itemData).getMapProviderWrapper();
+            final MPWrapper mpWrapper = tviMapProvider.getMapProviderWrapper();
             boolean isWmsDisplayed = mpWrapper.isDisplayedInMap();
 
             final MP mapProvider = mpWrapper.getMP();
-            if (mapProvider instanceof MPWms) {
+            if (mapProvider instanceof final MPWms mpWms) {
 
                // visibility for a wms map provider can be toggled only a layer
 
@@ -2332,7 +2238,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                   isWmsDisplayed = false;
                } else {
                   // show wms only when one layer is displayed
-                  isWmsDisplayed = canWmsBeDisplayed((MPWms) mapProvider);
+                  isWmsDisplayed = canWmsBeDisplayed(mpWms);
                }
 
             } else {
@@ -2354,9 +2260,8 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
             mpWrapper.setIsDisplayedInMap(isWmsDisplayed);
             enableProfileMapButton();
 
-         } else if (itemData instanceof TVIWmsLayer) {
+         } else if (itemData instanceof final TVIWmsLayer tviLayer) {
 
-            final TVIWmsLayer tviLayer = (TVIWmsLayer) itemData;
             final MtLayer mtLayer = tviLayer.getMtLayer();
 
             // toggle layer state
@@ -2385,7 +2290,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
        * !!!! zoom level must be set before any other map methods are called because it
        * initialized the map with new zoom levels !!!
        */
-      final int oldZoomLevel = _map.getZoom();
+      final int oldZoomLevel = _map.getZoomLevel();
       final GeoPosition mapCenter = _map.getMapGeoCenter();
 
       final int newFactoryMinZoom = _spinMinZoom.getSelection() - Map2.UI_MIN_ZOOM_LEVEL;
@@ -2405,7 +2310,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
       }
 
       // keep map position
-      _mpProfile.setLastUsedZoom(_map.getZoom());
+      _mpProfile.setLastUsedZoom(_map.getZoomLevel());
       _mpProfile.setLastUsedPosition(_map.getMapGeoCenter());
 
       // set positions of map provider
@@ -2418,9 +2323,7 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
          // update wms layer
          final MP mapProvider = mpWrapper.getMP();
-         if (mapProvider instanceof MPWms) {
-
-            final MPWms mpWms = (MPWms) mapProvider;
+         if (mapProvider instanceof final MPWms mpWms) {
 
             if (mpWrapper.isDisplayedInMap()) {
 
@@ -2454,9 +2357,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
                for (final TreeItem childItem : treeChildren) {
 
                   final Object childData = childItem.getData();
-                  if (childData instanceof TVIWmsLayer) {
+                  if (childData instanceof final TVIWmsLayer tviWmsLayer) {
 
-                     final MtLayer mtLayer = ((TVIWmsLayer) childData).getMtLayer();
+                     final MtLayer mtLayer = tviWmsLayer.getMtLayer();
 
                      mtLayer.setPositionIndex(itemIndex++);
 
@@ -2486,11 +2389,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
 
          tviMapProvider = (TVIMapProvider) firstElement;
 
-      } else if (firstElement instanceof TVIWmsLayer) {
+      } else if (firstElement instanceof final TVIWmsLayer tviWmsLayer) {
 
          // wms layer is selected, get parent
-
-         final TVIWmsLayer tviWmsLayer = (TVIWmsLayer) firstElement;
 
          final TreeViewerItem parentItem = tviWmsLayer.getParentItem();
          if (parentItem instanceof TVIMapProvider) {
@@ -2516,11 +2417,9 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
    private void updateMVBrightness() {
 
       final Object firstElement = ((StructuredSelection) _treeViewer.getSelection()).getFirstElement();
-      if (firstElement instanceof TVIMapProvider) {
+      if (firstElement instanceof final TVIMapProvider tviMapProvider) {
 
          // map provider is selected
-
-         final TVIMapProvider tviMapProvider = (TVIMapProvider) firstElement;
 
          // update brightness in the map provider
 
@@ -2545,16 +2444,16 @@ public class DialogMPProfile extends DialogMP implements ITileListener, IMapDefa
    private void updateMVMapProvider(final TVIWmsLayer tviLayer) {
 
       final TreeViewerItem tviParent = tviLayer.getParentItem();
-      if (tviParent instanceof TVIMapProvider) {
+      if (tviParent instanceof final TVIMapProvider tviMapProvider) {
 
-         final MPWrapper parentMpWrapper = ((TVIMapProvider) tviParent).getMapProviderWrapper();
+         final MPWrapper parentMpWrapper = tviMapProvider.getMapProviderWrapper();
          final MP mapProvider = parentMpWrapper.getMP();
 
-         if (mapProvider instanceof MPWms) {
+         if (mapProvider instanceof final MPWms mpWms) {
 
             // check if a layer is visible
 
-            parentMpWrapper.setIsDisplayedInMap(canWmsBeDisplayed((MPWms) mapProvider));
+            parentMpWrapper.setIsDisplayedInMap(canWmsBeDisplayed(mpWms));
             enableProfileMapButton();
 
             // update parent item in the viewer

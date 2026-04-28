@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,7 +18,7 @@ package net.tourbook.data;
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
-import java.time.Instant;
+import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.persistence.Entity;
@@ -28,17 +28,14 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
-import net.tourbook.Images;
 import net.tourbook.Messages;
-import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
 import net.tourbook.common.map.GeoPosition;
-import net.tourbook.common.util.IHoveredArea;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.database.FIELD_VALIDATION;
 import net.tourbook.database.TourDatabase;
 
-import org.eclipse.jface.resource.ImageRegistry;
-import org.eclipse.swt.graphics.Image;
+import org.eclipse.collections.impl.map.mutable.primitive.IntObjectHashMap;
 
 /**
  * A waypoint is associated with a tour but the way point position is independently from a tour, it
@@ -46,85 +43,103 @@ import org.eclipse.swt.graphics.Image;
  */
 @Entity
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "wayPointId")
-public class TourWayPoint implements Cloneable, Comparable<Object>, IHoveredArea {
 
-   private static final String        IMAGE_MAP_WAY_POINT_HOVERED = Images.Map_WayPoint_Hovered;
+public class TourWayPoint implements Cloneable, Comparable<Object>, Serializable {
 
-   public static final int            DB_LENGTH_NAME              = 1024;
-   public static final int            DB_LENGTH_DESCRIPTION       = 4096;
-   public static final int            DB_LENGTH_COMMENT           = 4096;
-   public static final int            DB_LENGTH_SYMBOL            = 1024;
-   public static final int            DB_LENGTH_CATEGORY          = 1024;
+   private static final long                serialVersionUID      = 1L;
 
-   @Transient
-   private static Image               _twpHoveredImage;
+   private static final char                NL                    = UI.NEW_LINE;
+
+   public static final int                  DB_LENGTH_NAME        = 1024;
+   public static final int                  DB_LENGTH_DESCRIPTION = 4096;
+   public static final int                  DB_LENGTH_COMMENT     = 4096;
+   public static final int                  DB_LENGTH_SYMBOL      = 1024;
+   public static final int                  DB_LENGTH_CATEGORY    = 1024;
 
    /**
     * Manually created way points or imported way points need a unique id to identify them, saved
     * way points are compared with the way point id.
     */
    @Transient
-   private static final AtomicInteger _createCounter              = new AtomicInteger();
+   private static final AtomicInteger       _createCounter        = new AtomicInteger();
 
    /**
     * Unique id for the {@link TourWayPoint} entity
     */
    @Id
    @GeneratedValue(strategy = GenerationType.IDENTITY)
-   private long                       wayPointId                  = TourDatabase.ENTITY_IS_NOT_SAVED;
+   private long                             wayPointId            = TourDatabase.ENTITY_IS_NOT_SAVED;
 
    @ManyToOne(optional = false)
-   private TourData                   tourData;
+   private TourData                         tourData;
 
-   // initialize with invalid values
-   private double      longitude = Double.MIN_VALUE;
-
-   private double      latitude  = Double.MIN_VALUE;
+   /**
+    * Initialize with invalid values
+    */
+   private double                           longitude             = Double.MIN_VALUE;
+   private double                           latitude              = Double.MIN_VALUE;
 
    /**
     * Absolute time in milliseconds since 1970-01-01T00:00:00Z with the default time zone.
     */
-   private long        time;
+   private long                             time;
 
    /**
     * Altitude in meters or {@link Float#MIN_VALUE} when not available.
     */
-   private float       altitude  = Float.MIN_VALUE;
-   private String      name;
-   private String      description;
-   private String      comment;
+   private float                            altitude              = Float.MIN_VALUE;
 
-   private String      symbol;
+   private String                           name;
+   private String                           description;
+   private String                           comment;
 
-   private String      category;
+   private String                           symbol;
+
+   private String                           category;
 
    /**
     * Text to display on the hyperlink, can be <code>null</code>
     *
     * @since DB version 28
     */
-   // <urlname> Text to display on the <url> hyperlink
-   private String      urlText;
+   private String                           urlText;
 
    /**
     * URL associated with the waypoint, can be <code>null</code>
     *
     * @since DB version 28
     */
-   // <url> URL associated with the waypoint
-   private String      urlAddress;
+   private String                           urlAddress;
 
    @Transient
-   private GeoPosition _geoPosition;
+   private GeoPosition                      _geoPosition;
 
    /**
     * Unique id for manually created waypoints because the {@link #wayPointId} is 0 when the
     * waypoint is not persisted.
     */
    @Transient
-   private long        _createId = _createCounter.incrementAndGet();
+   private long                             _createId             = _createCounter.incrementAndGet();
+
+   /**
+    * Caches the world positions for the pause lat/long values for each zoom level
+    */
+   @Transient
+   private IntObjectHashMap<java.awt.Point> _worldPixelPositions;
 
    public TourWayPoint() {}
+
+   /**
+    * Used for MT import/export
+    *
+    * @param tourData
+    */
+   public TourWayPoint(final TourData tourData) {
+
+      this.tourData = tourData;
+
+      _createId = _createCounter.incrementAndGet();
+   }
 
    public TourWayPoint clone(final TourData wpTourData) {
 
@@ -275,22 +290,6 @@ public class TourWayPoint implements Cloneable, Comparable<Object>, IHoveredArea
       return description;
    }
 
-   @Override
-   public Image getHoveredImage() {
-
-      if (_twpHoveredImage != null) {
-         return _twpHoveredImage;
-      }
-
-      final ImageRegistry imageRegistry = TourbookPlugin.getDefault().getImageRegistry();
-
-      imageRegistry.put(IMAGE_MAP_WAY_POINT_HOVERED, TourbookPlugin.getImageDescriptor(IMAGE_MAP_WAY_POINT_HOVERED));
-
-      _twpHoveredImage = imageRegistry.get(IMAGE_MAP_WAY_POINT_HOVERED);
-
-      return _twpHoveredImage;
-   }
-
    public double getLatitude() {
       return latitude;
    }
@@ -342,6 +341,16 @@ public class TourWayPoint implements Cloneable, Comparable<Object>, IHoveredArea
     */
    public long getWayPointId() {
       return wayPointId;
+   }
+
+   public java.awt.Point getWorldPixelPosition(final int zoomLevel) {
+
+      if (_worldPixelPositions != null) {
+
+         return _worldPixelPositions.get(zoomLevel);
+      }
+
+      return null;
    }
 
    @Override
@@ -456,6 +465,15 @@ public class TourWayPoint implements Cloneable, Comparable<Object>, IHoveredArea
       tourData = newTourData;
    }
 
+   public void setupDeepClone(final TourData tourDataFromClone) {
+
+      _createId = _createCounter.incrementAndGet();
+
+      wayPointId = TourDatabase.ENTITY_IS_NOT_SAVED;
+
+      tourData = tourDataFromClone;
+   }
+
    public void setUrlAddress(final String urlAddress) {
       this.urlAddress = urlAddress;
    }
@@ -464,22 +482,46 @@ public class TourWayPoint implements Cloneable, Comparable<Object>, IHoveredArea
       this.urlText = urlText;
    }
 
+   public void setWorldPixelPosition(final java.awt.Point worldPixelPosition,
+                                     final int zoomLevel) {
+
+      if (_worldPixelPositions == null) {
+
+         _worldPixelPositions = new IntObjectHashMap<>();
+      }
+
+      _worldPixelPositions.put(zoomLevel, worldPixelPosition);
+   }
+
+   /**
+    * This method is called in the "Tour Data" view !!!
+    */
    @Override
    public String toString() {
-      return "TourWayPoint [" //$NON-NLS-1$
 
-            + ("time=" + Instant.ofEpochMilli(time) + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            + ("_createId=" + _createId + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            + ("wayPointId=" + wayPointId + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            + ("latitude=" + latitude + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            + ("longitude=" + longitude + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("altitude=" + altitude + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("name=" + name + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("description=" + description + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("comment=" + comment + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("symbol=" + symbol + ", ") //$NON-NLS-1$ //$NON-NLS-2$
-            //          + ("category=" + category) //$NON-NLS-1$
+      return UI.EMPTY_STRING
 
-            + "]\n"; //$NON-NLS-1$
+            + "TourWayPoint" + NL //                           //$NON-NLS-1$
+
+            + "[" + NL //                                      //$NON-NLS-1$
+
+            + "   wayPointId     =" + wayPointId + NL //       //$NON-NLS-1$
+            + "   longitude      =" + longitude + NL //        //$NON-NLS-1$
+            + "   latitude       =" + latitude + NL //         //$NON-NLS-1$
+            + "   time           =" + time + NL //             //$NON-NLS-1$
+            + "   altitude       =" + altitude + NL //         //$NON-NLS-1$
+            + "   name           =" + name + NL //             //$NON-NLS-1$
+            + "   description    =" + description + NL //      //$NON-NLS-1$
+            + "   comment        =" + comment + NL //          //$NON-NLS-1$
+            + "   symbol         =" + symbol + NL //           //$NON-NLS-1$
+            + "   category       =" + category + NL //         //$NON-NLS-1$
+            + "   urlText        =" + urlText + NL //          //$NON-NLS-1$
+            + "   urlAddress     =" + urlAddress + NL //       //$NON-NLS-1$
+
+            + "   _createId      =" + _createId + NL //        //$NON-NLS-1$
+
+//          + "   _geoPosition   =" + _geoPosition + NL //     //$NON-NLS-1$
+
+            + "]" + NL; //                                     //$NON-NLS-1$
    }
 }

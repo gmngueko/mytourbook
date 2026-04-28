@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -14,10 +14,6 @@
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
  *******************************************************************************/
 package net.tourbook.statistics.graphs;
-
-import gnu.trove.list.array.TFloatArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.array.TLongArrayList;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -40,9 +36,12 @@ import net.tourbook.data.TourPerson;
 import net.tourbook.data.TourType;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.statistic.DurationTime;
-import net.tourbook.tag.tour.filter.TourTagFilterSqlJoinBuilder;
-import net.tourbook.ui.SQLFilter;
+import net.tourbook.ui.AppFilter;
 import net.tourbook.ui.TourTypeFilter;
+
+import org.eclipse.collections.impl.list.mutable.primitive.FloatArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList;
 
 public class DataProvider_Tour_Day extends DataProvider {
 
@@ -53,7 +52,7 @@ public class DataProvider_Tour_Day extends DataProvider {
 
    private DurationTime          _durationTime;
 
-   private void adjustValues(final TFloatArrayList dbAllValues,
+   private void adjustValues(final FloatArrayList dbAllValues,
                              final float[] lowValues,
                              final float[] highValues,
                              final int sameDOY_FirstIndex,
@@ -83,7 +82,7 @@ public class DataProvider_Tour_Day extends DataProvider {
       }
    }
 
-   private void adjustValues(final TIntArrayList dbAllTourDuration,
+   private void adjustValues(final IntArrayList dbAllTourDuration,
                              final int[] duration_Low,
                              final int[] duration_High,
                              final int sameDOY_FirstIndex,
@@ -160,9 +159,9 @@ public class DataProvider_Tour_Day extends DataProvider {
       }
    }
 
-   private void adjustValues_Avg(final TIntArrayList dbAllTourDuration,
+   private void adjustValues_Avg(final IntArrayList dbAllTourDuration,
 
-                                 final TFloatArrayList dbAllValues,
+                                 final FloatArrayList dbAllValues,
                                  final float[] lowValues,
                                  final float[] highValues,
 
@@ -292,13 +291,11 @@ public class DataProvider_Tour_Day extends DataProvider {
             break;
          }
 
-         // get the tour types
+         // get tour types
          final ArrayList<TourType> tourTypeList = TourDatabase.getActiveTourTypes();
          final TourType[] tourTypes = tourTypeList.toArray(new TourType[tourTypeList.size()]);
 
-         final SQLFilter sqlAppFilter = new SQLFilter(SQLFilter.TAG_FILTER);
-
-         final TourTagFilterSqlJoinBuilder tagFilterSqlJoinBuilder = new TourTagFilterSqlJoinBuilder();
+         final AppFilter appFilter = new AppFilter(AppFilter.ANY_APP_FILTERS);
 
          sql = UI.EMPTY_STRING
 
@@ -318,223 +315,193 @@ public class DataProvider_Tour_Day extends DataProvider {
 
                + "   TourDistance," + NL //                          10 //$NON-NLS-1$
                + "   TourAltUp," + NL //                             11 //$NON-NLS-1$
-               + "   TourTitle," + NL //                             12 //$NON-NLS-1$
-               + "   TourDescription," + NL //                       13 //$NON-NLS-1$
+               + "   TourAltDown," + NL //                           12 //$NON-NLS-1$
+               + "   TourTitle," + NL //                             13 //$NON-NLS-1$
+               + "   TourDescription," + NL //                       14 //$NON-NLS-1$
 
-               + "   training_TrainingEffect_Aerob," + NL //         14 //$NON-NLS-1$
-               + "   training_TrainingEffect_Anaerob," + NL //       15 //$NON-NLS-1$
-               + "   training_TrainingPerformance," + NL //          16 //$NON-NLS-1$
+               + "   training_TrainingEffect_Aerob," + NL //         15 //$NON-NLS-1$
+               + "   training_TrainingEffect_Anaerob," + NL //       16 //$NON-NLS-1$
+               + "   training_TrainingPerformance," + NL //          17 //$NON-NLS-1$
 
-               + "   TourType_typeId," + NL //                       17 //$NON-NLS-1$
-               + "   jTdataTtag.TourTag_tagId," + NL //               18 //$NON-NLS-1$
+               + "   TourType_typeId," + NL //                       18 //$NON-NLS-1$
 
-               + "   BodyWeight,         " + NL //      19 //$NON-NLS-1$
-               + "   BodyFat          " + NL //      20 //$NON-NLS-1$
+               + "   BodyWeight," + NL //                            19 //$NON-NLS-1$
+               + "   BodyFat" + NL //                                20 //$NON-NLS-1$
 
                + "FROM " + TourDatabase.TABLE_TOUR_DATA + NL //         //$NON-NLS-1$
 
-               // get/filter tag id's
-               + tagFilterSqlJoinBuilder.getSqlTagJoinTable() + " jTdataTtag" //                //$NON-NLS-1$
-               + " ON TourId = jTdataTtag.TourData_tourId" + NL //                              //$NON-NLS-1$
-
                + "WHERE StartYear IN (" + getYearList(lastYear, numberOfYears) + ")" + NL //    //$NON-NLS-1$ //$NON-NLS-2$
-               + "   " + sqlAppFilter.getWhereClause() //$NON-NLS-1$
+
+               + appFilter.getWhereClause()
 
                + "ORDER BY TourStartTime" + NL; //                                              //$NON-NLS-1$
 
-         final TLongArrayList dbAllTourIds = new TLongArrayList();
+// SET_FORMATTING_OFF
 
-         final TIntArrayList dbAllYears = new TIntArrayList();
-         final TIntArrayList dbAllMonths = new TIntArrayList();
-         final TIntArrayList dbAllDays = new TIntArrayList();
-         final TIntArrayList dbAllYearsDOY = new TIntArrayList(); // DOY...Day Of Year
+         final LongArrayList dbAllTourIds                      = new LongArrayList();
 
-         final TIntArrayList dbAllTourStartTime = new TIntArrayList();
-         final TIntArrayList dbAllTourEndTime = new TIntArrayList();
-         final TIntArrayList dbAllTourStartWeek = new TIntArrayList();
+         final IntArrayList dbAllYears                         = new IntArrayList();
+         final IntArrayList dbAllMonths                        = new IntArrayList();
+         final IntArrayList dbAllDays                          = new IntArrayList();
+         final IntArrayList dbAllYearsDOY                      = new IntArrayList(); // DOY...Day Of Year
+
+         final IntArrayList dbAllTourStartTime                 = new IntArrayList();
+         final IntArrayList dbAllTourEndTime                   = new IntArrayList();
+         final IntArrayList dbAllTourStartWeek                 = new IntArrayList();
          final ArrayList<ZonedDateTime> dbAllTourStartDateTime = new ArrayList<>();
 
-         final TIntArrayList dbAllTourDeviceTime_Elapsed = new TIntArrayList();
-         final TIntArrayList dbAllTourDeviceTime_Recorded = new TIntArrayList();
-         final TIntArrayList dbAllTourDeviceTime_Paused = new TIntArrayList();
-         final TIntArrayList dbAllTourComputedTime_Moving = new TIntArrayList();
-         final TIntArrayList dbAllTourDurationTimes = new TIntArrayList();
+         final IntArrayList dbAllTourDeviceTime_Elapsed        = new IntArrayList();
+         final IntArrayList dbAllTourDeviceTime_Recorded       = new IntArrayList();
+         final IntArrayList dbAllTourDeviceTime_Paused         = new IntArrayList();
+         final IntArrayList dbAllTourComputedTime_Moving       = new IntArrayList();
+         final IntArrayList dbAllTourDurationTimes             = new IntArrayList();
 
-         final TFloatArrayList dbAllDistance = new TFloatArrayList();
-         final TFloatArrayList dbAllAvgSpeed = new TFloatArrayList();
-         final TFloatArrayList dbAllAvgPace = new TFloatArrayList();
-         final TFloatArrayList dbAllElevationUp = new TFloatArrayList();
+         final FloatArrayList dbAllDistance                    = new FloatArrayList();
+         final FloatArrayList dbAllAvgSpeed                    = new FloatArrayList();
+         final FloatArrayList dbAllAvgPace                     = new FloatArrayList();
+         final FloatArrayList dbAllElevationDown               = new FloatArrayList();
+         final FloatArrayList dbAllElevationUp                 = new FloatArrayList();
 
-         final TFloatArrayList dbAllTrain_Effect_Aerob = new TFloatArrayList();
-         final TFloatArrayList dbAllTrain_Effect_Anaerob = new TFloatArrayList();
-         final TFloatArrayList dbAllTrain_Performance = new TFloatArrayList();
+         final FloatArrayList dbAllTrain_Effect_Aerob          = new FloatArrayList();
+         final FloatArrayList dbAllTrain_Effect_Anaerob        = new FloatArrayList();
+         final FloatArrayList dbAllTrain_Performance           = new FloatArrayList();
 
-         final TFloatArrayList dbAllBodyWeight = new TFloatArrayList();
-         final TFloatArrayList dbAllBodyFat = new TFloatArrayList();
+         final FloatArrayList dbAllBodyWeight                  = new FloatArrayList();
+         final FloatArrayList dbAllBodyFat                     = new FloatArrayList();
 
-         final ArrayList<String> dbAllTourTitle = new ArrayList<>();
-         final ArrayList<String> dbAllTourDescription = new ArrayList<>();
+         final ArrayList<String> dbAllTourTitle                = new ArrayList<>();
+         final ArrayList<String> dbAllTourDescription          = new ArrayList<>();
 
-         final TLongArrayList allTypeIds = new TLongArrayList();
-         final TIntArrayList allTypeColorIndex = new TIntArrayList();
-
-         final HashMap<Long, ArrayList<Long>> allTagIds = new HashMap<>();
-
-         long lastTourId = -1;
-         ArrayList<Long> tagIds = null;
+         final LongArrayList allTypeIds                        = new LongArrayList();
+         final IntArrayList allTypeColorIndex                  = new IntArrayList();
 
          final PreparedStatement prepStmt = conn.prepareStatement(sql);
 
-         int paramIndex = 1;
-         paramIndex = tagFilterSqlJoinBuilder.setParameters(prepStmt, paramIndex);
+         int nextIndex = 1;
 
-         sqlAppFilter.setParameters(prepStmt, paramIndex);
+         nextIndex = appFilter.setParameters(prepStmt, nextIndex);
 
          final ResultSet result = prepStmt.executeQuery();
 
          while (result.next()) {
 
-            final long dbTourId = result.getLong(1);
-            final Object dbTagId = result.getObject(18);
+            final long dbTourId                    = result.getLong(1);
 
-            if (dbTourId == lastTourId) {
+            final int dbTourYear                   = result.getShort(2);
+            final int dbTourStartWeek              = result.getInt(3);
 
-               // get additional tags from tag join
+            final long dbStartTimeMilli            = result.getLong(4);
+            final String dbTimeZoneId              = result.getString(5);
 
-               if (dbTagId instanceof Long) {
-                  tagIds.add((Long) dbTagId);
-               }
+            final int dbElapsedTime                = result.getInt(6);
+            final int dbRecordedTime               = result.getInt(7);
+            final int dbPausedTime                 = result.getInt(8);
+            final int dbMovingTime                 = result.getInt(9);
 
-            } else {
+            final float dbDistance                 = result.getFloat(10);
+            final int dbAltitudeUp                 = result.getInt(11);
+            final int dbAltitudeDown               = result.getInt(12);
 
-               // get first record from a tour
+            final String dbTourTitle               = result.getString(13);
+            final String dbDescription             = result.getString(14);
 
-// SET_FORMATTING_OFF
+            final float trainingEffect             = result.getFloat(15);
+            final float trainingEffect_Anaerobic   = result.getFloat(16);
+            final float trainingPerformance        = result.getFloat(17);
 
-               final int dbTourYear                   = result.getShort(2);
-               final int dbTourStartWeek              = result.getInt(3);
+            final Long dbValue_TourTypeIdObject    = (Long) result.getObject(18);
 
-               final long dbStartTimeMilli            = result.getLong(4);
-               final String dbTimeZoneId              = result.getString(5);
-
-               final int dbElapsedTime                = result.getInt(6);
-               final int dbRecordedTime               = result.getInt(7);
-               final int dbPausedTime                 = result.getInt(8);
-               final int dbMovingTime                 = result.getInt(9);
-
-               final float dbDistance                 = result.getFloat(10);
-               final int dbAltitudeUp                 = result.getInt(11);
-
-               final String dbTourTitle               = result.getString(12);
-               final String dbDescription             = result.getString(13);
-
-               final float trainingEffect             = result.getFloat(14);
-               final float trainingEffect_Anaerobic   = result.getFloat(15);
-               final float trainingPerformance        = result.getFloat(16);
-
-               final Long dbValue_TourTypeIdObject    = (Long) result.getObject(17);
-
-               final float bodyWeight    =  result.getFloat(19) * UI.UNIT_VALUE_WEIGHT;
-               final float bodyFat    =  result.getFloat(20);
+            final float bodyWeight                 = result.getFloat(19) * UI.UNIT_VALUE_WEIGHT;
+            final float bodyFat                    = result.getFloat(20);
 
 // SET_FORMATTING_ON
 
-               final TourDateTime tourDateTime = TimeTools.createTourDateTime(dbStartTimeMilli, dbTimeZoneId);
-               final ZonedDateTime zonedStartDateTime = tourDateTime.tourZonedDateTime;
+            final TourDateTime tourDateTime = TimeTools.createTourDateTime(dbStartTimeMilli, dbTimeZoneId);
+            final ZonedDateTime zonedStartDateTime = tourDateTime.tourZonedDateTime;
 
-               // get number for day of year, starts with 0
-               final int tourDOY = tourDateTime.tourZonedDateTime.get(ChronoField.DAY_OF_YEAR) - 1;
-               final int yearDOYs = getYearDOYs(dbTourYear);
+            // get number for day of year, starts with 0
+            final int tourDOY = tourDateTime.tourZonedDateTime.get(ChronoField.DAY_OF_YEAR) - 1;
+            final int yearDOYs = getYearDOYs(dbTourYear);
 
-               final int startDayTime = (zonedStartDateTime.getHour() * 3600)
-                     + (zonedStartDateTime.getMinute() * 60)
-                     + zonedStartDateTime.getSecond();
+            final int startDayTime = (zonedStartDateTime.getHour() * 3600)
+                  + (zonedStartDateTime.getMinute() * 60)
+                  + zonedStartDateTime.getSecond();
 
-               int durationTimeValue = 0;
+            int durationTimeValue = 0;
 
-               if (isDurationTime_Break) {
-                  durationTimeValue = dbElapsedTime - dbMovingTime;
-               } else if (isDurationTime_Elapsed) {
-                  durationTimeValue = dbElapsedTime;
-               } else if (isDurationTime_Recorded) {
-                  durationTimeValue = dbRecordedTime;
-               } else if (isDurationTime_Paused) {
-                  durationTimeValue = dbPausedTime;
-               } else {
-                  // moving time, this is also the old implementation for the duration value
-                  durationTimeValue = dbMovingTime == 0 ? dbElapsedTime : dbMovingTime;
-               }
-
-               dbAllTourIds.add(dbTourId);
-
-               dbAllYears.add(dbTourYear);
-               dbAllMonths.add(zonedStartDateTime.getMonthValue());
-               dbAllDays.add(zonedStartDateTime.getDayOfMonth());
-               dbAllYearsDOY.add(yearDOYs + tourDOY);
-               dbAllTourStartWeek.add(dbTourStartWeek);
-
-               dbAllTourStartDateTime.add(zonedStartDateTime);
-               dbAllTourStartTime.add(startDayTime);
-               dbAllTourEndTime.add((startDayTime + dbElapsedTime));
-
-               dbAllTourDeviceTime_Elapsed.add(dbElapsedTime);
-               dbAllTourDeviceTime_Recorded.add(dbRecordedTime);
-               dbAllTourDeviceTime_Paused.add(dbPausedTime);
-               dbAllTourComputedTime_Moving.add(dbMovingTime);
-
-               dbAllTourDurationTimes.add(durationTimeValue);
-
-               dbAllBodyWeight.add(bodyWeight);
-               dbAllBodyFat.add(bodyFat);
-
-               // round distance
-               final float distance = dbDistance / UI.UNIT_VALUE_DISTANCE;
-
-               dbAllDistance.add(distance);
-               dbAllElevationUp.add(dbAltitudeUp / UI.UNIT_VALUE_ELEVATION);
-
-               dbAllAvgPace.add(distance == 0 ? 0 : dbMovingTime * 1000f / distance / 60.0f);
-               dbAllAvgSpeed.add(dbMovingTime == 0 ? 0 : 3.6f * distance / dbMovingTime);
-
-               dbAllTrain_Effect_Aerob.add(trainingEffect);
-               dbAllTrain_Effect_Anaerob.add(trainingEffect_Anaerobic);
-               dbAllTrain_Performance.add(trainingPerformance);
-
-               dbAllTourTitle.add(dbTourTitle);
-               dbAllTourDescription.add(dbDescription == null ? UI.EMPTY_STRING : dbDescription);
-
-               if (dbTagId instanceof Long) {
-
-                  tagIds = new ArrayList<>();
-                  tagIds.add((Long) dbTagId);
-
-                  allTagIds.put(dbTourId, tagIds);
-               }
-
-               /*
-                * Convert type id to the type index in the tour types list which is also the color
-                * index
-                */
-               int colorIndex = 0;
-               long dbTypeId = TourDatabase.ENTITY_IS_NOT_SAVED;
-
-               if (dbValue_TourTypeIdObject instanceof Long) {
-
-                  dbTypeId = dbValue_TourTypeIdObject;
-
-                  for (int typeIndex = 0; typeIndex < tourTypes.length; typeIndex++) {
-                     if (dbTypeId == tourTypes[typeIndex].getTypeId()) {
-                        colorIndex = typeIndex;
-                        break;
-                     }
-                  }
-               }
-
-               allTypeColorIndex.add(colorIndex);
-               allTypeIds.add(dbTypeId);
+            if (isDurationTime_Break) {
+               durationTimeValue = dbElapsedTime - dbMovingTime;
+            } else if (isDurationTime_Elapsed) {
+               durationTimeValue = dbElapsedTime;
+            } else if (isDurationTime_Recorded) {
+               durationTimeValue = dbRecordedTime;
+            } else if (isDurationTime_Paused) {
+               durationTimeValue = dbPausedTime;
+            } else {
+               // moving time, this is also the old implementation for the duration value
+               durationTimeValue = dbMovingTime == 0 ? dbElapsedTime : dbMovingTime;
             }
 
-            lastTourId = dbTourId;
+            dbAllTourIds.add(dbTourId);
+
+            dbAllYears.add(dbTourYear);
+            dbAllMonths.add(zonedStartDateTime.getMonthValue());
+            dbAllDays.add(zonedStartDateTime.getDayOfMonth());
+            dbAllYearsDOY.add(yearDOYs + tourDOY);
+            dbAllTourStartWeek.add(dbTourStartWeek);
+
+            dbAllTourStartDateTime.add(zonedStartDateTime);
+            dbAllTourStartTime.add(startDayTime);
+            dbAllTourEndTime.add((startDayTime + dbElapsedTime));
+
+            dbAllTourDeviceTime_Elapsed.add(dbElapsedTime);
+            dbAllTourDeviceTime_Recorded.add(dbRecordedTime);
+            dbAllTourDeviceTime_Paused.add(dbPausedTime);
+            dbAllTourComputedTime_Moving.add(dbMovingTime);
+
+            dbAllTourDurationTimes.add(durationTimeValue);
+
+            dbAllBodyWeight.add(bodyWeight);
+            dbAllBodyFat.add(bodyFat);
+
+            // round distance
+            final float distance = dbDistance / UI.UNIT_VALUE_DISTANCE;
+
+            dbAllDistance.add(distance);
+            dbAllElevationUp.add(dbAltitudeUp / UI.UNIT_VALUE_ELEVATION);
+            dbAllElevationDown.add(dbAltitudeDown / UI.UNIT_VALUE_ELEVATION);
+
+            dbAllAvgPace.add(distance == 0 ? 0 : dbMovingTime * 1000f / distance / 60.0f);
+            dbAllAvgSpeed.add(dbMovingTime == 0 ? 0 : 3.6f * distance / dbMovingTime);
+
+            dbAllTrain_Effect_Aerob.add(trainingEffect);
+            dbAllTrain_Effect_Anaerob.add(trainingEffect_Anaerobic);
+            dbAllTrain_Performance.add(trainingPerformance);
+
+            dbAllTourTitle.add(dbTourTitle);
+            dbAllTourDescription.add(dbDescription == null ? UI.EMPTY_STRING : dbDescription);
+
+            /*
+             * Convert type id to the type index in the tour types list which is also the color
+             * index
+             */
+            int colorIndex = 0;
+            long dbTypeId = TourDatabase.ENTITY_IS_NOT_SAVED;
+
+            if (dbValue_TourTypeIdObject instanceof Long) {
+
+               dbTypeId = dbValue_TourTypeIdObject;
+
+               for (int typeIndex = 0; typeIndex < tourTypes.length; typeIndex++) {
+                  if (dbTypeId == tourTypes[typeIndex].getTypeId()) {
+                     colorIndex = typeIndex;
+                     break;
+                  }
+               }
+            }
+
+            allTypeColorIndex.add(colorIndex);
+            allTypeIds.add(dbTypeId);
          }
 
          final int[] allYearsDOY = dbAllYearsDOY.toArray();
@@ -542,7 +509,8 @@ public class DataProvider_Tour_Day extends DataProvider {
          final int[] durationTime_High = dbAllTourDurationTimes.toArray();
 
          final float[] distance_High = dbAllDistance.toArray();
-         final float[] elevation_High = dbAllElevationUp.toArray();
+         final float[] elevationUp_High = dbAllElevationUp.toArray();
+         final float[] elevationDown_High = dbAllElevationDown.toArray();
 
          final float[] avgPace_High = dbAllAvgPace.toArray();
          final float[] avgSpeed_High = dbAllAvgSpeed.toArray();
@@ -557,7 +525,8 @@ public class DataProvider_Tour_Day extends DataProvider {
          final int serieLength = durationTime_High.length;
 
          final int[] durationTime_Low = new int[serieLength];
-         final float[] elevation_Low = new float[serieLength];
+         final float[] elevationUp_Low = new float[serieLength];
+         final float[] elevationDown_Low = new float[serieLength];
          final float[] avgPace_Low = new float[serieLength];
          final float[] avgSpeed_Low = new float[serieLength];
          final float[] distance_Low = new float[serieLength];
@@ -595,7 +564,8 @@ public class DataProvider_Tour_Day extends DataProvider {
 
                durationTime_High[tourIndex]           += durationTime_Low[tourIndex]         = durationTime_High[tourIndex - 1];
 
-               elevation_High[tourIndex]              += elevation_Low[tourIndex]            = elevation_High[tourIndex - 1];
+               elevationUp_High[tourIndex]            += elevationUp_Low[tourIndex]          = elevationUp_High[tourIndex - 1];
+               elevationDown_High[tourIndex]          += elevationDown_Low[tourIndex]        = elevationDown_High[tourIndex - 1];
                avgPace_High[tourIndex]                += avgPace_Low[tourIndex]              = avgPace_High[tourIndex - 1];
                avgSpeed_High[tourIndex]               += avgSpeed_Low[tourIndex]             = avgSpeed_High[tourIndex - 1];
                distance_High[tourIndex]               += distance_Low[tourIndex]             = distance_High[tourIndex - 1];
@@ -614,17 +584,18 @@ public class DataProvider_Tour_Day extends DataProvider {
 
 // SET_FORMATTING_OFF
 
-               adjustValues(dbAllTourDurationTimes,           durationTime_Low,  durationTime_High,    sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllTourDurationTimes,      durationTime_Low,  durationTime_High,    sameDOY_FirstIndex,  sameDOY_LastIndex);
 
-               adjustValues(dbAllDistance,               distance_Low,  distance_High,    sameDOY_FirstIndex,  sameDOY_LastIndex);
-               adjustValues(dbAllElevationUp,              elevation_Low, elevation_High,   sameDOY_FirstIndex,  sameDOY_LastIndex);
-               adjustValues(dbAllAvgPace,                avgPace_Low,   avgPace_High,     sameDOY_FirstIndex,  sameDOY_LastIndex);
-               adjustValues(dbAllAvgSpeed,               avgSpeed_Low,  avgSpeed_High,    sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllDistance,               distance_Low,        distance_High,       sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllElevationUp,            elevationUp_Low,     elevationUp_High,    sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllElevationDown,          elevationDown_Low,   elevationDown_High,  sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllAvgPace,                avgPace_Low,         avgPace_High,        sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues(dbAllAvgSpeed,               avgSpeed_Low,        avgSpeed_High,       sameDOY_FirstIndex,  sameDOY_LastIndex);
 
                adjustValues(dbAllTrain_Effect_Aerob,     trainEffect_Aerob_Low,     trainEffect_Aerob_High,    sameDOY_FirstIndex,     sameDOY_LastIndex);
                adjustValues(dbAllTrain_Effect_Anaerob,   trainEffect_Anaerob_Low,   trainEffect_Anaerob_High,  sameDOY_FirstIndex,     sameDOY_LastIndex);
 
-               adjustValues_Avg(dbAllTourDurationTimes,       dbAllTrain_Performance,    trainPerformance_Low,      trainPerformance_High,  sameDOY_FirstIndex,  sameDOY_LastIndex);
+               adjustValues_Avg(dbAllTourDurationTimes,  dbAllTrain_Performance,    trainPerformance_Low,      trainPerformance_High,  sameDOY_FirstIndex,  sameDOY_LastIndex);
 
 // SET_FORMATTING_ON
 
@@ -640,7 +611,8 @@ public class DataProvider_Tour_Day extends DataProvider {
          adjustValues(dbAllTourDurationTimes,      durationTime_Low,          durationTime_High,         sameDOY_FirstIndex,  sameDOY_LastIndex);
 
          adjustValues(dbAllDistance,               distance_Low,              distance_High,             sameDOY_FirstIndex,  sameDOY_LastIndex);
-         adjustValues(dbAllElevationUp,            elevation_Low,             elevation_High,            sameDOY_FirstIndex,  sameDOY_LastIndex);
+         adjustValues(dbAllElevationUp,            elevationUp_Low,           elevationUp_High,          sameDOY_FirstIndex,  sameDOY_LastIndex);
+         adjustValues(dbAllElevationDown,          elevationDown_Low,         elevationDown_High,        sameDOY_FirstIndex,  sameDOY_LastIndex);
          adjustValues(dbAllAvgPace,                avgPace_Low,               avgPace_High,              sameDOY_FirstIndex,  sameDOY_LastIndex);
          adjustValues(dbAllAvgSpeed,               avgSpeed_Low,              avgSpeed_High,             sameDOY_FirstIndex,  sameDOY_LastIndex);
 
@@ -686,8 +658,6 @@ public class DataProvider_Tour_Day extends DataProvider {
          _tourDayData.allTypeIds = allTypeIds.toArray();
          _tourDayData.allTypeColorIndices = allTypeColorIndex.toArray();
 
-         _tourDayData.tagIds = allTagIds;
-
          _tourDayData.setDurationLow(durationTime_Low);
          _tourDayData.setDurationHigh(durationTime_High);
 
@@ -695,8 +665,11 @@ public class DataProvider_Tour_Day extends DataProvider {
          _tourDayData.allDistance_Low = distance_Low;
          _tourDayData.allDistance_High = distance_High;
          _tourDayData.allElevationUp = dbAllElevationUp.toArray();
-         _tourDayData.allElevationUp_Low = elevation_Low;
-         _tourDayData.allElevationUp_High = elevation_High;
+         _tourDayData.allElevationUp_Low = elevationUp_Low;
+         _tourDayData.allElevationUp_High = elevationUp_High;
+         _tourDayData.allElevationDown = dbAllElevationDown.toArray();
+         _tourDayData.allElevationDown_Low = elevationDown_Low;
+         _tourDayData.allElevationDown_High = elevationDown_High;
 
          _tourDayData.allAvgPace = dbAllAvgPace.toArray();
          _tourDayData.allAvgPace_Low = avgPace_Low;
@@ -725,6 +698,7 @@ public class DataProvider_Tour_Day extends DataProvider {
          _tourDayData.allTourDescriptions = dbAllTourDescription;
 
       } catch (final SQLException e) {
+
          SQL.showException(e, sql);
       }
 
@@ -763,6 +737,7 @@ public class DataProvider_Tour_Day extends DataProvider {
             + STAT_VALUE_MOTION_PACE.withUnitLabel(UI.UNIT_LABEL_PACE).getHead1()
 
             + STAT_VALUE_ELEVATION_UP.withUnitLabel(UI.UNIT_LABEL_ELEVATION).getHead1()
+            + STAT_VALUE_ELEVATION_DOWN.withUnitLabel(UI.UNIT_LABEL_ELEVATION).getHead1()
 
             + STAT_VALUE_TRAINING_AEROB.getHead1()
             + STAT_VALUE_TRAINING_ANAEROB.getHead1()
@@ -794,6 +769,7 @@ public class DataProvider_Tour_Day extends DataProvider {
             + STAT_VALUE_MOTION_PACE.getHead2()
 
             + STAT_VALUE_ELEVATION_UP.getHead2()
+            + STAT_VALUE_ELEVATION_DOWN.getHead2()
 
             + STAT_VALUE_TRAINING_AEROB.getHead2()
             + STAT_VALUE_TRAINING_ANAEROB.getHead2()
@@ -825,6 +801,7 @@ public class DataProvider_Tour_Day extends DataProvider {
             + STAT_VALUE_MOTION_PACE.getValueFormatting()
 
             + STAT_VALUE_ELEVATION_UP.getValueFormatting()
+            + STAT_VALUE_ELEVATION_DOWN.getValueFormatting()
 
             + STAT_VALUE_TRAINING_AEROB.getValueFormatting()
             + STAT_VALUE_TRAINING_ANAEROB.getValueFormatting()
@@ -890,6 +867,7 @@ public class DataProvider_Tour_Day extends DataProvider {
                _tourDayData.allAvgPace[dataIndex],
 
                _tourDayData.allElevationUp[dataIndex],
+               _tourDayData.allElevationDown[dataIndex],
 
                _tourDayData.allTraining_Effect_Aerob[dataIndex],
                _tourDayData.allTraining_Effect_Anaerob[dataIndex],

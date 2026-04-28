@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -15,10 +15,6 @@
  *******************************************************************************/
 package net.tourbook.ui.views.sensors;
 
-import gnu.trove.list.array.TFloatArrayList;
-import gnu.trove.list.array.TIntArrayList;
-import gnu.trove.list.array.TLongArrayList;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -32,8 +28,11 @@ import net.tourbook.common.util.SQL;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourType;
 import net.tourbook.database.TourDatabase;
-import net.tourbook.ui.SQLFilter;
+import net.tourbook.ui.AppFilter;
 
+import org.eclipse.collections.impl.list.mutable.primitive.FloatArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList;
 import org.eclipse.jface.dialogs.IDialogSettings;
 
 public class SensorDataProvider {
@@ -48,6 +47,7 @@ public class SensorDataProvider {
     * @param sensorId
     * @param isUseAppFilter
     * @param state
+    *
     * @return
     */
    SensorData getData(final long sensorId, final boolean useTourFilter, final IDialogSettings state) {
@@ -77,7 +77,7 @@ public class SensorDataProvider {
          /*
           * Setup app filter
           */
-         final SQLFilter appFilter = new SQLFilter(SQLFilter.FAST_APP_FILTER);
+         final AppFilter appFilter = new AppFilter(AppFilter.ONLY_FAST_APP_FILTERS);
          if (isAppFilter) {
 
             final String sqlTourIds = UI.EMPTY_STRING
@@ -131,44 +131,44 @@ public class SensorDataProvider {
                + "WHERE" + NL //                                                       //$NON-NLS-1$
 
                + "   DEVICESENSOR_SensorID = ?" + NL //                                //$NON-NLS-1$
+
                + "   " + sqlAppFilter + NL //                                          //$NON-NLS-1$
                + "   " + sqlDurationFilter + NL //                                     //$NON-NLS-1$
 
                + "ORDER BY DeviceSensorValue.TourStartTime" + NL //                    //$NON-NLS-1$
          ;
 
-         final TFloatArrayList allDbBatteryLevel_Start = new TFloatArrayList();
-         final TFloatArrayList allDbBatteryLevel_End = new TFloatArrayList();
-         final TFloatArrayList allDbBatteryStatus_Start = new TFloatArrayList();
-         final TFloatArrayList allDbBatteryStatus_End = new TFloatArrayList();
-         final TFloatArrayList allDbBatteryVoltage_Start = new TFloatArrayList();
-         final TFloatArrayList allDbBatteryVoltage_End = new TFloatArrayList();
+         final FloatArrayList allDbBatteryLevel_Start = new FloatArrayList();
+         final FloatArrayList allDbBatteryLevel_End = new FloatArrayList();
+         final FloatArrayList allDbBatteryStatus_Start = new FloatArrayList();
+         final FloatArrayList allDbBatteryStatus_End = new FloatArrayList();
+         final FloatArrayList allDbBatteryVoltage_Start = new FloatArrayList();
+         final FloatArrayList allDbBatteryVoltage_End = new FloatArrayList();
 
-         final TLongArrayList allDbTourIds = new TLongArrayList();
-         final TLongArrayList allDbTourStartTime = new TLongArrayList();
-         final TIntArrayList allDbTypeColorIndices = new TIntArrayList();
+         final LongArrayList allDbTourIds = new LongArrayList();
+         final LongArrayList allDbTourStartTime = new LongArrayList();
+         final IntArrayList allDbTypeColorIndices = new IntArrayList();
 
          boolean isAvailable_Level = false;
          boolean isAvailable_Status = false;
          boolean isAvailable_Voltage = false;
 
-         final TIntArrayList allDbXValues_ByTime = new TIntArrayList();
+         final IntArrayList allDbXValues_ByTime = new IntArrayList();
 
          long firstDateTime = Long.MIN_VALUE;
 
          final PreparedStatement stmt = conn.prepareStatement(sql);
 
-         stmt.setLong(1, sensorId);
+         int nextIndex = 1;
 
-         int paramIndex = 2;
+         stmt.setLong(nextIndex++, sensorId);
 
          if (isAppFilter) {
-            appFilter.setParameters(stmt, paramIndex);
-            paramIndex = appFilter.getLastParameterIndex();
+            nextIndex = appFilter.setParameters(stmt, nextIndex);
          }
 
          if (isDurationFilter) {
-            stmt.setLong(paramIndex++, durationFilter_DateTime.toEpochSecond() * 1000);
+            stmt.setLong(nextIndex++, durationFilter_DateTime.toEpochSecond() * 1000);
          }
 
          final ResultSet result = stmt.executeQuery();
@@ -359,6 +359,7 @@ public class SensorDataProvider {
 
    /**
     * @param state
+    *
     * @return Returns the date/time after which the tours should be retrieved
     */
    private ZonedDateTime getDurationFilter_DateTime(final IDialogSettings state) {
@@ -506,8 +507,8 @@ public class SensorDataProvider {
                                   final float value_Start,
                                   final float value_End,
 
-                                  final TFloatArrayList allBatteryValue_Start,
-                                  final TFloatArrayList allBatteryValue_End) {
+                                  final FloatArrayList allBatteryValue_Start,
+                                  final FloatArrayList allBatteryValue_End) {
 
       float value_1;
       float value_2;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -57,8 +57,7 @@ import org.eclipse.jface.window.Window;
 import org.eclipse.osgi.util.NLS;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
-import org.eclipse.swt.events.ControlAdapter;
-import org.eclipse.swt.events.ControlEvent;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseWheelListener;
@@ -280,25 +279,22 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
 
       shell.addDisposeListener(disposeEvent -> onDispose());
 
-      shell.addControlListener(new ControlAdapter() {
-         @Override
-         public void controlResized(final ControlEvent e) {
+      shell.addControlListener(ControlListener.controlResizedAdapter(controlEvent -> {
 
-            // allow resizing the height, preserve minimum width
+         // allow resizing the height, preserve minimum width
 
-            final Point defaultSize = shell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
-            final Point shellSize = shell.getSize();
+         final Point defaultSize = shell.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+         final Point shellSize = shell.getSize();
 
-//            if (shellSize.x < defaultSize.x) {
+//         if (shellSize.x < defaultSize.x) {
 //
-//            }
+//         }
 
-            final int width = defaultSize.x;
-            final int height = shellSize.y;
+         final int width = defaultSize.x;
+         final int height = shellSize.y;
 
-            shell.setSize(width, height);
-         }
-      });
+         shell.setSize(width, height);
+      }));
    }
 
    @Override
@@ -327,6 +323,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
     *
     * @param parent
     * @param action
+    *
     * @return
     */
    private ToolBarManager createActionButton(final Composite parent, final Action action) {
@@ -431,7 +428,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
             GridDataFactory.fillDefaults().grab(true, false).applyTo(_txtProfileName);
 
             // do live update
-            _txtProfileName.addTraverseListener(this::onModifyProfileName);
+            _txtProfileName.addTraverseListener(event -> onModifyProfileName(event));
          }
       }
    }
@@ -442,18 +439,12 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
        * profile image
        */
       _canvasProfileImage = new ImageCanvas(parent, SWT.DOUBLE_BUFFERED);
-      GridDataFactory.fillDefaults()//
+      _canvasProfileImage.addControlListener(ControlListener.controlResizedAdapter(controlEvent -> drawProfileImage()));
+
+      GridDataFactory.fillDefaults()
             .grab(true, true)
-//          .minSize(SWT.DEFAULT, 20)
             .hint(_pc.convertWidthInCharsToPixels(20), SWT.DEFAULT)
             .applyTo(_canvasProfileImage);
-
-      _canvasProfileImage.addControlListener(new ControlAdapter() {
-         @Override
-         public void controlResized(final ControlEvent e) {
-            drawProfileImage();
-         }
-      });
    }
 
    private void createUI_40_VertexFields(final Composite parent) {
@@ -462,7 +453,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
        * vertex fields container
        */
       _vertexOuterContainer = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults()//
+      GridDataFactory.fillDefaults()
             .grab(true, true)
             .applyTo(_vertexOuterContainer);
 
@@ -520,23 +511,15 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
             mouseEvent -> onFieldMouseDown(display, mouseEvent));
 
       // value listener
-      final SelectionListener valueSelectionListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent event) {
-            onFieldSelectValue(event.widget);
-         }
-      };
+      final SelectionListener valueSelectionListener = SelectionListener.widgetSelectedAdapter(
+            selectionEvent -> onFieldSelectValue(selectionEvent.widget));
+
       final MouseWheelListener valueMouseWheelListener = mouseEvent -> {
          UI.adjustSpinnerValueOnMouseScroll(mouseEvent);
          onFieldSelectValue(mouseEvent.widget);
       };
 
-      final SelectionListener prontoListener = new SelectionAdapter() {
-         @Override
-         public void widgetSelected(final SelectionEvent event) {
-            onFieldSelectPronto(event.widget);
-         }
-      };
+      final SelectionListener prontoListener = SelectionListener.widgetSelectedAdapter(event -> onFieldSelectPronto(event));
 
       /*
        * fields
@@ -562,12 +545,13 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
              * Spinner: Vertex value
              */
             final Spinner spinnerValue = new Spinner(vertexContainer, SWT.BORDER);
-            GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).applyTo(spinnerValue);
             spinnerValue.setMinimum(-10000);
             spinnerValue.setMaximum(10000);
             spinnerValue.addSelectionListener(valueSelectionListener);
             spinnerValue.addMouseWheelListener(valueMouseWheelListener);
             spinnerValue.setToolTipText(Messages.Map3Color_Dialog_Spinner_ColorValue_Tooltip);
+
+            GridDataFactory.fillDefaults().align(SWT.CENTER, SWT.CENTER).applyTo(spinnerValue);
 
             /*
              * Action: Delete vertex
@@ -579,27 +563,27 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
              * Label: Value color
              */
             final Label lblColor = new Label(vertexContainer, SWT.NONE);
-            GridDataFactory.fillDefaults()//
+            lblColor.addMouseListener(colorMouseListener);
+
+            GridDataFactory.fillDefaults()
                   .grab(true, false)
                   .hint(70, 10)
                   .applyTo(lblColor);
-            lblColor.addMouseListener(colorMouseListener);
 
             /*
              * Spinner: Opacity
              */
             final Spinner spinnerOpacity = new Spinner(vertexContainer, SWT.BORDER);
-            GridDataFactory.fillDefaults() //
-                  .align(SWT.BEGINNING, SWT.FILL)
-                  .applyTo(spinnerOpacity);
-
-            spinnerOpacity.setMinimum(Map3GradientColorManager.OPACITY_MIN);
-            spinnerOpacity.setMaximum(Map3GradientColorManager.OPACITY_MAX);
+            spinnerOpacity.setMinimum(0);
+            spinnerOpacity.setMaximum(UI.TRANSFORM_OPACITY_MAX);
             spinnerOpacity.setIncrement(1);
             spinnerOpacity.setPageIncrement(10);
             spinnerOpacity.addSelectionListener(_defaultSelectionAdapter);
             spinnerOpacity.addMouseWheelListener(_defaultMouseWheelListener);
-            spinnerOpacity.setToolTipText(Messages.Map3Color_Dialog_Spinner_ColorOpacity_Tooltip);
+            spinnerOpacity.setToolTipText(NLS.bind(Messages.Map3Color_Dialog_Spinner_ColorOpacity_Tooltip, UI.TRANSFORM_OPACITY_MAX));
+            GridDataFactory.fillDefaults()
+                  .align(SWT.BEGINNING, SWT.FILL)
+                  .applyTo(spinnerOpacity);
 
             /*
              * Radio: Pronto Color
@@ -642,18 +626,14 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
       // vertex container
       final Composite vertexContainer = new Composite(_vertexScrolledContainer, SWT.NONE);
       GridDataFactory.fillDefaults().grab(true, true).applyTo(vertexContainer);
-      GridLayoutFactory.fillDefaults()//
+      GridLayoutFactory.fillDefaults()
             .numColumns(6)
             .applyTo(vertexContainer);
 //    vertexContainer.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GRAY));
 
       _vertexScrolledContainer.setContent(vertexContainer);
-      _vertexScrolledContainer.addControlListener(new ControlAdapter() {
-         @Override
-         public void controlResized(final ControlEvent e) {
-            _vertexScrolledContainer.setMinSize(vertexContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-         }
-      });
+      _vertexScrolledContainer.addControlListener(ControlListener.controlResizedAdapter(controlEvent -> _vertexScrolledContainer.setMinSize(
+            vertexContainer.computeSize(SWT.DEFAULT, SWT.DEFAULT))));
 
       return vertexContainer;
    }
@@ -664,13 +644,13 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
        * Action bar
        */
       final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults()//
+      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
+//    container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
+      GridDataFactory.fillDefaults()
             .span(6, 1)
 //          .align(SWT.END, SWT.FILL)
             .grab(true, false)
             .applyTo(container);
-      GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
-//    container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
       {
          {
             final ToolBar toolbar = new ToolBar(container, SWT.FLAT);
@@ -684,18 +664,13 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
 
          {
             _chkProntoColor = new Button(container, SWT.CHECK);
-            GridDataFactory.fillDefaults()//
+            _chkProntoColor.setText(Messages.Map3Color_Dialog_Checkbox_EnableProntoColor);
+            _chkProntoColor.setToolTipText(Messages.Map3Color_Dialog_Checkbox_EnableProntoColor_Tooltip);
+            _chkProntoColor.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> enableControls_Pronto()));
+            GridDataFactory.fillDefaults()
                   .grab(true, false)
                   .align(SWT.END, SWT.FILL)
                   .applyTo(_chkProntoColor);
-            _chkProntoColor.setText(Messages.Map3Color_Dialog_Checkbox_EnableProntoColor);
-            _chkProntoColor.setToolTipText(Messages.Map3Color_Dialog_Checkbox_EnableProntoColor_Tooltip);
-            _chkProntoColor.addSelectionListener(new SelectionAdapter() {
-               @Override
-               public void widgetSelected(final SelectionEvent e) {
-                  enableControls_Pronto();
-               }
-            });
 
             // invalidate pronto color, initially a pronto color is not checked
             _prontoColorVertexIndex = null;
@@ -721,8 +696,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
       label.setText(Messages.Map3Color_Dialog_Label_Values);
 
       final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults()//
-            .applyTo(container);
+      GridDataFactory.fillDefaults().applyTo(container);
       GridLayoutFactory.fillDefaults().numColumns(2).applyTo(container);
       {
          /*
@@ -752,12 +726,12 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
           * Max brightness
           */
          _lblMaxBrightness = new Label(parent, SWT.NONE);
-         GridDataFactory.fillDefaults()//
+         _lblMaxBrightness.setText(LEGENDCOLOR_DIALOG_MAX_BRIGHTNESS_LABEL);
+         _lblMaxBrightness.setToolTipText(LEGENDCOLOR_DIALOG_MAX_BRIGHTNESS_TOOLTIP);
+         GridDataFactory.fillDefaults()
                .grab(true, false)
                .align(SWT.FILL, SWT.CENTER)
                .applyTo(_lblMaxBrightness);
-         _lblMaxBrightness.setText(LEGENDCOLOR_DIALOG_MAX_BRIGHTNESS_LABEL);
-         _lblMaxBrightness.setToolTipText(LEGENDCOLOR_DIALOG_MAX_BRIGHTNESS_TOOLTIP);
 
          final Composite containerMax = new Composite(parent, SWT.NONE);
          GridDataFactory.fillDefaults().grab(true, false).applyTo(containerMax);
@@ -780,12 +754,12 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
           * Min brightness
           */
          _lblMinBrightness = new Label(parent, SWT.NONE);
-         GridDataFactory.fillDefaults()//
+         _lblMinBrightness.setText(LEGENDCOLOR_DIALOG_MIN_BRIGHTNESS_LABEL);
+         _lblMinBrightness.setToolTipText(LEGENDCOLOR_DIALOG_MIN_BRIGHTNESS_TOOLTIP);
+         GridDataFactory.fillDefaults()
                .grab(true, false)
                .align(SWT.FILL, SWT.CENTER)
                .applyTo(_lblMinBrightness);
-         _lblMinBrightness.setText(LEGENDCOLOR_DIALOG_MIN_BRIGHTNESS_LABEL);
-         _lblMinBrightness.setToolTipText(LEGENDCOLOR_DIALOG_MIN_BRIGHTNESS_TOOLTIP);
 
          final Composite containerMin = new Composite(parent, SWT.NONE);
          GridDataFactory.fillDefaults().grab(true, false).applyTo(containerMin);
@@ -822,17 +796,17 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
 
       final Composite container = new Composite(parent, SWT.NONE);
       GridDataFactory.fillDefaults().grab(false, true).applyTo(container);
-      GridLayoutFactory.fillDefaults()//
+      GridLayoutFactory.fillDefaults()
             .extendedMargins(10, 5, 5, 5)
             .numColumns(1)
             .applyTo(container);
       {
          _colorChooser = new ColorChooser(container, SWT.NONE);
-         GridDataFactory.fillDefaults()//
+         _colorChooser.setProfileColors(this);
+
+         GridDataFactory.fillDefaults()
                .grab(false, true)
                .applyTo(_colorChooser);
-
-         _colorChooser.setProfileColors(this);
       }
    }
 
@@ -852,13 +826,14 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
              * Checkbox: live update
              */
             _chkLiveUpdate = new Button(container, SWT.CHECK);
-            GridDataFactory.fillDefaults()//
-                  .grab(true, false)
-                  .indent(convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN), 0)
-                  .applyTo(_chkLiveUpdate);
             _chkLiveUpdate.setText(LEGEND_COLOR_DIALOG_CHECK_LIVE_UPDATE);
             _chkLiveUpdate.setToolTipText(LEGEND_COLOR_DIALOG_CHECK_LIVE_UPDATE_TOOLTIP);
             _chkLiveUpdate.addSelectionListener(_defaultSelectionAdapter);
+
+            GridDataFactory.fillDefaults()
+                  .grab(true, false)
+                  .indent(convertHorizontalDLUsToPixels(IDialogConstants.HORIZONTAL_MARGIN), 0)
+                  .applyTo(_chkLiveUpdate);
          }
 
          containerButtonBar = super.createButtonBar(container);
@@ -880,12 +855,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
                IDialogConstants.CLIENT_ID + 6,
                Messages.Map3Color_Dialog_Button_Apply,
                false);
-         _btnApply.addSelectionListener(new SelectionAdapter() {
-            @Override
-            public void widgetSelected(final SelectionEvent e) {
-               onApply(true);
-            }
-         });
+         _btnApply.addSelectionListener(SelectionListener.widgetSelectedAdapter(selectionEvent -> onApply(true)));
       }
 
       // create default buttons (OK, Cancel)
@@ -920,7 +890,8 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
 
       _dialogColorProvider.configureColorProvider(
             ColorProviderConfig.MAP3_PROFILE,
-            imageHeight,
+//            imageHeight,
+            (int) (imageHeight * UI.HIDPI_SCALING),
             getRgbVertices(),
             isDrawUnits);
 
@@ -1124,6 +1095,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
     * Updates model from the UI and do a live update when selected.
     *
     * @param isForceLiveUpdate
+    *
     * @return Returns <code>true</code> when live update and UI update from the model is done.
     */
    private boolean onApply(final boolean isForceLiveUpdate) {
@@ -1190,9 +1162,9 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
       }
    }
 
-   private void onFieldSelectPronto(final Widget widget) {
+   private void onFieldSelectPronto(final SelectionEvent selectionEvent) {
 
-      final Integer vertexIndex = (Integer) widget.getData(DATA_KEY_VERTEX_INDEX);
+      final Integer vertexIndex = (Integer) selectionEvent.widget.getData(DATA_KEY_VERTEX_INDEX);
 
       // keep pronto index
       _prontoColorVertexIndex = vertexIndex;
@@ -1312,7 +1284,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
       for (int vertexIndex = 0; vertexIndex < rgbVertexListSize; vertexIndex++) {
 
          /*
-          * create vertices from UI controls
+          * Create vertices from UI controls
           */
          final Spinner spinnerOpacity = _spinnerOpacity[vertexIndex];
          final Spinner spinnerVertexValue = _spinnerVertexValue[vertexIndex];
@@ -1325,7 +1297,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
          final RGBVertex rgbVertex = new RGBVertex(sortId);
          rgbVertex.setValue(value);
          rgbVertex.setRGB(rgb);
-         rgbVertex.setOpacity(spinnerOpacity.getSelection());
+         rgbVertex.setOpacity((float) spinnerOpacity.getSelection() / UI.TRANSFORM_OPACITY_MAX);
 
          newRgbVertices.add(rgbVertex);
       }
@@ -1388,7 +1360,7 @@ public class DialogMap3ColorEditor extends TitleAreaDialog implements IProfileCo
             // update opacity
             final Spinner spinnerOpacity = _spinnerOpacity[vertexIndex];
             // must be rounded otherwise it can be wrong
-            final double opacity = vertex.getOpacity() + 0.0001;
+            final double opacity = (vertex.getOpacity() + 0.0001) * UI.TRANSFORM_OPACITY_MAX;
             spinnerOpacity.setSelection((int) opacity);
 
             // update value

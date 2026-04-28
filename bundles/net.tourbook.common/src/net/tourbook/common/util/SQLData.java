@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,6 +18,9 @@ package net.tourbook.common.util;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
+
+import net.tourbook.common.UI;
 
 /**
  * Common class to keep a sql statement and it's parameters together, this can be used as return
@@ -25,27 +28,29 @@ import java.util.ArrayList;
  */
 public class SQLData {
 
+   private static final char NL = UI.NEW_LINE;
+
    private String            _sqlString;
-   private ArrayList<Object> _parameters;
-
-   private int               _lastParameterIndex;
-
-   public SQLData(final String sqlString, final ArrayList<Object> parameters) {
-
-      _sqlString = sqlString;
-      _parameters = parameters;
-   }
+   private List<Object>      _allParameters;
 
    /**
-    * @return Returns the last parameter index +1 which was used for setting parameters in
-    *         {@link #setParameters(PreparedStatement, int)}
+    * Setup with empty sql data
     */
-   public int getLastParameterIndex() {
-      return _lastParameterIndex;
+   public SQLData() {
+
+      _sqlString = UI.EMPTY_STRING;
+      _allParameters = new ArrayList<>();
    }
 
-   public ArrayList<Object> getParameters() {
-      return _parameters;
+   public SQLData(final String sqlString,
+                  final List<Object> parameters) {
+
+      _sqlString = sqlString;
+      _allParameters = parameters;
+   }
+
+   public List<Object> getParameters() {
+      return _allParameters;
    }
 
    public String getSqlString() {
@@ -54,44 +59,40 @@ public class SQLData {
 
    /**
     * Sets the app filter parameters into the filter statement.
-    * <p>
-    * The last used index can be retrieved with {@link #getLastParameterIndex()}
     *
     * @param statement
     * @param startIndex
     *           Sets the parameter start index, the first parameter is 1
+    *
+    * @return Returns the next parameter index which is the last paramter index +1
+    *
     * @throws SQLException
     */
-   public void setParameters(final PreparedStatement statement, final int startIndex) throws SQLException {
+   public int setParameters(final PreparedStatement statement, final int startIndex) throws SQLException {
 
       int parameterIndex = startIndex;
 
-      for (final Object parameter : _parameters) {
+      for (final Object parameter : _allParameters) {
 
          if (parameter instanceof Long) {
 
-            statement.setLong(parameterIndex, (Long) parameter);
-            parameterIndex++;
+            statement.setLong(parameterIndex++, (Long) parameter);
 
          } else if (parameter instanceof Integer) {
 
-            statement.setInt(parameterIndex, (Integer) parameter);
-            parameterIndex++;
+            statement.setInt(parameterIndex++, (Integer) parameter);
 
          } else if (parameter instanceof Float) {
 
-            statement.setFloat(parameterIndex, (Float) parameter);
-            parameterIndex++;
+            statement.setFloat(parameterIndex++, (Float) parameter);
 
          } else if (parameter instanceof Double) {
 
-            statement.setDouble(parameterIndex, (Double) parameter);
-            parameterIndex++;
+            statement.setDouble(parameterIndex++, (Double) parameter);
 
          } else if (parameter instanceof String) {
 
-            statement.setString(parameterIndex, (String) parameter);
-            parameterIndex++;
+            statement.setString(parameterIndex++, (String) parameter);
 
          } else {
 
@@ -99,17 +100,22 @@ public class SQLData {
          }
       }
 
-      _lastParameterIndex = parameterIndex;
+      return parameterIndex;
    }
 
    @Override
    public String toString() {
 
-      return "SQLData [\n" // //$NON-NLS-1$
+      final int numParameters = _allParameters == null ? 0 : _allParameters.size();
 
-            + ("_sqlString=" + _sqlString + "\n") //$NON-NLS-1$ //$NON-NLS-2$
-            + ("_parameters=" + _parameters + "\n") //$NON-NLS-1$ //$NON-NLS-2$
+      return UI.EMPTY_STRING
 
-            + "]"; //$NON-NLS-1$
+            + "SQLData" + NL //                                      //$NON-NLS-1$
+
+            + "   hash           = " + this.hashCode() + NL //       //$NON-NLS-1$
+            + "   _sqlString     = " + _sqlString + NL //            //$NON-NLS-1$
+            + "   _allParameters = " + _allParameters + NL //        //$NON-NLS-1$
+            + "   numParameters  = " + numParameters + NL //         //$NON-NLS-1$
+      ;
    }
 }

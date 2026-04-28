@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,6 +16,7 @@
 package net.tourbook.tour;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import net.tourbook.Images;
 import net.tourbook.application.TourbookPlugin;
@@ -28,8 +29,7 @@ import net.tourbook.ui.IInfoToolTipProvider;
 import net.tourbook.ui.ITourProvider;
 
 import org.eclipse.jface.resource.ImageRegistry;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
@@ -50,17 +50,20 @@ public class TourInfoIconToolTipProvider implements ITourToolTipProvider, IInfoT
 
    static {
 
+// SET_FORMATTING_OFF
+
       final ImageRegistry imageRegistry = TourbookPlugin.getDefault().getImageRegistry();
 
-      imageRegistry.put(Images.TourInfo, TourbookPlugin.getImageDescriptor(Images.TourInfo));
-      imageRegistry.put(Images.TourInfo_Disabled, TourbookPlugin.getImageDescriptor(Images.TourInfo_Disabled));
-      imageRegistry.put(Images.TourInfo_Hovered, TourbookPlugin.getImageDescriptor(Images.TourInfo_Hovered));
+      imageRegistry.put(Images.TourInfo,           TourbookPlugin.getImageDescriptor(Images.TourInfo));
+      imageRegistry.put(Images.TourInfo_Hovered,   TourbookPlugin.getImageDescriptor(Images.TourInfo_Hovered));
 
-      _tourInfoImage = imageRegistry.get(Images.TourInfo);
-      _tourInfoImage_Disabled = imageRegistry.get(Images.TourInfo_Disabled);
-      _tourInfoImage_Hovered = imageRegistry.get(Images.TourInfo_Hovered);
+      _tourInfoImage             = imageRegistry.get(Images.TourInfo);
+      _tourInfoImage_Hovered     = imageRegistry.get(Images.TourInfo_Hovered);
+      _tourInfoImage_Disabled    = new Image(_tourInfoImage.getDevice(), _tourInfoImage, SWT.IMAGE_DISABLE);
 
-      _tourInfoImageSize = _tourInfoImage.getBounds();
+      _tourInfoImageSize         = _tourInfoImage.getBounds();
+
+// SET_FORMATTING_ON
    }
 
    private TourToolTip        _tourToolTip;
@@ -108,9 +111,9 @@ public class TourInfoIconToolTipProvider implements ITourToolTipProvider, IInfoT
 
    private void createInfoIcon() {
 
-      if (_tourInfoImage != null) {
-         return;
-      }
+//      if (_tourInfoImage != null) {
+//         return;
+//      }
    }
 
    @Override
@@ -142,12 +145,7 @@ public class TourInfoIconToolTipProvider implements ITourToolTipProvider, IInfoT
          }
       }
 
-      parent.addDisposeListener(new DisposeListener() {
-         @Override
-         public void widgetDisposed(final DisposeEvent e) {
-            _tourInfoUI.dispose();
-         }
-      });
+      parent.addDisposeListener(disposeEvent -> _tourInfoUI.dispose());
 
       return ui;
    }
@@ -156,7 +154,7 @@ public class TourInfoIconToolTipProvider implements ITourToolTipProvider, IInfoT
    public HoveredAreaContext getHoveredContext(final int devMouseX, final int devMouseY) {
 
       /*
-       * hovered area which is hit by the mouse is extendet in the width
+       * hovered area which is hit by the mouse is extended in the width
        */
       final int margin = 5;
 
@@ -306,7 +304,7 @@ public class TourInfoIconToolTipProvider implements ITourToolTipProvider, IInfoT
     *
     * @param tourData
     */
-   public void setTourDataList(final ArrayList<TourData> tourDataList) {
+   public void setTourDataList(final List<TourData> tourDataList) {
 
       if (tourDataList == null || tourDataList.isEmpty()) {
          _tourData = null;

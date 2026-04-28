@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -24,27 +24,27 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.tourbook.data.GearData;
+import net.tourbook.data.GearDataType;
 import net.tourbook.device.garmin.fit.FitData;
-import net.tourbook.device.garmin.fit.FitUtils;
 
 /**
  * Set gear data
  */
 public class MesgListener_Event extends AbstractMesgListener implements EventMesgListener {
 
-   List<GearData>     _gearData;
+   private List<GearData> _gearData;
 
-   private List<Long> _pausedTime_Start = new ArrayList<>();
-   private List<Long> _pausedTime_End   = new ArrayList<>();
-   private List<Long> _pausedTime_Data  = new ArrayList<>();
+   private List<Long>     _pausedTime_Start = new ArrayList<>();
+   private List<Long>     _pausedTime_End   = new ArrayList<>();
+   private List<Long>     _pausedTime_Data  = new ArrayList<>();
 
-   private boolean    _isTimerStopped   = true;
+   private boolean        _isTimerStopped   = true;
 
    public MesgListener_Event(final FitData fitData) {
 
       super(fitData);
 
-      _gearData = fitData.getGearData();
+      _gearData = fitData.getGearData(GearDataType.FRONT_GEAR_TEETH__REAR_GEAR_TEETH);
 
       _pausedTime_Start = fitData.getPausedTime_Start();
       _pausedTime_End = fitData.getPausedTime_End();
@@ -97,22 +97,21 @@ public class MesgListener_Event extends AbstractMesgListener implements EventMes
        */
       final Event event = mesg.getEvent();
       final EventType eventType = mesg.getEventType();
-      final long javaTime = FitUtils.convertGarminTimeToJavaTime(mesg.getTimestamp().getTimestamp());
+      final long javaTime = mesg.getTimestamp().getDate().getTime();
 
       if (event != null && event == Event.TIMER && eventType != null) {
 
          switch (eventType) {
 
-         //The Garmin usage of START/STOP/STOP_ALL is described here:
-         //https://www.thisisant.com/forum/viewthread/4319/#7452
+         // The Garmin usage of START/STOP/STOP_ALL is described here:
+         // https://www.thisisant.com/forum/viewthread/4319/#7452
 
-         case START:
+         // Garmin: Elapsed, Timer, and Moving Durations
+         // https://developer.garmin.com/fit/cookbook/durations/
 
-            handleTimerStartEvent(javaTime);
-            break;
+         case START -> handleTimerStartEvent(javaTime);
 
-         case STOP:
-         case STOP_ALL:
+         case STOP, STOP_ALL -> {
 
             /**
              * eventData == 0: user stop<br>
@@ -120,11 +119,13 @@ public class MesgListener_Event extends AbstractMesgListener implements EventMes
              */
             final Long eventData = mesg.getData();
 
-            handleTimerStopEvents(javaTime, eventData);
-            break;
+            if (eventData != null) {
 
-         default:
-            break;
+               handleTimerStopEvents(javaTime, eventData);
+            }
+         }
+         default -> { // Nothing to do
+         }
          }
       }
 

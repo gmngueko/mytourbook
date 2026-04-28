@@ -1,0 +1,167 @@
+/*******************************************************************************
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation version 2 of the License.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110, USA
+ *******************************************************************************/
+package net.tourbook.ui.views.tagging;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.ZonedDateTime;
+import java.util.Objects;
+import java.util.Set;
+
+import net.tourbook.common.UI;
+import net.tourbook.common.time.TimeTools;
+import net.tourbook.database.TourDatabase;
+
+import org.eclipse.jface.viewers.TreeViewer;
+
+public class TVITaggingView_Tour extends TVITaggingView_Item {
+
+   public static final String SQL_TOUR_COLUMNS = UI.EMPTY_STRING
+
+         + "   startYear," + NL                                            //    1  //$NON-NLS-1$
+         + "   startMonth," + NL                                           //    2  //$NON-NLS-1$
+         + "   startDay," + NL                                             //    3  //$NON-NLS-1$
+
+         + "   tourTitle," + NL                                            //    4  //$NON-NLS-1$
+         + "   tourType_typeId," + NL                                      //    5  //$NON-NLS-1$
+         + "   deviceTimeInterval," + NL                                   //    6  //$NON-NLS-1$
+         + "   startDistance," + NL                                        //    7  //$NON-NLS-1$
+
+         + "   Tmarker.MarkerId," + NL                                     //    8  //$NON-NLS-1$
+         + "   jTdataTtag_2.TourTag_TagId," + NL                           //    9  //$NON-NLS-1$
+         + "   jTdataEq.Equipment_EquipmentID," + NL                       //   10  //$NON-NLS-1$
+
+         + SQL_SUM_COLUMNS_TOUR;                                           //   11
+
+   long                       tourId;
+
+   ZonedDateTime              tourDate;
+
+   int                        tourYear;
+   int                        tourMonth;
+   int                        tourDay;
+
+   String                     tourTitle;
+
+   long                       tourTypeId;
+
+   /**
+    * Tour tag ids
+    */
+   Set<Long>                  allTagIDs;
+
+   /**
+    * Tour equipment ids
+    */
+   public Set<Long>           allEquipmentIDs;
+
+   public long                deviceStartDistance;
+
+   public short               deviceTimeInterval;
+
+   public TVITaggingView_Tour(final TVITaggingView_Item parentItem, final TreeViewer treeViewer) {
+
+      super(treeViewer);
+
+      setParentItem(parentItem);
+   }
+
+   @Override
+   public boolean equals(final Object obj) {
+
+      if (this == obj) {
+         return true;
+      }
+
+      if (obj == null) {
+         return false;
+      }
+
+      if (getClass() != obj.getClass()) {
+         return false;
+      }
+
+      final TVITaggingView_Tour other = (TVITaggingView_Tour) obj;
+
+      return tourId == other.tourId;
+   }
+
+   @Override
+   protected void fetchChildren() {}
+
+   public long getTourId() {
+      return tourId;
+   }
+
+   @Override
+   public boolean hasChildren() {
+      return false;
+   }
+
+   @Override
+   public int hashCode() {
+      return Objects.hash(tourId);
+   }
+
+   public void readTourColumnValues(final ResultSet result,
+                                    final int startIndex)
+         throws SQLException {
+
+// SET_FORMATTING_OFF
+
+      tourYear             = result.getInt(startIndex + 0);
+      tourMonth            = result.getInt(startIndex + 1);
+      tourDay              = result.getInt(startIndex + 2);
+
+      tourTitle            = result.getString(startIndex + 3);
+      final Object resultTourTypeId = result.getObject(startIndex + 4);
+
+      deviceTimeInterval   = result.getShort(startIndex + 5);
+      deviceStartDistance  = result.getLong(startIndex + 6);
+
+      tourDate = ZonedDateTime.of(tourYear, tourMonth, tourDay, 0, 0, 0, 0, TimeTools.getDefaultTimeZone());
+
+      tourTypeId = (resultTourTypeId == null ? TourDatabase.ENTITY_IS_NOT_SAVED : (Long) resultTourTypeId);
+
+// SET_FORMATTING_ON
+
+      if (UI.IS_SCRAMBLE_DATA) {
+         tourTitle = UI.scrambleText(tourTitle);
+      }
+
+      readSumColumnData(result, startIndex + 10);
+   }
+
+   @Override
+   public String toString() {
+
+      return UI.EMPTY_STRING
+
+            + "TVITaggingView_Tour" + NL //              //$NON-NLS-1$
+
+            + "[" + NL //                                //$NON-NLS-1$
+
+            + " tourId     = " + tourId + NL //          //$NON-NLS-1$
+            + " tourDate   = " + tourDate + NL //        //$NON-NLS-1$
+            + " tourTitle  = " + tourTitle + NL //       //$NON-NLS-1$
+            + " tourTypeId = " + tourTypeId + NL //      //$NON-NLS-1$
+
+            + "]" + NL //                                //$NON-NLS-1$
+
+      ;
+   }
+
+}

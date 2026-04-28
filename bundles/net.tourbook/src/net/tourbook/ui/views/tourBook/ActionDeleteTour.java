@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -30,6 +30,7 @@ import net.tourbook.database.TourDatabase;
 import net.tourbook.tour.ITourItem;
 import net.tourbook.tour.SelectionDeletedTours;
 import net.tourbook.tour.TourLogManager;
+import net.tourbook.tour.TourLogManager.AutoOpenEvent;
 import net.tourbook.tour.TourLogState;
 import net.tourbook.tour.TourLogView;
 import net.tourbook.tour.TourManager;
@@ -70,10 +71,11 @@ public class ActionDeleteTour extends Action {
 
       _tourBookView = tourBookView;
 
+      tourBookView.setActionDeleteTour(this);
+
       setText(Messages.Tour_Book_Action_delete_selected_tours);
 
-      setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete));
-      setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Delete_Disabled));
+      setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Trash));
    }
 
    private void deleteTours(final ArrayList<Long> selectedTourIDs,
@@ -170,9 +172,7 @@ public class ActionDeleteTour extends Action {
             }
          }
 
-         if (treeItem instanceof TVITourBookTour) {
-
-            final TVITourBookTour tourItem = (TVITourBookTour) treeItem;
+         if (treeItem instanceof final TVITourBookTour tourItem) {
 
             final Long tourId = tourItem.getTourId();
             final TourData tourData = TourManager.getTour(tourId);
@@ -276,10 +276,13 @@ public class ActionDeleteTour extends Action {
 
                .thenAccept(allRowPositions -> {
 
-                  // keep row position for the first deleted tour
-                  final int firstRowPosition = allRowPositions[0];
+                  if (allRowPositions.length > 0) {
 
-                  firstDeletePosition[0] = firstRowPosition;
+                     // keep row position for the first deleted tour
+                     final int firstRowPosition = allRowPositions[0];
+
+                     firstDeletePosition[0] = firstRowPosition;
+                  }
                });
 
          // wait until row index is set
@@ -306,7 +309,7 @@ public class ActionDeleteTour extends Action {
       }
 
       // log deletions
-      TourLogManager.showLogView();
+      TourLogManager.showLogView(AutoOpenEvent.DELETE_SOMETHING);
 
       final SelectionDeletedTours selectionForDeletedTours = new SelectionDeletedTours();
 
@@ -347,7 +350,7 @@ public class ActionDeleteTour extends Action {
       if (isLayoutNatTable) {
 
          // select tour at the same position as the first deleted tour
-         _tourBookView.selectTours_NatTable(firstDeletePosition, true, true, false);
+         _tourBookView.selectTours_NatTable(firstDeletePosition, true, true, true);
 
       } else {
 

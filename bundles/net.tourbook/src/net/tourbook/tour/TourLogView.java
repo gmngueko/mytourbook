@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -18,14 +18,11 @@ package net.tourbook.tour;
 import static net.tourbook.ui.UI.getIconUrl;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import net.tourbook.Images;
 import net.tourbook.Messages;
@@ -33,6 +30,8 @@ import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.CommonActivator;
 import net.tourbook.common.CommonImages;
 import net.tourbook.common.UI;
+import net.tourbook.common.tooltip.ActionToolbarSlideout;
+import net.tourbook.common.tooltip.ToolbarSlideout;
 import net.tourbook.common.util.Util;
 import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.web.WEB;
@@ -64,6 +63,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.ui.IPartListener2;
 import org.eclipse.ui.IWorkbenchPartReference;
 import org.eclipse.ui.part.PageBook;
@@ -88,7 +88,7 @@ public class TourLogView extends ViewPart {
 
    private static final String            STATE_IS_UI_COLORFULL            = "STATE_IS_UI_COLORFULL";                //$NON-NLS-1$
 
-   public static final String             CSS_LOG_INFO                     = "info";                                 //$NON-NLS-1$
+   static final String                    CSS_LOG_INFO                     = "info";                                 //$NON-NLS-1$
    private static final String            CSS_LOG_ITEM                     = "logItem";                              //$NON-NLS-1$
    private static final String            CSS_LOG_SUB_ITEM                 = "subItem";                              //$NON-NLS-1$
    public static final String             CSS_LOG_TITLE                    = "title";                                //$NON-NLS-1$
@@ -107,6 +107,7 @@ public class TourLogView extends ViewPart {
    private Action                         _action_CopyIntoClipboard;
    private Action                         _action_Clear;
    private Action_ToggleSimpleOrColor     _action_ToggleSimpleOrColor;
+   private Action_TourLogOptions          _action_TourLogOptions;
 
    private boolean                        _isBrowserContentSet;
    private boolean                        _isBrowserCompleted;
@@ -147,7 +148,6 @@ public class TourLogView extends ViewPart {
          setText(Messages.Tour_Log_Action_Clear_Tooltip);
 
          setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_RemoveAll));
-         setDisabledImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_RemoveAll_Disabled));
       }
 
       @Override
@@ -166,7 +166,6 @@ public class TourLogView extends ViewPart {
          setToolTipText(Messages.Tour_Log_Action_CopyTourLogIntoClipboard_Tooltip);
 
          setImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.App_Copy));
-         setDisabledImageDescriptor(CommonActivator.getThemedImageDescriptor(CommonImages.App_Copy_Disabled));
       }
 
       @Override
@@ -189,13 +188,22 @@ public class TourLogView extends ViewPart {
       }
    }
 
-   public void addLog(final TourLog tourLog) {
+   private class Action_TourLogOptions extends ActionToolbarSlideout {
+
+      @Override
+      protected ToolbarSlideout createSlideout(final ToolBar toolbar) {
+
+         return new SlideoutTourLogOptions(_pageBook, toolbar);
+      }
+   }
+
+   void addLog(final TourLog tourLog) {
 
       _tourLog_Queue.add(tourLog);
 
       if (isBrowserAvailable() && _isBrowserCompleted == false) {
 
-         // this occures when the view is opening but not yet ready
+         // this occurs when the view is opening but not yet ready
          return;
       }
 
@@ -254,7 +262,7 @@ public class TourLogView extends ViewPart {
             return;
          }
 
-         allLogItems = _tourLog_Queue.stream().collect(Collectors.toList());
+         allLogItems = _tourLog_Queue.stream().toList();
          _tourLog_Queue.clear();
       }
 
@@ -305,9 +313,9 @@ public class TourLogView extends ViewPart {
 
          final StringBuilder sb = new StringBuilder();
 
-         final boolean isFirst[] = { false };
+         final boolean[] isFirst = { false };
 
-         allSimple.forEach((logMessage) -> {
+         allSimple.forEach(logMessage -> {
 
             if (isFirst[0] == false) {
                isFirst[0] = true;
@@ -405,7 +413,7 @@ public class TourLogView extends ViewPart {
    /**
     * Clear logs.
     */
-   public void clear() {
+   void clear() {
 
       _noBrowserLog = UI.EMPTY_STRING;
       _txtNoBrowser.setText(UI.EMPTY_STRING);
@@ -418,6 +426,7 @@ public class TourLogView extends ViewPart {
       _action_Clear = new Action_ClearView();
       _action_CopyIntoClipboard = new Action_CopyLogValuesIntoClipboard();
       _action_ToggleSimpleOrColor = new Action_ToggleSimpleOrColor();
+      _action_TourLogOptions = new Action_TourLogOptions();
    }
 
    private String createHTML() {
@@ -557,24 +566,43 @@ public class TourLogView extends ViewPart {
 
       final String separator = "";//"\t"; //$NON-NLS-1$
 
-      return String.format(UI.EMPTY_STRING
+      final String logMessagePrefix = String.format(UI.EMPTY_STRING
 
             + "%s" + separator //            time              //$NON-NLS-1$
             + " [%-25s]" + separator //      thread name       //$NON-NLS-1$
             + " %-5d" + separator //         log number        //$NON-NLS-1$
             + " %-5s" + separator //         state icon        //$NON-NLS-1$
             + " %s" + separator //           indent            //$NON-NLS-1$
-            + "   %s" + separator //         message           //$NON-NLS-1$
             ,
 
             tourLog.time,
             tourLog.threadName,
             tourLog.logNumber,
             stateNoBrowser, // text instead of an icon
-            subIndent,
-            tourLog.message
+            subIndent);
 
-      );
+      final int prefixLength = logMessagePrefix.length();
+      final String linePrefix = UI.SPACE1.repeat(prefixLength + 3);
+
+      final String logMessageRaw = tourLog.message;
+      final String logMessageWithSpaces = logMessageRaw.replaceAll(
+
+            WEB.HTML_ELEMENT_BR,
+            WEB.HTML_ELEMENT_BR + linePrefix);
+      /*
+       * Replace new line breaks '<br>' with prefixed spaces
+       */
+
+      final String logMessage = String.format(UI.EMPTY_STRING
+
+            + "%s" //                        message prefix    //$NON-NLS-1$
+            + "   %s" + separator //         message           //$NON-NLS-1$
+            ,
+
+            logMessagePrefix,
+            logMessageWithSpaces);
+
+      return logMessage;
    }
 
    @Override
@@ -676,7 +704,7 @@ public class TourLogView extends ViewPart {
          _txtNoBrowser = new Text(container, SWT.MULTI | SWT.READ_ONLY | SWT.H_SCROLL | SWT.V_SCROLL);
          _txtNoBrowser.setFont(net.tourbook.ui.UI.getLogFont());
          _txtNoBrowser.setBackground(bgColor);
-         _txtNoBrowser.addMouseWheelListener(this::onMouseWheel);
+         _txtNoBrowser.addMouseWheelListener(event -> onMouseWheel(event));
          GridDataFactory.fillDefaults()
                .grab(true, true)
                .align(SWT.FILL, SWT.FILL)
@@ -718,6 +746,7 @@ public class TourLogView extends ViewPart {
       tbm.add(_action_CopyIntoClipboard);
       tbm.add(_action_ToggleSimpleOrColor);
       tbm.add(_action_Clear);
+      tbm.add(_action_TourLogOptions);
    }
 
    private String getStateImage_NoBrowser(final TourLogState state) {
@@ -786,23 +815,16 @@ public class TourLogView extends ViewPart {
       /*
        * Webpage css
        */
-      try {
+      final File webFile = WEB.getResourceFile(WEB_RESOURCE_TOUR_IMPORT_LOG_CSS);
+      final String cssFromFile = Util.readContentFromFile(webFile.getAbsolutePath());
 
-         final File webFile = WEB.getResourceFile(WEB_RESOURCE_TOUR_IMPORT_LOG_CSS);
-         final String cssFromFile = Util.readContentFromFile(webFile.getAbsolutePath());
+      _tourLogCSS = UI.EMPTY_STRING
 
-         _tourLogCSS = UI.EMPTY_STRING
-
-               + "<style>" + NL //              //$NON-NLS-1$
-               + WEB.createCSS_Scrollbar()
-               + cssFromFile
-               + "</style>" + NL //             //$NON-NLS-1$
-         ;
-
-      } catch (IOException | URISyntaxException e) {
-         TourLogManager.log_EXCEPTION_WithStacktrace(e);
-      }
-
+            + "<style>" + NL //              //$NON-NLS-1$
+            + WEB.createCSS_Scrollbar()
+            + cssFromFile
+            + "</style>" + NL //             //$NON-NLS-1$
+      ;
    }
 
    private boolean isBrowserAvailable() {

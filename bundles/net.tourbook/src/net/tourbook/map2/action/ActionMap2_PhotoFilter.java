@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2021, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -30,14 +30,14 @@ import org.eclipse.swt.widgets.ToolItem;
 
 public class ActionMap2_PhotoFilter extends ActionToolbarSlideoutAdv {
 
+   private static final String PHOTO_FILTER_TITLE_MAP2_PHOTO_FILTER = net.tourbook.Messages.Photo_Filter_Title_Map2PhotoFilter;
+
    /*
     * UI resources
     */
 // SET_FORMATTING_OFF
 
    private static Image _imageEnabled              = UI.IMAGE_REGISTRY.get(UI.IMAGE_ACTION_PHOTO_FILTER);
-   private static Image _imageDisabled             = UI.IMAGE_REGISTRY.get(UI.IMAGE_ACTION_PHOTO_FILTER_DISABLED);
-
    private static Image _imageEnabled_NoPhotos     = UI.IMAGE_REGISTRY.get(UI.IMAGE_ACTION_PHOTO_FILTER_NO_PHOTOS);
    private static Image _imageEnabled_WithPhotos   = UI.IMAGE_REGISTRY.get(UI.IMAGE_ACTION_PHOTO_FILTER_WITH_PHOTOS);
 
@@ -50,7 +50,7 @@ public class ActionMap2_PhotoFilter extends ActionToolbarSlideoutAdv {
 
    public ActionMap2_PhotoFilter(final Map2View map2View, final IDialogSettings state) {
 
-      super(_imageEnabled, _imageDisabled);
+      super(_imageEnabled);
 
       _map2View = map2View;
       _state = state;
@@ -62,7 +62,7 @@ public class ActionMap2_PhotoFilter extends ActionToolbarSlideoutAdv {
    @Override
    protected AdvancedSlideout createSlideout(final ToolItem toolItem) {
 
-      _slideoutPhotoFilter = new SlideoutPhotoFilter(toolItem, _map2View, _state);
+      _slideoutPhotoFilter = new SlideoutPhotoFilter(toolItem, _map2View, _state, PHOTO_FILTER_TITLE_MAP2_PHOTO_FILTER);
       _slideoutPhotoFilter.setSlideoutLocation(SlideoutLocation.BELOW_CENTER);
 
       return _slideoutPhotoFilter;

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -21,8 +21,6 @@ import java.util.Formatter;
 
 import net.tourbook.common.UI;
 
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
@@ -36,12 +34,12 @@ public class Util {
    private static final String        FORMAT_HH_MM    = "%d:%02d";                        //$NON-NLS-1$
    private static final String        FORMAT_HH_MM_SS = "%d:%02d:%02d";                   //$NON-NLS-1$
 
-   private final static NumberFormat  _nf0            = NumberFormat.getNumberInstance();
-   private final static NumberFormat  _nf1            = NumberFormat.getNumberInstance();
-   private final static NumberFormat  _nf2            = NumberFormat.getNumberInstance();
-   private final static NumberFormat  _nf3            = NumberFormat.getNumberInstance();
-   private final static DecimalFormat _nfE            = new DecimalFormat("0.###E0");     //$NON-NLS-1$
-   private final static NumberFormat  _df             = DecimalFormat.getNumberInstance();
+   private static final NumberFormat  _nf0            = NumberFormat.getNumberInstance();
+   private static final NumberFormat  _nf1            = NumberFormat.getNumberInstance();
+   private static final NumberFormat  _nf2            = NumberFormat.getNumberInstance();
+   private static final NumberFormat  _nf3            = NumberFormat.getNumberInstance();
+   private static final DecimalFormat _nfE            = new DecimalFormat("0.###E0");     //$NON-NLS-1$
+   private static final NumberFormat  _df             = DecimalFormat.getNumberInstance();
 
    static {
       _nf0.setMinimumFractionDigits(0);
@@ -68,6 +66,7 @@ public class Util {
     *
     * @param newWidth
     * @param newHeight
+    *
     * @return
     */
    public static boolean canReuseImage(final Image image, final Rectangle rect) {
@@ -94,6 +93,7 @@ public class Util {
     * @param image
     *           image which will be disposed if the image is not null
     * @param rect
+    *
     * @return returns a new created image
     */
    public static Image createImage(final Display display, final Image image, final Rectangle rect) {
@@ -103,35 +103,6 @@ public class Util {
       }
 
       return new Image(display, rect.width, rect.height);
-   }
-
-   public static Color disposeResource(final Color resource) {
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
-      }
-      return null;
-   }
-
-   public static Cursor disposeResource(final Cursor resource) {
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
-      }
-      return null;
-   }
-
-   /**
-    * Disposes a resource
-    *
-    * @param image
-    * @return <code>null</code>
-    */
-   public static Image disposeResource(final Image resource) {
-
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
-      }
-
-      return null;
    }
 
    public static String format_hh_mm(final long time) {
@@ -144,11 +115,10 @@ public class Util {
 
       final long timeAbsolute = time < 0 ? 0 - time : time;
 
-      return _formatter
-            .format(
-                  FORMAT_HH_MM,
-                  (timeAbsolute / 3600),
-                  (timeAbsolute % 3600) / 60)
+      return _formatter.format(FORMAT_HH_MM,
+
+            (timeAbsolute / 3600),
+            (timeAbsolute % 3600) / 60)
             .toString();
    }
 
@@ -232,6 +202,7 @@ public class Util {
             case 2:
                valueText = _nf2.format(divValue);
                break;
+
             case 3:
                valueText = _nf3.format(divValue);
                break;
@@ -367,6 +338,7 @@ public class Util {
     *
     * @param value
     * @param data
+    *
     * @return
     */
    public static String formatValue(final int value, final int unitType) {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2020, 2021 Frédéric Bard
+ * Copyright (C) 2020, 2026 Frédéric Bard
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -16,18 +16,37 @@
 package utils;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import net.tourbook.common.util.FilesUtils;
+import net.tourbook.common.UI;
+import net.tourbook.common.util.FileUtils;
+import net.tourbook.common.util.StatusUtil;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourMarker;
 
 import org.skyscreamer.jsonassert.ArrayValueMatcher;
 import org.skyscreamer.jsonassert.Customization;
@@ -42,8 +61,83 @@ public class Comparison {
 
    private static final String JSON = ".json"; //$NON-NLS-1$
 
+   private Comparison() {}
+
+   public static void compareFitAgainstControl(final String controlTourFilePathFit,
+                                               final String testTourFilePathFit) {
+
+      //Convert the test FIT file to CSV for a human readable comparison
+      convertFitToCsvFile(testTourFilePathFit);
+
+      final String testTourFilePathCsv = testTourFilePathFit.replace(".fit", ".csv"); //$NON-NLS-1$ //$NON-NLS-2$
+      final Path testTourAbsoluteFilePathCsv = Paths.get(utils.FilesUtils.getAbsoluteFilePath(testTourFilePathCsv));
+      assertTrue(Files.exists(testTourAbsoluteFilePathCsv));
+
+      final String controlTourFilePathCsv = controlTourFilePathFit.replace(".fit", ".csv"); //$NON-NLS-1$ //$NON-NLS-2$
+      final Path controlTourAbsoluteFilePathCsv = Paths.get(utils.FilesUtils.getAbsoluteFilePath(controlTourFilePathCsv));
+      assertTrue(Files.exists(controlTourAbsoluteFilePathCsv));
+
+      try {
+
+         final List<String> testFileContentArray = Files.readAllLines(testTourAbsoluteFilePathCsv, StandardCharsets.UTF_8);
+         final List<String> controlFileContentArray = Files.readAllLines(controlTourAbsoluteFilePathCsv, StandardCharsets.UTF_8);
+
+         // Modify the test and control files to ignore the software version
+         final String genericSoftwareVersion = "software_version,"; //$NON-NLS-1$
+         final String genericApplicationVersion = "application_version,"; //$NON-NLS-1$
+
+         controlFileContentArray.replaceAll(line -> line = line.replace("software_version,\"24.11\"", genericSoftwareVersion)); //$NON-NLS-1$
+         controlFileContentArray.replaceAll(line -> line = line.replace("application_version,\"2411\"", genericApplicationVersion)); //$NON-NLS-1$
+
+         // Regular expression to match the version pattern
+         final String regex = "(software_version,)\\" + "\"\\d+\\.\\d+\\" + "\""; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+         final Pattern pattern = Pattern.compile(regex);
+
+         for (int index = 0; index < testFileContentArray.size(); index++) {
+
+            final String line = testFileContentArray.get(index);
+            final Matcher matcher = pattern.matcher(line);
+            final String result = matcher.replaceAll("$1"); //$NON-NLS-1$
+            testFileContentArray.set(index, result);
+         }
+         testFileContentArray.replaceAll(line -> line.replaceFirst("application_version,\"\\d\\d\\d\\d\"", genericApplicationVersion)); //$NON-NLS-1$
+
+         // Modify the session/activity messages to remove/ignore their creation timestamps
+         // since it will be different at every test run
+         final String timeCreatedData = "Data,0,activity,num_sessions,"; //$NON-NLS-1$
+
+         List<String> timeCreatedLine = controlFileContentArray.stream().filter(s -> s.startsWith(timeCreatedData))
+               .toList();
+         // Retrieve the value of "time_created"
+         final String controlTimeCreatedValue = timeCreatedLine.get(0).split(",")[7]; //$NON-NLS-1$
+         //Replace all the values by an empty string
+         controlFileContentArray.replaceAll(line -> line = line.replace(
+               controlTimeCreatedValue,
+               UI.EMPTY_STRING));
+
+         timeCreatedLine = testFileContentArray.stream().filter(s -> s.startsWith(timeCreatedData)).toList();
+         // Retrieve the value of "time_created"
+         final String testTimeCreatedValue = timeCreatedLine.get(0).split(",")[7]; //$NON-NLS-1$
+         //Replace all the values by an empty string
+         testFileContentArray.replaceAll(line -> line = line.replace(
+               testTimeCreatedValue,
+               UI.EMPTY_STRING));
+
+         //Compare with the control file
+         if (!controlFileContentArray.equals(testFileContentArray)) {
+
+            final String testFileContent = String.join(UI.SYSTEM_NEW_LINE, testFileContentArray);
+            writeErroneousFiles(controlTourFilePathCsv.replace(".csv", "-GeneratedFromTests.csv"), testFileContent); //$NON-NLS-1$ //$NON-NLS-2$
+         }
+         assertLinesMatch(controlFileContentArray, testFileContentArray);
+
+      } catch (final IOException e) {
+         StatusUtil.log(e);
+      }
+   }
+
    /**
-    * Compares a test transaction against a control transaction.
+    * Compares a test tour against a control tour.
     *
     * @param testTourData
     *           The generated test TourData object.
@@ -53,24 +147,26 @@ public class Comparison {
    public static void compareTourDataAgainstControl(final TourData testTourData,
                                                     final String controlFileName) {
 
-      final String controlDocument = readFileContent(controlFileName + JSON);
+      final ArrayValueMatcher<Object> tourMarkersValueMatcher = new ArrayValueMatcher<>(
+            new CustomComparator(
+                  JSONCompareMode.STRICT,
+                  new Customization("tourMarkers[*].altitude", (o1, o2) -> true), //$NON-NLS-1$
+                  new Customization("tourMarkers[*].distance20", (o1, o2) -> true), //$NON-NLS-1$
+                  new Customization("tourMarkers[*].serieIndex", (o1, o2) -> true), //$NON-NLS-1$
+                  new Customization("tourMarkers[*].time", (o1, o2) -> true), //$NON-NLS-1$
+                  new Customization("tourMarkers[*].tourTime", (o1, o2) -> true))); //$NON-NLS-1$
 
-      testTourData.getTourMarkersSorted();
-      final String testJson = testTourData.toJson();
-
-      final ArrayValueMatcher<Object> arrValMatch = new ArrayValueMatcher<>(new CustomComparator(
-            JSONCompareMode.STRICT,
-            new Customization("tourMarkers[*].deviceLapTime", (o1, o2) -> true), //$NON-NLS-1$
-            new Customization("tourMarkers[*].tourData", (o1, o2) -> true))); //$NON-NLS-1$
-
-      final Customization arrayValueMatchCustomization = new Customization("tourMarkers", arrValMatch); //$NON-NLS-1$
       final CustomComparator customArrayValueComparator = new CustomComparator(
             JSONCompareMode.STRICT,
-            arrayValueMatchCustomization,
-            new Customization("importFilePath", (o1, o2) -> true), //$NON-NLS-1$
-            new Customization("importFilePathName", (o1, o2) -> true), //$NON-NLS-1$
-            new Customization("importFilePathNameText", (o1, o2) -> true), //$NON-NLS-1$
+            new Customization("tourMarkers", tourMarkersValueMatcher), //$NON-NLS-1$
+            new Customization("tourType.createId", (o1, o2) -> true), //$NON-NLS-1$
             new Customization("tourId", (o1, o2) -> true)); //$NON-NLS-1$
+
+      final String controlDocument = readFileContent(controlFileName + JSON);
+
+      final ArrayList<TourMarker> sortedMarkers = testTourData.getTourMarkersSorted();
+      testTourData.setTourMarkers(new LinkedHashSet<>(sortedMarkers));
+      final String testJson = convertTourDataToJson(testTourData);
 
       final JSONCompareResult result = JSONCompare.compareJSON(controlDocument, testJson, customArrayValueComparator);
 
@@ -111,11 +207,55 @@ public class Comparison {
       assertFalse(documentDiff.hasDifferences(), documentDiff.toString());
    }
 
+   private static void convertFitToCsvFile(final String fitFilePath) {
+
+      final File fileToConvert = new File(fitFilePath);
+
+      final String fitCsvToolFilePath = FilesUtils.getAbsoluteFilePath(
+            FilesUtils.rootPath + "utils/files/FitCSVTool.jar"); //$NON-NLS-1$
+
+      final ProcessBuilder processBuilder = new ProcessBuilder(
+            "java", //$NON-NLS-1$
+            "-jar", //$NON-NLS-1$
+            fitCsvToolFilePath,
+            fileToConvert.getAbsolutePath());
+      try {
+         final Process process = processBuilder.start();
+         process.waitFor();
+
+      } catch (final IOException | InterruptedException e) {
+         Thread.currentThread().interrupt();
+         StatusUtil.log(e);
+      }
+   }
+
+   private static String convertTourDataToJson(final TourData tourData) {
+
+      final ObjectMapper objectMapper = new ObjectMapper();
+      objectMapper.setSerializationInclusion(Include.NON_NULL);
+      objectMapper.setSerializationInclusion(Include.NON_EMPTY);
+      objectMapper.setConfig(objectMapper.getSerializationConfig()
+            .with(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY));
+      objectMapper.setVisibility(PropertyAccessor.ALL, Visibility.NONE);
+      objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.NONE);
+      objectMapper.setVisibility(PropertyAccessor.GETTER, Visibility.NONE);
+      objectMapper.setVisibility(PropertyAccessor.IS_GETTER, Visibility.NONE);
+      objectMapper.setVisibility(PropertyAccessor.SETTER, Visibility.NONE);
+
+      String jsonString = UI.EMPTY_STRING;
+      try {
+         jsonString = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tourData);
+      } catch (final JsonProcessingException e) {
+         StatusUtil.log(e);
+      }
+      return jsonString;
+   }
+
    public static String readFileContent(final String controlDocumentFileName) {
 
       final String controlDocumentFilePath = utils.FilesUtils.getAbsoluteFilePath(controlDocumentFileName);
 
-      return FilesUtils.readFileContentString(controlDocumentFilePath);
+      return FileUtils.readFileContentString(controlDocumentFilePath);
    }
 
    public static TourData retrieveImportedTour(final Map<Long, TourData> newlyImportedTours) {

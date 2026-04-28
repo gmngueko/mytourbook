@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2013, 2024 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -56,15 +56,14 @@ public class PhotoManager {
    private PhotoManager() {}
 
    public static void addPhotoEventListener(final IPhotoEventListener listener) {
+
       _photoEventListeners.add(listener);
    }
 
    public static void firePhotoEvent(final IViewPart viewPart, final PhotoEventId photoEventId, final Object data) {
 
-//		System.out.println(UI.timeStampNano() + " PhotoManager\tfireEvent\t" + data.getClass().getSimpleName());
-//		// TODO remove SYSTEM.OUT.PRINTLN
-
       final Object[] allListeners = _photoEventListeners.getListeners();
+
       for (final Object listener : allListeners) {
          ((IPhotoEventListener) listener).photoEvent(viewPart, photoEventId, data);
       }
@@ -78,6 +77,7 @@ public class PhotoManager {
    }
 
    public static void setPicDirView(final PicDirView picDirView) {
+
       _picDirView = picDirView;
    }
 

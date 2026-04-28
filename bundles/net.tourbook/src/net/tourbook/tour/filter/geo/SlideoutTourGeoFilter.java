@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -22,6 +22,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
+import net.tourbook.Images;
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
@@ -33,6 +34,7 @@ import net.tourbook.common.dialog.MessageDialogWithToggleState_Customized;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.tooltip.AdvancedSlideout;
 import net.tourbook.common.util.ColumnDefinition;
+import net.tourbook.common.util.ColumnDefinitionFor1stVisibleAlignmentColumn;
 import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.ITourViewer;
 import net.tourbook.common.util.TableColumnDefinition;
@@ -42,8 +44,7 @@ import net.tourbook.preferences.ITourbookPreferences;
 import net.tourbook.tour.TourEventId;
 import net.tourbook.tour.TourManager;
 
-import org.eclipse.jface.action.IMenuListener;
-import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -54,15 +55,11 @@ import org.eclipse.jface.layout.GridLayoutFactory;
 import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.util.IPropertyChangeListener;
-import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.ColumnViewer;
-import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
@@ -77,7 +74,6 @@ import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
-import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -86,9 +82,7 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.ScrollBar;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Table;
@@ -104,31 +98,36 @@ import org.eclipse.ui.IViewPart;
  */
 public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourViewer, IColorSelectorListener, IActionResetToDefault {
 
-   private static final String            COLUMN_CREATED_DATE_TIME   = "createdDateTime";                      //$NON-NLS-1$
-   private static final String            COLUMN_FILTER_NAME         = "filterName";                           //$NON-NLS-1$
-   private static final String            COLUMN_GEO_PARTS           = "geoParts";                             //$NON-NLS-1$
-   private static final String            COLUMN_LATITUDE_1          = "latitude1";                            //$NON-NLS-1$
-   private static final String            COLUMN_LATITUDE_2          = "latitude2";                            //$NON-NLS-1$
-   private static final String            COLUMN_LONGITUDE_1         = "longitude1";                           //$NON-NLS-1$
-   private static final String            COLUMN_LONGITUDE_2         = "longitude2";                           //$NON-NLS-1$
-   private static final String            COLUMN_SEQUENCE            = "sequence";                             //$NON-NLS-1$
-   private static final String            COLUMN_ZOOM_LEVEL          = "zoomLevel";                            //$NON-NLS-1$
+   private static final String            COLUMN_CREATED_DATE_TIME            = "createdDateTime";                      //$NON-NLS-1$
+   private static final String            COLUMN_FILTER_NAME                  = "filterName";                           //$NON-NLS-1$
+   private static final String            COLUMN_GEO_PARTS                    = "geoParts";                             //$NON-NLS-1$
+   private static final String            COLUMN_LATITUDE_1                   = "latitude1";                            //$NON-NLS-1$
+   private static final String            COLUMN_LATITUDE_2                   = "latitude2";                            //$NON-NLS-1$
+   private static final String            COLUMN_LONGITUDE_1                  = "longitude1";                           //$NON-NLS-1$
+   private static final String            COLUMN_LONGITUDE_2                  = "longitude2";                           //$NON-NLS-1$
+   private static final String            COLUMN_SEQUENCE                     = "sequence";                             //$NON-NLS-1$
+   private static final String            COLUMN_ZOOM_LEVEL                   = "zoomLevel";                            //$NON-NLS-1$
 
-   final static IPreferenceStore          _prefStore                 = TourbookPlugin.getPrefStore();
-   private final static IDialogSettings   _state                     = TourGeoFilter_Manager.getState();
+   private static final String            STATE_IS_FILTER_VIEWER_IN_EDIT_MODE = "isFilterViewerInEditMode";             //$NON-NLS-1$
+
+   private static final IPreferenceStore  _prefStore                          = TourbookPlugin.getPrefStore();
+   private static final IDialogSettings   _state                              = TourGeoFilter_Manager.getState();
 
    private TableViewer                    _geoFilterViewer;
    private TableColumnDefinition          _colDef_FilterName;
    private ColumnManager                  _columnManager;
-   private CompareResultComparator        _geoPartComparator         = new CompareResultComparator();
+   private CompareResultComparator        _geoPartComparator                  = new CompareResultComparator();
 
-   private final ArrayList<TourGeoFilter> _allGeoFilter              = TourGeoFilter_Manager.getAllGeoFilter();
+   private final ArrayList<TourGeoFilter> _allGeoFilter                       = TourGeoFilter_Manager.getAllGeoFilter();
    private TourGeoFilter                  _selectedFilter;
-   private boolean                        _isSelectPreviousGeoFilter = true;
+   private boolean                        _isSelectPreviousGeoFilter          = true;
+
+   private boolean                        _isFilterViewerInEditMode;
 
    private ToolItem                       _tourFilterItem;
 
    private ActionResetToDefaults          _actionRestoreDefaults;
+   private ActionToggleReadEditMode       _actionToggleReadEditMode;
 
    private SelectionAdapter               _columnSortListener;
    private IPropertyChangeListener        _defaultChangePropertyListener;
@@ -137,7 +136,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    private SelectionAdapter               _selectionListener_WithUpdateUI_WithRepainting;
    private SelectionAdapter               _selectionListener_OnlyStateUpdate;
 
-   private final NumberFormat             _nf2                       = NumberFormat.getInstance();
+   private final NumberFormat             _nf2                                = NumberFormat.getInstance();
    {
       _nf2.setMinimumFractionDigits(2);
       _nf2.setMaximumFractionDigits(2);
@@ -170,6 +169,25 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    private ColorSelectorExtended _colorGeoPart_HoverSelecting;
    private ColorSelectorExtended _colorGeoPart_Selected;
 
+   class ActionToggleReadEditMode extends Action {
+
+      public ActionToggleReadEditMode() {
+
+         super(null, AS_CHECK_BOX);
+
+         setToolTipText(Messages.Slideout_TourGeoFilter_Action_ToggleReadEditMode_Tooltip);
+
+         setImageDescriptor(TourbookPlugin.getThemedImageDescriptor(Images.App_Edit));
+
+         setEnabled(false);
+      }
+
+      @Override
+      public void run() {
+         actionToggleReadEditMode();
+      }
+   }
+
    private class CompareResultComparator extends ViewerComparator {
 
       private static final int ASCENDING       = 0;
@@ -197,6 +215,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
          case COLUMN_LATITUDE_1:
             rc = geoFilter1.geoLocation_TopLeft.latitude - geoFilter2.geoLocation_TopLeft.latitude;
             break;
+
          case COLUMN_LONGITUDE_1:
             rc = geoFilter1.geoLocation_TopLeft.longitude - geoFilter2.geoLocation_TopLeft.longitude;
             break;
@@ -204,6 +223,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
          case COLUMN_LATITUDE_2:
             rc = geoFilter1.geoLocation_BottomRight.latitude - geoFilter2.geoLocation_BottomRight.latitude;
             break;
+
          case COLUMN_LONGITUDE_2:
             rc = geoFilter1.geoLocation_BottomRight.longitude - geoFilter2.geoLocation_BottomRight.longitude;
             break;
@@ -289,7 +309,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
       @Override
       protected boolean canEdit(final Object element) {
-         return true;
+
+         return _isFilterViewerInEditMode;
       }
 
       @Override
@@ -339,7 +360,16 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       _tourFilterItem = toolItem;
 
       setShellFadeOutDelaySteps(30);
+
       setTitleText(Messages.Slideout_TourGeoFilter_Label_Title);
+      setTitleImage(TourbookPlugin.getThemedImageDescriptor(Images.TourGeoFilter));
+   }
+
+   private void actionToggleReadEditMode() {
+
+      _isFilterViewerInEditMode = _actionToggleReadEditMode.isChecked();
+
+      enableControls();
    }
 
    @Override
@@ -347,7 +377,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
       /**
        * Context menu must be set lately, otherwise an "Widget has the wrong parent" exception
-       * occures
+       * occurs
        */
       if (isVisible) {
          _columnManager.createHeaderContextMenu(_geoFilterViewer.getTable(), null, getRRShellWithResize());
@@ -362,6 +392,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    private void createActions() {
 
       _actionRestoreDefaults = new ActionResetToDefaults(this);
+      _actionToggleReadEditMode = new ActionToggleReadEditMode();
    }
 
    @Override
@@ -603,6 +634,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
          final ToolBarManager toolbarManager = new ToolBarManager(toolbarUI);
 
          toolbarManager.add(_actionRestoreDefaults);
+         toolbarManager.add(_actionToggleReadEditMode);
+
          toolbarManager.update(true);
       }
    }
@@ -645,12 +678,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
        * It took a while that the correct listener is set and also the checked item is fired and not
        * the wrong selection.
        */
-      table.addListener(SWT.Selection, new Listener() {
-
-         @Override
-         public void handleEvent(final Event event) {
+      table.addListener(SWT.Selection, event -> {
 //            onGeoPart_Select(event);
-         }
       });
 
       table.addKeyListener(new KeyListener() {
@@ -690,23 +719,10 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       _geoFilterViewer.setContentProvider(new GeoFilterProvider());
       _geoFilterViewer.setComparator(_geoPartComparator);
 
-      _geoFilterViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+      _geoFilterViewer.addSelectionChangedListener(selectionChangedEvent -> onGeoFilter_Select(selectionChangedEvent));
+      _geoFilterViewer.addDoubleClickListener(doubleClickEvent -> onGeoFilter_ToggleReadEditMode());
 
-         @Override
-         public void selectionChanged(final SelectionChangedEvent event) {
-            onGeoFilter_Select(event);
-         }
-      });
-
-      _geoFilterViewer.addDoubleClickListener(new IDoubleClickListener() {
-
-         @Override
-         public void doubleClick(final DoubleClickEvent event) {
-//          onBookmark_Rename(true);
-         }
-      });
-
-      updateUI_SetSortDirection(//
+      updateUI_SetSortDirection(
             _geoPartComparator.__sortColumnId,
             _geoPartComparator.__sortDirection);
 
@@ -714,7 +730,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    }
 
    /**
-    * Ceate the view context menus
+    * Create the view context menus
     */
    private void createUI_620_ContextMenu() {
 
@@ -722,11 +738,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
       menuMgr.setRemoveAllWhenShown(true);
 
-      menuMgr.addMenuListener(new IMenuListener() {
-         @Override
-         public void menuAboutToShow(final IMenuManager manager) {
+      menuMgr.addMenuListener(manager -> {
 //          fillContextMenu(manager);
-         }
       });
 
       /**
@@ -803,6 +816,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
       defineColumn_60_Latitude2();
       defineColumn_62_Longitude2();
+
+      new ColumnDefinitionFor1stVisibleAlignmentColumn(_columnManager);
    }
 
    private void defineColumn_00_SequenceNumber() {
@@ -849,7 +864,14 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
             final TourGeoFilter item = (TourGeoFilter) cell.getElement();
 
-            cell.setText(item.filterName);
+            if (UI.IS_SCRAMBLE_DATA) {
+
+               cell.setText(UI.scrambleText(item.filterName));
+
+            } else {
+
+               cell.setText(item.filterName);
+            }
          }
       });
    }
@@ -1041,9 +1063,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    private void disposeMapOverlayImages() {
 
       final IViewPart view = Util.getView(Map2View.ID);
-      if (view instanceof Map2View) {
-
-         final Map2View map2View = (Map2View) view;
+      if (view instanceof final Map2View map2View) {
 
          final Map2 map = map2View.getMap();
 
@@ -1056,9 +1076,12 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
    private void enableControls() {
 
       final boolean isGeoFilterSelected = _selectedFilter != null;
+      final boolean isGeoFilterAvailable = _allGeoFilter.size() > 0;
 
       _btnDeleteGeoFilter.setEnabled(isGeoFilterSelected);
-      _btnDeleteGeoFilterAllWithoutName.setEnabled(_allGeoFilter.size() > 0);
+      _btnDeleteGeoFilterAllWithoutName.setEnabled(isGeoFilterAvailable);
+
+      _actionToggleReadEditMode.setEnabled(isGeoFilterAvailable);
    }
 
    @Override
@@ -1080,6 +1103,7 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
 
    /**
     * @param sortColumnId
+    *
     * @return Returns the column widget by it's column id, when column id is not found then the
     *         first column is returned.
     */
@@ -1150,23 +1174,15 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
          }
       };
 
-      _defaultChangePropertyListener = new IPropertyChangeListener() {
-         @Override
-         public void propertyChange(final PropertyChangeEvent event) {
-            onChangeUI();
-         }
-      };
+      _defaultChangePropertyListener = propertyChangeEvent -> onChangeUI();
 
-      _mouseWheelListener_WithUpdateUI_WithRepainting = new MouseWheelListener() {
-         @Override
-         public void mouseScrolled(final MouseEvent event) {
+      _mouseWheelListener_WithUpdateUI_WithRepainting = mouseEvent -> {
 
-            // force repainting
-            disposeMapOverlayImages();
+         // force repainting
+         disposeMapOverlayImages();
 
-            UI.adjustSpinnerValueOnMouseScroll(event);
-            onChangeUI();
-         }
+         UI.adjustSpinnerValueOnMouseScroll(mouseEvent);
+         onChangeUI();
       };
 //
 //      _keepOpenListener = new FocusListener() {
@@ -1361,9 +1377,18 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       onSelect_GeoFilter(selectedGeoFilter);
    }
 
+   private void onGeoFilter_ToggleReadEditMode() {
+
+      // toggle action
+      _actionToggleReadEditMode.setChecked(!_actionToggleReadEditMode.isChecked());
+
+      // update state
+      actionToggleReadEditMode();
+   }
+
    private void onResize_Options() {
 
-      // horizontal scroll bar ishidden, only the vertical scrollbar can be displayed
+      // horizontal scroll bar is hidden, only the vertical scrollbar can be displayed
       int infoContainerWidth = _optionsContainer.getBounds().width;
       final ScrollBar vertBar = _optionsContainer.getVerticalBar();
 
@@ -1487,6 +1512,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       _colorGeoPart_HoverSelecting.setColorValue(Util.getStateRGB(_state,     TourGeoFilter_Manager.STATE_RGB_GEO_PARTS_HOVER,      TourGeoFilter_Manager.STATE_RGB_GEO_PARTS_HOVER_DEFAULT));
       _colorGeoPart_Selected.setColorValue(  Util.getStateRGB(_state,         TourGeoFilter_Manager.STATE_RGB_GEO_PARTS_SELECTED,   TourGeoFilter_Manager.STATE_RGB_GEO_PARTS_SELECTED_DEFAULT));
 
+      _actionToggleReadEditMode.setChecked(  _isFilterViewerInEditMode);
+
 // SET_FORMATTING_ON
 
       if (_isSelectPreviousGeoFilter) {
@@ -1518,6 +1545,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       // update comparator
       _geoPartComparator.__sortColumnId = sortColumnId;
       _geoPartComparator.__sortDirection = sortDirection;
+
+      _isFilterViewerInEditMode = _state.getBoolean(STATE_IS_FILTER_VIEWER_IN_EDIT_MODE);
    }
 
    @Override
@@ -1534,6 +1563,8 @@ public class SlideoutTourGeoFilter extends AdvancedSlideout implements ITourView
       _state.put(TourGeoFilter_Manager.STATE_SORT_COLUMN_DIRECTION, _geoPartComparator.__sortDirection);
 
       _columnManager.saveState(_state);
+
+      _state.put(STATE_IS_FILTER_VIEWER_IN_EDIT_MODE, _actionToggleReadEditMode.isChecked());
 
       super.saveState();
    }

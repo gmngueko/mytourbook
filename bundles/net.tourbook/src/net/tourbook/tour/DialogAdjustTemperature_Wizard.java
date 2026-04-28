@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2016 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -19,6 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import net.tourbook.Messages;
 import net.tourbook.application.TourbookPlugin;
@@ -27,6 +28,7 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
 import net.tourbook.preferences.ITourbookPreferences;
+import net.tourbook.tour.TourLogManager.AutoOpenEvent;
 import net.tourbook.ui.ITourProvider2;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 
@@ -49,7 +51,7 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
          .withMillisRemoved();
 
    private DialogAdjustTemperature_WizardPage _wizardPage;
-   private ArrayList<TourData>                _selectedTours;
+   private List<TourData>                     _selectedTours;
 
    private ITourProvider2                     _tourProvider;
 
@@ -59,7 +61,8 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
       _nf1.setMaximumFractionDigits(1);
    }
 
-   public DialogAdjustTemperature_Wizard(final ArrayList<TourData> selectedTours, final ITourProvider2 tourProvider) {
+   public DialogAdjustTemperature_Wizard(final List<TourData> selectedTours,
+                                         final ITourProvider2 tourProvider) {
 
       super();
 
@@ -87,7 +90,7 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
 
       final long start = System.currentTimeMillis();
 
-      TourLogManager.showLogView();
+      TourLogManager.showLogView(AutoOpenEvent.TOUR_ADJUSTMENTS);
 
       try {
 
@@ -95,6 +98,7 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
 
       } catch (InvocationTargetException | InterruptedException e) {
          StatusUtil.log(e);
+         Thread.currentThread().interrupt();
       }
 
       TourLogManager.log_DEFAULT(String.format(
@@ -112,7 +116,7 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
       final int durationTime = _prefStore.getInt(ITourbookPreferences.ADJUST_TEMPERATURE_DURATION_TIME);
 
       final float temperature = UI.convertTemperatureFromMetric(avgTemperature);
-      final Period durationPeriod = new Period(0, durationTime * 1000, _durationTemplate);
+      final Period durationPeriod = new Period(0, durationTime * 1000L, _durationTemplate);
 
       final String logText = NLS.bind(
             TourManager.LOG_TEMP_ADJUST_001_START,
@@ -149,7 +153,7 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
                      ++workedTours,
                      _selectedTours.size()));
 
-               final float oldTourAvgTemperature = tourData.getAvgTemperature();
+               final float oldTourAvgTemperature = tourData.getWeather_Temperature_Average_Device();
 
                // skip tours which avg temperature is above the minimum avg temperature
                if (oldTourAvgTemperature > avgTemperature) {
@@ -179,29 +183,26 @@ public class DialogAdjustTemperature_Wizard extends Wizard {
             // update the UI
             if (savedTours.size() > 0) {
 
-               Display.getDefault().asyncExec(new Runnable() {
-                  @Override
-                  public void run() {
+               Display.getDefault().asyncExec(() -> {
 
-                     Util.clearSelection();
+                  Util.clearSelection();
 
-                     /*
-                      * Ensure the tour data editor contains the correct tour data
-                      */
-                     TourData tourDataInEditor = null;
+                  /*
+                   * Ensure the tour data editor contains the correct tour data
+                   */
+                  TourData tourDataInEditor = null;
 
-                     final TourDataEditorView tourDataEditor = TourManager.getTourDataEditor();
-                     if (tourDataEditor != null) {
-                        tourDataInEditor = tourDataEditor.getTourData();
-                     }
-
-                     final TourEvent tourEvent = new TourEvent(savedTours);
-                     tourEvent.tourDataEditorSavedTour = tourDataInEditor;
-                     TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
-
-                     // do a reselection of the selected tours to fire the multi tour data selection
-                     _tourProvider.toursAreModified(savedTours);
+                  final TourDataEditorView tourDataEditor = TourManager.getTourDataEditor();
+                  if (tourDataEditor != null) {
+                     tourDataInEditor = tourDataEditor.getTourData();
                   }
+
+                  final TourEvent tourEvent = new TourEvent(savedTours);
+                  tourEvent.tourDataEditorSavedTour = tourDataInEditor;
+                  TourManager.fireEvent(TourEventId.TOUR_CHANGED, tourEvent);
+
+                  // do a reselection of the selected tours to fire the multi tour data selection
+                  _tourProvider.toursAreModified(savedTours);
                });
             }
          }

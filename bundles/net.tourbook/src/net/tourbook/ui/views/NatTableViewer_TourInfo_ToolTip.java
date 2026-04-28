@@ -131,9 +131,10 @@ public class NatTableViewer_TourInfo_ToolTip extends ToolTip implements ITourPro
 
             // tour data is available
 
-            container = _tourInfoUI.createContentArea(parent, _tourData, this, this);
-
+            // set BEFORE the UI is created
             _tourInfoUI.setActionsEnabled(true);
+
+            container = _tourInfoUI.createContentArea(parent, _tourData, this, this);
 
             // allow the actions to be selected
             setHideOnMouseDown(false);
@@ -155,11 +156,22 @@ public class NatTableViewer_TourInfo_ToolTip extends ToolTip implements ITourPro
 
       // try to position the tooltip at the bottom of the cell
 
+      if (_ttControl.isDisposed()) {
+         return super.getLocation(tipSize, event);
+      }
+
       if (_hoveredBounds != null) {
 
          final Rectangle cellBounds = _hoveredBounds;
          final int cellWidth2 = cellBounds.width / 2;
-         final int cellHeight = cellBounds.height;
+         int cellHeight = cellBounds.height;
+
+         if (UI.IS_4K_DISPLAY) {
+
+            // this adjustment is needed otherwise the tooltip is difficult to hover
+
+            cellHeight -= 1;
+         }
 
          final int devXDefault = cellBounds.x + cellWidth2;// + cellBounds.width; //event.x;
          final int devY = cellBounds.y + cellHeight;
@@ -339,7 +351,6 @@ public class NatTableViewer_TourInfo_ToolTip extends ToolTip implements ITourPro
    @Override
    protected boolean shouldCreateToolTip(final Event event) {
 
-
       if (!super.shouldCreateToolTip(event)) {
 
          // ensure default tooltip is displayed
@@ -370,5 +381,21 @@ public class NatTableViewer_TourInfo_ToolTip extends ToolTip implements ITourPro
       }
 
       return isShowTooltip;
+   }
+
+   @Override
+   protected boolean shouldHideToolTip(final Event event) {
+
+      if (_tourInfoUI.canHideTooltip() == false) {
+
+         /*
+          * Prevent closing when a contained tooltip is open, otherwise the tooltip of this tour
+          * info UI would close on Linux
+          */
+
+         return false;
+      }
+
+      return super.shouldHideToolTip(event);
    }
 }

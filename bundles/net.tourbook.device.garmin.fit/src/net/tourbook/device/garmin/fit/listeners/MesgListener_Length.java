@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2019, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -24,40 +24,40 @@ import java.util.List;
 
 import net.tourbook.data.SwimData;
 import net.tourbook.device.garmin.fit.FitData;
-import net.tourbook.device.garmin.fit.FitUtils;
 
 /**
  * Set swim data
  */
 public class MesgListener_Length extends AbstractMesgListener implements LengthMesgListener {
 
-   private List<SwimData> _swimData;
+   private List<SwimData> _allSwimData;
 
    public MesgListener_Length(final FitData fitData) {
 
       super(fitData);
 
-      _swimData = fitData.getSwimData();
+      _allSwimData = fitData.getSwimData();
    }
 
    @Override
    public void onMesg(final LengthMesg mesg) {
 
-      // create gear data for the current time
+      // create swim data for the current time
       final SwimData swimData = new SwimData();
 
-      _swimData.add(swimData);
-
-      final com.garmin.fit.DateTime garminTime = mesg.getTimestamp();
+      _allSwimData.add(swimData);
 
       // convert garmin time into java time
-      final long javaTime = FitUtils.convertGarminTimeToJavaTime(
-            garminTime.getTimestamp());
+      final long javaTime = mesg.getStartTime().getDate().getTime();
 
-      final Short avgSwimmingCadence = mesg.getAvgSwimmingCadence();
-      final LengthType lengthType = mesg.getLengthType();
-      final SwimStroke swimStrokeStyle = mesg.getSwimStroke();
-      final Integer numStrokes = mesg.getTotalStrokes();
+// SET_FORMATTING_OFF
+
+      final Short       avgSwimmingCadence   = mesg.getAvgSwimmingCadence();
+      final LengthType  lengthType           = mesg.getLengthType();
+      final SwimStroke  swimStrokeStyle      = mesg.getSwimStroke();
+      final Integer     numStrokes           = mesg.getTotalStrokes();
+
+// SET_FORMATTING_ON
 
       swimData.absoluteTime = javaTime;
 

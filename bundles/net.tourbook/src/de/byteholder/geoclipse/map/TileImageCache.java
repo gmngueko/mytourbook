@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -22,11 +22,14 @@ import de.byteholder.geoclipse.preferences.IMappingPreferences;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 
 import net.tourbook.application.TourbookPlugin;
+import net.tourbook.common.UI;
+import net.tourbook.common.util.CustomScalingImageDataProvider;
 import net.tourbook.common.util.StatusUtil;
 
 import org.eclipse.core.runtime.IPath;
@@ -36,12 +39,10 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -75,7 +76,7 @@ public class TileImageCache {
    private static final ReentrantLock                    CACHE_LOCK                 = new ReentrantLock();
 
    /**
-    * This display is used because {@link Display#getDefault()} is synchronized which propably
+    * This display is used because {@link Display#getDefault()} is synchronized which probably
     * causes the UI to be not smooth when images are loaded and the map is dragged at the same time
     */
    private Display                                       _display;
@@ -146,69 +147,154 @@ public class TileImageCache {
       }
    }
 
-   /**
-    * Dispose all cached images and clear the cache.
-    */
-   public synchronized void dispose() {
+   private Image createTileImage(final Tile tile, final ImageData imageData) {
 
-      final Collection<Image> allImages = _imageCache.values();
+      final int loadedImageWidth = imageData.width;
+      final float tileSize = tile.getMP().getTileSize();
 
-      for (final Image image : allImages) {
-         if (image != null) {
-            try {
-               image.dispose();
-            } catch (final Exception e) {
-               // ignore, another thread can have set the image to null
-            }
+      Image tileImage;
+
+      if (tileSize != loadedImageWidth) {
+
+         // create adjusted scaled image
+
+         final CustomScalingImageDataProvider imageDataProvider = new CustomScalingImageDataProvider(imageData);
+
+         final int deviceZoom = DPIUtil.getDeviceZoom();
+         final float deviceScale = deviceZoom / 100.0f;
+
+         final float tileSizeScaled = tileSize * deviceScale;
+         final float imageScale = tileSizeScaled / loadedImageWidth;
+
+         if (tileSizeScaled == loadedImageWidth) {
+
+            // nothing to do, the image has the correct size
+
+         } else {
+
+            imageDataProvider.setImageScale(imageScale);
          }
-      }
 
-      for (final Image image : _allImages) {
-         if (image != null) {
-            try {
-               image.dispose();
-            } catch (final Exception e) {}
-         }
-      }
-
-      _imageCache.clear();
-      _imageCacheFifo.clear();
-
-      _allImages.clear();
-   }
-
-   /**
-    * @param tileImagePath
-    * @return Returns the path for the offline image or <code>null</code> when the image is not
-    *         available
-    */
-   private IPath getCheckedOfflineImagePath(final IPath tileImagePath) {
-
-      File tileImageFile = tileImagePath.toFile();
-
-      if (tileImageFile.exists()) {
-
-         return tileImagePath;
+         tileImage = new Image(_display, imageDataProvider);
 
       } else {
 
-         // test a part image
+         // create OS scaled image
 
-         final String fileExt = tileImagePath.getFileExtension();
-         final IPath pathWithoutExt = tileImagePath.removeFileExtension();
+         tileImage = new Image(_display, imageData);
+      }
 
-         final String partFileName = pathWithoutExt.lastSegment() + MapProviderManager.PART_IMAGE_FILE_NAME_SUFFIX;
+      return tileImage;
+   }
 
-         final IPath partFilePath = pathWithoutExt
-               .removeLastSegments(1)
-               .append(partFileName)
-               .addFileExtension(fileExt);
+   /**
+    * Dispose all cached images and clear the cache.
+    */
+   public void dispose() {
 
-         tileImageFile = partFilePath.toFile();
+      synchronized (_allImages) {
 
-         if (tileImageFile.exists()) {
-            return partFilePath;
+         final Collection<Image> allImages = _imageCache.values();
+
+         for (final Image image : allImages) {
+            if (image != null) {
+               try {
+                  image.dispose();
+               } catch (final Exception e) {
+                  // ignore, another thread can have set the image to null
+               }
+            }
          }
+
+         for (int imageIndex = 0; imageIndex < _allImages.size(); imageIndex++) {
+
+            Image image = null;
+
+            try {
+
+               // use imageIndex to prevent foreach loop !!!
+               @SuppressWarnings("unused")
+               final int dummy = imageIndex;
+
+               image = _allImages.get(imageIndex);
+
+            } catch (final ConcurrentModificationException e) {
+               // ignore
+            }
+
+            if (image != null) {
+               try {
+                  image.dispose();
+               } catch (final Exception e) {}
+            }
+         }
+
+         _imageCache.clear();
+         _imageCacheFifo.clear();
+
+         _allImages.clear();
+      }
+   }
+
+   /**
+    * @param tile
+    * @param tileImagePath
+    *
+    * @return Returns the path for the offline image or <code>null</code> when the image is not
+    *         available
+    */
+   private IPath getCheckedOfflineImagePath(final Tile tile, final IPath tileImagePath) {
+
+      /*
+       * Test 4k image
+       */
+
+      final String fileExt = tileImagePath.getFileExtension();
+      final IPath pathWithoutExt = tileImagePath.removeFileExtension();
+
+      final String hiDPI_2xFileName = pathWithoutExt.lastSegment() + UI.HIDPI_NAME_2x;
+
+      IPath hiDPIFilePath = pathWithoutExt
+            .removeLastSegments(1)
+            .append(hiDPI_2xFileName)
+            .addFileExtension(fileExt);
+
+      if (hiDPIFilePath.toFile().exists()) {
+         return hiDPIFilePath;
+      }
+
+      final String hiDPI_15xFileName = pathWithoutExt.lastSegment() + UI.HIDPI_NAME_15x;
+
+      hiDPIFilePath = pathWithoutExt
+            .removeLastSegments(1)
+            .append(hiDPI_15xFileName)
+            .addFileExtension(fileExt);
+
+      if (hiDPIFilePath.toFile().exists()) {
+         return hiDPIFilePath;
+      }
+
+      /*
+       * Test default image
+       */
+
+      if (tileImagePath.toFile().exists()) {
+         return tileImagePath;
+      }
+
+      /*
+       * Test part image
+       */
+
+      final String partImageFileName = pathWithoutExt.lastSegment() + MapProviderManager.PART_IMAGE_FILE_NAME_SUFFIX;
+
+      final IPath partImageFilePath = pathWithoutExt
+            .removeLastSegments(1)
+            .append(partImageFileName)
+            .addFileExtension(fileExt);
+
+      if (partImageFilePath.toFile().exists()) {
+         return partImageFilePath;
       }
 
       return null;
@@ -218,6 +304,7 @@ public class TileImageCache {
     * Loads the tile image from the offline image file
     *
     * @param tile
+    *
     * @return Returns image from offline image file or <code>null</code> when loading fails
     */
    Image getOfflineImage(final Tile tile) {
@@ -237,7 +324,7 @@ public class TileImageCache {
             return null;
          }
 
-         final IPath offlineImagePath = getCheckedOfflineImagePath(tileImagePath);
+         final IPath offlineImagePath = getCheckedOfflineImagePath(tile, tileImagePath);
          if (offlineImagePath != null) {
 
             // get image for this tile
@@ -249,19 +336,20 @@ public class TileImageCache {
             try {
 
                /*
-                * load image with the constructor which is 20 times faster than loading the
+                * Load image with the constructor which is 20 times faster than loading the
                 * image with an imageloader
                 */
+               final ImageData imageData = new ImageData(osTileImagePath);
 
-               final Image loadedImage = new Image(_display, osTileImagePath);
+               final Image tileImage = createTileImage(tile, imageData);
 
                /*
                 * It can happen that these images are not in the image cache. Keep all created
                 * images in an separated image list.
                 */
-               _allImages.add(loadedImage);
+               _allImages.add(tileImage);
 
-               return loadedImage;
+               return tileImage;
 
             } catch (final Exception e) {
 
@@ -283,73 +371,9 @@ public class TileImageCache {
       return null;
    }
 
-//	/**
-//	 * Loads the tile image from the offline image file
-//	 *
-//	 * @param tile
-//	 * @return Returns image data from the offline image file or <code>null</code> otherwise
-//	 */
-//	ImageData getOfflineTileImageData_OLD(final Tile tile) {
-//
-//		if (_useOffLineCache == false) {
-//			return null;
-//		}
-//
-//		/*
-//		 * try to get the image from the offline image files
-//		 */
-//		try {
-//
-//			final IPath tileImagePath = getTileImagePath(tile);
-//			if (tileImagePath == null) {
-//				// offline image path is not available
-//				return null;
-//			}
-//
-//			final File tileImageFile = tileImagePath.toFile();
-//			if (tileImageFile.exists()) {
-//
-//				// get image for this tile
-//
-//				final String osTilePath = tileImagePath.toOSString();
-//
-//				tile.setOfflinePath(osTilePath);
-//
-//				try {
-//
-//					// load image
-//
-//					final ImageData[] loadedImageData = new ImageLoader().load(osTilePath);
-//
-//					if (loadedImageData != null && loadedImageData.length > 0 && loadedImageData[0] != null) {
-//
-//						// loading image data was successful
-//
-//						return loadedImageData[0];
-//					}
-//
-//				} catch (final Exception e) {
-//
-//					// this file seems to be corrupted
-//
-//					tile.setOfflineError(true);
-//
-//					/*
-//					 * it happened too often when zooming fast in/out
-//					 */
-////					StatusUtil.logStatus("Error loading image from file: " + osTilePath, e);//$NON-NLS-1$
-//				}
-//			}
-//
-//		} catch (final Exception e) {
-//			StatusUtil.log(e);
-//		}
-//
-//		return null;
-//	}
-
    /**
     * @param tile
+    *
     * @return Returns the tile image from the cache, returns <code>null</code> when the image is
     *         not available in the cache or is disposed
     */
@@ -374,6 +398,7 @@ public class TileImageCache {
 
    /**
     * @param tile
+    *
     * @return Returns the tile image os file path or <code>null</code> when the path is not
     *         available
     */
@@ -395,12 +420,12 @@ public class TileImageCache {
    }
 
    /**
-    * Put tile image into the image cache
+    * Put tile image into the image cache and replace existing image
     *
     * @param tileKey
     * @param tileImage
     */
-   private void putIntoImageCache(final String tileKey, final Image tileImage) {
+   void putIntoImageCache(final String tileKey, final Image tileImage) {
 
       /*
        * check if the max number of images is reached, remove oldest image from the cache
@@ -557,16 +582,9 @@ public class TileImageCache {
          final ImageLoader imageLoader = new ImageLoader();
          imageLoader.data = new ImageData[] { tileImageData };
 
-         imageType = tileImageData.type;
-
-         final String fileExtension = MapProviderManager.getImageFileExtension(imageType);
-         final String extension;
-         if (fileExtension == null) {
-            extension = MapProviderManager.FILE_EXTENSION_PNG;
-            imageType = SWT.IMAGE_PNG;
-         } else {
-            extension = fileExtension;
-         }
+         // force png because jpg would loose further quality
+         final String extension = MapProviderManager.FILE_EXTENSION_PNG;
+         imageType = SWT.IMAGE_PNG;
 
          if (isChildError) {
 
@@ -574,8 +592,7 @@ public class TileImageCache {
              * create a part image which is an image where not all children are loaded
              */
 
-            final String fileName = tilePathWithoutExt.lastSegment()
-                  + MapProviderManager.PART_IMAGE_FILE_NAME_SUFFIX;
+            final String fileName = tilePathWithoutExt.lastSegment() + MapProviderManager.PART_IMAGE_FILE_NAME_SUFFIX;
 
             tilePathWithoutExt = tilePathWithoutExt.removeLastSegments(1).append(fileName);
          }
@@ -590,9 +607,9 @@ public class TileImageCache {
       } catch (final Exception e) {
 
          /*
-          * disabled because it happened to often
+          * Disabled because it happened to often
           */
-         StatusUtil.log("cannot save tile image:" + imageOSFilePath + " - image type:" + imageType, e);//$NON-NLS-1$ //$NON-NLS-2$
+         StatusUtil.log("Cannot save tile image:" + imageOSFilePath + " - image type:" + imageType, e);//$NON-NLS-1$ //$NON-NLS-2$
       }
    }
 
@@ -623,7 +640,7 @@ public class TileImageCache {
             return;
          }
 
-         final IPath offlineImagePath = getCheckedOfflineImagePath(tileImagePath);
+         final IPath offlineImagePath = getCheckedOfflineImagePath(tile, tileImagePath);
          if (offlineImagePath != null) {
 
             // offline image is available
@@ -650,6 +667,7 @@ public class TileImageCache {
     * @param tileKey
     * @param isSaveImage
     * @param isChildError
+    *
     * @return
     */
    Image setupImage(final ImageData loadedImageData,
@@ -675,6 +693,7 @@ public class TileImageCache {
     *           tile key which is used to keep the image in the cache
     * @param loadedImageData
     * @param tileOfflineImage
+    *
     * @return
     */
    private Image setupImageInternal(final Tile tile,
@@ -682,9 +701,35 @@ public class TileImageCache {
                                     final ImageData loadedImageData,
                                     final Image tileOfflineImage) {
 
-      final Image tileImage = tileOfflineImage != null
-            ? tileOfflineImage
-            : new Image(_display, loadedImageData);
+      final Image tileImage;
+
+      if (tileOfflineImage != null) {
+
+         tileImage = tileOfflineImage;
+
+      } else {
+
+         // ckeck offline image
+         final String osTileImagePath = tile.getOfflinePath();
+         if (osTileImagePath != null) {
+
+            // create custom scaled image
+
+            /*
+             * Load image with the constructor which is 20 times faster than loading the
+             * image with an imageloader
+             */
+            final ImageData imageData = new ImageData(osTileImagePath);
+
+            tileImage = createTileImage(tile, imageData);
+
+         } else {
+
+            // create default scaled image
+
+            tileImage = createTileImage(tile, loadedImageData);
+         }
+      }
 
       // cache tile image
       putIntoImageCache(tileKey, tileImage);
@@ -695,53 +740,18 @@ public class TileImageCache {
 
          // tile image (map) is dimmed
 
-         final int dimmingAlphaValue = mp.getDimLevel();
-
-         if (dimmingAlphaValue == 0xFF) {
+         if (mp.getDimAlpha() == 0xFF) {
 
             // tile image is not dimmed
 
          } else {
 
-            // tile image is dimmed
+            // tile image is dimmed, set flag that dimming is painted
 
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            //
-            // run in the UI thread
-            //
-            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            _display.asyncExec(() -> {
-
-               if (tileImage == null || tileImage.isDisposed()) {
-                  return;
-               }
-
-               // create dimmed image
-               final Rectangle imageBounds = tileImage.getBounds();
-               final Image dimmedImage = new Image(_display, imageBounds);
-
-               final GC gcDimmedImage = new GC(dimmedImage);
-               {
-                  gcDimmedImage.setBackground(new Color(mp.getDimColor()));
-                  gcDimmedImage.fillRectangle(imageBounds);
-
-                  gcDimmedImage.setAlpha(dimmingAlphaValue);
-                  {
-                     gcDimmedImage.drawImage(tileImage, 0, 0);
-                  }
-                  gcDimmedImage.setAlpha(0xff);
-               }
-               gcDimmedImage.dispose();
-
-               tileImage.dispose();
-
-               // replace tile image with the dimmed image
-               putIntoImageCache(tileKey, dimmedImage);
-            });
+            tile.dimImage_TileKey = tileKey;
          }
       }
 
       return tileImage;
    }
-
 }

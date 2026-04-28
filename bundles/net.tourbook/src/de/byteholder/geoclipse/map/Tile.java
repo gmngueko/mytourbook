@@ -2,28 +2,22 @@
  * Tile.java
  *
  * Created on March 14, 2006, 4:53 PM
- *
- * To change this template, choose Tools | Template Manager
- * and open the template in the editor.
  */
 package de.byteholder.geoclipse.map;
 
-import de.byteholder.geoclipse.mapprovider.ImageDataResources;
 import de.byteholder.geoclipse.mapprovider.MP;
 
-import gnu.trove.list.array.TLongArrayList;
-
 import java.util.ArrayList;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.tourbook.common.util.StatusUtil;
-import net.tourbook.data.TourWayPoint;
+import net.tourbook.common.UI;
 
-import org.eclipse.swt.graphics.Device;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
+import org.eclipse.collections.impl.list.mutable.primitive.LongArrayList;
+import org.eclipse.collections.impl.set.mutable.primitive.IntHashSet;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Rectangle;
@@ -37,21 +31,13 @@ import org.eclipse.swt.graphics.Rectangle;
  * @author Wolfgang
  */
 
-public class Tile extends Observable {
+public class Tile {
 
 //   private static final double            MAX_LATITUDE_85_05112877   = 85.05112877;
 
-   private static final String NL = "\n"; //$NON-NLS-1$
-   /*
-    * private static final String COLUMN_2 = "  "; //$NON-NLS-1$
-    * private static final String COLUMN_4 = "    "; //$NON-NLS-1$
-    * private static final String COLUMN_5 = "     ";
-    */
+   private static final String             NL                           = "\n";                                //$NON-NLS-1$
 
-   private static final ReentrantLock      TILE_LOCK                 = new ReentrantLock();
-   private static final int                MAX_BOUNDS                = Map2.MAP_MAX_ZOOM_LEVEL + 1;
-
-   private OverlayTourState                _overlayTourState         = OverlayTourState.TILE_IS_NOT_CHECKED;
+   private OverlayTourState                _overlayTourState            = OverlayTourState.TILE_IS_NOT_CHECKED;
 
    /**
     * <pre>
@@ -64,9 +50,9 @@ public class Tile extends Observable {
     * </pre>
     */
 
-   private OverlayImageState               _overlayImageState        = OverlayImageState.NOT_SET;
+   private OverlayImageState               _overlayImageState           = OverlayImageState.NOT_SET;
 
-   private int                             _overlayContent           = 0;
+   private int                             _overlayContent              = 0;
 
    /**
     * Map zoom level
@@ -91,16 +77,12 @@ public class Tile extends Observable {
    /**
     * Map image for this tile
     */
-   private Image                           _mapImage                 = null;
+   private Image                           _mapImage;
 
    /**
     * Image for the overlay tile, NOT the surrounding part tiles
     */
    private Image                           _overlayImage;
-   /**
-    * contains overlay the image data for this tile
-    */
-   private ImageDataResources              _overlayImageDataResources;
 
    private final String                    _tileKey;
 
@@ -115,14 +97,14 @@ public class Tile extends Observable {
 
    private Future<?>                       _future;
 
-   private boolean                         _isLoading                = false;
+   private boolean                         _isLoading;
 
-   private boolean                         _isOfflineError           = false;
+   private boolean                         _isOfflineError;
 
    /**
     * contains the error message when loading of the image fails
     */
-   private String                          _loadingError             = null;
+   private String                          _loadingError;
 
    /**
     * url which is used to load the tile
@@ -149,7 +131,7 @@ public class Tile extends Observable {
     * {@link #_parentTile} is set to <code>null</code> to keep the tile in a cache when the tile has
     * loading errors
     */
-   private boolean                         _isChild                  = false;
+   private boolean                         _isChild                     = false;
 
    /**
     * When set, this is a parent tile which has children tiles
@@ -168,36 +150,30 @@ public class Tile extends Observable {
    private long                            _timeEndLoading;
 
    /**
-    * contains children which contains loading errors
+    * Contains children which contains loading errors
     */
    private ConcurrentHashMap<String, Tile> _childrenWithErrors;
-
-   @SuppressWarnings("unchecked")
-   private final ArrayList<Rectangle>[]    _markerBounds             = new ArrayList[MAX_BOUNDS];
-   @SuppressWarnings("unchecked")
-   private final ArrayList<Rectangle>[]    _markerPartBounds         = new ArrayList[MAX_BOUNDS];
-
-   /**
-    * Contains the {@link TourWayPoint}'s which are displayed in this tile.
-    * <p>
-    * {@link #_twpSimpleBounds} and {@link #_twpEnhancedBounds} contains the rectangles in the same
-    * sequence as {@link #_twp}.
-    */
-   @SuppressWarnings("unchecked")
-   private final ArrayList<TourWayPoint>[] _twp                      = new ArrayList[MAX_BOUNDS];
-
-   @SuppressWarnings("unchecked")
-   private final ArrayList<Rectangle>[]    _twpSimpleBounds          = new ArrayList[MAX_BOUNDS];
-
-   @SuppressWarnings("unchecked")
-   private final ArrayList<Rectangle>[]    _twpEnhancedBounds        = new ArrayList[MAX_BOUNDS];
 
    /**
     * The hover rectangles will be set when a tile is painted, the rectangle position is relative to
     * the tile
     */
-   public ArrayList<Rectangle>             allPainted_HoverRectangle = new ArrayList<>();
-   public TLongArrayList                   allPainted_HoverTourID    = new TLongArrayList();
+   public List<Rectangle>                  allPainted_HoverRectangle    = new ArrayList<>();
+   public LongArrayList                    allPainted_HoverTourID       = new LongArrayList();
+   public IntArrayList                     allPainted_HoverSerieIndices = new IntArrayList();
+
+   /**
+    * Hash for all paintings, this is used to optimize performance by reducing number of paintings
+    * because there can be millions
+    */
+   public IntHashSet                       allPainted_Hash              = new IntHashSet();
+
+   private TileImageLoaderCallback         _tileImageLoaderCallback;
+
+   /**
+    * Set map dimming when this tile image is painted the first time
+    */
+   public String                           dimImage_TileKey;
 
    /**
     * Create a new Tile at the specified tile point and zoom level
@@ -233,6 +209,7 @@ public class Tile extends Observable {
     * @param customTileKey
     *           custom tile key which can be <code>null</code> when it's not set
     * @param projectionId
+    *
     * @return
     */
    public static String getTileKey(final MP mp,
@@ -272,97 +249,9 @@ public class Tile extends Observable {
       return sb.toString();
    }
 
-   public void addMarkerBounds(final int x, //
-                               final int y,
-                               final int width,
-                               final int height,
-                               final int zoomLevel) {
-
-      if (_markerBounds[zoomLevel] == null) {
-         initBounds(zoomLevel);
-      }
-
-      _markerBounds[zoomLevel].add(new Rectangle(x, y, width, height));
-   }
-
-   /**
-    * @param x
-    *           left position relative to the tile image
-    * @param y
-    *           top position relative to the tile image
-    * @param width
-    * @param height
-    * @param zoomLevel
-    * @param parts
-    *           number of parts for which the marker is painted
-    */
-   public void addMarkerBounds(final int x,
-                               final int y,
-                               final int width,
-                               final int height,
-                               final int zoomLevel,
-                               final int parts) {
-
-      if (_markerBounds[zoomLevel] == null) {
-         initBounds(zoomLevel);
-      }
-
-//      final Rectangle markerBounds = new Rectangle(x < 0 ? 0 : x, y < 0 ? 0 : y, width, height);
-      final Rectangle markerBounds = new Rectangle(x, y, width, height);
-
-      if (parts == 1) {
-         _markerBounds[zoomLevel].add(markerBounds);
-      } else {
-         _markerPartBounds[zoomLevel].add(markerBounds);
-      }
-   }
-
-   @Override
-   public void addObserver(final Observer o) {
-      super.addObserver(o);
-   }
-
-   /**
-    * @param twp
-    * @param twpBounds
-    *           Hovered area for the tour way point.
-    *           <p>
-    *           <i>x/y</i> is the top left corner within the control, <br>
-    *           <i>width/height</i> is the dimension for the hovered area which is the size of the
-    *           painted image
-    * @param zoomLevel
-    * @param parts
-    */
-   public void addTourWayPointBounds(final TourWayPoint twp,
-                                     final Rectangle twpBounds,
-                                     final int zoomLevel,
-                                     final int parts) {
-
-      if (_markerBounds[zoomLevel] == null) {
-         initBounds(zoomLevel);
-      }
-
-      final ArrayList<TourWayPoint> twpList = _twp[zoomLevel];
-
-      if (twpList.contains(twp) == false) {
-
-         /*
-          * The way point is set at the beginning of the list because further way point could
-          * overpaint the current. So the later painted way point can be not covered by another and
-          * the tooltips are displayed accordingly.
-          */
-         twpList.add(0, twp);
-
-         if (parts == 1) {
-            _twpSimpleBounds[zoomLevel].add(0, twpBounds);
-         } else {
-            _twpEnhancedBounds[zoomLevel].add(0, twpBounds);
-         }
-      }
-   }
-
    /**
     * @param tileChildren
+    *
     * @return Returns <code>true</code> when all children are loaded, otherwise <code>false</code>
     */
    private boolean areAllChildrenLoaded(final ArrayList<Tile> tileChildren) {
@@ -389,70 +278,12 @@ public class Tile extends Observable {
       return true;
    }
 
-   public synchronized Image createOverlayImage(final Device display) {
+   public void callTileImageLoaderCallback() {
 
-      if (_overlayImageDataResources == null) {
-         return null;
+      if (_tileImageLoaderCallback != null) {
+
+         _tileImageLoaderCallback.update(this);
       }
-
-      try {
-
-         // it is synchronized because this object can be set to null in another thread
-         synchronized (_overlayImageDataResources) {
-
-            // check _overlayImageDataResources again, it could be null at this time
-            if (_overlayImageDataResources == null) {
-               return null;
-            }
-
-            final ImageData tileImageData = _overlayImageDataResources.getTileImageData();
-            final ImageData neighborImageData = _overlayImageDataResources.getNeighborImageData();
-
-            if ((tileImageData == null) && (neighborImageData == null)) {
-               return null;
-            }
-
-            final int tileSize = _mp.getTileSize();
-            final ImageData finalImageData = UI.createTransparentImageData(tileSize);
-
-            // draw neighbor first
-            if (neighborImageData != null) {
-
-               // check _overlayImageDataResources again, it could be null at this time
-               if (_overlayImageDataResources == null) {
-                  return null;
-               }
-               _overlayImageDataResources.drawImageData(
-                     finalImageData,
-                     neighborImageData,
-                     0,
-                     0,
-                     tileSize,
-                     tileSize);
-            }
-
-            // draw tile last to overwrite neighbor image data,
-            if (tileImageData != null) {
-
-               // check _overlayImageDataResources again, it could be null at this time
-               if (_overlayImageDataResources == null) {
-                  return null;
-               }
-               _overlayImageDataResources.drawImageData(finalImageData, tileImageData, 0, 0, tileSize, tileSize);
-            }
-
-            // create image from image data
-            _overlayImage = new Image(display, finalImageData);
-
-            return _overlayImage;
-         }
-
-      } catch (final Exception e) {
-         // log it but don't show because it happened too often
-         StatusUtil.log(e);
-      }
-
-      return null;
    }
 
    /**
@@ -460,6 +291,7 @@ public class Tile extends Observable {
     * are available
     *
     * @param childImageData
+    *
     * @return
     */
    public ParentImageStatus createParentImage(final ImageData childImageData) {
@@ -470,8 +302,11 @@ public class Tile extends Observable {
       final Tile parentTile = _parentTile;
 
       if (parentTile == null) {
-         // this happens often -> disabled log
-//         StatusUtil.log(NLS.bind(Messages.DBG057_MapProfile_NoParentTile, getTileKey()), new Exception());
+
+// this happens too often -> disabled log
+//
+//       StatusUtil.log(NLS.bind(Messages.DBG057_MapProfile_NoParentTile, getTileKey()), new Exception());
+
          return null;
       }
 
@@ -485,10 +320,11 @@ public class Tile extends Observable {
 
                // check if the parent is already created
                final Image parentImage = parentTile._mapImage;
+
                if ((parentImage != null) && !parentImage.isDisposed()) {
+
                   // parent image is already created
                   return new ParentImageStatus(null, false, false, false);
-
                }
 
                // check if all children are loaded
@@ -498,8 +334,7 @@ public class Tile extends Observable {
                   final MP parentMp = parentTile._mp;
                   if (parentMp instanceof ITileChildrenCreator) {
 
-                     final ParentImageStatus parentImageStatus = ((ITileChildrenCreator) parentMp)
-                           .getParentImage(parentTile);
+                     final ParentImageStatus parentImageStatus = ((ITileChildrenCreator) parentMp).getParentImage(parentTile);
 
                      // prevent memory leaks: remove image data in the chilren tiles
                      for (final Tile childTile : tileChildren) {
@@ -577,23 +412,18 @@ public class Tile extends Observable {
     * Check if the new image is valid
     *
     * @param newImage
+    *
     * @return Returns a valid image or <code>null</code> when the image is invald
     */
    private Image getCheckedImage(Image image) {
 
       // check if available or disposed
-      if ((image == null) || image.isDisposed()) {
+      if (image == null || image.isDisposed()) {
+
          image = null;
+
          return null;
       }
-
-//      // check image bounds
-//      final Rectangle imageBounds = image.getBounds();
-//      if (imageBounds.width <= 0 || imageBounds.height <= 0) {
-//         image.dispose();
-//         image = null;
-//         return null;
-//      }
 
       return image;
    }
@@ -662,31 +492,6 @@ public class Tile extends Observable {
       return _overlayImage;
    }
 
-   public ImageDataResources getOverlayImageDataResources() {
-
-      if (_overlayImageDataResources != null) {
-         return _overlayImageDataResources;
-      }
-
-      TILE_LOCK.lock();
-      {
-         try {
-
-            // check again
-            if (_overlayImageDataResources != null) {
-               return _overlayImageDataResources;
-            }
-
-            _overlayImageDataResources = new ImageDataResources(_mp.getTileSize());
-
-         } finally {
-            TILE_LOCK.unlock();
-         }
-      }
-
-      return _overlayImageDataResources;
-   }
-
    public OverlayImageState getOverlayImageState() {
       return _overlayImageState;
    }
@@ -701,15 +506,6 @@ public class Tile extends Observable {
     */
    public Tile getParentTile() {
       return _parentTile;
-   }
-
-   /**
-    * @param zoomLevel
-    * @return Returns marker bounds which are set for a part or <code>null</code> when there are no
-    *         part marker bounds
-    */
-   public ArrayList<Rectangle> getPartMarkerBounds(final int zoomLevel) {
-      return _markerPartBounds[zoomLevel];
    }
 
    public String getTileCustomPath() {
@@ -728,13 +524,6 @@ public class Tile extends Observable {
       return _timeEndLoading;
    }
 
-//   /**
-//    * @return Returns <code>true</code> when this tile is a child of another tile
-//    */
-//   public boolean isChildTile() {
-//      return fParentTile != null;
-//   }
-
    public long getTimeIsQueued() {
       return _timeIsQueued;
    }
@@ -748,27 +537,6 @@ public class Tile extends Observable {
     */
    public String getUrl() {
       return _url;
-   }
-
-   /**
-    * @param mapZoomLevel
-    * @param isTourPaintMethodEnhanced
-    *           When <code>true</code> the overlay image is painted with the enhanced method which
-    *           is currently 3 x 3 parts.
-    * @return Returns a list with rectangles for each way point in the tile or <code>null</code>
-    *         when there are no way points within the tile.
-    */
-   public ArrayList<Rectangle> getWayPointBounds(final int mapZoomLevel, final boolean isTourPaintMethodEnhanced) {
-
-      if (isTourPaintMethodEnhanced) {
-         return _twpEnhancedBounds[mapZoomLevel];
-      }
-
-      return _twpSimpleBounds[mapZoomLevel];
-   }
-
-   public ArrayList<TourWayPoint> getWayPoints(final int _mapZoomLevel) {
-      return _twp[_mapZoomLevel];
    }
 
    /**
@@ -805,34 +573,6 @@ public class Tile extends Observable {
     */
    public void incrementOverlayContent() {
       _overlayContent++;
-   }
-
-   /**
-    * creates marker bounds array for the zoom level
-    *
-    * @param zoomLevel
-    */
-   private void initBounds(final int zoomLevel) {
-
-      TILE_LOCK.lock();
-      try {
-
-         // check again
-         if (_markerBounds[zoomLevel] == null) {
-
-            // create bounds for current zoomlevel
-
-            _twp[zoomLevel] = new ArrayList<>();
-
-            _markerBounds[zoomLevel] = new ArrayList<>();
-            _markerPartBounds[zoomLevel] = new ArrayList<>();
-            _twpSimpleBounds[zoomLevel] = new ArrayList<>();
-            _twpEnhancedBounds[zoomLevel] = new ArrayList<>();
-         }
-
-      } finally {
-         TILE_LOCK.unlock();
-      }
    }
 
    /**
@@ -885,15 +625,6 @@ public class Tile extends Observable {
    }
 
    /**
-    * notify image observers that the image has changed
-    */
-   void notifyImageObservers() {
-
-      setChanged();
-      notifyObservers();
-   }
-
-   /**
     * reset overlay in this tile, by resetting the status state
     */
    public void resetOverlay() {
@@ -902,40 +633,6 @@ public class Tile extends Observable {
       _overlayImageState = OverlayImageState.NOT_SET;
 
       _overlayContent = 0;
-
-      _overlayImageDataResources = null;
-
-      /*
-       * reset all bounds for all zoomlevels, this is necessary when a new tour is displayed
-       */
-      for (int zoomLevel = 0; zoomLevel < MAX_BOUNDS; zoomLevel++) {
-
-         final ArrayList<TourWayPoint> twpBounds = _twp[zoomLevel];
-         if (twpBounds != null) {
-            twpBounds.clear();
-         }
-
-         ArrayList<Rectangle> bounds = _markerBounds[zoomLevel];
-         if (bounds != null) {
-            bounds.clear();
-         }
-
-         bounds = _markerPartBounds[zoomLevel];
-         if (bounds != null) {
-            bounds.clear();
-         }
-
-         bounds = _twpSimpleBounds[zoomLevel];
-         if (bounds != null) {
-            bounds.clear();
-         }
-
-         bounds = _twpEnhancedBounds[zoomLevel];
-         if (bounds != null) {
-            bounds.clear();
-         }
-      }
-
    }
 
    /**
@@ -968,6 +665,11 @@ public class Tile extends Observable {
       _childrenWithErrors.put(childTile.getTileKey(), childTile);
    }
 
+   public void setChildTileImageData(final ImageData childTileImageData) {
+
+      _childTileImageData = childTileImageData;
+   }
+
    /**
     * Set custom data which can be retrieved with {@link #getData()}
     *
@@ -981,7 +683,13 @@ public class Tile extends Observable {
       _future = future;
    }
 
+   public void setImageLoaderCallback(final TileImageLoaderCallback tileImageLoaderCallback) {
+
+      _tileImageLoaderCallback = tileImageLoaderCallback;
+   }
+
    public void setIsOfflineImageAvailable(final boolean isOfflineImageAvailable) {
+
       _isOfflineImageAvailable = isOfflineImageAvailable;
    }
 
@@ -1029,14 +737,10 @@ public class Tile extends Observable {
     * Set the map image for this tile, the image is checked before it is set
     *
     * @param newImage
+    *
     * @return <code>true</code> when the image was set, <code>false</code> when the image is invalid
     */
    public boolean setMapImage(final Image newImage) {
-
-//      if (newImage != null) {
-//         int a = 0;
-//         a++;
-//      }
 
       _mapImage = getCheckedImage(newImage);
 
@@ -1098,32 +802,13 @@ public class Tile extends Observable {
    @Override
    public String toString() {
 
-      // final boolean isImageOK = _mapImage == null ? //
-      // false
-      // : _mapImage.isDisposed() ? //
-      // false
-      // : true;
-
       return UI.EMPTY_STRING
-
-//            + " z=" + Integer.toString(_zoom).concat(COLUMN_2).substring(0, 2) // //$NON-NLS-1$
-//            + " x=" + Integer.toString(_x).concat(COLUMN_5).substring(0, 5) //$NON-NLS-1$
-//            + " y=" + Integer.toString(_y).concat(COLUMN_5).substring(0, 5) + NL //$NON-NLS-1$
 
             + " z=" + Integer.toString(_zoom) // //$NON-NLS-1$
             + " x=" + Integer.toString(_x) //$NON-NLS-1$
             + " y=" + Integer.toString(_y) + NL //$NON-NLS-1$
 
             + "allHoverRectangle: " + allPainted_HoverRectangle.size() + NL //$NON-NLS-1$
-
-//
-//            + (_isLoading ? " LOAD" : COLUMN_5) //$NON-NLS-1$
-//            + " img=" + (isImageOK ? "OK" : COLUMN_2) //$NON-NLS-1$ //$NON-NLS-2$
-//            + (isLoadingError() ? " ERR" : COLUMN_4) //$NON-NLS-1$
-//            //
-//            //                            0123456789012345678901234567890123456789
-//            + (" key=" + _tileKey.concat("                                        ").substring(0, 40)) //$NON-NLS-1$ //$NON-NLS-2$
-      //
       ;
    }
 

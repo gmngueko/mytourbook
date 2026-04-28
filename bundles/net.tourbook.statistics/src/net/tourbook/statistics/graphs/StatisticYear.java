@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2021 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -30,6 +30,7 @@ import net.tourbook.chart.IChartInfoProvider;
 import net.tourbook.chart.MinMaxKeeper_YData;
 import net.tourbook.common.UI;
 import net.tourbook.common.color.GraphColorManager;
+import net.tourbook.common.tooltip.ICanHideTooltip;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourPerson;
@@ -122,10 +123,10 @@ public abstract class StatisticYear extends TourbookStatistic {
     * @param hoveredBar_HorizontalIndex
     *           valueIndex
     */
-   private void createToolTipUI(final IToolTipProvider toolTipProvider,
-                                final Composite parent,
-                                final int hoveredBar_SerieIndex,
-                                final int hoveredBar_ValueIndex) {
+   private ICanHideTooltip createToolTipUI(final IToolTipProvider toolTipProvider,
+                                           final Composite parent,
+                                           final int hoveredBar_SerieIndex,
+                                           final int hoveredBar_ValueIndex) {
 
       /*
        * Create tooltip title
@@ -134,7 +135,7 @@ public abstract class StatisticYear extends TourbookStatistic {
       final LocalDate yearDate = LocalDate.of(oldestYear, 1, 1).plusYears(hoveredBar_ValueIndex);
 
       final String toolTipTitle = Integer.toString(yearDate.getYear());
-      final String totalColumnHeaderTitel = toolTipTitle;
+      final String totalColumnHeaderTitle = toolTipTitle;
 
       final boolean isShowPercentageValues = _prefStore.getBoolean(ITourbookPreferences.STAT_YEAR_TOOLTIP_IS_SHOW_PERCENTAGE_VALUES);
       final boolean isShowSummaryValues = _prefStore.getBoolean(ITourbookPreferences.STAT_YEAR_TOOLTIP_IS_SHOW_SUMMARY_VALUES);
@@ -147,9 +148,11 @@ public abstract class StatisticYear extends TourbookStatistic {
             hoveredBar_ValueIndex,
             toolTipTitle,
             null,
-            totalColumnHeaderTitel,
+            totalColumnHeaderTitle,
             isShowSummaryValues,
             isShowPercentageValues);
+
+      return null;
    }
 
    void createXData_Year(final ChartDataModel chartDataModel) {
@@ -159,30 +162,6 @@ public abstract class StatisticYear extends TourbookStatistic {
       xData.setAxisUnit(ChartDataSerie.X_AXIS_UNIT_YEAR);
       xData.setChartSegments(createChartSegments(_statisticData_Year));
       chartDataModel.setXData(xData);
-   }
-
-   /**
-    * Altitude
-    *
-    * @param chartDataModel
-    */
-   void createYData_Altitude(final ChartDataModel chartDataModel) {
-
-      final ChartDataYSerie yData = new ChartDataYSerie(
-            ChartType.BAR,
-            getChartType(_chartType),
-            _statisticData_Year.elevationUp_Low_Resorted,
-            _statisticData_Year.elevationUp_High_Resorted);
-
-      yData.setYTitle(Messages.LABEL_GRAPH_ALTITUDE);
-      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
-      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
-      yData.setShowYSlider(true);
-
-      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
-      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Year.typeIds_Resorted, _appTourTypeFilter);
-
-      chartDataModel.addYData(yData);
    }
 
    /**
@@ -317,6 +296,55 @@ public abstract class StatisticYear extends TourbookStatistic {
    }
 
    /**
+    * Elevation down
+    *
+    * @param chartDataModel
+    */
+   void createYData_ElevationDown(final ChartDataModel chartDataModel) {
+
+      final ChartDataYSerie yData = new ChartDataYSerie(
+            ChartType.BAR,
+            getChartType(_chartType),
+            _statisticData_Year.elevationDown_Low_Resorted,
+            _statisticData_Year.elevationDown_High_Resorted);
+
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_DOWN);
+      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
+      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
+      yData.setShowYSlider(true);
+      yData.setYAxisDirection(false);
+
+      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
+      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Year.typeIds_Resorted, _appTourTypeFilter);
+
+      chartDataModel.addYData(yData);
+   }
+
+   /**
+    * Elevation up
+    *
+    * @param chartDataModel
+    */
+   void createYData_ElevationUp(final ChartDataModel chartDataModel) {
+
+      final ChartDataYSerie yData = new ChartDataYSerie(
+            ChartType.BAR,
+            getChartType(_chartType),
+            _statisticData_Year.elevationUp_Low_Resorted,
+            _statisticData_Year.elevationUp_High_Resorted);
+
+      yData.setYTitle(Messages.LABEL_GRAPH_ELEVATION_UP);
+      yData.setUnitLabel(UI.UNIT_LABEL_ELEVATION);
+      yData.setAxisUnit(ChartDataSerie.AXIS_UNIT_NUMBER);
+      yData.setShowYSlider(true);
+
+      StatisticServices.setTourTypeColors(yData, GraphColorManager.PREF_GRAPH_ALTITUDE);
+      StatisticServices.setTourTypeColorIndex(yData, _statisticData_Year.typeIds_Resorted, _appTourTypeFilter);
+
+      chartDataModel.addYData(yData);
+   }
+
+   /**
     * Number of tours
     *
     * @param chartDataModel
@@ -431,8 +459,15 @@ public abstract class StatisticYear extends TourbookStatistic {
 
       // set tool tip info
       chartModel.setCustomData(
+
             ChartDataModel.BAR_TOOLTIP_INFO_PROVIDER,
-            (IChartInfoProvider) StatisticYear.this::createToolTipUI);
+
+            (IChartInfoProvider) (toolTipProvider, parent, serieIndex, valueIndex) -> createToolTipUI(
+
+                  toolTipProvider,
+                  parent,
+                  serieIndex,
+                  valueIndex));
    }
 
    @Override
@@ -502,7 +537,7 @@ public abstract class StatisticYear extends TourbookStatistic {
          setGraphLabel_Duration(_yData_Duration, durationTime);
       }
 
-      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix());
+      StatisticServices.updateChartProperties(_chart, getGridPrefPrefix(), getLayoutPrefPrefix());
 
       // update title segment config AFTER defaults are set above
       final ChartTitleSegmentConfig ctsConfig = _chart.getChartTitleSegmentConfig();

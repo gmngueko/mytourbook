@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2023 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -57,7 +57,6 @@ import net.tourbook.map3.layer.TourInfoLayer;
 import net.tourbook.map3.layer.TourLegendLayer;
 import net.tourbook.map3.layer.TrackSliderLayer;
 import net.tourbook.map3.layer.tourtrack.TourTrackLayer;
-import net.tourbook.map3.ui.DialogMap3Layer;
 import net.tourbook.map3.ui.DialogTerrainProfileConfig;
 import net.tourbook.map3.ui.SlideoutMap3Layer;
 
@@ -339,13 +338,7 @@ public class Map3Manager {
       createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_BLUE_MARBLE_WMS_2004);
       createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_I_CUBED_LANDSAT);
       createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_USGS_NAIP_PLUS);
-      //createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_MS_VIRTUAL_EARTH_AERIAL);
       createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_BING_IMAGERY);
-      createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_USGS_TOPO_BASE_MAP);
-      createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_USGS_TOPO_BASE_MAP_LARGE_SCALE);
-      createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_USGS_TOPO_SCANNED_MAPS_1_250K);
-      createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_USGS_TOPO_SCANNED_MAPS_1_100K);
-      createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_USGS_TOPO_SCANNED_MAPS_1_24K);
       createLayerXml_120_Default(xml, true, true, 1.0f, MapDefaultLayer.ID_POLITICAL_BOUNDARIES);
       createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_OPEN_STREET_MAP);
       createLayerXml_120_Default(xml, false, true, 1.0f, MapDefaultLayer.ID_EARTH_AT_NIGHT);
@@ -378,7 +371,7 @@ public class Map3Manager {
        * create UI model layer
        */
       final String layerId = MarkerLayer.MAP3_LAYER_ID;
-      final TVIMap3Layer tviLayer = new TVIMap3Layer(layerId, _wwLayer_Marker, Messages.Custom_Layer_TourMarker);
+      final TVIMap3Layer tviLayer = new TVIMap3Layer(layerId, _wwLayer_Marker, Messages.Custom_Layer_TourMarkers);
 
       final boolean isVisible = true;
 
@@ -436,7 +429,7 @@ public class Map3Manager {
       /*
        * create WW layer
        */
-      _wwLayer_TourTrack = new TourTrackLayer(_state);
+      _wwLayer_TourTrack = new TourTrackLayer();
 
       /*
        * create UI model layer
@@ -842,7 +835,7 @@ public class Map3Manager {
    }
 
    /**
-    * @return Returns an instance of {@link DialogMap3Layer} or <code>null</code> when view is not
+    * @return Returns an instance of {@link SlideoutMap3Layer} or <code>null</code> when view is not
     *         created.
     */
    public static SlideoutMap3Layer getMap3LayerSlideout() {
@@ -877,6 +870,7 @@ public class Map3Manager {
     *
     * @param wwd
     * @param newWWLayer
+    *
     * @return
     */
    private static TVIMap3Layer insertBeforeCompass(final WorldWindow wwd, final TVIMap3Layer newUILayer) {
@@ -917,6 +911,7 @@ public class Map3Manager {
     * @param tviParent
     * @param newWWLayer
     * @param newUILayer
+    *
     * @return
     */
    private static TVIMap3Layer insertBeforeCompass_10(final TVIMap3Item tviParent, final TVIMap3Layer newUILayer) {
@@ -954,6 +949,7 @@ public class Map3Manager {
     *
     * @param wwd
     * @param newWWLayer
+    *
     * @return
     */
    private static TVIMap3Layer insertBeforePlaceNames(final WorldWindow wwd, final TVIMap3Layer newUILayer) {
@@ -994,6 +990,7 @@ public class Map3Manager {
     * @param tviParent
     * @param newWWLayer
     * @param newUILayer
+    *
     * @return
     */
    private static TVIMap3Layer insertBeforePlaceNames_10(final TVIMap3Item tviParent, final TVIMap3Layer newUILayer) {
@@ -1236,7 +1233,7 @@ public class Map3Manager {
 
       Map3GradientColorManager.saveColors();
 
-      _wwLayer_TourTrack.saveState(_state);
+      _wwLayer_TourTrack.saveState();
 
       /*
        * save layer structure in xml file

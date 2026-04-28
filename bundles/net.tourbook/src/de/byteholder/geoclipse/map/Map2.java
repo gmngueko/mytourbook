@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2022 Wolfgang Schramm and Contributors
+ * Copyright (C) 2005, 2025 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -38,79 +38,130 @@
  */
 package de.byteholder.geoclipse.map;
 
-import static org.eclipse.swt.events.ControlListener.controlResizedAdapter;
-import static org.eclipse.swt.events.MouseTrackListener.mouseExitAdapter;
-
 import de.byteholder.geoclipse.Messages;
 import de.byteholder.geoclipse.map.event.IBreadcrumbListener;
+import de.byteholder.geoclipse.map.event.IExternalAppListener;
+import de.byteholder.geoclipse.map.event.IGeoPositionListener;
 import de.byteholder.geoclipse.map.event.IHoveredTourListener;
 import de.byteholder.geoclipse.map.event.IMapGridListener;
 import de.byteholder.geoclipse.map.event.IMapInfoListener;
 import de.byteholder.geoclipse.map.event.IMapPositionListener;
+import de.byteholder.geoclipse.map.event.IMapSelectionListener;
 import de.byteholder.geoclipse.map.event.IPOIListener;
-import de.byteholder.geoclipse.map.event.IPositionListener;
 import de.byteholder.geoclipse.map.event.ITourSelectionListener;
+import de.byteholder.geoclipse.map.event.MapGeoPositionEvent;
 import de.byteholder.geoclipse.map.event.MapHoveredTourEvent;
 import de.byteholder.geoclipse.map.event.MapPOIEvent;
-import de.byteholder.geoclipse.map.event.MapPositionEvent;
-import de.byteholder.geoclipse.mapprovider.ImageDataResources;
 import de.byteholder.geoclipse.mapprovider.MP;
 import de.byteholder.geoclipse.mapprovider.MapProviderManager;
 import de.byteholder.geoclipse.preferences.IMappingPreferences;
 import de.byteholder.geoclipse.ui.TextWrapPainter;
 
+import java.awt.BasicStroke;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.NumberFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.tourbook.Images;
+import net.tourbook.OtherMessages;
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.UI;
 import net.tourbook.common.color.ColorCacheSWT;
-import net.tourbook.common.color.ColorUtil;
 import net.tourbook.common.color.ThemeUtil;
 import net.tourbook.common.formatter.FormatManager;
 import net.tourbook.common.map.GeoPosition;
+import net.tourbook.common.time.TimeTools;
+import net.tourbook.common.util.CustomScalingImageDataProvider;
 import net.tourbook.common.util.HoveredAreaContext;
 import net.tourbook.common.util.IToolTipProvider;
 import net.tourbook.common.util.ITourToolTipProvider;
+import net.tourbook.common.util.ImageConverter;
+import net.tourbook.common.util.ImageUtils;
 import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.TourToolTip;
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
+import net.tourbook.data.TourLocation;
+import net.tourbook.data.TourMarker;
+import net.tourbook.data.TourMarkerType;
+import net.tourbook.data.TourPhoto;
 import net.tourbook.data.TourWayPoint;
+import net.tourbook.map.location.LocationType;
+import net.tourbook.map.location.MapLocationToolTip;
+import net.tourbook.map2.view.Map2Config;
+import net.tourbook.map2.view.Map2ConfigManager;
+import net.tourbook.map2.view.Map2PainterConfig;
+import net.tourbook.map2.view.Map2Point;
+import net.tourbook.map2.view.Map2PointManager;
 import net.tourbook.map2.view.Map2View;
-import net.tourbook.map2.view.WayPointToolTipProvider;
+import net.tourbook.map2.view.MapLabelLayout;
+import net.tourbook.map2.view.MapPointStatistics;
+import net.tourbook.map2.view.MapPointToolTip;
+import net.tourbook.map2.view.MapPointType;
+import net.tourbook.map2.view.MapTourMarkerTime;
+import net.tourbook.map2.view.SelectionMapSelection;
+import net.tourbook.map2.view.SlideoutMap2_PhotoHistogram;
+import net.tourbook.map2.view.SlideoutMap2_PhotoImage;
+import net.tourbook.map2.view.SlideoutMap2_PhotoOptions;
+import net.tourbook.map2.view.TourMapPainter;
+import net.tourbook.map25.layer.marker.ScreenUtils;
+import net.tourbook.map25.layer.marker.algorithm.distance.Cluster;
+import net.tourbook.map25.layer.marker.algorithm.distance.ClusterItem;
+import net.tourbook.map25.layer.marker.algorithm.distance.DistanceClustering;
+import net.tourbook.map25.layer.marker.algorithm.distance.QuadItem;
+import net.tourbook.map25.layer.marker.algorithm.distance.StaticCluster;
+import net.tourbook.photo.ILoadCallBack;
+import net.tourbook.photo.IPhotoServiceProvider;
+import net.tourbook.photo.ImageQuality;
+import net.tourbook.photo.Photo;
+import net.tourbook.photo.PhotoActivator;
+import net.tourbook.photo.PhotoImageCache;
+import net.tourbook.photo.PhotoImages;
+import net.tourbook.photo.PhotoLoadManager;
+import net.tourbook.photo.PhotoLoadingState;
 import net.tourbook.preferences.ITourbookPreferences;
+import net.tourbook.preferences.Map2_Appearance;
 import net.tourbook.tour.SelectionTourId;
 import net.tourbook.tour.SelectionTourIds;
 import net.tourbook.tour.TourManager;
+import net.tourbook.tour.filter.TourFilterFieldOperator;
 import net.tourbook.tour.filter.geo.TourGeoFilter;
 import net.tourbook.tour.filter.geo.TourGeoFilter_Manager;
+import net.tourbook.tour.photo.TourPhotoManager;
 import net.tourbook.ui.IInfoToolTipProvider;
 import net.tourbook.ui.IMapToolTipProvider;
 import net.tourbook.ui.MTRectangle;
 
-import org.apache.commons.lang3.text.WordUtils;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.IStatus;
+import org.apache.commons.text.WordUtils;
+import org.eclipse.collections.impl.list.mutable.primitive.IntArrayList;
+import org.eclipse.collections.impl.set.mutable.primitive.LongHashSet;
 import org.eclipse.core.runtime.ListenerList;
-import org.eclipse.core.runtime.Status;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -127,11 +178,13 @@ import org.eclipse.swt.dnd.DropTargetEvent;
 import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.dnd.URLTransfer;
+import org.eclipse.swt.events.ControlListener;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Cursor;
@@ -143,20 +196,23 @@ import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.graphics.Resource;
 import org.eclipse.swt.graphics.Transform;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.oscim.core.GeoPoint;
+
+import particlelabeling.PointFeature;
+import particlelabeling.PointFeatureLabeler;
 
 public class Map2 extends Canvas {
 
-   private static final String          TOUR_TOOLTIP_LABEL_DISTANCE                    = net.tourbook.ui.Messages.Tour_Tooltip_Label_Distance;
-   private static final String          TOUR_TOOLTIP_LABEL_MOVING_TIME                 = net.tourbook.ui.Messages.Tour_Tooltip_Label_MovingTime;
-   private static final String          TOUR_TOOLTIP_LABEL_RECORDED_TIME               = net.tourbook.ui.Messages.Tour_Tooltip_Label_RecordedTime;
+   private static final char            NL                                             = UI.NEW_LINE;
 
    private static final IDialogSettings _geoFilterState                                = TourGeoFilter_Manager.getState();
+
    /**
     * Min zoomlevels which the maps supports
     */
@@ -168,7 +224,7 @@ public class Map2 extends Canvas {
    public static final int              MAP_MAX_ZOOM_LEVEL                             = 22;
 
    /**
-    * these zoom levels are displayed in the UI therefore they start with 1 instead of 0
+    * These zoom levels are displayed in the UI therefore they start with 1 instead of 0
     */
    public static final int              UI_MIN_ZOOM_LEVEL                              = MAP_MIN_ZOOM_LEVEL + 1;
    public static final int              UI_MAX_ZOOM_LEVEL                              = MAP_MAX_ZOOM_LEVEL + 1;
@@ -176,20 +232,18 @@ public class Map2 extends Canvas {
    public static final int              EXPANDED_HOVER_SIZE                            = 20;
    public static final int              EXPANDED_HOVER_SIZE2                           = EXPANDED_HOVER_SIZE / 2;
 
-   private static final String          DIRECTION_E                                    = "E";                                                     //$NON-NLS-1$
-   private static final String          DIRECTION_N                                    = "N";                                                     //$NON-NLS-1$
-
-   private static final String          VALUE_FORMAT_TIME                              = "%s\t%s";                                                //$NON-NLS-1$
-   private static final String          VALUE_FORMAT_DISTANCE                          = "%s\t\t%s %s";                                           //$NON-NLS-1$
+   private static final String          DIRECTION_E                                    = "E";                             //$NON-NLS-1$
+   private static final String          DIRECTION_N                                    = "N";                             //$NON-NLS-1$
 
    private static final int             TEXT_MARGIN                                    = 6;
+   public static final int              MAP_POINT_BORDER                               = UI.IS_4K_DISPLAY ? 4 : 2;
 
-   private static final String          GEO_GRID_ACTION_UPDATE_GEO_LOCATION_ZOOM_LEVEL = "\uE003";                                                //$NON-NLS-1$
+   private static final String          GEO_GRID_ACTION_UPDATE_GEO_LOCATION_ZOOM_LEVEL = "\uE003";                        //$NON-NLS-1$
 
    /*
     * Wikipedia data
     */
-//   private static final String WIKI_PARAMETER_DIM                     = "dim";                                                   //$NON-NLS-1$
+// private static final String WIKI_PARAMETER_DIM  = "dim";  //$NON-NLS-1$
    private static final String WIKI_PARAMETER_TYPE = "type"; //$NON-NLS-1$
 
 //   http://toolserver.org/~geohack/geohack.php?pagename=Sydney&language=de&params=33.85_S_151.2_E_region:AU-NSW_type:city(3641422)
@@ -261,95 +315,210 @@ public class Map2 extends Canvas {
    private static final ColorCacheSWT    _colorCache                           = new ColorCacheSWT();
 
    // [181,208,208] is the color of water in the standard OSM material
-   public static final RGB  OSM_BACKGROUND_RGB         = new RGB(181, 208, 208);
-   private static final RGB MAP_DEFAULT_BACKGROUND_RGB = new RGB(0x40, 0x40, 0x40);
+   public static final RGB               OSM_BACKGROUND_RGB         = new RGB(181, 208, 208);
+   private static final RGB              MAP_DEFAULT_BACKGROUND_RGB = new RGB(0x40, 0x40, 0x40);
 
-   private static RGB       MAP_TRANSPARENT_RGB;
-   {
-      MAP_TRANSPARENT_RGB = UI.IS_OSX
-            ? new RGB(0xfe, 0xfe, 0xfe)
-            : new RGB(0xfe, 0xfe, 0xfe);
-   }
+   private static final java.awt.Color   RATING_STAR_COLOR          = new java.awt.Color(250, 224, 0);
+   private static final java.awt.Color   RATING_STAR_COLOR_BORDER   = new java.awt.Color(198, 178, 0);
+
+   private static RGB                    _mapTransparentRGB;
+   private static Color                  _mapTransparentColor;
+
+   private IDialogSettings               _state_Map2;
+
+   private Font                          _boldFontSWT               = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
+   private Font                          _labelFontSWT;
+   private String                        _labelFontName;
+   private int                           _labelFontSize;
+
+   private java.awt.Font                 _labelFontAWT              = UI.AWT_DIALOG_FONT;
+   private java.awt.Font                 _clusterFontAWT;
+
+   private Color                         _defaultBackgroundColor;
 
    /**
     * Map zoom level which is currently be used to display tiles. Normally a value between around 0
     * and 20.
     */
-   private int                     _mapZoomLevel;
-   private boolean                 _isZoomWithMousePosition;
+   private int                           _mapZoomLevel;
 
-   /**
-    * This image contains the map which is painted in the map viewport
-    */
-   private Image                   _mapImage;
+   private CenterMapBy                   _centerMapBy;
 
-   private Image                   _9PartImage;
-   private GC                      _9PartGC;
+   /** This image contains the map which is painted in the map viewport */
+   private Image                         _mapImage;
 
    /**
     * Indicates whether or not to draw the borders between tiles. Defaults to false. not very nice
     * looking, very much a product of testing Consider whether this should really be a property or
     * not.
     */
-   private boolean                 _isShowDebug_TileInfo;
-   private boolean                 _isShowDebug_TileBorder;
-   private boolean                 _isShowDebug_GeoGrid;
+   private boolean                       _isShowDebug_TileInfo;
+   private boolean                       _isShowDebug_TileBorder;
+   private boolean                       _isShowDebug_GeoGrid;
+
+   @SuppressWarnings("unused")
+   private final StringBuilder           _debugLog                  = new StringBuilder();
 
    /**
     * Factory used by this component to grab the tiles necessary for painting the map.
     */
-   private MP                      _mp;
+   private MP                            _mp;
 
    /**
     * The position in latitude/longitude of the "address" being mapped. This is a special coordinate
     * that, when moved, will cause the map to be moved as well. It is separate from "center" in that
     * "center" tracks the current center (in pixels) of the view port whereas this will not change
-    * when panning or zooming. Whenever the addressLocation is changed, however, the map will be
+    * when panning or zooming. Whenever the commonLocation is changed, however, the map will be
     * repositioned.
     */
-   private GeoPosition             _addressLocation;
+   private GeoPosition                   _commonLocation;
 
    /**
     * The overlay to delegate to for painting the "foreground" of the map component. This would
     * include painting waypoints, day/night, etc. also receives mouse events.
     */
-   private final List<Map2Painter> _allMapPainter           = new ArrayList<>();
+   private final TourMapPainter          _mapPainter                = new TourMapPainter();
 
-   private final TileLoadObserver  _tileImageLoadObserver   = new TileLoadObserver();
+   private final TileImageLoaderCallback _tileImageLoaderCallback   = new TileImageLoaderCallback_ForTileImages();
 
-   private final Cursor            _cursorCross;
-   private final Cursor            _cursorDefault;
-   private final Cursor            _cursorHand;
-   private final Cursor            _cursorPan;
-   private final Cursor            _cursorSearchTour;
-   private final Cursor            _cursorSearchTour_Scroll;
+   private Cursor                        _currentCursor;
+   private final Cursor                  _cursorCross;
+   private final Cursor                  _cursorDefault;
+   private final Cursor                  _cursorHand;
+   private final Cursor                  _cursorPan;
+   private final Cursor                  _cursorPhoto_Move;
+   private final Cursor                  _cursorPhoto_Select;
+   private final Cursor                  _cursorSearchTour;
+   private final Cursor                  _cursorSearchTour_Scroll;
+   private final Cursor                  _cursorSelect;
 
-   private final AtomicInteger     _redrawMapCounter        = new AtomicInteger();
-   private final AtomicInteger     _overlayRunnableCounter  = new AtomicInteger();
+   private final AtomicInteger           _redrawMapCounter          = new AtomicInteger();
+   private final AtomicInteger           _overlayRunnableCounter    = new AtomicInteger();
 
-   private boolean                 _isLeftMouseButtonPressed;
-   private boolean                 _isMapPanned;
+   private boolean                       _canPanMap;
+   private boolean                       _isMapPanned;
 
-   private Point                   _mouseDownPosition;
-   private int                     _mouseMove_DevPosition_X = Integer.MIN_VALUE;
-   private int                     _mouseMove_DevPosition_Y = Integer.MIN_VALUE;
-   private int                     _mouseMove_DevPosition_X_Last;
-   private int                     _mouseMove_DevPosition_Y_Last;
-   private GeoPosition             _mouseMove_GeoPosition;
+   private boolean                       _canPanPhoto;
+   private boolean                       _isPhotoPanned;
+   private Photo                         _pannedPhoto;
 
-   private Thread                  _overlayThread;
+   private boolean                       _isMouseDown;
+   private Point                         _mouseDownPosition;
+   private GeoPosition                   _mouseDown_ContextMenu_GeoPosition;
+   private int                           _mouseMove_DevPosition_X   = Integer.MIN_VALUE;
+   private int                           _mouseMove_DevPosition_Y   = Integer.MIN_VALUE;
+   private int                           _mouseMove_DevPosition_X_Last;
+   private int                           _mouseMove_DevPosition_Y_Last;
+   private GeoPosition                   _mouseMove_GeoPosition;
 
-   private long                    _nextOverlayRedrawTime;
-   private final NumberFormat      _nf1;
+   private Thread                        _overlayThread;
+   private long                          _nextOverlayRedrawTime;
 
-   private final NumberFormat      _nf2;
-   private final NumberFormat      _nf3;
-   private final NumberFormat      _nfLatLon;
+   private Map2Config                    _mapConfig                 = Map2ConfigManager.getActiveConfig();
+
+   private float                         _deviceScaling             = DPIUtil.getDeviceZoom() / 100f;
+
+   /*
+    * Map points
+    */
+   private boolean                         _isMapPointVisible;
+
+   private final ExecutorService           _mapPointPainter_Executor        = createMapPoint_PainterThread();
+   private Future<?>                       _mapPointPainter_Task;
+
+   /**
+    * The {@link #_mapPointPainter_Executor} is drawing into this image
+    */
+   private Image                           _mapPointImage;
+
+   /**
+    * Cleanup images, they cannot be disposed in the UI thread otherwise there are tons of
+    * exceptions when the map image is resized
+    */
+   private List<Image>                     _allDisposableMapPointImages_SWT = new ArrayList<>();
+
+   /**
+    * It looks like that onResize() is not called very early from the swtbot to initialize this
+    * field <a href=
+    * "https://github.com/mytourbook/mytourbook/issues/1361#issuecomment-2166663604">https://github.com/mytourbook/mytourbook/issues/1361#issuecomment-2166663604</a>
+    */
+   private Rectangle                       _mapPointImageSize               = new Rectangle(0, 0, 400, 400);
+
+   private int                             _mapPointPainter_LastCounter;
+   private final AtomicInteger             _mapPointPainter_RunnableCounter = new AtomicInteger();
+   private Rectangle                       _mapPointPainter_Viewport_WhenPainted;
+   private Rectangle                       _mapPointPainter_Viewport_DuringPainting;
+   private int                             _mapPointPainter_MicroAdjustment_DiffX;
+   private int                             _mapPointPainter_MicroAdjustment_DiffY;
+
+   private DistanceClustering<ClusterItem> _distanceClustering              = new DistanceClustering<>();
+   private PointFeatureLabeler             _labelSpreader                   = new PointFeatureLabeler();
+   private List<PaintedMapPoint>           _allPaintedClusterMarkers        = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedCommonLocations       = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedTourLocations         = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedMarkers               = new ArrayList<>();
+   private List<PaintedMarkerCluster>      _allPaintedMarkerClusters        = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedPauses                = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedPhotos                = new ArrayList<>();
+   private List<PaintedMapPoint>           _allPaintedWayPoints             = new ArrayList<>();
+   private final Set<String>               _allMapMarkerSkipLabels          = new HashSet<>();
+   private final Map<String, Map2Point>    _allMapMarkerWithGroupedLabels   = new HashMap<>();
+   private String                          _groupedMarkers;
+   private List<TourLocation>              _allCommonLocations;
+   private List<TourLocation>              _allTourLocations;
+
+   private int                             _clusterSymbolBorder             = 10;
+   private int                             _labelRespectMargin              = 1;
+   private int                             _mapPointSymbolSize              = 5;
+   private int                             _mapPointSymbolRespectSize       = _mapPointSymbolSize + 2;
+
+   private PaintedMarkerCluster            _hoveredMarkerCluster;
+   private PaintedMapPoint                 _hoveredMapPoint;
+   private PaintedMapPoint                 _hoveredMapPoint_Previous;
+   private boolean                         _isHoveredMapPointSymbol;
+   private Photo                           _selectedPhoto;
+   private PaintedMapPoint                 _selectedPhotoMapPoint;
+   private boolean                         _isInHoveredRatingStar;
+   private boolean                         _isMarkerClusterSelected;
+   private MapPointToolTip                 _mapPointTooltip;
+   private SlideoutMap2_PhotoImage         _mapPointTooltip_PhotoImage;
+   private SlideoutMap2_PhotoHistogram     _mapPointTooltip_PhotoHistogram;
+   private boolean                         _isPreloadHQImages;
+   private boolean                         _isEnlargeSmallImages;
+   private boolean                         _isShowHQPhotoImages;
+   private boolean                         _isShowPhotoAdjustments;
+   private final ILoadCallBack             _photoImageLoaderCallback        = new PhotoImageLoaderCallback();
+   private final ILoadCallBack             _photoTooltipImageLoaderCallback = new PhotoTooltipImageLoaderCallback();
+
+   /** Number of created map points */
+   private int                             _numStatistics_AllCommonLocations;
+   private int                             _numStatistics_AllTourMarkers;
+   private int                             _numStatistics_AllTourLocations;
+   private int                             _numStatistics_AllTourWayPoints;
+   private int                             _numStatistics_AllTourPauses;
+   private int                             _numStatistics_AllTourPhotos;
+
+   private boolean                         _numStatistics_AllTourMarkers_IsTruncated;
+   private boolean                         _numStatistics_AllTourWayPoints_IsTruncated;
+   private boolean                         _numStatistics_AllTourPauses_IsTruncated;
+   private boolean                         _numStatistics_AllTourPhotos_IsTruncated;
+
+   private Map<Long, java.awt.Color>       _locationBoundingBoxColors       = new HashMap<>();
+   private int                             _colorSwitchCounter;
+
+   private final NumberFormat              _nf0;
+   private final NumberFormat              _nf1;
+   private final NumberFormat              _nf2;
+   private final NumberFormat              _nf3;
+   private final NumberFormat              _nfLatLon;
    {
+      _nf0 = NumberFormat.getNumberInstance();
       _nf1 = NumberFormat.getNumberInstance();
       _nf2 = NumberFormat.getNumberInstance();
       _nf3 = NumberFormat.getNumberInstance();
 
+      _nf0.setMinimumFractionDigits(0);
+      _nf0.setMaximumFractionDigits(0);
       _nf1.setMinimumFractionDigits(1);
       _nf1.setMaximumFractionDigits(1);
       _nf2.setMinimumFractionDigits(2);
@@ -361,6 +530,7 @@ public class Map2 extends Canvas {
       _nfLatLon.setMinimumFractionDigits(4);
       _nfLatLon.setMaximumFractionDigits(4);
    }
+
    private final TextWrapPainter                      _textWrapper               = new TextWrapPainter();
 
    /**
@@ -423,10 +593,12 @@ public class Map2 extends Canvas {
     * tried to document this behaviour.
     */
    private Rectangle                                  _worldPixel_TopLeft_Viewport;
+
    /**
     * Size in device pixel where the map is displayed
     */
    private Rectangle                                  _devMapViewport;
+
    /**
     * Size of the map in tiles at the current zoom level {@link #_mapZoomLevel} (num tiles tall by
     * num tiles wide)
@@ -455,18 +627,18 @@ public class Map2 extends Canvas {
    private final ListenerList<IMapGridListener>       _allMapGridListener        = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IMapInfoListener>       _allMapInfoListener        = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IMapPositionListener>   _allMapPositionListener    = new ListenerList<>(ListenerList.IDENTITY);
-   private final ListenerList<IPositionListener>      _allMousePositionListeners = new ListenerList<>(ListenerList.IDENTITY);
+   private final ListenerList<IMapSelectionListener>  _allMapSelectionListener   = new ListenerList<>(ListenerList.IDENTITY);
+   private final ListenerList<IGeoPositionListener>   _allMousePositionListeners = new ListenerList<>(ListenerList.IDENTITY);
+   private final ListenerList<IExternalAppListener>   _allExternalAppListeners   = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<IPOIListener>           _allPOIListeners           = new ListenerList<>(ListenerList.IDENTITY);
    private final ListenerList<ITourSelectionListener> _allTourSelectionListener  = new ListenerList<>(ListenerList.IDENTITY);
 
    // measurement system
-   private float       _distanceUnitValue = 1;
-   private String      _distanceUnitLabel = UI.EMPTY_STRING;
+   private float   _distanceUnitValue = 1;
+   private String  _distanceUnitLabel = UI.EMPTY_STRING;
 
-   private boolean     _isScaleVisible;
-
-   private final Color _transparentColor;
-   private Color       _defaultBackgroundColor;
+   private boolean _isScaleVisible;
+   private boolean _isShowTour;
 
    /*
     * POI image
@@ -481,32 +653,51 @@ public class Map2 extends Canvas {
    /*
     * POI tooltip
     */
-   private PoiToolTip       _poi_Tooltip;
-   private final int        _poi_Tooltip_OffsetY       = 5;
-   private TourToolTip      _tour_ToolTip;
+   private PoiToolTip _poi_Tooltip;
+   private final int  _poi_Tooltip_OffsetY = 5;
+
+   /*
+    * Tour tooltip
+    */
+   private TourToolTip        _tourTooltip;
+   private HoveredAreaContext _tourTooltip_HoveredAreaContext;
+
+   /*
+    * Map locations
+    */
+   private MapLocationToolTip _mapLocation_Tooltip;
 
    /**
     * Hovered/selected tour
     */
-   private boolean          _isShowHoveredSelectedTour = Map2View.STATE_IS_SHOW_HOVERED_SELECTED_TOUR_DEFAULT;
-   private long             _hovered_SelectedTourId    = Long.MIN_VALUE;
+   private boolean            _isShowHoveredOrSelectedTour       = Map2View.STATE_IS_SHOW_HOVERED_SELECTED_TOUR_DEFAULT;
 
-   private ArrayList<Long>  _allHoveredTourIds         = new ArrayList<>();
-   private ArrayList<Point> _allDevHoveredPoints       = new ArrayList<>();
+   private ArrayList<Point>   _allHoveredDevPoints               = new ArrayList<>();
+   private ArrayList<Long>    _allHoveredTourIds                 = new ArrayList<>();
+   private IntArrayList       _allHoveredSerieIndices            = new IntArrayList();
 
-   private int              _hoveredSelectedTour_Hovered_Opacity;
-   private Color            _hoveredSelectedTour_Hovered_Color;
-   private int              _hoveredSelectedTour_HoveredAndSelected_Opacity;
-   private Color            _hoveredSelectedTour_HoveredAndSelected_Color;
-   private int              _hoveredSelectedTour_Selected_Opacity;
-   private Color            _hoveredSelectedTour_Selected_Color;
+   private long               _hovered_SelectedTourId            = -1;
+   private int                _hovered_SelectedSerieIndex_Front  = -1;
+   private int                _hovered_SelectedSerieIndex_Behind = -1;
+
+   /**
+    * When <code>true</code> then a tour can be selected, otherwise a trackpoint (including tour)
+    * can be selected
+    */
+   private boolean            _hoveredSelectedTour_CanSelectTour;
+   private int                _hoveredSelectedTour_Hovered_Opacity;
+   private Color              _hoveredSelectedTour_Hovered_Color;
+   private int                _hoveredSelectedTour_HoveredAndSelected_Opacity;
+   private Color              _hoveredSelectedTour_HoveredAndSelected_Color;
+   private int                _hoveredSelectedTour_Selected_Opacity;
+   private Color              _hoveredSelectedTour_Selected_Color;
 
    /**
     * When <code>true</code> the loading... image is not displayed
     */
-   private boolean          _isLiveView;
+   private boolean            _isLiveView;
 
-   private long             _lastMapDrawTime;
+   private long               _lastMapDrawTime;
 
    /*
     * All painted tiles in the map are within these 4 tile positions
@@ -521,9 +712,6 @@ public class Map2 extends Canvas {
    private final Display _display;
    private final Thread  _displayThread;
    //
-   private int           _jobCounterSplitImages = 0;
-   private Object        _splitJobFamily        = new Object();
-   private boolean       _isCancelSplitJobs;
 
    /*
     * Download offline images
@@ -541,7 +729,7 @@ public class Map2 extends Canvas {
    private Point                     _offline_WorldMouse_End;
    private Point                     _offline_WorldMouse_Move;
 
-   private IMapContextProvider       _mapContextProvider;
+   private IMapContextMenuProvider   _mapContextMenuProvider;
 
    /**
     * Is <code>true</code> when the map context menu can be displayed
@@ -550,9 +738,7 @@ public class Map2 extends Canvas {
 
    private DropTarget                _dropTarget;
 
-   private boolean                   _isRedrawEnabled           = true;
-
-   private HoveredAreaContext        _hoveredAreaContext;
+   private boolean                   _isMapPaintingEnabled      = true;
 
    private int                       _overlayAlpha              = 0xff;
 
@@ -573,56 +759,151 @@ public class Map2 extends Canvas {
 
    private ActionManageOfflineImages _actionManageOfflineImages;
 
-   /**
-    * When <code>true</code> the tour is painted in the map in the enhanced mode otherwise in the
-    * simple mode
-    */
-   private boolean                   _isTourPaintMethodEnhanced;
-   private boolean                   _isShowTourPaintMethodEnhancedWarning;
-
    private boolean                   _isMapBackgroundDark;
    private boolean                   _isFastMapPainting;
    private boolean                   _isFastMapPainting_Active;
    private boolean                   _isInInverseKeyboardPanning;
 
+   /**
+    * Tour direction is displayed only when tour is hovered
+    */
+   private boolean                   _isDrawTourDirection;
+
+   /**
+    * When <code>true</code> then the tour directions are displayed always but this is valid only,
+    * when just one tour is displayed
+    */
+   private boolean                   _isDrawTourDirection_Always;
+
    /*
     * Direction arrows
     */
-   private boolean           _isDrawTourDirection;
-   private int               _tourDirection_MarkerGap;
-   private int               _tourDirection_LineWidth;
-   private RGB               _tourDirection_RGB;
-   private float             _tourDirection_SymbolSize;
+   private int                 _tourDirection_MarkerGap;
+   private int                 _tourDirection_LineWidth;
+   private RGB                 _tourDirection_RGB;
+   private float               _tourDirection_SymbolSize;
 
-   private int               _fastMapPainting_skippedValues;
+   private int                 _fastMapPainting_skippedValues;
 
-   private MapTourBreadcrumb _tourBreadcrumb;
-   private boolean           _isShowBreadcrumbs = Map2View.STATE_IS_SHOW_BREADCRUMBS_DEFAULT;
+   private MapTourBreadcrumb   _tourBreadcrumb;
+   private boolean             _isShowBreadcrumbs            = Map2View.STATE_IS_SHOW_BREADCRUMBS_DEFAULT;
 
-   private Font              _boldFont          = JFaceResources.getFontRegistry().getBold(JFaceResources.DIALOG_FONT);
+   private int                 _prefOptions_BorderWidth;
+   private boolean             _prefOptions_isCutOffLinesInPauses;
+   private boolean             _prefOptions_IsDrawSquare;
+   private int                 _prefOptions_LineWidth;
+   private List<Long>          _allTourIds;
 
-   /**
-    * This observer is called in the {@link Tile} when a tile image is set into the tile
-    */
-   private final class TileLoadObserver implements Observer {
+   private final BufferedImage _imageMapLocation_Tour;
+   private final BufferedImage _imageMapLocation_Common;
+   private final BufferedImage _imageMapLocation_TourStart;
+   private final BufferedImage _imageMapLocation_TourEnd;
+   private final BufferedImage _imageMapLocation_Hovered;
+   private final BufferedImage _imageMapLocation_Disabled;
+   private final BufferedImage _imageMapLocation_Disabled_Dark;
+
+   private Point               _imageMapLocationBounds;
+
+   private BufferedImage       _imageAnnotationCropped;
+   private BufferedImage       _imageAnnotationTonality;
+   private BufferedImage       _imageRatingStar;
+
+   private int                 _ratingStarImageSize;
+   private Rectangle           _paintedRatingStars;
+
+   private final int           MAX_RATING_STARS              = 5;
+   public int                  MAX_RATING_STARS_WIDTH;
+
+   public int                  MAP_IMAGE_DEFAULT_SIZE_TINY   = 50;
+   public int                  MAP_IMAGE_DEFAULT_SIZE_SMALL  = 100;
+   public int                  MAP_IMAGE_DEFAULT_SIZE_MEDIUM = 200;
+   public int                  MAP_IMAGE_DEFAULT_SIZE_LARGE  = 300;
+
+   {
+      final int deviceZoom = DPIUtil.getDeviceZoom();
+      final float deviceScale = deviceZoom / 100f;
+
+// SET_FORMATTING_OFF
+
+      MAP_IMAGE_DEFAULT_SIZE_TINY   = (int) (MAP_IMAGE_DEFAULT_SIZE_TINY * deviceScale);
+      MAP_IMAGE_DEFAULT_SIZE_SMALL  = (int) (MAP_IMAGE_DEFAULT_SIZE_SMALL * deviceScale);
+      MAP_IMAGE_DEFAULT_SIZE_MEDIUM = (int) (MAP_IMAGE_DEFAULT_SIZE_MEDIUM * deviceScale);
+      MAP_IMAGE_DEFAULT_SIZE_LARGE  = (int) (MAP_IMAGE_DEFAULT_SIZE_LARGE * deviceScale);
+
+      _imageAnnotationCropped    = ImageConverter.convertIntoAWT(PhotoActivator.getImageDescriptor(PhotoImages.PhotoAnnotation_Cropped), deviceZoom);
+      _imageAnnotationTonality   = ImageConverter.convertIntoAWT(PhotoActivator.getImageDescriptor(PhotoImages.PhotoAnnotation_Tonality), deviceZoom);
+      _imageRatingStar           = ImageConverter.convertIntoAWT(PhotoActivator.getImageDescriptor(PhotoImages.PhotoRatingStar), deviceZoom);
+
+// SET_FORMATTING_ON
+
+      // rating star width and height are the same
+      _ratingStarImageSize = _imageRatingStar.getWidth();
+
+      MAX_RATING_STARS_WIDTH = _ratingStarImageSize * MAX_RATING_STARS;
+   }
+
+   private static enum HoveredPoint_PaintMode {
+
+      IS_HOVERED, //
+      IS_SELECTED, //
+      IS_HOVERED_AND_SELECTED, //
+   }
+
+   private class PhotoImageLoaderCallback implements ILoadCallBack {
 
       @Override
-      public void update(final Observable observable, final Object arg) {
+      public void callBackImageIsLoaded(final boolean isUpdateUI) {
 
-         if (observable instanceof Tile) {
+         try {
 
-            final Tile tile = (Tile) observable;
+            if (isUpdateUI) {
 
-            if (tile.getZoom() == _mapZoomLevel) {
+               // curves must be updated after the image is loading which is computing the curves
+               _mapPointTooltip_PhotoHistogram.updateCurves();
 
-               /*
-                * Because we are not in the UI thread, we have to queue the call for redraw and
-                * cannot do it directly.
-                */
                paint();
-
-               tile.deleteObserver(this);
             }
+
+         } catch (final Exception e) {
+            StatusUtil.log(e);
+         }
+      }
+   }
+
+   private class PhotoTooltipImageLoaderCallback implements ILoadCallBack {
+
+      @Override
+      public void callBackImageIsLoaded(final boolean isUpdateUI) {
+
+         try {
+
+            if (isUpdateUI) {
+
+               _mapPointTooltip_PhotoImage.onImageIsLoaded();
+               _mapPointTooltip_PhotoHistogram.onImageIsLoaded();
+            }
+
+         } catch (final Exception e) {
+            StatusUtil.log(e);
+         }
+      }
+   }
+
+   /**
+    * This callback is called when a tile image was loaded and is set into the tile
+    */
+   final class TileImageLoaderCallback_ForTileImages implements TileImageLoaderCallback {
+
+      @Override
+      public void update(final Tile tile) {
+
+         if (tile.getZoom() == _mapZoomLevel) {
+
+            /*
+             * Because we are not in the UI thread, we have to queue the call for redraw and
+             * cannot do it directly.
+             */
+            paint();
          }
       }
    }
@@ -636,6 +917,8 @@ public class Map2 extends Canvas {
 
       super(parent, style | SWT.DOUBLE_BUFFERED);
 
+      _state_Map2 = state;
+
       _display = getDisplay();
       _displayThread = _display.getThread();
 
@@ -646,17 +929,43 @@ public class Map2 extends Canvas {
       createContextMenu();
 
       updateGraphColors();
+      updateMapOptions();
+      updatePhotoOptions();
+
       grid_UpdatePaintingStateData();
 
-      _cursorCross = new Cursor(_display, SWT.CURSOR_CROSS);
-      _cursorDefault = new Cursor(_display, SWT.CURSOR_ARROW);
-      _cursorHand = new Cursor(_display, SWT.CURSOR_HAND);
-      _cursorPan = new Cursor(_display, SWT.CURSOR_SIZEALL);
+// SET_FORMATTING_OFF
 
-      _cursorSearchTour = UI.createCursorFromImage(TourbookPlugin.getImageDescriptor(Images.SearchTours_ByLocation));
-      _cursorSearchTour_Scroll = UI.createCursorFromImage(TourbookPlugin.getImageDescriptor(Images.SearchTours_ByLocation_Scroll));
+      _cursorCross                     = new Cursor(_display, SWT.CURSOR_CROSS);
+      _cursorDefault                   = new Cursor(_display, SWT.CURSOR_ARROW);
+      _cursorHand                      = new Cursor(_display, SWT.CURSOR_HAND);
+      _cursorPan                       = new Cursor(_display, SWT.CURSOR_SIZEALL);
 
-      _transparentColor = new Color(MAP_TRANSPARENT_RGB);
+      _cursorPhoto_Move                = createCursorFromImage(Images.Cursor_Photo_Move);
+      _cursorPhoto_Select              = createCursorFromImage(Images.Cursor_Photo_Select);
+      _cursorSearchTour                = createCursorFromImage(Images.SearchTours_ByLocation);
+      _cursorSearchTour_Scroll         = createCursorFromImage(Images.SearchTours_ByLocation_Scroll);
+      _cursorSelect                    = createCursorFromImage(Images.Cursor_Select);
+
+      _imageMapLocation_Common         = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Common).createImage());
+      _imageMapLocation_Tour           = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Tour).createImage());
+      _imageMapLocation_TourStart      = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_TourStart).createImage());
+      _imageMapLocation_TourEnd        = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_TourEnd).createImage());
+
+      _imageMapLocation_Disabled       = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Disabled).createImage());
+      _imageMapLocation_Disabled_Dark  = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Disabled_Dark).createImage());
+      _imageMapLocation_Hovered        = ImageUtils.createAWTImage(TourbookPlugin.getImageDescriptor(Images.MapLocationMarker_Hovered).createImage());
+
+      _imageMapLocationBounds          = new Point(_imageMapLocation_Hovered.getWidth(), _imageMapLocation_Hovered.getHeight());
+
+      _mapLocation_Tooltip             = new MapLocationToolTip(this);
+      _mapPointTooltip                 = new MapPointToolTip(this);
+      _mapPointTooltip_PhotoImage      = new SlideoutMap2_PhotoImage(this);
+      _mapPointTooltip_PhotoHistogram  = new SlideoutMap2_PhotoHistogram(this);
+
+      updateTooltips();
+
+// SET_FORMATTING_ON
 
       _poiImage = TourbookPlugin.getImageDescriptor(Images.POI_InMap).createImage();
       _poiImageBounds = _poiImage.getBounds();
@@ -679,7 +988,19 @@ public class Map2 extends Canvas {
     * @return Returns rgb values for the color which is used as transparent color in the map.
     */
    public static RGB getTransparentRGB() {
-      return MAP_TRANSPARENT_RGB;
+
+      if (_mapTransparentRGB == null) {
+
+         updateTransparencyColor(Map2View.STATE_MAP_TRANSPARENCY_COLOR_DEFAULT);
+      }
+
+      return _mapTransparentRGB;
+   }
+
+   private static void updateTransparencyColor(final RGB transparentColor) {
+
+      _mapTransparentRGB = transparentColor;
+      _mapTransparentColor = new Color(transparentColor);
    }
 
    public void actionManageOfflineImages(final Event event) {
@@ -713,7 +1034,7 @@ public class Map2 extends Canvas {
       _offline_DevMouse_Start = null;
       _offline_DevMouse_End = null;
 
-      setCursor(_cursorCross);
+      setCursorOptimized(_cursorCross);
 
       redraw();
       paint();
@@ -742,7 +1063,7 @@ public class Map2 extends Canvas {
             new Point2D.Double(worldMousePosition.x, worldMousePosition.y),
             _mapZoomLevel);
 
-      setCursor(_cursorSearchTour);
+      setCursorOptimized(_cursorSearchTour);
 
       redraw();
       paint();
@@ -750,8 +1071,8 @@ public class Map2 extends Canvas {
 
    private void addAllListener() {
 
-      addPaintListener(this::onPaint);
-      addDisposeListener(this::onDispose);
+      addPaintListener(paintEvent -> onPaint(paintEvent));
+      addDisposeListener(disposeEvent -> onDispose(disposeEvent));
 
       addFocusListener(new FocusListener() {
          @Override
@@ -784,15 +1105,15 @@ public class Map2 extends Canvas {
          }
       });
 
-      addMouseTrackListener(mouseExitAdapter(mouseEvent -> onMouse_Exit()));
-      addMouseMoveListener(this::onMouse_Move);
+      addMouseTrackListener(MouseTrackListener.mouseExitAdapter(mouseEvent -> onMouse_Exit()));
+      addMouseMoveListener(mouseEvent -> onMouse_Move(mouseEvent));
 
-      addListener(SWT.MouseHorizontalWheel, this::onMouse_Wheel);
-      addListener(SWT.MouseVerticalWheel, this::onMouse_Wheel);
+      addListener(SWT.MouseHorizontalWheel, event -> onMouse_Wheel(event));
+      addListener(SWT.MouseVerticalWheel, event -> onMouse_Wheel(event));
 
-      addListener(SWT.KeyDown, this::onKey_Down);
+      addListener(SWT.KeyDown, event -> onKey_Down(event));
 
-      addControlListener(controlResizedAdapter(controlEvent -> onResize()));
+      addControlListener(ControlListener.controlResizedAdapter(controlEvent -> onResize()));
 
       // enable traverse keys
       addTraverseListener(traverseEvent -> traverseEvent.doit = true);
@@ -846,6 +1167,10 @@ public class Map2 extends Canvas {
       });
    }
 
+   public void addExternalAppListener(final IExternalAppListener mapListener) {
+      _allExternalAppListeners.add(mapListener);
+   }
+
    public void addHoveredTourListener(final IHoveredTourListener hoveredTourListener) {
       _allHoveredTourListeners.add(hoveredTourListener);
    }
@@ -858,95 +1183,57 @@ public class Map2 extends Canvas {
       _allMapInfoListener.add(mapInfoListener);
    }
 
-   public void addMapPositionListener(final IMapPositionListener mapPanListener) {
-      _allMapPositionListener.add(mapPanListener);
+   public void addMapPositionListener(final IMapPositionListener listener) {
+      _allMapPositionListener.add(listener);
    }
 
-   public void addMousePositionListener(final IPositionListener mapListener) {
+   public void addMapSelectionListener(final IMapSelectionListener listener) {
+      _allMapSelectionListener.add(listener);
+   }
+
+   public void addMousePositionListener(final IGeoPositionListener mapListener) {
       _allMousePositionListeners.add(mapListener);
-   }
-
-   /**
-    * Adds a map overlay. This is a Painter which will paint on top of the map. It can be used to
-    * draw waypoints, lines, or static overlays like text messages.
-    *
-    * @param overlay
-    *           the map overlay to use
-    * @see org.jdesktop.swingx.painters.Painter
-    */
-   public void addOverlayPainter(final Map2Painter overlay) {
-
-      _allMapPainter.add(overlay);
-
-      paint();
    }
 
    public void addPOIListener(final IPOIListener poiListener) {
       _allPOIListeners.add(poiListener);
    }
 
-   public void addTourSelectionListener(final ITourSelectionListener iTourSelectionListener) {
-      _allTourSelectionListener.add(iTourSelectionListener);
+   public void addTourSelectionListener(final ITourSelectionListener tourSelectionListener) {
+      _allTourSelectionListener.add(tourSelectionListener);
    }
 
    /**
     * Checks if an image can be reused, this is true if the image exists and has the same size
     *
-    * @param newWidth
-    * @param newHeight
+    * @param image
+    * @param newBounds
+    *
     * @return
     */
-   private boolean canReuseImage(final Image image, final Rectangle clientArea) {
+   private boolean canReuseImage(final Image image, final Rectangle newBounds) {
 
       // check if we could reuse the existing image
 
-      if ((image == null) || image.isDisposed()) {
+      if (image == null || image.isDisposed()) {
          return false;
       }
 
       // image exist, check image bounds
       final Rectangle oldBounds = image.getBounds();
 
-      if (!((oldBounds.width == clientArea.width) && (oldBounds.height == clientArea.height))) {
-         return false;
+      if (oldBounds.width == newBounds.width && oldBounds.height == newBounds.height) {
+         return true;
       }
 
-      return true;
-   }
-
-   /**
-    * make sure that the parted overlay image has the correct size
-    */
-   private void checkImageTemplate9Parts() {
-
-      final int parts = 3;
-      final int partedTileSize = _tilePixelSize * parts;
-
-      if ((_9PartImage != null) && (_9PartImage.isDisposed() == false)) {
-         if (_9PartImage.getBounds().width == partedTileSize) {
-            // image is OK
-            return;
-         }
-      }
-      if (_9PartImage != null) {
-         _9PartImage.dispose();
-      }
-      if (_9PartGC != null) {
-         _9PartGC.dispose();
-      }
-
-      // create 9 part image/gc
-      final ImageData transparentImageData = de.byteholder.geoclipse.map.UI.createTransparentImageData(
-            partedTileSize);
-
-      _9PartImage = new Image(_display, transparentImageData);
-      _9PartGC = new GC(_9PartImage);
+      return false;
    }
 
    /**
     * Checks validation of a world pixel by using the current zoom level and map tile size.
     *
     * @param newWorldPixelCenter
+    *
     * @return Returns adjusted world pixel when necessary.
     */
    private Point2D.Double checkWorldPixel(final Point2D newWorldPixelCenter) {
@@ -1013,6 +1300,62 @@ public class Map2 extends Canvas {
       _actionManageOfflineImages = new ActionManageOfflineImages(Map2.this);
    }
 
+   private java.awt.Color createBoundingBoxColor() {
+
+      int red = (int) (Math.random() * 255);
+      int green = (int) (Math.random() * 255);
+      int blue = (int) (Math.random() * 255);
+
+      final float[] hsbValues = java.awt.Color.RGBtoHSB(red, green, blue, null);
+
+      final float hue = hsbValues[0];
+      final float saturation = hsbValues[1];
+      float brightness = hsbValues[2];
+
+      int adjustedRGB = Integer.MIN_VALUE;
+
+      final float brightnessClipValue = 0.5f;
+      final float darknessClipValue = 0.6f;
+
+      if (_isMapBackgroundDark) {
+
+         // background is dark -> ensure that a bright color is used
+
+         if (brightness < brightnessClipValue) {
+
+            brightness = brightnessClipValue;
+
+            adjustedRGB = java.awt.Color.HSBtoRGB(hue, saturation, brightness);
+         }
+
+      } else {
+
+         // background is bright -> ensure that a darker color is used
+
+         if (brightness > darknessClipValue) {
+
+            brightness = darknessClipValue;
+
+            adjustedRGB = java.awt.Color.HSBtoRGB(hue, saturation, brightness);
+         }
+      }
+
+      if (adjustedRGB != Integer.MIN_VALUE) {
+
+         // brightness is adjusted
+
+         final java.awt.Color adjustedColor = new java.awt.Color(adjustedRGB);
+
+         red = adjustedColor.getRed();
+         green = adjustedColor.getBlue();
+         blue = adjustedColor.getBlue();
+      }
+
+      final java.awt.Color locationColor = new java.awt.Color(red, green, blue);
+
+      return locationColor;
+   }
+
    /**
     * create the context menu
     */
@@ -1028,46 +1371,125 @@ public class Map2 extends Canvas {
             return;
          }
 
-         if (_mapContextProvider != null) {
-            _mapContextProvider.fillContextMenu(menuManager, _actionManageOfflineImages);
+         if (_mapContextMenuProvider != null) {
+            _mapContextMenuProvider.fillContextMenu(menuManager, _actionManageOfflineImages);
          }
       });
 
       setMenu(menuMgr.createContextMenu(this));
    }
 
+   private Cursor createCursorFromImage(final String imageName) {
+
+      return UI.createCursorFromImage(TourbookPlugin.getImageDescriptor(imageName));
+   }
+
+   private void createLabelSpreaderLabels(final Graphics2D g2d,
+                                          final Map2Point[] allMapPoints,
+                                          final List<PointFeature> allCreatedLabels) {
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+      final int textHeight = fontMetrics.getHeight();
+
+      // without margin the labels are too close
+      final int margin = _labelRespectMargin;
+      final int margin2x = margin * 2;
+
+      for (final Map2Point mapPoint : allMapPoints) {
+
+         final int devX = mapPoint.geoPointDevX;
+         final int devY = mapPoint.geoPointDevY;
+
+         final String pointLabel = mapPoint.getFormattedLabel();
+
+         final int textWidth = fontMetrics.stringWidth(pointLabel);
+
+         final PointFeature pointFeature = new PointFeature(
+
+               null,
+               -1,
+
+               devX - margin,
+               devY - margin,
+
+               textWidth + margin2x,
+               textHeight + margin2x);
+
+         pointFeature.data = mapPoint;
+
+         allCreatedLabels.add(pointFeature);
+      }
+   }
+
+   private void createLabelSpreaderPhotos(final Graphics2D g2d,
+                                          final Map2Point[] allMapPoints,
+                                          final List<PointFeature> allCreatedItems) {
+
+      // without a margin the images are too close
+      final int margin = _labelRespectMargin;
+      final int margin2x = margin * 2;
+
+      for (final Map2Point mapPoint : allMapPoints) {
+
+         final int devX = mapPoint.geoPointDevX;
+         final int devY = mapPoint.geoPointDevY;
+
+         final Photo photo = mapPoint.photo;
+         final Point mapImageSize = photo.getMap2ImageSize(
+
+               _isShowHQPhotoImages,
+               _isShowPhotoAdjustments,
+               _isEnlargeSmallImages);
+
+         final PointFeature pointFeature = new PointFeature(
+
+               null,
+               -1,
+
+               devX - margin,
+               devY - margin,
+
+               mapImageSize.x + margin2x,
+               mapImageSize.y + margin2x);
+
+         pointFeature.data = mapPoint;
+
+         allCreatedItems.add(pointFeature);
+      }
+   }
+
    /**
-    * Creates a new image, old image is disposed
+    * Creates a new image, the old image is disposed
     *
     * @param display
-    * @param image
+    * @param oldImage
     *           image which will be disposed if the image is not null
-    * @param clientArea
+    * @param imageSize
+    * @param fillColor
+    *
     * @return returns a new created image
     */
-   private Image createMapImage(final Display display, final Image image, final Rectangle clientArea) {
+   private Image createMapImage(final Display display,
+                                final Image oldImage,
+                                final Rectangle imageSize,
+                                final Color fillColor) {
 
-      if (image != null) {
-         image.dispose();
+      if (oldImage != null) {
+         oldImage.dispose();
       }
 
-      // ensure the image has a width/height of 1, otherwise this causes troubles
-      final int width = Math.max(1, clientArea.width);
-      final int height = Math.max(1, clientArea.height);
+      // ensure that the image has a minimum width/height of 1, otherwise this causes troubles
+      final int width = Math.max(1, imageSize.width);
+      final int height = Math.max(1, imageSize.height);
 
       final Image mapImage = new Image(display, width, height);
 
-      if (UI.isDarkTheme()) {
-
-         /*
-          * It looks ugly when in the dark theme the default map background is white which occure
-          * before the map tile images are painted
-          */
+      if (fillColor != null) {
 
          final GC gc = new GC(mapImage);
          {
-            gc.setBackground(ThemeUtil.getDarkestBackgroundColor());
-            gc.fillRectangle(clientArea);
+            gc.setBackground(fillColor);
+            gc.fillRectangle(imageSize);
          }
          gc.dispose();
       }
@@ -1075,18 +1497,1072 @@ public class Map2 extends Canvas {
       return mapImage;
    }
 
-   public void deleteFailedImageFiles() {
-      MapProviderManager.deleteOfflineMap(_mp, true);
+   private ExecutorService createMapPoint_PainterThread() {
+
+      final ThreadFactory threadFactory = runnable -> {
+
+         final Thread thread = new Thread(runnable, "2D Map - Map Point Image Painter");//$NON-NLS-1$
+
+         thread.setPriority(Thread.MIN_PRIORITY);
+         thread.setDaemon(true);
+
+         return thread;
+      };
+
+      return Executors.newSingleThreadExecutor(threadFactory);
    }
 
-   public synchronized void dimMap(final boolean isDimMap, final int dimLevel, final RGB dimColor) {
+   private void createMapPoints_Locations_10_FromTourData(final List<TourData> allTourData,
+                                                          final List<Map2Point> allMapPoints) {
 
-      _mp.setDimLevel(isDimMap, dimLevel, dimColor);
+      final HashMap<TourLocation, Map2Point> allTourLocationsMap = new HashMap<>();
 
-      // remove all cached map images
-      _mp.disposeTileImages();
+      for (final TourData tourData : allTourData) {
 
-      resetAll();
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         if (tourData == null || tourData.isLatLonAvailable() == false) {
+            continue;
+         }
+
+         final List<TourLocation> allTempTourLocations = new ArrayList<>();
+         final TourLocation tourLocationStart = tourData.getTourLocationStart();
+         final TourLocation tourLocationEnd = tourData.getTourLocationEnd();
+
+         boolean hasStartLocation = false;
+
+         if (tourLocationStart != null) {
+            hasStartLocation = true;
+            allTempTourLocations.add(tourLocationStart);
+         }
+
+         if (tourLocationEnd != null) {
+            allTempTourLocations.add(tourLocationEnd);
+         }
+
+         if (allTempTourLocations.size() == 0) {
+            continue;
+         }
+
+         for (int locationIndex = 0; locationIndex < allTempTourLocations.size(); locationIndex++) {
+
+            final TourLocation tourLocation = allTempTourLocations.get(locationIndex);
+
+            final boolean isStartLocation = hasStartLocation && locationIndex == 0;
+
+            createMapPoints_Locations_30_TourLocation(tourLocation,
+
+                  isStartLocation
+                        ? LocationType.TourStart
+                        : LocationType.TourEnd,
+
+                  allTourLocationsMap);
+         }
+      }
+
+      allMapPoints.addAll(allTourLocationsMap.values());
+   }
+
+   private void createMapPoints_Locations_20_FromTourLocations(final List<TourLocation> allTourLocations,
+                                                               final List<Map2Point> allMapPoints) {
+
+      if (allTourLocations == null) {
+         return;
+      }
+
+      final HashMap<TourLocation, Map2Point> allTourLocationsMap = new HashMap<>();
+
+      for (final TourLocation tourLocation : allTourLocations) {
+
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         createMapPoints_Locations_30_TourLocation(tourLocation, LocationType.Tour, allTourLocationsMap);
+      }
+
+      allMapPoints.addAll(allTourLocationsMap.values());
+   }
+
+   private void createMapPoints_Locations_30_TourLocation(final TourLocation tourLocation,
+                                                          final LocationType locationType,
+                                                          final HashMap<TourLocation, Map2Point> allTourLocationsMap) {
+
+      final boolean isTruncateLabel = _mapConfig.isTruncateLabel;
+      final int labelTruncateLength = _mapConfig.labelTruncateLength;
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      /*
+       * Check if location is visible
+       */
+      final double latitude = tourLocation.latitude;
+      final double longitude = tourLocation.longitude;
+
+      // convert location lat/long into world pixels
+      final java.awt.Point worldPixel_LocationPos = _mp.geoToPixel(new GeoPosition(latitude, longitude), _mapZoomLevel);
+
+      final int worldPixel_LocationPosX = worldPixel_LocationPos.x;
+      final int worldPixel_LocationPosY = worldPixel_LocationPos.y;
+
+      final boolean isLocationInViewport = worldPixel_Viewport.contains(worldPixel_LocationPosX, worldPixel_LocationPosY);
+
+      if (isLocationInViewport == false) {
+         return;
+      }
+
+      // convert world position into device position
+      final int devX = worldPixel_LocationPosX - worldPixel_Viewport.x;
+      final int devY = worldPixel_LocationPosY - worldPixel_Viewport.y;
+
+      String locationLabel = tourLocation.getMapName();
+
+      /*
+       * Check if location is a duplicate
+       */
+      final Map2Point existingMap2Location = allTourLocationsMap.get(tourLocation);
+      if (existingMap2Location != null) {
+
+         // this location is a duplicate
+
+         if (locationType.equals(LocationType.TourStart)) {
+
+            existingMap2Location.numDuplicates_Start++;
+
+         } else if (locationType.equals(LocationType.TourEnd)) {
+
+            existingMap2Location.numDuplicates_End++;
+         }
+
+         return;
+      }
+
+      /*
+       * Create map point
+       */
+
+      // create formatted label
+      if (isTruncateLabel && locationLabel.length() > labelTruncateLength) {
+
+         if (labelTruncateLength == 0) {
+
+            locationLabel = UI.SYMBOL_DOT;
+
+         } else {
+
+            locationLabel = locationLabel.substring(0, labelTruncateLength) + UI.SYMBOL_ELLIPSIS;
+         }
+      }
+
+      final Map2Point mapPoint = new Map2Point(MapPointType.TOUR_LOCATION, new GeoPoint(latitude, longitude));
+
+      mapPoint.tourLocation = tourLocation;
+      mapPoint.locationType = LocationType.Tour;
+
+      mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
+      mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
+      mapPoint.setFormattedLabel(locationLabel);
+
+      // update and keep skipped labels
+
+      if (locationType.equals(LocationType.TourStart)) {
+
+         mapPoint.numDuplicates_Start++;
+
+      } else if (locationType.equals(LocationType.TourEnd)) {
+
+         mapPoint.numDuplicates_End++;
+      }
+
+      if (_mapConfig.isShowLocationBoundingBox) {
+         createMapPoints_Locations_90_BoundingBox(tourLocation, mapPoint);
+      }
+
+      allTourLocationsMap.put(tourLocation, mapPoint);
+
+      _numStatistics_AllTourLocations++;
+   }
+
+   private void createMapPoints_Locations_50_FromCommonLocations(final List<TourLocation> allCommonLocations,
+                                                                 final List<Map2Point> allMapPoints) {
+
+      if (allCommonLocations == null || allCommonLocations.size() == 0) {
+         return;
+      }
+
+      final boolean isTruncateLabel = _mapConfig.isTruncateLabel;
+      final int labelTruncateLength = _mapConfig.labelTruncateLength;
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      for (final TourLocation tourLocation : allCommonLocations) {
+
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         /*
+          * Check if location is visible
+          */
+         final double latitude = tourLocation.latitude;
+         final double longitude = tourLocation.longitude;
+
+         // convert location lat/long into world pixels
+         final java.awt.Point worldPixel_LocationPos = _mp.geoToPixel(new GeoPosition(latitude, longitude), _mapZoomLevel);
+
+         final int worldPixel_LocationPosX = worldPixel_LocationPos.x;
+         final int worldPixel_LocationPosY = worldPixel_LocationPos.y;
+
+         final boolean isLocationInViewport = worldPixel_Viewport.contains(worldPixel_LocationPosX, worldPixel_LocationPosY);
+
+         if (isLocationInViewport == false) {
+            continue;
+         }
+
+         // convert world position into device position
+         final int devX = worldPixel_LocationPosX - worldPixel_Viewport.x;
+         final int devY = worldPixel_LocationPosY - worldPixel_Viewport.y;
+
+         String locationLabel = tourLocation.getMapName();
+
+         // create formatted label
+         if (isTruncateLabel && locationLabel.length() > labelTruncateLength) {
+
+            if (labelTruncateLength == 0) {
+
+               locationLabel = UI.SYMBOL_DOT;
+
+            } else {
+
+               locationLabel = locationLabel.substring(0, labelTruncateLength) + UI.SYMBOL_ELLIPSIS;
+            }
+         }
+
+         /*
+          * Create map point
+          */
+
+         final Map2Point mapPoint = new Map2Point(MapPointType.COMMON_LOCATION, new GeoPoint(latitude, longitude));
+
+         mapPoint.tourLocation = tourLocation;
+         mapPoint.locationType = LocationType.Common;
+
+         mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
+         mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
+
+         mapPoint.setFormattedLabel(locationLabel);
+
+         if (_mapConfig.isShowLocationBoundingBox) {
+            createMapPoints_Locations_90_BoundingBox(tourLocation, mapPoint);
+         }
+
+         allMapPoints.add(mapPoint);
+
+         _numStatistics_AllCommonLocations++;
+      }
+   }
+
+   private void createMapPoints_Locations_90_BoundingBox(final TourLocation tourLocation,
+                                                         final Map2Point mapPoints) {
+
+      final int viewportX = _worldPixel_TopLeft_Viewport.x;
+      final int viewportY = _worldPixel_TopLeft_Viewport.y;
+
+      // create original bbox
+
+      final double latitudeMin = tourLocation.latitudeMin;
+      final double latitudeMax = tourLocation.latitudeMax;
+      final double longitudeMin = tourLocation.longitudeMin;
+      final double longitudeMax = tourLocation.longitudeMax;
+
+      // convert location lat/long into world pixels
+
+      final java.awt.Point providedBBox_TopLeft = _mp.geoToPixel(new GeoPosition(latitudeMax, longitudeMin), _mapZoomLevel);
+      final java.awt.Point providedBBox_TopRight = _mp.geoToPixel(new GeoPosition(latitudeMax, longitudeMax), _mapZoomLevel);
+      final java.awt.Point providedBBox_BottomLeft = _mp.geoToPixel(new GeoPosition(latitudeMin, longitudeMin), _mapZoomLevel);
+
+      final int bboxTopLeft_DevX = providedBBox_TopLeft.x - viewportX;
+      final int bboxTopRight_DevX = providedBBox_TopRight.x - viewportX;
+
+      final int bboxTopLeft_DevY = providedBBox_TopLeft.y - viewportY;
+      final int bboxBottomLeft_DevY = providedBBox_BottomLeft.y - viewportY;
+
+      final int bboxWidth = bboxTopRight_DevX - bboxTopLeft_DevX;
+      final int bboxHeight = bboxBottomLeft_DevY - bboxTopLeft_DevY;
+
+      mapPoints.boundingBoxAWT = new java.awt.Rectangle(
+
+            (int) (bboxTopLeft_DevX * _deviceScaling),
+            (int) (bboxTopLeft_DevY * _deviceScaling),
+            (int) (bboxWidth * _deviceScaling),
+            (int) (bboxHeight * _deviceScaling));
+
+      mapPoints.boundingBoxSWT = new Rectangle(
+
+            bboxTopLeft_DevX,
+            bboxTopLeft_DevY,
+            bboxWidth,
+            bboxHeight);
+
+      final double latitudeMin_Resized = tourLocation.latitudeMin_Resized;
+      final double latitudeMax_Resized = tourLocation.latitudeMax_Resized;
+      final double longitudeMin_Resized = tourLocation.longitudeMin_Resized;
+      final double longitudeMax_Resized = tourLocation.longitudeMax_Resized;
+
+      final boolean isBBoxResized = false
+
+            || latitudeMin != latitudeMin_Resized
+            || latitudeMax != latitudeMax_Resized
+
+            || longitudeMin != longitudeMin_Resized
+            || longitudeMax != longitudeMax_Resized;
+
+      if (isBBoxResized) {
+
+         // draw resized bbox
+
+// SET_FORMATTING_OFF
+
+         final java.awt.Point providedBBox_TopLeft_Resized     = _mp.geoToPixel(new GeoPosition(latitudeMax_Resized, longitudeMin_Resized), _mapZoomLevel);
+         final java.awt.Point providedBBox_TopRight_Resized    = _mp.geoToPixel(new GeoPosition(latitudeMax_Resized, longitudeMax_Resized), _mapZoomLevel);
+         final java.awt.Point providedBBox_BottomLeft_Resized  = _mp.geoToPixel(new GeoPosition(latitudeMin_Resized, longitudeMin_Resized), _mapZoomLevel);
+
+         final int bboxTopLeft_DevX_Resized     = providedBBox_TopLeft_Resized.x - viewportX;
+         final int bboxTopRight_DevX_Resized    = providedBBox_TopRight_Resized.x - viewportX;
+         final int bboxTopLeft_DevY_Resized     = providedBBox_TopLeft_Resized.y - viewportY;
+         final int bboxBottomLeft_DevY_Resized  = providedBBox_BottomLeft_Resized.y - viewportY;
+
+         final int bboxWidth_Resized            = bboxTopRight_DevX_Resized - bboxTopLeft_DevX_Resized;
+         final int bboxHeight_Resized           = bboxBottomLeft_DevY_Resized - bboxTopLeft_DevY_Resized;
+
+// SET_FORMATTING_ON
+
+         mapPoints.boundingBox_ResizedAWT = new java.awt.Rectangle(
+
+               (int) (bboxTopLeft_DevX_Resized * _deviceScaling),
+               (int) (bboxTopLeft_DevY_Resized * _deviceScaling),
+               (int) (bboxWidth_Resized * _deviceScaling),
+               (int) (bboxHeight_Resized * _deviceScaling)
+
+         );
+
+         mapPoints.boundingBox_ResizedSWT = new Rectangle(
+
+               bboxTopLeft_DevX_Resized,
+               bboxTopLeft_DevY_Resized,
+               bboxWidth_Resized,
+               bboxHeight_Resized
+
+         );
+      }
+
+      /*
+       * Paint each bbox with a different color but use the same color for the same bbox
+       */
+      final long bboxKey = tourLocation.boundingBoxKey;
+
+      java.awt.Color boundingBoxColor = _locationBoundingBoxColors.get(bboxKey);
+
+      if (boundingBoxColor == null) {
+
+         // create bbox color
+
+         boundingBoxColor = createBoundingBoxColor();
+
+         _locationBoundingBoxColors.put(bboxKey, boundingBoxColor);
+      }
+
+      mapPoints.boundingBox_ColorAWT = boundingBoxColor;
+   }
+
+   /**
+    * Create {@link Map2Point} wrapper for {@link TourMarker}
+    *
+    * @param allTourData
+    * @param allMapMarkers2
+    *
+    * @return Returns a list with all markers which are visible in the map viewport
+    */
+   private void createMapPoints_TourMarkers(final List<TourData> allTourData, final List<Map2Point> allMapPoints) {
+
+      final boolean isGroupDuplicatedMarkers = _mapConfig.isGroupDuplicatedMarkers;
+
+      if (isGroupDuplicatedMarkers) {
+         setupGroupedLabels();
+      }
+
+      _allMapMarkerWithGroupedLabels.clear();
+
+      LongHashSet markerFilter_typeIDMap = null;
+      final boolean isFilterTourMarkers = _mapConfig.isFilterTourMarkers;
+      if (isFilterTourMarkers) {
+
+         final long[] tourMarkerFilter = _mapConfig.tourMarkerFilter;
+
+         if (tourMarkerFilter != null) {
+
+            markerFilter_typeIDMap = new LongHashSet(tourMarkerFilter);
+         }
+      }
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      final List<TourMarker> allFilteredMakerList = new ArrayList<>();
+
+      for (final TourData tourData : allTourData) {
+
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         if (tourData == null || tourData.isLatLonAvailable() == false) {
+            continue;
+         }
+
+         final Set<TourMarker> allTourMarkers = tourData.getTourMarkers();
+
+         if (allTourMarkers.isEmpty()) {
+            continue;
+         }
+
+         for (final TourMarker tourMarker : allTourMarkers) {
+
+            // skip marker when hidden or not set
+            if (tourMarker.isMarkerVisible() == false || tourMarker.getLabel().length() == 0) {
+               continue;
+            }
+
+            // skip marker when filtered out
+            if (isFilterTourMarkers) {
+
+               // tour markers are filtered by marker type
+
+               final TourMarkerType tourMarkerType = tourMarker.getTourMarkerType();
+
+               if (tourMarkerType != null) {
+
+                  if (markerFilter_typeIDMap.contains(tourMarkerType.getId()) == false) {
+
+                     continue;
+                  }
+               }
+            }
+
+            /*
+             * Check if marker is visible
+             */
+            java.awt.Point markerWorldPixelPosition = tourMarker.getWorldPixelPosition(_mapZoomLevel);
+
+            if (markerWorldPixelPosition == null) {
+
+               // convert marker lat/long into world pixels
+
+               markerWorldPixelPosition = _mp.geoToPixel(
+
+                     new GeoPosition(tourMarker.getLatitude(), tourMarker.getLongitude()),
+                     _mapZoomLevel);
+
+               tourMarker.setWorldPixelPosition(markerWorldPixelPosition, _mapZoomLevel);
+            }
+
+            final int markerWorldPixelX = markerWorldPixelPosition.x;
+            final int markerWorldPixelY = markerWorldPixelPosition.y;
+
+            final boolean isMarkerInViewport = worldPixel_Viewport.contains(markerWorldPixelX, markerWorldPixelY);
+
+            if (isMarkerInViewport) {
+
+               allFilteredMakerList.add(tourMarker);
+            }
+         }
+      }
+
+      final boolean isTruncateLabel = _mapConfig.isTruncateLabel;
+      final int labelTruncateLength = _mapConfig.labelTruncateLength;
+      final int skipLabelGridSize = _mapConfig.groupGridSize;
+
+      float numAllRemainingItems = _mapConfig.labelDistributorMaxLabels;
+
+      final int numMarkers = allFilteredMakerList.size();
+
+      final float subMarkerItems = numMarkers / numAllRemainingItems;
+
+      for (int markerIndex = 0; markerIndex < numMarkers; markerIndex++) {
+
+         int markerSubIndex = markerIndex;
+
+         if (subMarkerItems > 1) {
+
+            // there are more pauses than visible pauses
+
+            final float nextItemIndex = subMarkerItems * markerIndex;
+            final double randomDiff = Math.random() * subMarkerItems;
+
+            markerSubIndex = (int) (nextItemIndex + randomDiff);
+
+            _numStatistics_AllTourMarkers_IsTruncated = true;
+         }
+
+         // check bounds
+         if (markerSubIndex >= numMarkers) {
+            break;
+         }
+
+         final TourMarker tourMarker = allFilteredMakerList.get(markerSubIndex);
+
+         final java.awt.Point markerWorldPixelPosition = tourMarker.getWorldPixelPosition(_mapZoomLevel);
+
+         if (markerWorldPixelPosition == null) {
+            continue;
+         }
+
+         final int markerWorldPixelX = markerWorldPixelPosition.x;
+         final int markerWorldPixelY = markerWorldPixelPosition.y;
+
+         // convert world position into device position
+         final int devX = markerWorldPixelX - worldPixel_Viewport.x;
+         final int devY = markerWorldPixelY - worldPixel_Viewport.y;
+
+         String markerText = tourMarker.getMarkerMapLabel();
+         String groupKey = null;
+
+         /*
+          * Check if marker is a duplicate
+          */
+         if (isGroupDuplicatedMarkers && _allMapMarkerSkipLabels.size() > 0) {
+
+            if (_allMapMarkerSkipLabels.contains(markerText)) {
+
+               // this label is marked to be grouped
+
+               final int groupX = devX / skipLabelGridSize;
+               final int groupY = devY / skipLabelGridSize;
+
+               groupKey = markerText + UI.DASH + groupX + UI.DASH + groupY;
+
+               final Map2Point groupedMarker = _allMapMarkerWithGroupedLabels.get(groupKey);
+
+               if (groupedMarker != null) {
+
+                  // skip marker label but update number of skipped labels
+
+                  groupedMarker.numDuplicates++;
+
+                  continue;
+               }
+            }
+         }
+
+         // create formatted label
+         if (isTruncateLabel && markerText.length() > labelTruncateLength) {
+
+            // keep star at the end
+            final String endSymbol = markerText.endsWith(UI.SYMBOL_STAR)
+                  ? UI.SYMBOL_STAR
+                  : UI.EMPTY_STRING;
+
+            if (labelTruncateLength == 0) {
+
+               markerText = UI.SYMBOL_DOT + endSymbol;
+
+            } else {
+
+               markerText = markerText.substring(0, labelTruncateLength)
+
+                     + UI.SYMBOL_ELLIPSIS
+
+                     + endSymbol;
+            }
+         }
+
+         final MapTourMarkerTime tourMarkerDateTimeFormat = _mapConfig.tourMarkerDateTimeFormat;
+         if (tourMarkerDateTimeFormat.equals(MapTourMarkerTime.NONE) == false) {
+
+            // append time stamp
+
+            final TourData tourData = tourMarker.getTourData();
+            final ZonedDateTime tourStartTime = tourData.getTourStartTime();
+            final ZonedDateTime markerStartTime = TimeTools.getZonedDateTime(
+                  tourMarker.getTourTime(),
+                  tourStartTime.getZone());
+
+// SET_FORMATTING_OFF
+
+            switch (tourMarkerDateTimeFormat) {
+            case DATE:           markerText += UI.SPACE + TimeTools.Formatter_Date_S      .format(markerStartTime);  break;
+            case DATE_NO_YEAR:   markerText += UI.SPACE + TimeTools.Formatter_Date_NoYear .format(markerStartTime);  break;
+            case TIME:           markerText += UI.SPACE + TimeTools.Formatter_Time_S      .format(markerStartTime);  break;
+            case DATE_TIME:      markerText += UI.SPACE + TimeTools.Formatter_DateTime_S  .format(markerStartTime);  break;
+            case NONE:
+            default:
+            }
+// SET_FORMATTING_ON
+         }
+
+         /*
+          * Create map point
+          */
+         final Map2Point mapPoint = new Map2Point(
+
+               MapPointType.TOUR_MARKER,
+               new GeoPoint(tourMarker.getLatitude(), tourMarker.getLongitude()));
+
+         mapPoint.tourMarker = tourMarker;
+
+         mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
+         mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
+         mapPoint.setFormattedLabel(markerText);
+
+         if (groupKey != null) {
+
+            // update and keep skipped labels
+
+            mapPoint.numDuplicates++;
+
+            _allMapMarkerWithGroupedLabels.put(groupKey, mapPoint);
+         }
+
+         allMapPoints.add(mapPoint);
+
+         _numStatistics_AllTourMarkers++;
+
+         if (numAllRemainingItems-- <= 0) {
+            break;
+         }
+      }
+   }
+
+   private void createMapPoints_TourPauses(final List<TourData> allTourData, final List<Map2Point> allMapPoints) {
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      final List<TourPause> allFilteredPausesList = new ArrayList<>();
+
+      final int numAllTours = allTourData.size();
+
+      for (int tourIndex = 0; tourIndex < numAllTours; tourIndex++) {
+
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         final TourData tourData = allTourData.get(tourIndex);
+
+         // check if geo positions are available
+         if (tourData == null || tourData.isLatLonAvailable() == false) {
+            continue;
+         }
+
+         // check if tour is visible
+         final Rectangle tourWorldPixelBounds = tourData.getWorldPixelBounds(_mp, _mapZoomLevel);
+         if (worldPixel_Viewport.intersects(tourWorldPixelBounds) == false) {
+            continue;
+         }
+
+         // check if pauses are available
+         final long[] pausedTime_Start = tourData.getPausedTime_Start();
+         if (pausedTime_Start == null || pausedTime_Start.length == 0) {
+            continue;
+         }
+
+         final int[] timeSerie = tourData.timeSerie;
+         final double[] latitudeSerie = tourData.latitudeSerie;
+         final double[] longitudeSerie = tourData.longitudeSerie;
+
+         final long tourStartTimeMS = tourData.getTourStartTimeMS();
+
+         int serieIndex = 0;
+         final List<TourPause> allTourPauses = tourData.getTourPauses();
+
+         for (int pauseIndex = 0; pauseIndex < allTourPauses.size(); pauseIndex++) {
+
+            final TourPause tourPause = allTourPauses.get(pauseIndex);
+
+            if (isTourPauseVisible(tourPause.duration, tourPause.isAutoPause)) {
+
+               // pause is not filtered by the duration
+
+               java.awt.Point pauseWorldpixelPosition = tourPause.getWorldPixelPosition(_mapZoomLevel);
+
+               if (pauseWorldpixelPosition == null) {
+
+                  // create world position
+
+                  final long startTime = pausedTime_Start[pauseIndex];
+
+                  for (int timeSerieIndex = serieIndex; timeSerieIndex < timeSerie.length; ++timeSerieIndex) {
+
+                     final long currentTime = timeSerie[timeSerieIndex] * 1000L + tourStartTimeMS;
+
+                     if (currentTime >= startTime) {
+                        serieIndex = timeSerieIndex;
+                        break;
+                     }
+                  }
+
+                  // convert lat/lon into world pixels
+                  final double latitude = latitudeSerie[serieIndex];
+                  final double longitude = longitudeSerie[serieIndex];
+                  final GeoPosition geoPosition = new GeoPosition(latitude, longitude);
+
+                  pauseWorldpixelPosition = _mp.geoToPixel(geoPosition, _mapZoomLevel);
+
+                  tourPause.setPosition(geoPosition, pauseWorldpixelPosition, _mapZoomLevel);
+               }
+
+               final boolean isPauseInViewport = worldPixel_Viewport.contains(pauseWorldpixelPosition.x, pauseWorldpixelPosition.y);
+
+               if (isPauseInViewport) {
+
+                  allFilteredPausesList.add(tourPause);
+               }
+            }
+         }
+      }
+
+      /*
+       * Create pause points for all visible pauses
+       */
+      final TourPause[] allFilteredPauses = allFilteredPausesList.toArray(new TourPause[allFilteredPausesList.size()]);
+
+      final float numPauses = allFilteredPauses.length;
+      float numAllRemainingItems = _mapConfig.labelDistributorMaxLabels;
+
+      final float subPauseItems = numPauses / numAllRemainingItems;
+
+      for (int pauseIndex = 0; pauseIndex < numPauses; pauseIndex++) {
+
+         int pauseSubIndex = pauseIndex;
+
+         if (subPauseItems > 1) {
+
+            // there are more pauses than visible pauses
+
+            final float nextItemIndex = subPauseItems * pauseIndex;
+            final double randomDiff = Math.random() * subPauseItems;
+
+            pauseSubIndex = (int) (nextItemIndex + randomDiff);
+
+            _numStatistics_AllTourPauses_IsTruncated = true;
+         }
+
+         // check bounds
+         if (pauseSubIndex >= numPauses) {
+            break;
+         }
+
+         final TourPause tourPause = allFilteredPauses[pauseSubIndex];
+
+         // convert world position into device position
+         final java.awt.Point pauseWorldPixelPosition = tourPause.getWorldPixelPosition(_mapZoomLevel);
+
+         if (pauseWorldPixelPosition == null) {
+
+            // this happend but it should not
+
+            continue;
+         }
+
+         final int devX = pauseWorldPixelPosition.x - worldPixel_Viewport.x;
+         final int devY = pauseWorldPixelPosition.y - worldPixel_Viewport.y;
+
+         final GeoPosition geoPosition = tourPause.geoPosition;
+
+         /*
+          * Create map point
+          */
+         final Map2Point mapPoint = new Map2Point(
+
+               MapPointType.TOUR_PAUSE,
+               new GeoPoint(geoPosition.latitude, geoPosition.longitude));
+
+         mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
+         mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
+
+         mapPoint.tourPause = tourPause;
+
+         mapPoint.setFormattedLabel(UI.format_hh_mm_ss(tourPause.duration));
+
+         allMapPoints.add(mapPoint);
+
+         _numStatistics_AllTourPauses++;
+
+         if (numAllRemainingItems-- <= 0) {
+            break;
+         }
+      }
+   }
+
+   private void createMapPoints_TourPhotos(final List<Photo> allPhotos, final List<Map2Point> allMapPoints) {
+
+      // clone list to prevent concurrency exceptions, this happened
+      final List<Photo> allPhotosCloned = new ArrayList<>(allPhotos);
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      final boolean isLinkPhotoDisplayed = Map2PainterConfig.isLinkPhotoDisplayed;
+
+      // world positions are cached to optimize performance
+      final int projectionHash = _mp.getProjection().getId().hashCode();
+
+      final List<Photo> allVisiblePhotos = new ArrayList<>();
+      final List<java.awt.Point> allWorldPixel = new ArrayList<>();
+
+      final int numPhotos = allPhotosCloned.size();
+
+      for (int photoIndex = 0; photoIndex < numPhotos; photoIndex++) {
+
+         final Photo photo = allPhotosCloned.get(photoIndex);
+
+         // keep serie indices for the photos
+         photo.photoIndex = photoIndex;
+
+         final java.awt.Point photoWorldPixel = photo.getWorldPosition(
+               _mp,
+               projectionHash,
+               _mapZoomLevel,
+               isLinkPhotoDisplayed);
+
+         if (photoWorldPixel == null) {
+            continue;
+         }
+
+         final boolean isPhotoInViewport = worldPixel_Viewport.contains(photoWorldPixel.x, photoWorldPixel.y);
+         if (isPhotoInViewport) {
+
+            allVisiblePhotos.add(photo);
+            allWorldPixel.add(photoWorldPixel);
+         }
+      }
+
+      /*
+       * Create map points
+       */
+      final float numVisiblePhotos = allVisiblePhotos.size();
+      float numAllRemainingItems = _mapConfig.labelDistributorMaxLabels;
+
+      final float subPhotoItems = numVisiblePhotos / numAllRemainingItems;
+
+      for (int photoIndex = 0; photoIndex < numVisiblePhotos; photoIndex++) {
+
+         /*
+          * Skip photos when there are too many
+          */
+         int photoSubIndex = photoIndex;
+
+         if (subPhotoItems > 1) {
+
+            // there are more photos than visible photos
+
+            final float nextItemIndex = subPhotoItems * photoIndex;
+            final double randomDiff = Math.random() * subPhotoItems;
+
+            photoSubIndex = (int) (nextItemIndex + randomDiff);
+
+            _numStatistics_AllTourPhotos_IsTruncated = true;
+         }
+
+         // check bounds
+         if (photoSubIndex >= numVisiblePhotos) {
+            break;
+         }
+
+         final Photo photo = allVisiblePhotos.get(photoSubIndex);
+         final java.awt.Point photoWorldPixel = allWorldPixel.get(photoSubIndex);
+
+         // convert world position into device position
+         final int devXPhoto = photoWorldPixel.x - worldPixel_Viewport.x;
+         final int devYPhoto = photoWorldPixel.y - worldPixel_Viewport.y;
+
+         final double latitude = isLinkPhotoDisplayed
+               ? photo.getLinkLatitude()
+               : photo.getTourLatitude();
+
+         final double longitude = isLinkPhotoDisplayed
+               ? photo.getLinkLongitude()
+               : photo.getTourLongitude();
+
+         /*
+          * Create map point
+          */
+         final Map2Point mapPoint = new Map2Point(
+
+               MapPointType.TOUR_PHOTO,
+               new GeoPoint(latitude, longitude));
+
+         mapPoint.geoPointDevX = (int) (devXPhoto * _deviceScaling);
+         mapPoint.geoPointDevY = (int) (devYPhoto * _deviceScaling);
+
+         mapPoint.photo = photo;
+
+         allMapPoints.add(mapPoint);
+
+         _numStatistics_AllTourPhotos++;
+
+         if (numAllRemainingItems-- <= 0) {
+            break;
+         }
+      }
+   }
+
+   private void createMapPoints_TourWayPoints(final List<TourData> allTourData,
+                                              final List<Map2Point> allWayPointPoints) {
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      final List<TourWayPoint> allWayPoints = new ArrayList<>();
+
+      for (final TourData tourData : allTourData) {
+
+         if (isMapPointPainterInterrupted()) {
+            break;
+         }
+
+         if (tourData == null || tourData.isLatLonAvailable() == false) {
+            continue;
+         }
+
+         final Set<TourWayPoint> allTourMarkers = tourData.getTourWayPoints();
+
+         if (allTourMarkers.isEmpty()) {
+            continue;
+         }
+
+         for (final TourWayPoint wayPoint : allTourMarkers) {
+
+            // skip when not set
+            if (wayPoint.getName().length() == 0) {
+               continue;
+            }
+
+            /*
+             * Check if marker is visible
+             */
+            java.awt.Point wayPointWorldPixelPosition = wayPoint.getWorldPixelPosition(_mapZoomLevel);
+
+            if (wayPointWorldPixelPosition == null) {
+
+               // convert marker lat/long into world pixels
+
+               wayPointWorldPixelPosition = _mp.geoToPixel(
+
+                     new GeoPosition(wayPoint.getLatitude(), wayPoint.getLongitude()),
+                     _mapZoomLevel);
+
+               wayPoint.setWorldPixelPosition(wayPointWorldPixelPosition, _mapZoomLevel);
+            }
+
+            final int markerWorldPixelX = wayPointWorldPixelPosition.x;
+            final int markerWorldPixelY = wayPointWorldPixelPosition.y;
+
+            final boolean isMarkerInViewport = worldPixel_Viewport.contains(markerWorldPixelX, markerWorldPixelY);
+
+            if (isMarkerInViewport) {
+
+               allWayPoints.add(wayPoint);
+            }
+         }
+      }
+
+      final boolean isTruncateLabel = _mapConfig.isTruncateLabel;
+      final int labelTruncateLength = _mapConfig.labelTruncateLength;
+
+      float numAllRemainingItems = _mapConfig.labelDistributorMaxLabels;
+
+      final int numItems = allWayPoints.size();
+
+      final float subItems = numItems / numAllRemainingItems;
+
+      for (int wpIndex = 0; wpIndex < numItems; wpIndex++) {
+
+         int markerSubIndex = wpIndex;
+
+         if (subItems > 1) {
+
+            // there are more names than visible names
+
+            final float nextItemIndex = subItems * wpIndex;
+            final double randomDiff = Math.random() * subItems;
+
+            markerSubIndex = (int) (nextItemIndex + randomDiff);
+
+            _numStatistics_AllTourWayPoints_IsTruncated = true;
+         }
+
+         // check bounds
+         if (markerSubIndex >= numItems) {
+            break;
+         }
+
+         final TourWayPoint wayPoint = allWayPoints.get(markerSubIndex);
+
+         final java.awt.Point markerWorldPixelPosition = wayPoint.getWorldPixelPosition(_mapZoomLevel);
+
+         if (markerWorldPixelPosition == null) {
+            continue;
+         }
+
+         final int markerWorldPixelX = markerWorldPixelPosition.x;
+         final int markerWorldPixelY = markerWorldPixelPosition.y;
+
+         // convert world position into device position
+         final int devX = markerWorldPixelX - worldPixel_Viewport.x;
+         final int devY = markerWorldPixelY - worldPixel_Viewport.y;
+
+         String wpName = wayPoint.getName();
+
+         // create formatted label
+         if (isTruncateLabel && wpName.length() > labelTruncateLength) {
+
+            // keep star at the end
+            final String endSymbol = wpName.endsWith(UI.SYMBOL_STAR)
+                  ? UI.SYMBOL_STAR
+                  : UI.EMPTY_STRING;
+
+            if (labelTruncateLength == 0) {
+
+               wpName = UI.SYMBOL_DOT + endSymbol;
+
+            } else {
+
+               wpName = wpName.substring(0, labelTruncateLength)
+
+                     + UI.SYMBOL_ELLIPSIS
+
+                     + endSymbol;
+            }
+         }
+
+         /*
+          * Create map point
+          */
+         final Map2Point mapPoint = new Map2Point(
+
+               MapPointType.TOUR_WAY_POINT,
+               new GeoPoint(wayPoint.getLatitude(), wayPoint.getLongitude()));
+
+         mapPoint.tourWayPoint = wayPoint;
+
+         mapPoint.geoPointDevX = (int) (devX * _deviceScaling);
+         mapPoint.geoPointDevY = (int) (devY * _deviceScaling);
+
+         mapPoint.setFormattedLabel(wpName);
+
+         allWayPointPoints.add(mapPoint);
+
+         _numStatistics_AllTourWayPoints++;
+
+         if (numAllRemainingItems-- <= 0) {
+            break;
+         }
+      }
+   }
+
+   public void deleteFailedImageFiles() {
+
+      MapProviderManager.deleteOfflineMap(_mp, true);
    }
 
    /**
@@ -1105,15 +2581,22 @@ public class Map2 extends Canvas {
       grid_UpdatePaintingStateData();
    }
 
-   private void disposeResource(final Resource resource) {
+   public void disposeTiles() {
 
-      if ((resource != null) && !resource.isDisposed()) {
-         resource.dispose();
-      }
+      _mp.disposeTiles();
    }
 
-   public void disposeTiles() {
-      _mp.disposeTiles();
+   private void fireEvent_HoveredTour(final Long hoveredTourId, final int hoveredValuePointIndex) {
+
+      final MapHoveredTourEvent event = new MapHoveredTourEvent(
+            hoveredTourId,
+            hoveredValuePointIndex,
+            _mouseMove_DevPosition_X,
+            _mouseMove_DevPosition_Y);
+
+      for (final Object listener : _allHoveredTourListeners.getListeners()) {
+         ((IHoveredTourListener) listener).setHoveredTourId(event);
+      }
    }
 
    private void fireEvent_MapGrid(final boolean isGridSelected, final MapGridData mapGridData) {
@@ -1158,6 +2641,18 @@ public class Map2 extends Canvas {
       }
    }
 
+   /**
+    * @param selection
+    */
+   private void fireEvent_MapSelection(final ISelection selection) {
+
+      final Object[] listeners = _allMapSelectionListener.getListeners();
+
+      for (final Object listener : listeners) {
+         ((IMapSelectionListener) listener).onMapSelection(selection);
+      }
+   }
+
    private void fireEvent_MousePosition() {
 
       // check position, can initially be null
@@ -1174,11 +2669,11 @@ public class Map2 extends Canvas {
       final int worldMouseY = topLeftViewPort.y + _mouseMove_DevPosition_Y;
 
       final GeoPosition geoPosition = _mp.pixelToGeo(new Point2D.Double(worldMouseX, worldMouseY), _mapZoomLevel);
-      final MapPositionEvent event = new MapPositionEvent(geoPosition, _mapZoomLevel);
+      final MapGeoPositionEvent event = new MapGeoPositionEvent(geoPosition, _mapZoomLevel);
 
       final Object[] listeners = _allMousePositionListeners.getListeners();
       for (final Object listener : listeners) {
-         ((IPositionListener) listener).setPosition(event);
+         ((IGeoPositionListener) listener).setPosition(event);
       }
    }
 
@@ -1192,6 +2687,15 @@ public class Map2 extends Canvas {
       }
    }
 
+   private void fireEvent_RunExternalApp(final int numberOfExternalApp, final Photo photo) {
+
+      final Object[] listeners = _allExternalAppListeners.getListeners();
+
+      for (final Object listener : listeners) {
+         ((IExternalAppListener) listener).runExternalApp(numberOfExternalApp, photo);
+      }
+   }
+
    private void fireEvent_TourBreadcrumb() {
 
       for (final Object selectionListener : _allBreadcrumbListener.getListeners()) {
@@ -1202,28 +2706,15 @@ public class Map2 extends Canvas {
    private void fireEvent_TourSelection(final ISelection selection) {
 
       for (final Object selectionListener : _allTourSelectionListener.getListeners()) {
-         ((ITourSelectionListener) selectionListener).onSelection(selection);
+         ((ITourSelectionListener) selectionListener).onTourSelection(selection);
       }
-   }
-
-   public GeoPosition get_mouseMove_GeoPosition() {
-      return _mouseMove_GeoPosition;
-   }
-
-   /**
-    * Gets the current address location of the map. This property does not change when the user pans
-    * the map. This property is bound.
-    *
-    * @return the current map location (address)
-    */
-   public GeoPosition getAddressLocation() {
-      return _addressLocation;
    }
 
    /**
     * Parse bounding box string.
     *
     * @param boundingBox
+    *
     * @return Returns a set with bounding box positions or <code>null</code> when boundingBox cannot
     *         be parsed.
     */
@@ -1269,19 +2760,130 @@ public class Map2 extends Canvas {
       return rect;
    }
 
+   public CenterMapBy getCenterMapBy() {
+      return _centerMapBy;
+   }
+
+   /**
+    * Gets the current common location of the map. This property does not change when the user pans
+    * the map. This property is bound.
+    *
+    * @return the current map location (address)
+    */
+   public GeoPosition getCommonLocation() {
+
+      return _commonLocation;
+   }
+
+   public float getDeviceScaling() {
+
+      return _deviceScaling;
+   }
+
+   public PaintedMapPoint getHoveredMapPoint() {
+
+      return _hoveredMapPoint;
+   }
+
    /**
     * Retrieve, if any, the current tour hovered by the user.
     *
-    * @return If found, the current hovered tour, the smallest integer otherwise.
+    * @return If found, the current hovered tour otherwise <code>null</code>
     */
-   public long getHoveredTourId() {
+   public Long getHoveredTourId() {
 
       if (_allHoveredTourIds != null && _allHoveredTourIds.size() == 1) {
 
          return _allHoveredTourIds.get(0);
       }
 
-      return Integer.MIN_VALUE;
+      return null;
+   }
+
+   /**
+    * Find a more precise hovered position
+    *
+    * @param hoveredTourId
+    * @param devMouseTileY
+    * @param devMouseTileX
+    * @param devHoveredTileY
+    * @param devHoveredTileX
+    * @param allPainted_HoveredRectangle
+    * @param allPainted_HoveredTourId
+    * @param allPainted_HoveredSerieIndices
+    *
+    * @return
+    */
+   private int getHoveredValuePointIndex(final Long hoveredTourId,
+                                         final int devMouseTileX,
+                                         final int devMouseTileY,
+                                         final int devHoveredTileX,
+                                         final int devHoveredTileY,
+                                         final Rectangle[] allPainted_HoveredRectangle,
+                                         final long[] allPainted_HoveredTourId,
+                                         final int[] allPainted_HoveredSerieIndices) {
+
+      /*
+       * Get indices which are containing the hovered tour id
+       */
+      int firstPaintIndex = -1;
+      int lastPaintIndex = -1;
+
+      for (int paintIndex = 0; paintIndex < allPainted_HoveredTourId.length; paintIndex++) {
+
+         final long paintedTourId = allPainted_HoveredTourId[paintIndex];
+
+         if (firstPaintIndex == -1 && paintedTourId == hoveredTourId) {
+
+            firstPaintIndex = lastPaintIndex = paintIndex;
+
+         } else if (paintedTourId == hoveredTourId) {
+
+            lastPaintIndex = paintIndex;
+
+         } else if (lastPaintIndex != -1) {
+
+            // there are no further positions for the hovered tour
+
+            break;
+         }
+      }
+
+      /*
+       * Find index with the smallest x/y diff value
+       */
+      int minDiff = Integer.MAX_VALUE;
+      int minHoverIndex = 0;
+
+      int hoverIndex;
+
+      for (hoverIndex = firstPaintIndex; hoverIndex <= lastPaintIndex; hoverIndex++) {
+
+         final Rectangle painted_HoveredRectangle = allPainted_HoveredRectangle[hoverIndex];
+
+         final int paintedHovered_CenterX = painted_HoveredRectangle.x + painted_HoveredRectangle.width / 2;
+         final int paintedHovered_CenterY = painted_HoveredRectangle.y + painted_HoveredRectangle.height / 2;
+
+         int diffX = devMouseTileX - paintedHovered_CenterX;
+         int diffY = devMouseTileY - paintedHovered_CenterY;
+
+         diffX = diffX < 0 ? -diffX : diffX;
+         diffY = diffY < 0 ? -diffY : diffY;
+
+         final int allDiff = diffX + diffY;
+
+         if (allDiff < minDiff) {
+
+            minDiff = allDiff;
+            minHoverIndex = allPainted_HoveredSerieIndices[hoverIndex];
+         }
+      }
+
+      return minHoverIndex;
+   }
+
+   public Font getLabelFont() {
+      return _labelFontSWT;
    }
 
    /**
@@ -1306,11 +2908,27 @@ public class Map2 extends Canvas {
       return _mp.pixelToGeo(_worldPixel_MapCenter, _mapZoomLevel);
    }
 
+   public MapLocationToolTip getMapLocationTooltip() {
+
+      return _mapLocation_Tooltip;
+   }
+
    /**
-    * @return Returns the overlay map painter which are defined as plugin extension
+    * @return Returns the tour map painter
     */
-   public List<Map2Painter> getMapPainter() {
-      return _allMapPainter;
+   public TourMapPainter getMapPainter() {
+
+      return _mapPainter;
+   }
+
+   /**
+    * Is used to activate/deactivate the tooltip
+    *
+    * @return
+    */
+   public MapPointToolTip getMapPointTooltip() {
+
+      return _mapPointTooltip;
    }
 
    /**
@@ -1319,14 +2937,30 @@ public class Map2 extends Canvas {
     * @return Returns the current map provider
     */
    public MP getMapProvider() {
+
       return _mp;
    }
 
    /**
+    * @return
+    */
+   public GeoPosition getMouseDown_GeoPosition() {
+
+      return _mouseDown_ContextMenu_GeoPosition;
+   }
+
+   public GeoPosition getMouseMove_GeoPosition() {
+
+      return _mouseMove_GeoPosition;
+   }
+
+   /**
     * @param tileKey
+    *
     * @return Returns the key to identify overlay images in the image cache
     */
    private String getOverlayKey(final Tile tile) {
+
       return _overlayKey + tile.getTileKey();
    }
 
@@ -1335,19 +2969,212 @@ public class Map2 extends Canvas {
     * @param xOffset
     * @param yOffset
     * @param projectionId
+    *
     * @return
     */
    private String getOverlayKey(final Tile tile, final int xOffset, final int yOffset, final String projectionId) {
+
       return _overlayKey + tile.getTileKey(xOffset, yOffset, projectionId);
    }
 
-   private PoiToolTip getPoi() {
+   /**
+    * @param photo
+    * @param map
+    * @param tile
+    *
+    * @return Returns the photo image or <code>null</code> when image is not loaded.
+    */
+   private BufferedImage getPhotoImage(final Photo photo) {
+
+      BufferedImage awtThumbImage = null;
+      BufferedImage awtPhotoImageThumbHQ = null;
+
+      /*
+       * 1. The thumbs MUST be loaded firstly because they are also loading the image orientation
+       */
+
+      // check if image has an loading error
+      final PhotoLoadingState thumbPhotoLoadingState = photo.getLoadingState(ImageQuality.THUMB);
+
+      if (thumbPhotoLoadingState != PhotoLoadingState.IMAGE_IS_INVALID) {
+
+         // image is not invalid and not yet loaded
+
+         // check if image is in the cache
+         awtThumbImage = PhotoImageCache.getImage_AWT(photo, ImageQuality.THUMB);
+
+         if (awtThumbImage == null
+               && thumbPhotoLoadingState == PhotoLoadingState.IMAGE_IS_IN_LOADING_QUEUE == false) {
+
+            // the requested image is not available in the image cache -> image must be loaded
+
+            PhotoLoadManager.putImageInLoadingQueueThumb_Map(
+                  photo,
+                  ImageQuality.THUMB,
+                  _photoImageLoaderCallback,
+                  true // is AWT image
+            );
+
+//            System.out.println(UI.timeStamp() + " Map2.getPhotoImage() 1 " + null);
+
+            return null;
+         }
+      }
+
+      if (_isShowHQPhotoImages == false) {
+
+         // HQ image is not requested
+
+//         System.out.println(UI.timeStamp() + " Map2.getPhotoImage() 2 " + awtThumbImage.getWidth() + " / " + awtThumbImage.getHeight());
+
+         return awtThumbImage;
+      }
+
+      /*
+       * 2. Display thumb HQ image
+       */
+
+      // check if image has an loading error
+      final PhotoLoadingState thumbHqPhotoLoadingState = photo.getLoadingState(ImageQuality.THUMB_HQ);
+
+      if (thumbHqPhotoLoadingState != PhotoLoadingState.IMAGE_IS_INVALID) {
+
+         // image is not invalid and not yet loaded
+
+         final boolean isPhotoAdjusted = photo.isCropped || photo.isSetTonality;
+
+         final ImageQuality imageQuality = _isShowPhotoAdjustments && isPhotoAdjusted
+               ? ImageQuality.THUMB_HQ_ADJUSTED
+               : ImageQuality.THUMB_HQ;
+
+         // check if image is in the cache
+         awtPhotoImageThumbHQ = PhotoImageCache.getImage_AWT(photo, imageQuality);
+
+         final boolean isImageInLoadingQueue = thumbHqPhotoLoadingState == PhotoLoadingState.IMAGE_IS_IN_LOADING_QUEUE;
+         final boolean isImageNotInLoadingQueue = isImageInLoadingQueue == false;
+
+         if (isImageNotInLoadingQueue) {
+
+            final boolean isPhotoModified = _isShowPhotoAdjustments && photo.isAdjustmentModified;
+            final boolean isPhotoNotLoaded = awtPhotoImageThumbHQ == null;
+
+            if (isPhotoModified || isPhotoNotLoaded) {
+
+               // the requested image is not available in the image cache or is modified -> image must be loaded
+
+               PhotoLoadManager.putImageInLoadingQueueHQ_Map_Thumb(
+                     photo,
+                     Photo.getMap2ImageRequestedSize(),
+                     imageQuality,
+                     _photoImageLoaderCallback);
+            }
+         }
+      }
+
+      if (awtPhotoImageThumbHQ != null) {
+
+//         System.out.println(UI.timeStamp() + " Map2.getPhotoImage() 3 " + awtPhotoImageThumbHQ.getWidth() + " / " + awtPhotoImageThumbHQ.getHeight());
+
+         return awtPhotoImageThumbHQ;
+      }
+
+      if (awtThumbImage != null) {
+//         System.out.println(UI.timeStamp() + " Map2.getPhotoImage() 4 " + awtThumbImage.getWidth() + " / " + awtThumbImage.getHeight());
+      }
+
+      return awtThumbImage;
+   }
+
+   public ILoadCallBack getPhotoTooltipImageLoaderCallback() {
+
+      return _photoTooltipImageLoaderCallback;
+   }
+
+   private PoiToolTip getPoiTooltip() {
 
       if (_poi_Tooltip == null) {
          _poi_Tooltip = new PoiToolTip(getShell());
       }
 
       return _poi_Tooltip;
+   }
+
+   /**
+    * @param tourId
+    *
+    * @return Return dev X/Y position of the hovered tour or <code>null</code>
+    */
+   private int[] getReducesTourPositions(final long tourId) {
+
+      final TourData tourData = TourManager.getTour(tourId);
+
+      if (tourData == null) {
+
+         // this happened, it can be that previously a history/multiple tour was displayed
+         return null;
+      }
+
+      final double[] latitudeSerie = tourData.latitudeSerie;
+      final double[] longitudeSerie = tourData.longitudeSerie;
+
+      if (latitudeSerie == null) {
+         return null;
+      }
+
+      final MP mp = getMapProvider();
+      final int zoomLevel = getZoomLevel();
+
+      // paint with much less points to speed it up
+      final int numMaxSegments = 1000;
+      final float numSlices = latitudeSerie.length;
+      final int numSegments = (int) Math.min(numMaxSegments, numSlices);
+
+      final Rectangle worldPosition_Viewport = _worldPixel_TopLeft_Viewport;
+
+      // get world position for the first lat/lon
+      final java.awt.Point worldPos_FirstAWT = mp.geoToPixel(
+            new GeoPosition(latitudeSerie[0], longitudeSerie[0]),
+            zoomLevel);
+
+      // convert world position into device position
+      int devPosX1 = worldPos_FirstAWT.x - worldPosition_Viewport.x;
+      int devPosY1 = worldPos_FirstAWT.y - worldPosition_Viewport.y;
+
+      final int[] devXY = new int[numSegments * 2];
+
+      // set first position
+      devXY[0] = devPosX1;
+      devXY[1] = devPosY1;
+
+      for (int segmentIndex = 1; segmentIndex < numSegments; segmentIndex++) {
+
+         final int nextSerieIndex = (int) (numSlices / numSegments * segmentIndex);
+
+         // get world position for the current lat/lon
+         final java.awt.Point worldPosAWT = mp.geoToPixel(
+               new GeoPosition(latitudeSerie[nextSerieIndex], longitudeSerie[nextSerieIndex]),
+               zoomLevel);
+
+         // convert world position into device position
+         final int devPosX2 = worldPosAWT.x - worldPosition_Viewport.x;
+         final int devPosY2 = worldPosAWT.y - worldPosition_Viewport.y;
+
+         final int devXYIndex = segmentIndex * 2;
+
+         devXY[devXYIndex + 0] = devPosX2;
+         devXY[devXYIndex + 1] = devPosY2;
+
+         // advance to the next segment
+         devPosX1 = devPosX2;
+         devPosY1 = devPosY2;
+      }
+
+      return devXY;
+   }
+
+   public PaintedMapPoint getSelectedPhotoMapPoint() {
+
+      return _selectedPhotoMapPoint;
    }
 
    /**
@@ -1377,6 +3204,7 @@ public class Map2 extends Canvas {
     *           Geo positions
     * @param zoom
     *           Requested zoom level
+    *
     * @return Returns a rectangle in world positions which contains all geo positions for the given
     *         zoom level
     */
@@ -1411,63 +3239,8 @@ public class Map2 extends Canvas {
     *
     * @return Returns the current zoom level of the map
     */
-   public int getZoom() {
+   public int getZoomLevel() {
       return _mapZoomLevel;
-   }
-
-   /**
-    * @param boundingBox
-    * @return Returns zoom level or -1 when bounding box is <code>null</code>.
-    */
-   public int getZoom(final String boundingBox) {
-
-      // original: setBoundsZoomLevel
-
-      if (boundingBox == null) {
-         return -1;
-      }
-
-      final Set<GeoPosition> positions = getBoundingBoxPositions(boundingBox);
-      if (positions == null) {
-         return -1;
-      }
-
-      final MP mp = getMapProvider();
-
-      final int maximumZoomLevel = mp.getMaximumZoomLevel();
-      int zoom = mp.getMinimumZoomLevel();
-
-      Rectangle positionRect = getWorldPixelFromGeoPositions(positions, zoom);
-      Rectangle viewport = getWorldPixelViewport();
-
-      // zoom in until bounding box is larger than the viewport
-      while ((positionRect.width < viewport.width) && (positionRect.height < viewport.height)) {
-
-         // center position in the map
-         final java.awt.Point center = new java.awt.Point(
-               positionRect.x + positionRect.width / 2,
-               positionRect.y + positionRect.height / 2);
-
-         setMapCenter(mp.pixelToGeo(center, zoom));
-
-         zoom++;
-
-         // check zoom level
-         if (zoom >= maximumZoomLevel) {
-            break;
-         }
-         setZoom(zoom);
-
-         positionRect = getWorldPixelFromGeoPositions(positions, zoom);
-         viewport = getWorldPixelViewport();
-      }
-
-      // the algorithm generated a larger zoom level as necessary
-      zoom--;
-
-      setZoom(zoom);
-
-      return zoom;
    }
 
    /**
@@ -1476,6 +3249,7 @@ public class Map2 extends Canvas {
     * @param geo_Start
     * @param geo_End
     * @param mapGridData
+    *
     * @return
     */
    private void grid_Convert_StartEnd_2_TopLeft(GeoPosition geo_Start,
@@ -1752,7 +3526,7 @@ public class Map2 extends Canvas {
 
       TourGeoFilter_Manager.setGeoFilter_OpenSlideout(false, false);
 
-      setCursor(_cursorDefault);
+      setCursorOptimized(_cursorDefault);
       redraw();
    }
 
@@ -1766,7 +3540,7 @@ public class Map2 extends Canvas {
 
       _geoGrid_IsGridAutoScroll = true;
       _geoGrid_AutoScrollCounter[0]++;
-      setCursor(_cursorSearchTour_Scroll);
+      setCursorOptimized(_cursorSearchTour_Scroll);
 
       getDisplay().timerExec(AUTO_SCROLL_INTERVAL, new Runnable() {
 
@@ -1800,7 +3574,7 @@ public class Map2 extends Canvas {
 
             // set new map center
             setMapCenterInWorldPixel(new Point2D.Double(newCenterX, newCenterY));
-            updateViewPortData();
+            updateViewportData();
 
             paint();
 
@@ -1813,7 +3587,7 @@ public class Map2 extends Canvas {
                getDisplay().timerExec(AUTO_SCROLL_INTERVAL, this);
             } else {
                _geoGrid_IsGridAutoScroll = false;
-               setCursor(_cursorSearchTour);
+               setCursorOptimized(_cursorSearchTour);
             }
          }
       });
@@ -1852,7 +3626,8 @@ public class Map2 extends Canvas {
 
    /**
     * @param mouseEvent
-    * @return Returns mouse positon in the map border or <code>null</code> when the border is not
+    *
+    * @return Returns mouse position in the map border or <code>null</code> when the border is not
     *         hovered. The returned absolute values are higher when the mouse is closer to the
     *         border.
     */
@@ -1990,19 +3765,26 @@ public class Map2 extends Canvas {
       return gridGeoPos;
    }
 
+   private void hideHoveredTours() {
+
+      _allHoveredTourIds.clear();
+      _allHoveredDevPoints.clear();
+      _allHoveredSerieIndices.clear();
+   }
+
    private void hideTourTooltipHoveredArea() {
 
-      if (_tour_ToolTip == null) {
+      if (_tourTooltip == null) {
          return;
       }
 
       // update tool tip because it has it's own mouse move listener for the map
-      _tour_ToolTip.hideHoveredArea();
+      _tourTooltip.hideHoveredArea();
 
-      if (_hoveredAreaContext != null) {
+      if (_tourTooltip_HoveredAreaContext != null) {
 
          // hide hovered area
-         _hoveredAreaContext = null;
+         _tourTooltip_HoveredAreaContext = null;
 
          redraw();
       }
@@ -2019,131 +3801,32 @@ public class Map2 extends Canvas {
       _worldPixel_TopLeft_Viewport = getWorldPixel_TopLeft_Viewport(_worldPixel_MapCenter);
    }
 
+   public boolean isCutOffLinesInPauses() {
+      return _prefOptions_isCutOffLinesInPauses;
+   }
+
    public boolean isMapBackgroundDark() {
       return _isMapBackgroundDark;
    }
 
-   private boolean isPaintTile_With_BasicMethod() {
+   private boolean isMapPointPainterInterrupted() {
 
-      return _isTourPaintMethodEnhanced == false || (_isFastMapPainting && _isFastMapPainting_Active);
+      return _mapPointPainter_Task == null || _mapPointPainter_Task.isCancelled();
    }
 
-   /**
-    * Checks if a part within the parted image is modified. This method is optimized to search first
-    * all 4 borders and then the whole image.
-    *
-    * @param imageData9Parts
-    * @param srcXStart
-    * @param srcYStart
-    * @param tileSize
-    * @return Returns <code>true</code> when a part is modified
-    */
-   private boolean isPartImageDataModified(final ImageData imageData9Parts,
-                                           final int srcXStart,
-                                           final int srcYStart,
-                                           final int tileSize) {
+   private boolean isPhotoTour(final Photo photo) {
 
-      final int transRed = MAP_TRANSPARENT_RGB.red;
-      final int transGreen = MAP_TRANSPARENT_RGB.green;
-      final int transBlue = MAP_TRANSPARENT_RGB.blue;
+      final List<TourPhoto> allTourPhotos = TourPhotoManager.getTourPhotos(photo);
 
-      final byte[] srcData = imageData9Parts.data;
-      final int srcBytesPerLine = imageData9Parts.bytesPerLine;
-      final int pixelBytes = imageData9Parts.depth == 32 ? 4 : 3;
+      if (allTourPhotos.size() > 0) {
 
-      int srcIndex;
-      int srcRed, srcGreen, srcBlue;
+         final TourPhoto tourPhoto = allTourPhotos.get(0);
 
-      // check border: top
-      {
-         final int srcY = srcYStart;
-         final int srcYBytesPerLine = srcY * srcBytesPerLine;
+         if (tourPhoto != null) {
 
-         for (int srcX = srcXStart; srcX < srcXStart + tileSize; srcX++) {
+            final TourData tourData = tourPhoto.getTourData();
 
-            srcIndex = srcYBytesPerLine + (srcX * pixelBytes);
-
-            srcBlue = srcData[srcIndex] & 0xFF;
-            srcGreen = srcData[srcIndex + 1] & 0xFF;
-            srcRed = srcData[srcIndex + 2] & 0xFF;
-
-            if ((srcRed != transRed) || (srcGreen != transGreen) || (srcBlue != transBlue)) {
-               return true;
-            }
-         }
-      }
-
-      // check border: bottom
-      {
-         final int srcY = srcYStart + tileSize - 1;
-         final int srcYBytesPerLine = srcY * srcBytesPerLine;
-
-         for (int srcX = srcXStart; srcX < srcXStart + tileSize; srcX++) {
-
-            srcIndex = srcYBytesPerLine + (srcX * pixelBytes);
-
-            srcBlue = srcData[srcIndex] & 0xFF;
-            srcGreen = srcData[srcIndex + 1] & 0xFF;
-            srcRed = srcData[srcIndex + 2] & 0xFF;
-
-            if ((srcRed != transRed) || (srcGreen != transGreen) || (srcBlue != transBlue)) {
-               return true;
-            }
-         }
-      }
-
-      // check border: left
-      {
-         final int srcX = srcXStart * pixelBytes;
-
-         for (int srcY = srcYStart; srcY < srcYStart + tileSize; srcY++) {
-
-            srcIndex = (srcY * srcBytesPerLine) + srcX;
-
-            srcBlue = srcData[srcIndex] & 0xFF;
-            srcGreen = srcData[srcIndex + 1] & 0xFF;
-            srcRed = srcData[srcIndex + 2] & 0xFF;
-
-            if ((srcRed != transRed) || (srcGreen != transGreen) || (srcBlue != transBlue)) {
-               return true;
-            }
-         }
-      }
-
-      // check border: right
-      {
-         final int srcX = (srcXStart + tileSize - 1) * pixelBytes;
-
-         for (int srcY = srcYStart; srcY < srcYStart + tileSize; srcY++) {
-
-            srcIndex = (srcY * srcBytesPerLine) + srcX;
-
-            srcBlue = srcData[srcIndex] & 0xFF;
-            srcGreen = srcData[srcIndex + 1] & 0xFF;
-            srcRed = srcData[srcIndex + 2] & 0xFF;
-
-            if ((srcRed != transRed) || (srcGreen != transGreen) || (srcBlue != transBlue)) {
-               return true;
-            }
-         }
-      }
-
-      // check whole image
-      for (int srcY = srcYStart; srcY < srcYStart + tileSize; srcY++) {
-
-         final int srcYBytesPerLine = srcY * srcBytesPerLine;
-
-         for (int srcX = srcXStart; srcX < srcXStart + tileSize; srcX++) {
-
-            srcIndex = srcYBytesPerLine + (srcX * pixelBytes);
-
-            srcBlue = srcData[srcIndex] & 0xFF;
-            srcGreen = srcData[srcIndex + 1] & 0xFF;
-            srcRed = srcData[srcIndex + 2] & 0xFF;
-
-            if ((srcRed != transRed) || (srcGreen != transGreen) || (srcBlue != transBlue)) {
-               return true;
-            }
+            return tourData.isPhotoTour();
          }
       }
 
@@ -2159,6 +3842,11 @@ public class Map2 extends Canvas {
 
    }
 
+   public boolean isShowPhotoAdjustments() {
+
+      return _isShowPhotoAdjustments;
+   }
+
    /**
     * Checks is a tile position is within a map. It is possible that the tile is outside of the map
     * when it's value is negative or greater than the map border.
@@ -2169,26 +3857,33 @@ public class Map2 extends Canvas {
     *
     * @param tilePosX
     * @param tilePosY
+    *
     * @return
     */
    private boolean isTileOnMap(final int tilePosX, final int tilePosY) {
 
       if (tilePosY < 0 || tilePosY >= _mapTileSize.height) {
+
          return false;
+
       } else {
 
          if (_mapZoomLevel < 5) {
 
             if (tilePosX < 0 || tilePosX >= _mapTileSize.width) {
+
                return false;
             }
+
          } else {
 
             // display one additional tile when the the map is zoomed enough
             if (tilePosX < -1 || tilePosX > _mapTileSize.width) {
+
                return false;
             }
          }
+
          return true;
       }
    }
@@ -2207,139 +3902,184 @@ public class Map2 extends Canvas {
          return false;
       }
 
-      final int numPrevHoveredTours = _allHoveredTourIds.size();
+      int numPrevHoveredTours;
 
-      Tile hoveredTile = null;
+      Rectangle[] allPainted_HoveredRectangle = null;
+      long[] allPainted_HoveredTourId = null;
+      int[] allPainted_HoveredSerieIndices = null;
 
-      int hoveredTileIndex_X = 0;
-      int hoveredTileIndex_Y = 0;
-
-      final int devMouseX = _mouseMove_DevPosition_X;
-      final int devMouseY = _mouseMove_DevPosition_Y;
-
-      final Tile[][] allPaintedTiles = _allPaintedTiles;
+      int devMouseTileX = 0;
+      int devMouseTileY = 0;
 
       // top/left dev position for the hovered tile
       int devHoveredTileX = 0;
       int devHoveredTileY = 0;
 
-      /*
-       * Get tile which is hovered
-       */
-      tileLoop:
+      try {
 
-      for (int tilePosX = _tilePos_MinX; tilePosX <= _tilePos_MaxX; tilePosX++) {
+         Tile hoveredTile = null;
 
-         hoveredTileIndex_Y = 0;
+         int hoveredTileIndex_X = 0;
+         int hoveredTileIndex_Y = 0;
 
-         for (int tilePosY = _tilePos_MinY; tilePosY <= _tilePos_MaxY; tilePosY++) {
+         final int devMouseX = _mouseMove_DevPosition_X;
+         final int devMouseY = _mouseMove_DevPosition_Y;
 
-            // convert tile world position into device position
-            devHoveredTileX = tilePosX * _tilePixelSize - _worldPixel_TopLeft_Viewport.x;
-            devHoveredTileY = tilePosY * _tilePixelSize - _worldPixel_TopLeft_Viewport.y;
+         final Tile[][] allPaintedTiles = _allPaintedTiles;
 
-            final int devTileXNext = devHoveredTileX + _tilePixelSize;
-            final int devTileYNext = devHoveredTileY + _tilePixelSize;
+         /*
+          * Get tile which is hovered
+          */
+         tileLoop:
 
-            if (devMouseX >= devHoveredTileX && devMouseX < devTileXNext) {
-               if (devMouseY >= devHoveredTileY && devMouseY < devTileYNext) {
+         for (int tilePosX = _tilePos_MinX; tilePosX <= _tilePos_MaxX; tilePosX++) {
 
-                  // this is the tile which is hovered with the mouse
+            hoveredTileIndex_Y = 0;
 
-                  hoveredTile = allPaintedTiles[hoveredTileIndex_X][hoveredTileIndex_Y];
+            for (int tilePosY = _tilePos_MinY; tilePosY <= _tilePos_MaxY; tilePosY++) {
 
-                  break tileLoop;
+               // convert tile world position into device position
+               devHoveredTileX = tilePosX * _tilePixelSize - _worldPixel_TopLeft_Viewport.x;
+               devHoveredTileY = tilePosY * _tilePixelSize - _worldPixel_TopLeft_Viewport.y;
+
+               final int devTileXNext = devHoveredTileX + _tilePixelSize;
+               final int devTileYNext = devHoveredTileY + _tilePixelSize;
+
+               if (devMouseX >= devHoveredTileX && devMouseX < devTileXNext) {
+                  if (devMouseY >= devHoveredTileY && devMouseY < devTileYNext) {
+
+                     // this is the tile which is hovered with the mouse
+
+                     hoveredTile = allPaintedTiles[hoveredTileIndex_X][hoveredTileIndex_Y];
+
+                     break tileLoop;
+                  }
                }
+
+               hoveredTileIndex_Y++;
             }
 
-            hoveredTileIndex_Y++;
+            hoveredTileIndex_X++;
          }
 
-         hoveredTileIndex_X++;
-      }
+         numPrevHoveredTours = _allHoveredTourIds.size();
 
-      // reset hovered data
-      _allHoveredTourIds.clear();
-      _allDevHoveredPoints.clear();
+         // reset hovered data
+         hideHoveredTours();
 
-      if (hoveredTile == null) {
+         if (hoveredTile == null) {
 
-         // this can occur when map is zoomed
-         return false;
-      }
+            // this can occur when map is zoomed
+            return false;
+         }
 
-      final ArrayList<Rectangle> allPainted_HoveredRectangle_List = hoveredTile.allPainted_HoverRectangle;
-      if (allPainted_HoveredRectangle_List.isEmpty()) {
+         final List<Rectangle> allPainted_HoveredRectangle_List = hoveredTile.allPainted_HoverRectangle;
+         if (allPainted_HoveredRectangle_List.isEmpty()) {
 
-         // nothing is painted in this tile
-         return false;
-      }
+            // nothing is painted in this tile
+            return false;
+         }
 
-      // get mouse relative position in the tile
-      final int devMouseTileX = devMouseX - devHoveredTileX;
-      final int devMouseTileY = devMouseY - devHoveredTileY;
+         // get mouse relative position in the tile
+         devMouseTileX = devMouseX - devHoveredTileX;
+         devMouseTileY = devMouseY - devHoveredTileY;
 
-      // optimize performance by removing object references
-      final long[] allPainted_HoveredTourId = hoveredTile.allPainted_HoverTourID.toArray();
+         // optimize performance by removing object references
+         allPainted_HoveredTourId = hoveredTile.allPainted_HoverTourID.toArray();
+         allPainted_HoveredSerieIndices = hoveredTile.allPainted_HoverSerieIndices.toArray();
 
-      final Rectangle[] allPainted_HoveredRectangle = allPainted_HoveredRectangle_List.toArray(
-            new Rectangle[allPainted_HoveredRectangle_List.size()]);
+         allPainted_HoveredRectangle = allPainted_HoveredRectangle_List.toArray(new Rectangle[allPainted_HoveredRectangle_List.size()]);
 
-      long painted_HoveredTourId = -1;
-      final int numPainted_HoveredTourId = allPainted_HoveredTourId.length;
+         long painted_HoveredTourId = -1;
+         final int numPainted_HoveredTourId = allPainted_HoveredTourId.length;
 
-      for (int hoverIndex = 0; hoverIndex < numPainted_HoveredTourId; hoverIndex++) {
+         for (int hoverIndex = 0; hoverIndex < numPainted_HoveredTourId; hoverIndex++) {
 
-         final Rectangle painted_HoveredRectangle = allPainted_HoveredRectangle[hoverIndex];
+            final Rectangle painted_HoveredRectangle = allPainted_HoveredRectangle[hoverIndex];
 
-         // optimized: hoveredRectangle.contains(devMouseTileX, devMouseTileY)
-         if ((devMouseTileX >= painted_HoveredRectangle.x)
-               && (devMouseTileY >= painted_HoveredRectangle.y)
-               && devMouseTileX < (painted_HoveredRectangle.x + painted_HoveredRectangle.width)
-               && devMouseTileY < (painted_HoveredRectangle.y + painted_HoveredRectangle.height)) {
+            final int paintedHoveredX = painted_HoveredRectangle.x;
+            final int paintedHoveredY = painted_HoveredRectangle.y;
 
-            painted_HoveredTourId = allPainted_HoveredTourId[hoverIndex];
+            // optimized: painted_HoveredRectangle.contains(devMouseTileX, devMouseTileY)
+            if (devMouseTileX >= paintedHoveredX
+                  && devMouseTileY >= paintedHoveredY
+                  && devMouseTileX < (paintedHoveredX + painted_HoveredRectangle.width)
+                  && devMouseTileY < (paintedHoveredY + painted_HoveredRectangle.height)) {
 
-            int devHoveredRect_Center_X = painted_HoveredRectangle.x + painted_HoveredRectangle.width / 2;
-            int devHoveredRect_Center_Y = painted_HoveredRectangle.y + painted_HoveredRectangle.height / 2;
+               // a tour is hovered
 
-            // convert from tile position to device position
-            devHoveredRect_Center_X += devHoveredTileX;
-            devHoveredRect_Center_Y += devHoveredTileY;
+               painted_HoveredTourId = allPainted_HoveredTourId[hoverIndex];
 
-            _allHoveredTourIds.add(painted_HoveredTourId);
-            _allDevHoveredPoints.add(new Point(devHoveredRect_Center_X, devHoveredRect_Center_Y));
+               int devHoveredRect_Center_X = paintedHoveredX + painted_HoveredRectangle.width / 2;
+               int devHoveredRect_Center_Y = paintedHoveredY + painted_HoveredRectangle.height / 2;
 
-            // advance to the next tour id
-            int hoverTourIdIndex;
-            for (hoverTourIdIndex = hoverIndex + 1; hoverTourIdIndex < numPainted_HoveredTourId; hoverTourIdIndex++) {
+               // convert from tile position to device position
+               devHoveredRect_Center_X += devHoveredTileX;
+               devHoveredRect_Center_Y += devHoveredTileY;
 
-               final long nextPainted_HoveredTourId = allPainted_HoveredTourId[hoverTourIdIndex];
+               _allHoveredTourIds.add(painted_HoveredTourId);
+               _allHoveredSerieIndices.add(allPainted_HoveredSerieIndices[hoverIndex]);
+               _allHoveredDevPoints.add(new Point(devHoveredRect_Center_X, devHoveredRect_Center_Y));
 
-               if (nextPainted_HoveredTourId != painted_HoveredTourId) {
+               // advance to the next tour id
+               int hoverTourIdIndex;
+               for (hoverTourIdIndex = hoverIndex + 1; hoverTourIdIndex < numPainted_HoveredTourId; hoverTourIdIndex++) {
 
-                  // the next tour id is discovered
+                  final long nextPainted_HoveredTourId = allPainted_HoveredTourId[hoverTourIdIndex];
 
-                  hoverIndex = hoverTourIdIndex;
+                  if (nextPainted_HoveredTourId != painted_HoveredTourId) {
 
+                     // the next tour id is discovered
+
+                     hoverIndex = hoverTourIdIndex;
+
+                     break;
+                  }
+               }
+
+               // this must be checked again otherwise the last tour id occurs multiple times
+               if (hoverTourIdIndex >= numPainted_HoveredTourId) {
                   break;
                }
             }
-
-            // this must be checked again otherwise the last tour id occurs multiple times
-            if (hoverTourIdIndex >= numPainted_HoveredTourId) {
-               break;
-            }
          }
-      }
 
-      /*
-       * Fire event, there is a possible issue:
-       * Above there are return statements which do not fire this event !!!
-       */
-      final MapHoveredTourEvent event = new MapHoveredTourEvent(getHoveredTourId());
-      for (final Object listener : _allHoveredTourListeners.getListeners()) {
-         ((IHoveredTourListener) listener).setHoveredTourId(event);
+      } finally {
+
+         // fire hover event, when a tour is hovered
+
+         final int numHoveredSerieIndices = _allHoveredSerieIndices.size();
+
+         if (numHoveredSerieIndices > 0) {
+
+            int hoveredValuePointIndex;
+
+            if (numHoveredSerieIndices == 1) {
+
+               hoveredValuePointIndex = getHoveredValuePointIndex(
+
+                     _allHoveredTourIds.get(0),
+
+                     devMouseTileX,
+                     devMouseTileY,
+
+                     devHoveredTileX,
+                     devHoveredTileY,
+
+                     allPainted_HoveredRectangle,
+                     allPainted_HoveredTourId,
+                     allPainted_HoveredSerieIndices);
+
+               // overwrite initial value
+               _allHoveredSerieIndices.set(0, hoveredValuePointIndex);
+
+            } else {
+
+               hoveredValuePointIndex = _allHoveredSerieIndices.get(0);
+            }
+
+            fireEvent_HoveredTour(getHoveredTourId(), hoveredValuePointIndex);
+         }
       }
 
       if (_allHoveredTourIds.size() > 0) {
@@ -2358,6 +4098,134 @@ public class Map2 extends Canvas {
    }
 
    /**
+    * @param pauseDuration
+    *           Pause duration in seconds
+    * @param isPauseAnAutoPause
+    *           When <code>true</code> an auto-pause happened otherwise it is an user pause
+    *
+    * @return
+    */
+   private boolean isTourPauseVisible(final long pauseDuration, final boolean isPauseAnAutoPause) {
+
+      final Map2Config config = _mapConfig;
+
+      if (config.isFilterTourPauses == false) {
+
+         // nothing is filtered
+         return true;
+      }
+
+      boolean isPauseVisible = false;
+
+      if (config.isShowAutoPauses && isPauseAnAutoPause) {
+
+         // pause is an auto-pause
+         isPauseVisible = true;
+      }
+
+      if (config.isShowUserPauses && !isPauseAnAutoPause) {
+
+         // pause is a user-pause
+         isPauseVisible = true;
+      }
+
+      if (isPauseVisible && config.isFilterTourPause_Duration) {
+
+         // filter by pause duration -> hide pause when condition is true
+
+         final long requiredPauseDuration = config.tourPauseDuration;
+         final Enum<TourFilterFieldOperator> pauseDurationOperator = config.tourPauseDurationFilter_Operator;
+
+         if (TourFilterFieldOperator.GREATER_THAN_OR_EQUAL.equals(pauseDurationOperator)) {
+
+            isPauseVisible = (pauseDuration >= requiredPauseDuration) == false;
+
+         } else if (TourFilterFieldOperator.LESS_THAN_OR_EQUAL.equals(pauseDurationOperator)) {
+
+            isPauseVisible = (pauseDuration <= requiredPauseDuration) == false;
+
+         } else if (TourFilterFieldOperator.EQUALS.equals(pauseDurationOperator)) {
+
+            isPauseVisible = (pauseDuration == requiredPauseDuration) == false;
+
+         } else if (TourFilterFieldOperator.NOT_EQUALS.equals(pauseDurationOperator)) {
+
+            isPauseVisible = (pauseDuration != requiredPauseDuration) == false;
+         }
+      }
+
+      return isPauseVisible;
+   }
+
+   /**
+    * @return Returns <code>true</code> when a cluster is hovered
+    */
+   private boolean markerCluster_SetHoveredCluster() {
+
+      final PaintedMarkerCluster oldHoveredCluster = _hoveredMarkerCluster;
+      PaintedMarkerCluster newHoveredCluster = null;
+
+      _hoveredMarkerCluster = null;
+
+      for (final PaintedMarkerCluster paintedCluster : _allPaintedMarkerClusters) {
+
+         final Rectangle paintedRect = paintedCluster.clusterSymbolRectangle_Unscaled;
+
+         // increase hovered rectangle to prevent flickering when moving too fast
+
+         final int clusterWidth = paintedRect.width;
+         final int clusterHeight = paintedRect.height;
+
+         final int hoveredOffset = clusterWidth > 30 ? 0 : 10;
+
+         if (true
+               && (_mouseMove_DevPosition_X > paintedRect.x - hoveredOffset)
+               && (_mouseMove_DevPosition_X < paintedRect.x + clusterWidth + hoveredOffset)
+               && (_mouseMove_DevPosition_Y > paintedRect.y - hoveredOffset)
+               && (_mouseMove_DevPosition_Y < paintedRect.y + clusterHeight + hoveredOffset)) {
+
+            // a cluster is hovered
+
+            _hoveredMarkerCluster = newHoveredCluster = paintedCluster;
+
+            break;
+         }
+      }
+
+      // repaint map when hovered state has changed
+      if (oldHoveredCluster == null && newHoveredCluster == null) {
+
+         // ignore
+
+      } else if (false
+
+            || oldHoveredCluster == null && newHoveredCluster != null
+            || oldHoveredCluster != null && newHoveredCluster == null
+
+            // now both should be NOT null -> compare cluster rectangles
+            || oldHoveredCluster.clusterSymbolRectangle_Unscaled.equals(
+                  newHoveredCluster.clusterSymbolRectangle_Unscaled) == false) {
+
+         // another cluster is hovered
+
+         paint();
+
+         return true;
+
+      } else {
+
+         // the same cluster is hovered
+
+         // hide hovered tours
+         hideHoveredTours();
+
+         return true;
+      }
+
+      return false;
+   }
+
+   /**
     * Hide offline area and all states
     */
    private void offline_DisableOfflineAreaSelection() {
@@ -2368,7 +4236,7 @@ public class Map2 extends Canvas {
 
       _isContextMenuEnabled = true;
 
-      setCursor(_cursorDefault);
+      setCursorOptimized(_cursorDefault);
       redraw();
    }
 
@@ -2377,6 +4245,7 @@ public class Map2 extends Canvas {
     *
     * @param worldPosX
     * @param worldPosY
+    *
     * @return
     */
    private Point offline_GetDevGridGeoPosition(final int worldPosX, final int worldPosY) {
@@ -2471,9 +4340,9 @@ public class Map2 extends Canvas {
    /**
     * onDispose is called when the map is disposed
     *
-    * @param e
+    * @param event
     */
-   private void onDispose(final DisposeEvent e) {
+   private void onDispose(final DisposeEvent event) {
 
       if (_mp != null) {
          _mp.resetAll(false);
@@ -2482,23 +4351,29 @@ public class Map2 extends Canvas {
          _dropTarget.dispose();
       }
 
-      disposeResource(_mapImage);
-      disposeResource(_poiImage);
+      if (_mapPointPainter_Task != null) {
+         _mapPointPainter_Task.cancel(true);
+      }
 
-      disposeResource(_9PartImage);
-      disposeResource(_9PartGC);
+      UI.disposeResource(_labelFontSWT);
+      UI.disposeResource(_mapImage);
+      UI.disposeResource(_mapPointImage);
+      UI.disposeResource(_poiImage);
 
-      disposeResource(_cursorCross);
-      disposeResource(_cursorDefault);
-      disposeResource(_cursorHand);
-      disposeResource(_cursorPan);
-      disposeResource(_cursorSearchTour);
-      disposeResource(_cursorSearchTour_Scroll);
+      UI.disposeResource(_cursorCross);
+      UI.disposeResource(_cursorDefault);
+      UI.disposeResource(_cursorHand);
+      UI.disposeResource(_cursorPan);
+      UI.disposeResource(_cursorPhoto_Move);
+      UI.disposeResource(_cursorPhoto_Select);
+      UI.disposeResource(_cursorSearchTour);
+      UI.disposeResource(_cursorSearchTour_Scroll);
+      UI.disposeResource(_cursorSelect);
+
+      PhotoLoadManager.stopImageLoading(true);
 
       // dispose resources in the overlay plugins
-      for (final Map2Painter overlay : _allMapPainter) {
-         overlay.dispose();
-      }
+      _mapPainter.dispose();
 
       _overlayImageCache.dispose();
       _colorCache.dispose();
@@ -2509,7 +4384,7 @@ public class Map2 extends Canvas {
 
       // dispose legend image
       if (_mapLegend != null) {
-         disposeResource(_mapLegend.getImage());
+         UI.disposeResource(_mapLegend.getImage());
       }
 
       if (_poi_Tooltip != null) {
@@ -2518,6 +4393,8 @@ public class Map2 extends Canvas {
 
       // stop overlay thread
       _overlayThread.interrupt();
+
+      _mapPointPainter_Executor.shutdownNow();
    }
 
    private void onDropRunnable(final DropTargetEvent event) {
@@ -2528,12 +4405,14 @@ public class Map2 extends Canvas {
 
       if (TextTransfer.getInstance().isSupportedType(transferDataType)) {
 
-         if (event.data instanceof String) {
-            isPOI = parsePOIText((String) event.data);
+         if (event.data instanceof final String eventData) {
+
+            isPOI = parseAndDisplayPOIText(eventData);
          }
 
       } else if (URLTransfer.getInstance().isSupportedType(transferDataType)) {
-         isPOI = parsePOIText((String) event.data);
+
+         isPOI = parseAndDisplayPOIText((String) event.data);
       }
 
       if (isPOI == false) {
@@ -2550,8 +4429,7 @@ public class Map2 extends Canvas {
             }
          }
 
-         MessageDialog.openInformation(
-               getShell(), //
+         MessageDialog.openInformation(getShell(),
                Messages.Dialog_DropNoPOI_Title,
                NLS.bind(Messages.Dialog_DropNoPOI_Message, poiText));
       }
@@ -2591,12 +4469,15 @@ public class Map2 extends Canvas {
       case SWT.ARROW_LEFT:
          xDiff = _isInInverseKeyboardPanning ? -offset : offset;
          break;
+
       case SWT.ARROW_RIGHT:
          xDiff = _isInInverseKeyboardPanning ? offset : -offset;
          break;
+
       case SWT.ARROW_UP:
          yDiff = _isInInverseKeyboardPanning ? -offset : offset;
          break;
+
       case SWT.ARROW_DOWN:
          yDiff = _isInInverseKeyboardPanning ? offset : -offset;
          break;
@@ -2604,10 +4485,11 @@ public class Map2 extends Canvas {
 
       switch (event.character) {
       case '+':
-         zoomIn();
+         zoomIn(CenterMapBy.Map);
          break;
+
       case '-':
-         zoomOut();
+         zoomOut(CenterMapBy.Map);
          break;
       }
 
@@ -2618,10 +4500,24 @@ public class Map2 extends Canvas {
 
    private void onMouse_DoubleClick(final MouseEvent mouseEvent) {
 
-      if (mouseEvent.button == 1) {
+      if (mouseEvent.button != 1) {
+         return;
+      }
+
+      if (_hoveredMapPoint != null && _hoveredMapPoint.mapPoint.photo != null) {
+
+         // run external app 1
+
+         // prevent map panning, this is happening
+         _canPanMap = false;
+         _canPanPhoto = false;
+
+         fireEvent_RunExternalApp(1, _hoveredMapPoint.mapPoint.photo);
+
+      } else {
 
          /*
-          * set new map center
+          * Set new map center
           */
          final double x = _worldPixel_TopLeft_Viewport.x + mouseEvent.x;
          final double y = _worldPixel_TopLeft_Viewport.y + mouseEvent.y;
@@ -2637,22 +4533,80 @@ public class Map2 extends Canvas {
 
    private void onMouse_Down(final MouseEvent mouseEvent) {
 
-      // check if left mouse button is pressed
-      if (mouseEvent.button != 1) {
+      if (_worldPixel_TopLeft_Viewport == null) {
+
+         // map is not yet fully initialized
+
          return;
       }
+
+      final int devMouseX = mouseEvent.x;
+      final int devMouseY = mouseEvent.y;
+
+      // check context menu
+      if (mouseEvent.button != 1) {
+
+         // right mouse down is pressed -> keep position
+
+         final Point worldMousePosition = new Point(
+               _worldPixel_TopLeft_Viewport.x + devMouseX,
+               _worldPixel_TopLeft_Viewport.y + devMouseY);
+
+         final GeoPosition geoMousePosition = _mp.pixelToGeo(
+               new Point2D.Double(worldMousePosition.x, worldMousePosition.y),
+               _mapZoomLevel);
+
+         _mouseDown_ContextMenu_GeoPosition = geoMousePosition;
+
+         return;
+      }
+
+      _isMouseDown = true;
+
+      final boolean isShiftKey = UI.isShiftKey(mouseEvent);
+      final boolean isCtrlKey = UI.isCtrlKey(mouseEvent);
 
       hideTourTooltipHoveredArea();
       setPoiVisible(false);
 
-      final Point devMousePosition = new Point(mouseEvent.x, mouseEvent.y);
+      final Point devMousePosition = new Point(devMouseX, devMouseY);
+
+      if (_isMarkerClusterSelected) {
+
+         // check if a marker is selected
+
+         if (_hoveredMapPoint != null) {
+
+            // a marker is hovered
+
+         } else {
+
+            // switch cluster OFF
+
+            _isMarkerClusterSelected = false;
+
+            markerCluster_SetHoveredCluster();
+
+            paint();
+         }
+
+      } else if (_hoveredMarkerCluster != null) {
+
+         // switch cluster ON
+
+         _isMarkerClusterSelected = true;
+
+         paint();
+      }
+
+      boolean isCanPanMap = false;
 
       if (_offline_IsSelectingOfflineArea) {
 
          _offline_IsOfflineSelectionStarted = true;
 
-         final int worldMouseX = _worldPixel_TopLeft_Viewport.x + mouseEvent.x;
-         final int worldMouseY = _worldPixel_TopLeft_Viewport.y + mouseEvent.y;
+         final int worldMouseX = _worldPixel_TopLeft_Viewport.x + devMouseX;
+         final int worldMouseY = _worldPixel_TopLeft_Viewport.y + devMouseY;
 
          _offline_DevMouse_Start = devMousePosition;
          _offline_DevMouse_End = devMousePosition;
@@ -2669,10 +4623,8 @@ public class Map2 extends Canvas {
          _geoGrid_Data_Hovered.isSelectionStarted = true;
 
          final Point worldMousePosition = new Point(
-               _worldPixel_TopLeft_Viewport.x + mouseEvent.x,
-               _worldPixel_TopLeft_Viewport.y + mouseEvent.y);
-
-         _geoGrid_Data_Hovered.isSelectionStarted = true;
+               _worldPixel_TopLeft_Viewport.x + devMouseX,
+               _worldPixel_TopLeft_Viewport.y + devMouseY);
 
          final GeoPosition geoMousePosition = _mp.pixelToGeo(new Point2D.Double(worldMousePosition.x, worldMousePosition.y), _mapZoomLevel);
          _geoGrid_Data_Hovered.geo_Start = geoMousePosition;
@@ -2682,8 +4634,9 @@ public class Map2 extends Canvas {
 
          redraw();
 
-      } else if (_isShowHoveredSelectedTour
-            && _isShowBreadcrumbs
+      } else if (_isShowBreadcrumbs
+
+            // check if breadcrumb is hit
             && _tourBreadcrumb.onMouseDown(devMousePosition)) {
 
          // a crumb is selected
@@ -2709,7 +4662,7 @@ public class Map2 extends Canvas {
 
          } else {
 
-            // show bread crum tours in the map
+            // show bread crumb tours in the map
 
             final ArrayList<Long> crumbTourIds = _tourBreadcrumb.getHoveredCrumbedTours_WithReset();
 
@@ -2719,6 +4672,59 @@ public class Map2 extends Canvas {
             fireEvent_TourSelection(new SelectionTourIds(crumbTourIds));
          }
 
+      } else if (_hoveredMapPoint != null) {
+
+         final Photo photo = _hoveredMapPoint.mapPoint.photo;
+
+         if (photo != null) {
+
+            if (_isInHoveredRatingStar) {
+
+               saveRatingStars(photo);
+
+               // when a rating star is removed, then the photo may be filtered out -> hide hovered mappoint/photo
+               _hoveredMapPoint = null;
+
+            } else {
+
+               // a photo is selected
+
+               if (isCtrlKey) {
+
+                  // deselect photo
+
+                  selectPhoto(null, null);
+
+               } else {
+
+                  // a photo is hovered -> show photo tooltip
+
+                  selectPhoto(photo, _hoveredMapPoint);
+               }
+
+               if (_isHoveredMapPointSymbol
+
+                     // it is not yet supported to move photos when it is not a photo tour
+                     && isPhotoTour(photo)) {
+
+                  // when a photo symbol is hovered, then the photo can be panned, otherwise the map
+
+                  isCanPanMap = false;
+
+                  _canPanPhoto = true;
+                  _pannedPhoto = photo;
+
+                  _mouseDownPosition = devMousePosition;
+
+                  setCursorOptimized(_cursorPhoto_Move);
+
+               } else {
+
+                  isCanPanMap = true;
+               }
+            }
+         }
+
       } else if (_geoGrid_Label_IsHovered) {
 
          // set map location to the selected geo filter default position
@@ -2726,19 +4732,13 @@ public class Map2 extends Canvas {
          // hide hover color
          _geoGrid_Label_IsHovered = false;
 
-         setCursor(_cursorDefault);
+         setCursorOptimized(_cursorDefault);
 
          /*
           * Zoom to geo filter zoom level
           */
-         // prevent recenter
-         final boolean isZoomWithMousePosition = _isZoomWithMousePosition;
-         _isZoomWithMousePosition = false;
-         {
-            // set zoom level first, that recalculation is correct
-            setZoom(_geoGrid_MapZoomLevel);
-         }
-         _isZoomWithMousePosition = isZoomWithMousePosition;
+         // set zoom level first, that recalculation is correct ->/ prevent recenter
+         setZoom(_geoGrid_MapZoomLevel);
 
          /*
           * Center to geo filter position
@@ -2752,56 +4752,154 @@ public class Map2 extends Canvas {
          // hide hover color
          _geoGrid_Action_IsHovered = false;
 
-         setCursor(_cursorDefault);
+         setCursorOptimized(_cursorDefault);
 
          _geoGrid_TourGeoFilter.mapGeoCenter = _geoGrid_MapGeoCenter = getMapGeoCenter();
-         _geoGrid_TourGeoFilter.mapZoomLevel = _geoGrid_MapZoomLevel = getZoom();
+         _geoGrid_TourGeoFilter.mapZoomLevel = _geoGrid_MapZoomLevel = getZoomLevel();
 
       } else if (_allHoveredTourIds.size() > 0) {
 
-         if (_allHoveredTourIds.size() == 1) {
+         onMouse_Down_HoveredTour(isShiftKey);
 
-            // select hovered tour
+      } else {
 
-            final long hoveredTour = _allHoveredTourIds.get(0);
+         isCanPanMap = true;
+      }
 
-            if (_hovered_SelectedTourId != hoveredTour) {
+      if (isCanPanMap) {
+
+         // when the left mousebutton is clicked remember this point (for panning)
+         _canPanMap = true;
+         _mouseDownPosition = devMousePosition;
+
+         setCursorOptimized(_cursorPan);
+      }
+   }
+
+   /**
+    * A tour is hovered, select/deselect tour or trackpoint
+    *
+    * @param isShiftKeyPressed
+    */
+   private void onMouse_Down_HoveredTour(final boolean isShiftKeyPressed) {
+
+      ISelection tourSelection = null;
+
+      if (_allHoveredTourIds.size() == 1) {
+
+         // one tour is hovered -> select tour or trackpoint
+
+         final long hoveredTourId = _allHoveredTourIds.get(0);
+
+         if (_hoveredSelectedTour_CanSelectTour) {
+
+            // a tour can be/is selected
+
+            if (_hovered_SelectedTourId == -1) {
 
                // toggle selection -> select tour
 
-               _hovered_SelectedTourId = hoveredTour;
+               _hovered_SelectedTourId = hoveredTourId;
 
-               fireEvent_TourSelection(new SelectionTourId(_hovered_SelectedTourId));
+               tourSelection = new SelectionTourId(_hovered_SelectedTourId);
 
             } else {
 
                // toggle selection -> hide tour selection
 
-               _hovered_SelectedTourId = Long.MIN_VALUE;
+               _hovered_SelectedTourId = -1;
             }
+
+            _hovered_SelectedSerieIndex_Behind = -1;
+            _hovered_SelectedSerieIndex_Front = -1;
 
          } else {
 
-            // hide single tour selection
-            _hovered_SelectedTourId = Long.MIN_VALUE;
+            // a trackpoint can be/is selected
 
-            // clone tour id's becauses they will be removed
-            final ArrayList<Long> allClonedTourIds = new ArrayList<>();
-            allClonedTourIds.addAll(_allHoveredTourIds);
+            _hovered_SelectedTourId = hoveredTourId;
 
-            fireEvent_TourSelection(new SelectionTourIds(_allHoveredTourIds));
+            final boolean isAnotherTourSelected = _hovered_SelectedTourId != -1 && _hovered_SelectedTourId != hoveredTourId;
+
+            if (isAnotherTourSelected) {
+
+               // fire a selection for a new tour
+
+               tourSelection = new SelectionTourId(_hovered_SelectedTourId);
+
+               _hovered_SelectedSerieIndex_Behind = -1;
+               _hovered_SelectedSerieIndex_Front = -1;
+            }
+
+            final int hoveredSerieIndex = _allHoveredSerieIndices.get(0);
+
+            if (isShiftKeyPressed) {
+
+               // select 2nd value point
+
+               _hovered_SelectedSerieIndex_Behind = hoveredSerieIndex;
+
+            } else {
+
+               // select 1st value point
+
+               _hovered_SelectedSerieIndex_Front = hoveredSerieIndex;
+            }
+
+            /*
+             * Ensure that the right index is larger than the left index
+             */
+            int selectedSerieIndex_Behind = _hovered_SelectedSerieIndex_Behind;
+            int selectedSerieIndex_Front = _hovered_SelectedSerieIndex_Front;
+
+            if (_hovered_SelectedSerieIndex_Front == -1) {
+
+               selectedSerieIndex_Behind = -1;
+               selectedSerieIndex_Front = _hovered_SelectedSerieIndex_Behind;
+
+            } else if (_hovered_SelectedSerieIndex_Behind == -1) {
+
+               // serie index in front is larger than the behind -> nothing to do
+
+            } else if (_hovered_SelectedSerieIndex_Behind > _hovered_SelectedSerieIndex_Front) {
+
+               final int hovered_SelectedSerieIndex_LeftBackup = _hovered_SelectedSerieIndex_Behind;
+
+               selectedSerieIndex_Behind = _hovered_SelectedSerieIndex_Front;
+               selectedSerieIndex_Front = hovered_SelectedSerieIndex_LeftBackup;
+            }
+
+            _hovered_SelectedSerieIndex_Front = selectedSerieIndex_Front;
+            _hovered_SelectedSerieIndex_Behind = selectedSerieIndex_Behind;
+
+            fireEvent_MapSelection(new SelectionMapSelection(
+
+                  _hovered_SelectedTourId,
+                  selectedSerieIndex_Behind,
+                  selectedSerieIndex_Front));
          }
-
-         redraw();
 
       } else {
 
-         // when the left mousebutton is clicked remember this point (for panning)
-         _isLeftMouseButtonPressed = true;
-         _mouseDownPosition = devMousePosition;
+         // multiple tours are selected
 
-         setCursor(_cursorPan);
+         // hide single tour selection
+         _hovered_SelectedTourId = -1;
+         _hovered_SelectedSerieIndex_Behind = -1;
+         _hovered_SelectedSerieIndex_Front = -1;
+
+         // clone tour id's becauses they will be removed
+         final ArrayList<Long> allClonedTourIds = new ArrayList<>();
+         allClonedTourIds.addAll(_allHoveredTourIds);
+
+         tourSelection = new SelectionTourIds(_allHoveredTourIds);
       }
+
+      if (tourSelection != null) {
+         fireEvent_TourSelection(tourSelection);
+      }
+
+      redraw();
    }
 
    private void onMouse_Exit() {
@@ -2816,21 +4914,22 @@ public class Map2 extends Canvas {
 
       // stop grid autoscrolling
       _geoGrid_IsGridAutoScroll = false;
-
       _geoGrid_Label_IsHovered = false;
 
-      if (_isShowHoveredSelectedTour) {
+      // hide link to the hovered point
+      _hoveredMapPoint = null;
+
+      if (_isShowHoveredOrSelectedTour) {
 
          _tourBreadcrumb.onMouseExit();
 
          // reset hovered data to hide hovered tour background
-         _allHoveredTourIds.clear();
-         _allDevHoveredPoints.clear();
-
-         redraw();
+         hideHoveredTours();
       }
 
-      setCursor(_cursorDefault);
+      setCursorOptimized(_cursorDefault);
+
+      redraw();
    }
 
    private void onMouse_Move(final MouseEvent mouseEvent) {
@@ -2841,15 +4940,15 @@ public class Map2 extends Canvas {
 
       final Point devMousePosition = new Point(mouseEvent.x, mouseEvent.y);
 
-      _mouseMove_DevPosition_X = mouseEvent.x;
-      _mouseMove_DevPosition_Y = mouseEvent.y;
+      final int mouseMoveDevX = _mouseMove_DevPosition_X = mouseEvent.x;
+      final int mouseMoveDevY = _mouseMove_DevPosition_Y = mouseEvent.y;
 
       // keep position for out of the map events, e.g. to recenter map
-      _mouseMove_DevPosition_X_Last = _mouseMove_DevPosition_X;
-      _mouseMove_DevPosition_Y_Last = _mouseMove_DevPosition_Y;
+      _mouseMove_DevPosition_X_Last = mouseMoveDevX;
+      _mouseMove_DevPosition_Y_Last = mouseMoveDevY;
 
-      final int worldMouseX = _worldPixel_TopLeft_Viewport.x + _mouseMove_DevPosition_X;
-      final int worldMouseY = _worldPixel_TopLeft_Viewport.y + _mouseMove_DevPosition_Y;
+      final int worldMouseX = _worldPixel_TopLeft_Viewport.x + mouseMoveDevX;
+      final int worldMouseY = _worldPixel_TopLeft_Viewport.y + mouseMoveDevY;
       final Point worldMouse_Move = new Point(worldMouseX, worldMouseY);
 
       final GeoPosition geoMouseMove = _mp.pixelToGeo(new Point2D.Double(worldMouseX, worldMouseY), _mapZoomLevel);
@@ -2896,7 +4995,167 @@ public class Map2 extends Canvas {
          return;
       }
 
-      if (_isLeftMouseButtonPressed) {
+      /*
+       * Setup map points
+       */
+      _hoveredMapPoint_Previous = _hoveredMapPoint;
+      _hoveredMapPoint = null;
+      _isHoveredMapPointSymbol = false;
+
+      // use a local ref otherwise the list could be modified in another thread which caused exceptions
+      final List<PaintedMapPoint> allPaintedClusterMarkers = _allPaintedClusterMarkers;
+      final List<PaintedMapPoint> allPaintedCommonLocations = _allPaintedCommonLocations;
+      final List<PaintedMapPoint> allPaintedTourLocations = _allPaintedTourLocations;
+      final List<PaintedMapPoint> allPaintedMarkers = _allPaintedMarkers;
+      final List<PaintedMapPoint> allPaintedPauses = _allPaintedPauses;
+      final List<PaintedMapPoint> allPaintedPhotos = _allPaintedPhotos;
+      final List<PaintedMapPoint> allPaintedWayPoints = _allPaintedWayPoints;
+
+      /*
+       * Prio 1: Marker cluster
+       */
+
+      if (_allPaintedMarkerClusters.size() > 0) {
+
+         // marker clusters are painted
+
+         if (_isMarkerClusterSelected
+
+               // map is not panned
+               && _isMouseDown == false) {
+
+            // keep selected and check if a cluster marker is hovered
+
+            if (allPaintedClusterMarkers != null && allPaintedClusterMarkers.size() > 0) {
+
+               for (final PaintedMapPoint paintedMarker : allPaintedClusterMarkers) {
+
+                  final Rectangle paintedLabelRect = paintedMarker.labelRectangle_Unscaled;
+                  final Rectangle paintedSymbolRect = paintedMarker.symbolRectangle_Unscaled;
+
+                  if (true
+                        && (mouseMoveDevX > paintedLabelRect.x)
+                        && (mouseMoveDevX < paintedLabelRect.x + paintedLabelRect.width)
+                        && (mouseMoveDevY > paintedLabelRect.y)
+                        && (mouseMoveDevY < paintedLabelRect.y + paintedLabelRect.height)
+
+                        || paintedSymbolRect != null
+                              && (mouseMoveDevX > paintedSymbolRect.x)
+                              && (mouseMoveDevX < paintedSymbolRect.x + paintedSymbolRect.width)
+                              && (mouseMoveDevY > paintedSymbolRect.y)
+                              && (mouseMoveDevY < paintedSymbolRect.y + paintedSymbolRect.height)
+
+                  ) {
+
+                     // a map marker is hovered
+
+                     _hoveredMapPoint = paintedMarker;
+
+                     break;
+                  }
+               }
+            }
+
+            hideHoveredTours();
+
+            redraw();
+
+            return;
+         }
+
+         final boolean isClusterHovered = markerCluster_SetHoveredCluster();
+         if (isClusterHovered) {
+
+            if (_isMouseDown) {
+
+               // allow map panning
+
+            } else {
+
+               return;
+            }
+         }
+      }
+
+      // prio 2a: Map common locations
+      if (allPaintedCommonLocations.size() > 0) {
+         onMouse_Move_CheckMapPoints(allPaintedCommonLocations, mouseMoveDevX, mouseMoveDevY);
+      }
+
+      // prio 2b: Map tour locations
+      if (_hoveredMapPoint == null && allPaintedTourLocations.size() > 0) {
+         onMouse_Move_CheckMapPoints(allPaintedTourLocations, mouseMoveDevX, mouseMoveDevY);
+      }
+
+      // prio 3: Tour marker
+      if (_hoveredMapPoint == null && allPaintedMarkers.size() > 0) {
+         onMouse_Move_CheckMapPoints(allPaintedMarkers, mouseMoveDevX, mouseMoveDevY);
+      }
+
+      // prio 4: Tour pauses
+      if (_hoveredMapPoint == null && allPaintedPauses.size() > 0) {
+         onMouse_Move_CheckMapPoints(allPaintedPauses, mouseMoveDevX, mouseMoveDevY);
+      }
+
+      // prio 5: Tour waypoints
+      if (_hoveredMapPoint == null && allPaintedWayPoints.size() > 0) {
+         onMouse_Move_CheckMapPoints(allPaintedWayPoints, mouseMoveDevX, mouseMoveDevY);
+      }
+
+      // prio 6: Photos
+      if (_hoveredMapPoint == null && allPaintedPhotos.size() > 0) {
+
+         onMouse_Move_CheckMapPoints(allPaintedPhotos, mouseMoveDevX, mouseMoveDevY);
+
+         if (_hoveredMapPoint != null && Map2PainterConfig.isPhotoAutoSelect) {
+
+            // a photo is hovered -> select photo
+
+            final Photo photo = _hoveredMapPoint.mapPoint.photo;
+
+            // select photo only when it is not yet selected
+            if (_selectedPhoto != photo) {
+               selectPhoto(photo, _hoveredMapPoint);
+            }
+
+         }
+
+         if (_hoveredMapPoint != null) {
+
+            if (_canPanPhoto) {
+
+               setCursorOptimized(_cursorPhoto_Move);
+
+            } else {
+
+               setCursorOptimized(_cursorPhoto_Select);
+            }
+         }
+      }
+
+      if (_hoveredMapPoint != null) {
+
+         isSomethingHit = true;
+
+         // reset hovered data
+         hideHoveredTours();
+      }
+
+      // ensure that the old map point is hidden
+      if (_hoveredMapPoint_Previous != null) {
+         redraw();
+      }
+
+      if (_canPanPhoto) {
+
+         // pan photo
+
+         panPhoto(mouseEvent);
+
+         return;
+      }
+
+      if (_canPanMap) {
 
          // pan map
 
@@ -2907,21 +5166,21 @@ public class Map2 extends Canvas {
 
       // #######################################################################
 
-      if (_tour_ToolTip != null && _tour_ToolTip.isActive()) {
+      if (_tourTooltip != null && _tourTooltip.isActive()) {
 
          /*
           * check if the mouse is within a hovered area
           */
          boolean isContextValid = false;
-         if (_hoveredAreaContext != null) {
+         if (_tourTooltip_HoveredAreaContext != null) {
 
-            final int topLeftX = _hoveredAreaContext.hoveredTopLeftX;
-            final int topLeftY = _hoveredAreaContext.hoveredTopLeftY;
+            final int topLeftX = _tourTooltip_HoveredAreaContext.hoveredTopLeftX;
+            final int topLeftY = _tourTooltip_HoveredAreaContext.hoveredTopLeftY;
 
-            if (_mouseMove_DevPosition_X >= topLeftX
-                  && _mouseMove_DevPosition_X < topLeftX + _hoveredAreaContext.hoveredWidth
-                  && _mouseMove_DevPosition_Y >= topLeftY
-                  && _mouseMove_DevPosition_Y < topLeftY + _hoveredAreaContext.hoveredHeight) {
+            if (mouseMoveDevX >= topLeftX
+                  && mouseMoveDevX < topLeftX + _tourTooltip_HoveredAreaContext.hoveredWidth
+                  && mouseMoveDevY >= topLeftY
+                  && mouseMoveDevY < topLeftY + _tourTooltip_HoveredAreaContext.hoveredHeight) {
 
                isContextValid = true;
             }
@@ -2938,15 +5197,16 @@ public class Map2 extends Canvas {
 
          // check if mouse is within the poi image
          if (_isPoiVisible
-               && (_mouseMove_DevPosition_X > _poiImageDevPosition.x)
-               && (_mouseMove_DevPosition_X < _poiImageDevPosition.x + _poiImageBounds.width)
-               && (_mouseMove_DevPosition_Y > _poiImageDevPosition.y - _poi_Tooltip_OffsetY - 5)
-               && (_mouseMove_DevPosition_Y < _poiImageDevPosition.y + _poiImageBounds.height)) {
+               && (mouseMoveDevX > _poiImageDevPosition.x)
+               && (mouseMoveDevX < _poiImageDevPosition.x + _poiImageBounds.width)
+               && (mouseMoveDevY > _poiImageDevPosition.y - _poi_Tooltip_OffsetY - 5)
+               && (mouseMoveDevY < _poiImageDevPosition.y + _poiImageBounds.height)) {
 
             // display poi
             showPoi();
 
          } else {
+
             setPoiVisible(false);
          }
       }
@@ -2960,11 +5220,11 @@ public class Map2 extends Canvas {
 
          _geoGrid_Label_IsHovered = false;
 
-         if (_geoGrid_Label_Outline.contains(_mouseMove_DevPosition_X, _mouseMove_DevPosition_Y)) {
+         if (_geoGrid_Label_Outline.contains(mouseMoveDevX, mouseMoveDevY)) {
 
             _geoGrid_Label_IsHovered = true;
 
-            setCursor(_cursorHand);
+            setCursorOptimized(_cursorHand);
 
             redraw();
 
@@ -2974,7 +5234,7 @@ public class Map2 extends Canvas {
 
             // hide hovered state
 
-            setCursor(_cursorDefault);
+            setCursorOptimized(_cursorDefault);
 
             redraw();
          }
@@ -2989,11 +5249,11 @@ public class Map2 extends Canvas {
 
          _geoGrid_Action_IsHovered = false;
 
-         if (_geoGrid_Action_Outline.contains(_mouseMove_DevPosition_X, _mouseMove_DevPosition_Y)) {
+         if (_geoGrid_Action_Outline.contains(mouseMoveDevX, mouseMoveDevY)) {
 
             _geoGrid_Action_IsHovered = true;
 
-            setCursor(_cursorHand);
+            setCursorOptimized(_cursorHand);
 
             redraw();
 
@@ -3003,13 +5263,13 @@ public class Map2 extends Canvas {
 
             // hide hovered state
 
-            setCursor(_cursorDefault);
+            setCursorOptimized(_cursorDefault);
 
             redraw();
          }
       }
 
-      if (isSomethingHit == false && _isShowHoveredSelectedTour) {
+      if (isSomethingHit == false) {
 
          final int numOldHoveredTours = _allHoveredTourIds.size();
 
@@ -3018,13 +5278,12 @@ public class Map2 extends Canvas {
             // breadcrumb is hovered
 
             // do not show hovered tour info -> reset hovered data
-            _allHoveredTourIds.clear();
-            _allDevHoveredPoints.clear();
+            hideHoveredTours();
 
             if (_tourBreadcrumb.isCrumbHovered()) {
-               setCursor(_cursorHand);
+               setCursorOptimized(_cursorHand);
             } else {
-               setCursor(_cursorDefault);
+               setCursorOptimized(_cursorDefault);
             }
 
             redraw();
@@ -3033,7 +5292,7 @@ public class Map2 extends Canvas {
 
             // tour is hovered
 
-            setCursor(_cursorHand);
+            setCursorOptimized(_cursorSelect);
 
             // show hovered tour
             redraw();
@@ -3042,14 +5301,129 @@ public class Map2 extends Canvas {
 
             // reset cursor
 
-            setCursor(_cursorDefault);
+            setCursorOptimized(_cursorDefault);
          }
       }
 
       fireEvent_MousePosition();
    }
 
+   private void onMouse_Move_CheckMapPoints(final List<PaintedMapPoint> allPaintedMapPoints,
+                                            int mouseMoveDevX,
+                                            int mouseMoveDevY) {
+
+      // first check the symbol
+
+      mouseMoveDevX = (int) (mouseMoveDevX * _deviceScaling);
+      mouseMoveDevY = (int) (mouseMoveDevY * _deviceScaling);
+
+      for (final PaintedMapPoint paintedMapPoint : allPaintedMapPoints) {
+
+         final Rectangle paintedSymbolRect = paintedMapPoint.symbolRectangle;
+
+         if (paintedSymbolRect != null
+               && (mouseMoveDevX > paintedSymbolRect.x)
+               && (mouseMoveDevX < paintedSymbolRect.x + paintedSymbolRect.width)
+               && (mouseMoveDevY > paintedSymbolRect.y)
+               && (mouseMoveDevY < paintedSymbolRect.y + paintedSymbolRect.height)
+
+         ) {
+
+            // a map point is hovered
+
+            _hoveredMapPoint = paintedMapPoint;
+
+            _isHoveredMapPointSymbol = true;
+
+            break;
+         }
+      }
+
+      // second check the label/photo
+      if (_hoveredMapPoint == null) {
+
+         for (final PaintedMapPoint paintedMapPoint : allPaintedMapPoints) {
+
+            final Rectangle paintedLabelRect = paintedMapPoint.labelRectangle;
+
+            if (true
+                  && (mouseMoveDevX > paintedLabelRect.x)
+                  && (mouseMoveDevX < paintedLabelRect.x + paintedLabelRect.width)
+                  && (mouseMoveDevY > paintedLabelRect.y)
+                  && (mouseMoveDevY < paintedLabelRect.y + paintedLabelRect.height)) {
+
+               // a map point is hovered
+
+               _hoveredMapPoint = paintedMapPoint;
+
+               final Photo photo = paintedMapPoint.mapPoint.photo;
+
+               if (photo != null) {
+
+                  onMouse_Move_CheckMapPoints_PhotoRatingStars(photo, photo.paintedRatingStars);
+               }
+
+               break;
+
+            } else if (_paintedRatingStars != null
+
+                  // this can be null when a hovered rating star was set
+                  && _hoveredMapPoint_Previous != null
+
+                  && (mouseMoveDevX > _paintedRatingStars.x)
+                  && (mouseMoveDevX < _paintedRatingStars.x + _paintedRatingStars.width)
+                  && (mouseMoveDevY > _paintedRatingStars.y)
+                  && (mouseMoveDevY < _paintedRatingStars.y + _paintedRatingStars.height)) {
+
+               // a rating star is hovered
+
+               _hoveredMapPoint = _hoveredMapPoint_Previous;
+
+               final Photo photo = _hoveredMapPoint.mapPoint.photo;
+
+               if (photo != null) {
+
+                  onMouse_Move_CheckMapPoints_PhotoRatingStars(photo, photo.paintedRatingStars);
+               }
+
+               break;
+            }
+         }
+      }
+   }
+
+   private void onMouse_Move_CheckMapPoints_PhotoRatingStars(final Photo photo, final Rectangle paintedRatingStars) {
+
+      int hoveredStars = 0;
+      _isInHoveredRatingStar = false;
+
+      if (paintedRatingStars != null) {
+
+         final int mouseMoveDevX = (int) (_mouseMove_DevPosition_X * _deviceScaling);
+         final int mouseMoveDevY = (int) (_mouseMove_DevPosition_Y * _deviceScaling);
+
+         final int photoDevX = photo.paintedPhoto.x;
+         final int photoWidth = photo.paintedPhoto.width;
+
+         _isInHoveredRatingStar = paintedRatingStars.contains(mouseMoveDevX, mouseMoveDevY);
+
+         // center ratings stars in the middle of the image
+         final int ratingStarsLeftBorder = photoDevX
+               + photoWidth / 2
+               - MAX_RATING_STARS_WIDTH / 2;
+
+         if (_isInHoveredRatingStar) {
+
+            hoveredStars = (mouseMoveDevX - ratingStarsLeftBorder) / _ratingStarImageSize + 1;
+         }
+      }
+
+      photo.hoveredStars = hoveredStars;
+   }
+
    private void onMouse_Up(final MouseEvent mouseEvent) {
+
+      _isMouseDown = false;
 
       if (_offline_IsSelectingOfflineArea) {
 
@@ -3068,7 +5442,7 @@ public class Map2 extends Canvas {
          offline_UpdateOfflineAreaEndPosition(mouseEvent);
 
          // reset cursor
-         setCursor(_cursorDefault);
+         setCursorOptimized(_cursorDefault);
 
          // hide selection
          _offline_IsSelectingOfflineArea = false;
@@ -3123,19 +5497,28 @@ public class Map2 extends Canvas {
                redraw();
             }
 
-            _mouseDownPosition = null;
-            _isLeftMouseButtonPressed = false;
+            if (_isPhotoPanned) {
+               _isPhotoPanned = false;
+               redraw();
+            }
 
-            setCursor(_cursorDefault);
+            _mouseDownPosition = null;
+
+            _canPanMap = false;
+            _canPanPhoto = false;
+
+            setCursorOptimized(_cursorDefault);
 
          } else if (mouseEvent.button == 2) {
+
             // if the middle mouse button is clicked, recenter the view
-//            recenterMap(event.x, event.y);
+            // recenterMap(event.x, event.y);
          }
       }
 
       // show poi info when mouse is within the poi image
-      if ((_mouseMove_DevPosition_X > _poiImageDevPosition.x)
+      if (true
+            && (_mouseMove_DevPosition_X > _poiImageDevPosition.x)
             && (_mouseMove_DevPosition_X < _poiImageDevPosition.x + _poiImageBounds.width)
             && (_mouseMove_DevPosition_Y > _poiImageDevPosition.y - _poi_Tooltip_OffsetY - 5)
             && (_mouseMove_DevPosition_Y < _poiImageDevPosition.y + _poiImageBounds.height)) {
@@ -3143,7 +5526,7 @@ public class Map2 extends Canvas {
          setPoiVisible(true);
       }
 
-      if (_isShowHoveredSelectedTour) {
+      if (_isShowHoveredOrSelectedTour) {
 
          // when a tour is unselected, show it hovered
 
@@ -3158,9 +5541,12 @@ public class Map2 extends Canvas {
    private void onMouse_Wheel(final Event event) {
 
       if (event.count < 0) {
-         zoomOut();
+
+         zoomOut(_centerMapBy);
+
       } else {
-         zoomIn();
+
+         zoomIn(_centerMapBy);
       }
    }
 
@@ -3176,75 +5562,117 @@ public class Map2 extends Canvas {
 
       // draw map image to the screen
 
-      if ((_mapImage != null) && !_mapImage.isDisposed()) {
+//      final long start = System.nanoTime();
 
-         final GC gc = event.gc;
+      if (_mapImage == null || _mapImage.isDisposed()) {
+         return;
+      }
 
-         gc.drawImage(_mapImage, 0, 0);
+      final GC gc = event.gc;
 
-         if (_directMapPainter != null) {
+      gc.drawImage(_mapImage, 0, 0);
 
-            // is drawing sliders in map/legend
+      if (_directMapPainter != null) {
 
-            _directMapPainterContext.gc = gc;
-            _directMapPainterContext.viewport = _worldPixel_TopLeft_Viewport;
+         // is drawing sliders in map/legend
 
-            _directMapPainter.paint(_directMapPainterContext);
-         }
+         _directMapPainterContext.gc = gc;
+         _directMapPainterContext.clientArea = _clientArea;
+         _directMapPainterContext.mapViewport = _worldPixel_TopLeft_Viewport;
 
-         if (_hoveredAreaContext != null) {
-            final Image hoveredImage = _hoveredAreaContext.hoveredImage;
-            if (hoveredImage != null) {
+         _directMapPainter.paint(_directMapPainterContext);
+      }
 
-               gc.drawImage(hoveredImage,
-                     _hoveredAreaContext.hoveredTopLeftX,
-                     _hoveredAreaContext.hoveredTopLeftY);
-            }
-         }
+      if (_tourTooltip_HoveredAreaContext != null) {
+         final Image hoveredImage = _tourTooltip_HoveredAreaContext.hoveredImage;
+         if (hoveredImage != null) {
 
-         if (_isPoiVisible && _poi_Tooltip != null) {
-            if (_isPoiPositionInViewport = updatePoiImageDevPosition()) {
-               gc.drawImage(_poiImage, _poiImageDevPosition.x, _poiImageDevPosition.y);
-            }
-         }
-
-         if (_offline_IsPaintOfflineArea) {
-            paint_OfflineArea(gc);
-         }
-
-         final boolean isPaintTourInfo = paint_HoveredTour(gc);
-
-         _geoGrid_Label_Outline = null;
-         _geoGrid_Action_Outline = null;
-         if (_geoGrid_Data_Selected != null) {
-            paint_GeoGrid_10_Selected(gc, _geoGrid_Data_Selected);
-         }
-         if (_geoGrid_Data_Hovered != null) {
-            paint_GeoGrid_20_Hovered(gc, _geoGrid_Data_Hovered);
-         }
-
-         // paint tooltip icon in the map
-         if (_tour_ToolTip != null) {
-            _tour_ToolTip.paint(gc, _clientArea);
-         }
-
-         // paint AFTER hovered/selected tour
-         if (isPaintTourInfo) {
-            paint_HoveredTour_50_TourInfo(gc);
+            gc.drawImage(hoveredImage,
+                  _tourTooltip_HoveredAreaContext.hoveredTopLeftX,
+                  _tourTooltip_HoveredAreaContext.hoveredTopLeftY);
          }
       }
+
+      if (_isPoiVisible && _poi_Tooltip != null) {
+         if (_isPoiPositionInViewport = updatePoiImageDevPosition()) {
+            gc.drawImage(_poiImage, _poiImageDevPosition.x, _poiImageDevPosition.y);
+         }
+      }
+
+      if (_offline_IsPaintOfflineArea) {
+         paint_OfflineArea(gc);
+      }
+
+      final boolean isPaintTourInfo = paint_HoveredTour(gc);
+
+      _geoGrid_Label_Outline = null;
+      _geoGrid_Action_Outline = null;
+      if (_geoGrid_Data_Selected != null) {
+         paint_GeoGrid_10_Selected(gc, _geoGrid_Data_Selected);
+      }
+      if (_geoGrid_Data_Hovered != null) {
+         paint_GeoGrid_20_Hovered(gc, _geoGrid_Data_Hovered);
+      }
+
+      // paint tooltip icon in the map
+      if (_tourTooltip != null) {
+         _tourTooltip.paint(gc, _clientArea);
+      }
+
+      // paint info AFTER hovered/selected tour
+      if (isPaintTourInfo && _isMarkerClusterSelected == false) {
+         paint_HoveredTour_50_TourInfo(gc);
+      }
+
+//      final long end = System.nanoTime();
+//      System.out.println(UI.timeStampNano() + " onPaint - %7.3f ms".formatted((float) (end - start) / 1000000));
    }
 
    private void onResize() {
 
       /*
-       * the method getClientArea() is only correct in a dialog when it's called in the create()
+       * The method getClientArea() is only correct in a dialog when it's called in the create()
        * method after super.create();
        */
 
       _clientArea = getClientArea();
 
-      updateViewPortData();
+      _mapPointImageSize = new Rectangle(
+
+            0,
+            0,
+
+            _clientArea.width, // + 2 * MAP_OVERLAY_MARGIN,
+            _clientArea.height // + 2 * MAP_OVERLAY_MARGIN
+      );
+
+      updateViewportData();
+
+      // stop painting thread
+      if (_mapPointPainter_Task != null) {
+
+         synchronized (_mapPointPainter_Task) {
+
+            // check again, this happens
+
+            if (_mapPointPainter_Task != null) {
+
+               _mapPointPainter_Task.cancel(true);
+
+               try {
+
+                  // wait until the task is canceled
+                  _mapPointPainter_Task.get(5000, TimeUnit.MILLISECONDS);
+
+               } catch (final Exception e) {
+
+                  // ignore
+
+//               StatusUtil.log(e);
+               }
+            }
+         }
+      }
 
       paint();
    }
@@ -3256,7 +5684,10 @@ public class Map2 extends Canvas {
 
       final int redrawCounter = _redrawMapCounter.incrementAndGet();
 
-      if (isDisposed() || _mp == null || _isRedrawEnabled == false) {
+      // repaint the map point image
+      _mapPointPainter_RunnableCounter.incrementAndGet();
+
+      if (isDisposed() || _mp == null || _isMapPaintingEnabled == false) {
          return;
       }
 
@@ -3265,7 +5696,7 @@ public class Map2 extends Canvas {
          // internal data are not yet initialized, this happens only the first time when a map is displayed
 
          initMap();
-         updateViewPortData();
+         updateViewportData();
       }
 
       // get time when the redraw is requested
@@ -3317,34 +5748,52 @@ public class Map2 extends Canvas {
    }
 
    /**
-    * Draws map tiles/legend/scale into the map image which is displayed in the SWT paint event.
+    * Draws map tiles/legend/scale into the map image {@link #_mapImage} which is displayed in the
+    * SWT paint event.
     */
    private void paint_10_PaintMapImage() {
+
+//      final long start = System.nanoTime();
 
       if (isDisposed()) {
          return;
       }
 
-      // Draw the map
       GC gcMapImage = null;
+
       try {
 
          // check or create map image
-         final Image image = _mapImage;
-         if ((image == null) || image.isDisposed() || (canReuseImage(image, _clientArea) == false)) {
-            _mapImage = createMapImage(_display, image, _clientArea);
+         final Image currentMapImage = _mapImage;
+
+         if (canReuseImage(currentMapImage, _clientArea) == false) {
+
+            final Color fillColor = UI.IS_DARK_THEME
+
+                  /*
+                   * It looks ugly when in the dark theme the default map background is white which
+                   * occur before the map tile images are painted
+                   */
+                  ? ThemeUtil.getDarkestBackgroundColor()
+                  : null;
+
+            _mapImage = createMapImage(_display, currentMapImage, _clientArea, fillColor);
          }
 
          gcMapImage = new GC(_mapImage);
          {
             paint_30_Tiles(gcMapImage);
 
+            if (_isMapPointVisible || Map2PainterConfig.isShowPhotos) {
+               paint_40_MapPoints(gcMapImage);
+            }
+
             if (_isLegendVisible && _mapLegend != null) {
-               paint_40_Legend(gcMapImage);
+               paint_80_Legend(gcMapImage);
             }
 
             if (_isScaleVisible) {
-               paint_50_Scale(gcMapImage);
+               paint_90_Scale(gcMapImage);
             }
 
             if (_isShowDebug_GeoGrid) {
@@ -3354,12 +5803,14 @@ public class Map2 extends Canvas {
 
       } catch (final Exception e) {
 
-         e.printStackTrace();
+         StatusUtil.log(e);
 
          // map image is corrupt
          _mapImage.dispose();
+         _mapPointImage.dispose();
 
       } finally {
+
          if (gcMapImage != null) {
             gcMapImage.dispose();
          }
@@ -3368,6 +5819,9 @@ public class Map2 extends Canvas {
       redraw();
 
       _lastMapDrawTime = System.currentTimeMillis();
+
+//      final long end = System.nanoTime();
+//      System.out.println(UI.timeStampNano() + " paint_10_PaintMapImage() - %7.3f ms".formatted((float) (end - start) / 1000000));
    }
 
    /**
@@ -3412,7 +5866,62 @@ public class Map2 extends Canvas {
       }
    }
 
-   private void paint_40_Legend(final GC gc) {
+   /**
+    * @param gcMapImage
+    */
+   private void paint_40_MapPoints(final GC gcMapImage) {
+
+      if (_isMapPointVisible == false
+            || _mapConfig == null
+            || _mapConfig.isShowTourMarker == false
+                  && _mapConfig.isShowTourLocation == false
+                  && _mapConfig.isShowCommonLocation == false
+                  && _mapConfig.isShowTourPauses == false
+                  && Map2PainterConfig.isShowPhotos == false) {
+
+         // there is nothing which should be painted
+
+         return;
+      }
+
+      if (_mapPointImage == null || _mapPointImage.isDisposed()) {
+
+         // start the map point painting
+
+         paint_MapPointImage();
+
+         return;
+      }
+
+      // paint map point image
+
+      try {
+
+         // do micro adjustments otherwise panning the map is NOT smooth
+         final Rectangle topLeft_Viewport_WhenPainted = _mapPointPainter_Viewport_WhenPainted;
+         final Rectangle topLeft_Viewport_Current = _worldPixel_TopLeft_Viewport;
+
+         final int diffX = topLeft_Viewport_WhenPainted.x - topLeft_Viewport_Current.x;
+         final int diffY = topLeft_Viewport_WhenPainted.y - topLeft_Viewport_Current.y;
+
+         gcMapImage.drawImage(_mapPointImage, diffX, diffY);
+
+         _mapPointPainter_MicroAdjustment_DiffX = diffX;
+         _mapPointPainter_MicroAdjustment_DiffY = diffY;
+
+         // start the map point painting
+         paint_MapPointImage();
+
+      } catch (final Exception e) {
+
+         StatusUtil.log(e);
+
+         // new overlay image is corrupt
+         UI.disposeResource(_mapPointImage);
+      }
+   }
+
+   private void paint_80_Legend(final GC gc) {
 
       // get legend image from the legend
       final Image legendImage = _mapLegend.getImage();
@@ -3437,7 +5946,7 @@ public class Map2 extends Canvas {
     *
     * @param gc
     */
-   private void paint_50_Scale(final GC gc) {
+   private void paint_90_Scale(final GC gc) {
 
       final int viewPortWidth = _worldPixel_TopLeft_Viewport.width;
 
@@ -3574,7 +6083,7 @@ public class Map2 extends Canvas {
 
       // show different color when adjusted
       if (isAdjusted) {
-         gc.setForeground(_display.getSystemColor(SWT.COLOR_RED));
+         gc.setForeground(_display.getSystemColor(SWT.COLOR_BLUE));
       } else {
          gc.setForeground(UI.SYS_COLOR_DARK_GRAY);
       }
@@ -3756,6 +6265,7 @@ public class Map2 extends Canvas {
     * @param isPaintLastGridSelection
     *           When <code>true</code>, the last selected grid is painted, otherwise the currently
     *           selecting grid
+    *
     * @return Returns top/left box position in the viewport
     */
    private Point paint_GeoGrid_50_Outline(final GC gc,
@@ -3848,76 +6358,155 @@ public class Map2 extends Canvas {
 
    private boolean paint_HoveredTour(final GC gc) {
 
-      boolean isHoveredAndSelectedTour = false;
+      Long hoveredTourId = null;
+      boolean isTourHoveredAndSelected = false;
       boolean isPaintTourInfo = false;
-      boolean isPaintBreadcrumbs = false;
+
+      final int numHoveredTours = _allHoveredDevPoints.size();
+
+      if (numHoveredTours > 0) {
+
+         isPaintTourInfo = true;
+
+         if (numHoveredTours == 1) {
+
+            hoveredTourId = _allHoveredTourIds.get(0);
+
+            if (hoveredTourId == _hovered_SelectedTourId) {
+               isTourHoveredAndSelected = true;
+            }
+         }
+      }
 
       /*
-       * Paint hovered tour
+       * Paint selected tour or trackpoint
        */
-      if (_isShowHoveredSelectedTour) {
+      if (_hovered_SelectedTourId != -1) {
 
-         isPaintBreadcrumbs = _isShowBreadcrumbs;
+         if (_hoveredSelectedTour_CanSelectTour) {
 
-         final int numTours = _allDevHoveredPoints.size();
+            // a tour can be selected
 
-         if (numTours > 0) {
+            if (isTourHoveredAndSelected) {
+
+               gc.setAlpha(_hoveredSelectedTour_HoveredAndSelected_Opacity);
+               gc.setForeground(_hoveredSelectedTour_HoveredAndSelected_Color);
+
+            } else {
+
+               gc.setAlpha(_hoveredSelectedTour_Selected_Opacity);
+               gc.setForeground(_hoveredSelectedTour_Selected_Color);
+            }
+
+            paint_HoveredTour_10(gc, _hovered_SelectedTourId);
+
+         } else {
+
+            // a trackpoint can be selected
+
+            paint_HoveredTrackpoint_10(
+                  gc,
+                  _hovered_SelectedTourId,
+                  _hovered_SelectedSerieIndex_Behind,
+                  _hovered_SelectedSerieIndex_Front,
+
+                  HoveredPoint_PaintMode.IS_SELECTED);
+         }
+      }
+
+      /*
+       * Paint hovered tour or trackpoint
+       */
+      if (_isShowHoveredOrSelectedTour) {
+
+         if (numHoveredTours > 0) {
 
             isPaintTourInfo = true;
 
-            if (numTours == 1) {
+            if (numHoveredTours == 1) {
 
-               final long hoveredTourId = _allHoveredTourIds.get(0);
+               if (// paint hovered tour when
 
-               if (hoveredTourId == _hovered_SelectedTourId) {
-                  isHoveredAndSelectedTour = true;
-               }
+               // tour is not selected
+               isTourHoveredAndSelected == false
 
-               // paint hovered only when not selected
-               if (isHoveredAndSelectedTour == false) {
+                     // or when a trackpoint is selected
+                     || isTourHoveredAndSelected && _hoveredSelectedTour_CanSelectTour == false
 
-                  gc.setAlpha(0x80);
-                  gc.setForeground(Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+               ) {
 
-                  gc.setAlpha(_hoveredSelectedTour_Hovered_Opacity);
-                  gc.setForeground(_hoveredSelectedTour_Hovered_Color);
+                  if (_hoveredSelectedTour_CanSelectTour) {
 
-                  paint_HoveredTour_10(gc, hoveredTourId);
+                     // a tour can be selected
+
+                     gc.setAlpha(_hoveredSelectedTour_Hovered_Opacity);
+                     gc.setForeground(_hoveredSelectedTour_Hovered_Color);
+
+                     paint_HoveredTour_10(gc, hoveredTourId);
+
+                  } else {
+
+                     // a trackpoint can be selected
+
+                     final int hoveredSerieIndex = _allHoveredSerieIndices.get(0);
+                     final boolean isHoveredAndSelected = hoveredSerieIndex == _hovered_SelectedSerieIndex_Behind
+                           || hoveredSerieIndex == _hovered_SelectedSerieIndex_Front;
+
+                     paint_HoveredTrackpoint_10(
+                           gc,
+                           hoveredTourId,
+                           hoveredSerieIndex,
+                           -1,
+                           isHoveredAndSelected
+                                 ? HoveredPoint_PaintMode.IS_HOVERED_AND_SELECTED
+                                 : HoveredPoint_PaintMode.IS_HOVERED);
+
+                     // paint direction arrows
+                     if (_isDrawTourDirection) {
+
+                        final int[] devXYTourPositions = getReducesTourPositions(hoveredTourId);
+
+                        if (devXYTourPositions != null) {
+                           paint_HoveredTour_14_DirectionArrows(gc, devXYTourPositions);
+                        }
+                     }
+                  }
                }
             }
          }
       }
 
       /*
-       * Paint Selected tour
+       * Paint tour directions when not yet painted
        */
-      if (_hovered_SelectedTourId != Long.MIN_VALUE) {
+      if (_isShowTour
 
-         if (isHoveredAndSelectedTour) {
+            && _isDrawTourDirection
+            && _isDrawTourDirection_Always
 
-            gc.setAlpha(0x40);
-            gc.setForeground(UI.SYS_COLOR_GREEN);
+            // currently only one tour is supported
+            && _allTourIds != null && _allTourIds.size() == 1
 
-            gc.setAlpha(_hoveredSelectedTour_HoveredAndSelected_Opacity);
-            gc.setForeground(_hoveredSelectedTour_HoveredAndSelected_Color);
+            // nothing is currently hovered
+            && numHoveredTours == 0
 
-         } else {
+      ) {
 
-            gc.setAlpha(0x40);
-            gc.setForeground(UI.SYS_COLOR_BLACK);
+         final Long tourId = _allTourIds.get(0);
 
-            gc.setAlpha(_hoveredSelectedTour_Selected_Opacity);
-            gc.setForeground(_hoveredSelectedTour_Selected_Color);
+         final int[] devXYTourPositions = getReducesTourPositions(tourId);
+
+         if (devXYTourPositions != null) {
+            paint_HoveredTour_14_DirectionArrows(gc, devXYTourPositions);
          }
-
-         paint_HoveredTour_10(gc, _hovered_SelectedTourId);
       }
 
-      if (isPaintBreadcrumbs) {
+      /*
+       * Paint breadcrumb bar
+       */
+      if (_isShowBreadcrumbs) {
 
-         final boolean isEnhancedPaintingMethod = isPaintTile_With_BasicMethod() == false;
-
-         _tourBreadcrumb.paint(gc, isEnhancedPaintingMethod && _isShowTourPaintMethodEnhancedWarning);
+         _tourBreadcrumb.paint(gc, _isShowBreadcrumbs);
       }
 
       return isPaintTourInfo;
@@ -3925,7 +6514,7 @@ public class Map2 extends Canvas {
 
    private void paint_HoveredTour_10(final GC gc, final long tourId) {
 
-      int[] devXY;
+      int[] devXYTourPositions;
 
       gc.setLineWidth(30);
 
@@ -3934,85 +6523,17 @@ public class Map2 extends Canvas {
 
       gc.setAntialias(SWT.ON);
       {
-         devXY = paint_HoveredTour_12_Tour(gc, tourId);
+         devXYTourPositions = getReducesTourPositions(tourId);
+         if (devXYTourPositions != null) {
+            gc.drawPolyline(devXYTourPositions);
+         }
       }
       gc.setAntialias(SWT.OFF);
       gc.setAlpha(0xff);
 
-      if (_isDrawTourDirection && devXY != null) {
-         paint_HoveredTour_14_DirectionArrows(gc, devXY);
+      if (_isDrawTourDirection && devXYTourPositions != null) {
+         paint_HoveredTour_14_DirectionArrows(gc, devXYTourPositions);
       }
-   }
-
-   /**
-    * @param gc
-    * @param tourId
-    * @return Return dev X/Y position of the hovered tour
-    */
-   private int[] paint_HoveredTour_12_Tour(final GC gc, final long tourId) {
-
-      final TourData tourData = TourManager.getTour(tourId);
-
-      if (tourData == null) {
-
-         // this occurred, it can be that previously a history/multiple tour was displayed
-         return null;
-      }
-
-      final MP mp = getMapProvider();
-      final int zoomLevel = getZoom();
-
-      final double[] latitudeSerie = tourData.latitudeSerie;
-      final double[] longitudeSerie = tourData.longitudeSerie;
-
-      // paint with much less points to speed it up
-      final int numMaxSegments = 200;
-      final float numSlices = latitudeSerie.length;
-      final int numSegments = (int) Math.min(numMaxSegments, numSlices);
-
-      final Rectangle worldPosition_Viewport = _worldPixel_TopLeft_Viewport;
-
-      // get world position for the first lat/lon
-      final java.awt.Point worldPos_FirstAWT = mp.geoToPixel(
-            new GeoPosition(latitudeSerie[0], longitudeSerie[0]),
-            zoomLevel);
-
-      // convert world position into device position
-      int devPosX1 = worldPos_FirstAWT.x - worldPosition_Viewport.x;
-      int devPosY1 = worldPos_FirstAWT.y - worldPosition_Viewport.y;
-
-      final int[] devXY = new int[numSegments * 2];
-
-      // set first position
-      devXY[0] = devPosX1;
-      devXY[1] = devPosY1;
-
-      for (int segmentIndex = 1; segmentIndex < numSegments; segmentIndex++) {
-
-         final int nextSerieIndex = (int) (numSlices / numSegments * segmentIndex);
-
-         // get world position for the current lat/lon
-         final java.awt.Point worldPosAWT = mp.geoToPixel(
-               new GeoPosition(latitudeSerie[nextSerieIndex], longitudeSerie[nextSerieIndex]),
-               zoomLevel);
-
-         // convert world position into device position
-         final int devPosX2 = worldPosAWT.x - worldPosition_Viewport.x;
-         final int devPosY2 = worldPosAWT.y - worldPosition_Viewport.y;
-
-         final int devXYIndex = segmentIndex * 2;
-
-         devXY[devXYIndex + 0] = devPosX2;
-         devXY[devXYIndex + 1] = devPosY2;
-
-         // advance to the next segment
-         devPosX1 = devPosX2;
-         devPosY1 = devPosY2;
-      }
-
-      gc.drawPolyline(devXY);
-
-      return devXY;
    }
 
    private void paint_HoveredTour_14_DirectionArrows(final GC gc, final int[] devXY) {
@@ -4084,10 +6605,10 @@ public class Map2 extends Canvas {
 
                final float directionRotation = (float) MtMath.angleOf(devX1, devY1, devX2, devY2);
 
+// when debugging then autoScapeUp provided the wrong values when using a 4k display !!!
 //               final int xPos1 = DPIUtil.autoScaleUp(devX1);
 //               final int yPos1 = DPIUtil.autoScaleUp(devY1);
 
-               // when debugging then autoScapeUp provided the wrong values when using a 4k display !!!
                final int xPos1 = devX1;
                final int yPos1 = devY1;
 
@@ -4138,7 +6659,7 @@ public class Map2 extends Canvas {
 //         // paint hovered rectangle
 //         gc.setLineWidth(1);
 //
-//         for (final Point hoveredPoint : _allDevHoveredPoints) {
+//         for (final Point hoveredPoint : _allHoveredDevPoints) {
 //
 //            gc.setAlpha(0x60);
 //            gc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_GREEN));
@@ -4161,40 +6682,55 @@ public class Map2 extends Canvas {
       final int devXMouse = _mouseMove_DevPosition_X;
       final int devYMouse = _mouseMove_DevPosition_Y;
 
-      final int numTours = _allHoveredTourIds.size();
+      final int numHoveredTours = _allHoveredTourIds.size();
+      final int numDisplayedTours = _allTourIds != null
+            ? _allTourIds.size()
+            : 0;
 
-      if (numTours == 1) {
+      if (numHoveredTours == 1) {
 
-         final TourData tourData = TourManager.getTour(_allHoveredTourIds.get(0));
+         // one tour is hovered -> show tour details
 
-         if (tourData == null) {
+         if (numDisplayedTours > 1) {
 
-            // this occurred, it can be that previously a history/multiple tour was displayed
+            // multiple tours are displayed
+
+            final TourData tourData = TourManager.getTour(_allHoveredTourIds.get(0));
+
+            if (tourData == null) {
+
+               // this occurred, it can be that previously a history/multiple tour was displayed
+
+            } else {
+
+               // tour data are available
+
+               paint_HoveredTour_52_OneTour(gc, devXMouse, devYMouse, tourData, _allHoveredSerieIndices.get(0));
+            }
 
          } else {
 
-            // tour data are available
+            // just one tour is displayed
 
-            paint_HoveredTour_52_TourDetail(gc, devXMouse, devYMouse, tourData);
+            // ** tour track info can be displayed in the value point tooltip
+            // ** tour info can be displayed with the tour info tooltip
          }
 
       } else {
 
-         final String hoverText = Messages.Map2_Hovered_Tours + UI.SPACE + Integer.toString(numTours);
+         // multiple tours are hovered -> show number of hovered tours
 
-         paint_Text_Label(gc,
-               devXMouse,
-               devYMouse,
-               hoverText,
-               UI.SYS_COLOR_WHITE,
-               Display.getCurrent().getSystemColor(SWT.COLOR_BLUE),
-               true);
+         paint_HoveredTour_54_MultipleTours(gc, devXMouse, devYMouse, _allHoveredTourIds);
       }
    }
 
-   private void paint_HoveredTour_52_TourDetail(final GC gc, final int devXMouse, final int devYMouse, final TourData tourData) {
+   private void paint_HoveredTour_52_OneTour(final GC gc,
+                                             final int devXMouse,
+                                             final int devYMouse,
+                                             final TourData tourData,
+                                             final int hoveredSerieIndex) {
 
-      final Font normalFont = gc.getFont();
+      final Font gcFontBackup = gc.getFont();
 
       final String text_TourDateTime = TourManager.getTourDateTimeFull(tourData);
       final String text_TourTitle = tourData.getTourTitle();
@@ -4203,30 +6739,47 @@ public class Map2 extends Canvas {
       final long movingTime = tourData.getTourComputedTime_Moving();
       final long recordedTime = tourData.getTourDeviceTime_Recorded();
       final float distance = tourData.getTourDistance() / UI.UNIT_VALUE_DISTANCE;
+      final int elevationUp = tourData.getTourAltUp();
 
-      final String text_MovingTime = String.format(VALUE_FORMAT_TIME,
-            TOUR_TOOLTIP_LABEL_MOVING_TIME,
+      /*
+       * Tour values
+       */
+      final String text_TourMovingTime = String.format(Messages.Map2_TourTooltip_Time,
+            OtherMessages.TOUR_TOOLTIP_LABEL_MOVING_TIME,
             FormatManager.formatMovingTime(movingTime));
 
-      final String text_RecordedTime = String.format(VALUE_FORMAT_TIME,
-            TOUR_TOOLTIP_LABEL_RECORDED_TIME,
-            FormatManager.formatRecordedTime(recordedTime));
+      final String text_TourRecordedTime = String.format(Messages.Map2_TourTooltip_Time,
+            OtherMessages.TOUR_TOOLTIP_LABEL_RECORDED_TIME,
+            FormatManager.formatMovingTime(recordedTime));
 
-      final String text_Distance = String.format(VALUE_FORMAT_DISTANCE,
-            TOUR_TOOLTIP_LABEL_DISTANCE,
+      final String text_TourDistance = String.format(Messages.Map2_TourTooltip_Distance,
+            OtherMessages.TOUR_TOOLTIP_LABEL_DISTANCE,
             FormatManager.formatDistance(distance / 1000.0),
             UI.UNIT_LABEL_DISTANCE);
 
-      final String valueText = UI.EMPTY_STRING
+      final String text_ElevationUp = String.format(Messages.Map2_TourTooltip_Elevation,
+            OtherMessages.TOUR_TOOLTIP_LABEL_ELEVATION_UP,
+            FormatManager.formatElevation(elevationUp),
+            UI.UNIT_LABEL_ELEVATION);
 
-            + UI.NEW_LINE + text_TourDateTime
-            + UI.NEW_LINE
-            + UI.NEW_LINE + text_Distance
-            + UI.NEW_LINE + text_MovingTime
-            + UI.NEW_LINE + text_RecordedTime;
+      /*
+       * Track values
+       */
+
+      // trackpoint
+
+      final StringBuilder sb = new StringBuilder();
+
+      sb.append(NL);
+      sb.append(text_TourDateTime + NL);
+      sb.append(NL);
+      sb.append(text_TourDistance + NL);
+      sb.append(text_ElevationUp + NL);
+      sb.append(text_TourMovingTime + NL);
+      sb.append(text_TourRecordedTime);
 
       final Point size_DateTime = gc.textExtent(text_TourDateTime);
-      final Point size_Values = gc.textExtent(valueText);
+      final Point size_Values = gc.textExtent(sb.toString());
 
       Point size_Title = new Point(0, 0);
       String wrappedTitle = null;
@@ -4236,7 +6789,7 @@ public class Map2 extends Canvas {
 
          wrappedTitle = WordUtils.wrap(text_TourTitle, 40);
 
-         gc.setFont(_boldFont);
+         gc.setFont(_boldFontSWT);
          size_Title = gc.textExtent(wrappedTitle);
 
          titleHeight = size_Title.y;
@@ -4255,10 +6808,10 @@ public class Map2 extends Canvas {
       final int detailWidth = contentWidth + marginHorizontal * 2;
       final int detailHeight = contentHeight + marginVertical * 2;
 
-      final int marginAboveMouse = 10;
-      final int marginBelowMouse = 25;
+      final int marginAboveMouse = 50;
+      final int marginBelowMouse = 40;
 
-      int devXDetail = devXMouse + 10;
+      int devXDetail = devXMouse + 20;
       int devYDetail = devYMouse - marginAboveMouse;
 
       // ensure that the tour detail is fully visible
@@ -4288,7 +6841,7 @@ public class Map2 extends Canvas {
 
       if (isTourTitle) {
 
-         gc.setFont(_boldFont);
+         gc.setFont(_boldFontSWT);
          gc.drawText(wrappedTitle, devX, devY);
 
          devY += titleHeight;
@@ -4298,8 +6851,2556 @@ public class Map2 extends Canvas {
          devY -= lineHeight;
       }
 
-      gc.setFont(normalFont);
-      gc.drawText(valueText, devX, devY);
+      gc.setFont(gcFontBackup);
+      gc.drawText(sb.toString(), devX, devY);
+   }
+
+   private void paint_HoveredTour_54_MultipleTours(final GC gc,
+                                                   final int devXMouse,
+                                                   final int devYMouse,
+                                                   final List<Long> allHoveredTourIds) {
+
+      final StringBuilder sb = new StringBuilder();
+
+      // Show number of hovered tours
+      sb.append(String.format("%d %s", //$NON-NLS-1$
+            allHoveredTourIds.size(),
+            Messages.Map2_Hovered_Tours));
+      sb.append(NL);
+
+      for (final Long tourId : allHoveredTourIds) {
+
+         final TourData tourData = TourManager.getTour(tourId);
+         if (tourData == null) {
+            continue;
+         }
+
+         final ZonedDateTime tourStartTime = tourData.getTourStartTime();
+         final long movingTime = tourData.getTourComputedTime_Moving();
+         final float distance = tourData.getTourDistance() / UI.UNIT_VALUE_DISTANCE;
+         final int elevationUp = tourData.getTourAltUp();
+
+         final String text_TourDateTime = String.format("%s\t%s", //$NON-NLS-1$
+               tourStartTime.format(TimeTools.Formatter_DateTime_S),
+               tourStartTime.format(TimeTools.Formatter_Weekday));
+
+         final String text_TourMovingTime = FormatManager.formatMovingTime(movingTime);
+         final String text_TourDistance = String.format("%s %s", //$NON-NLS-1$
+               FormatManager.formatDistance(distance / 1000.0),
+               UI.UNIT_LABEL_DISTANCE);
+
+         final String text_ElevationUp = String.format("%s %s", //$NON-NLS-1$
+               FormatManager.formatElevation(elevationUp),
+               UI.UNIT_LABEL_ELEVATION);
+         /*
+          * Combine tour values
+          */
+         sb.append(NL);
+         sb.append(String.format("%s\t%s\t%8s\t%10s", //$NON-NLS-1$
+               text_TourDateTime,
+               text_TourMovingTime,
+               text_TourDistance,
+               text_ElevationUp));
+
+      }
+
+      final Point contentSize = gc.textExtent(sb.toString());
+
+      final int marginHorizontal = 3;
+      final int marginVertical = 1;
+
+      final int contentWidth = contentSize.x;
+      final int contentHeight = contentSize.y;
+
+      final int tooltipWidth = contentWidth + marginHorizontal * 2;
+      final int tooltipHeight = contentHeight + marginVertical * 2;
+
+      final int marginAroundMouse = 20;
+
+      int devXTooltip = devXMouse + marginAroundMouse;
+      int devYTooltip = devYMouse - marginAroundMouse;
+
+      /*
+       * Ensure that the tour detail is fully visible
+       */
+      final int viewportWidth = _devMapViewport.width;
+      final int viewportHeight = _devMapViewport.height;
+
+      if (devXTooltip + tooltipWidth > viewportWidth) {
+
+         // tooltip is truncated at the right side -> move tooltip to the left of the mouse
+
+         devXTooltip = devXMouse - marginAroundMouse - tooltipWidth;
+      }
+
+      if (devYTooltip - tooltipHeight < 0) {
+
+         // tooltip is truncated at the top -> move tooltip below the mouse
+
+         devYTooltip = devYMouse + tooltipHeight + marginAroundMouse;
+
+         if (devYTooltip + tooltipHeight > viewportHeight) {
+
+            // tooltip is truncated at the bottom -> snap to the top
+
+            devYTooltip = tooltipHeight;
+         }
+      }
+
+      final int devX = devXTooltip + marginHorizontal;
+      final int devY = devYTooltip - contentHeight - marginVertical;
+
+      /*
+       * Paint tooltip
+       */
+      final Rectangle clippingRect = new Rectangle(
+            devXTooltip,
+            devYTooltip - tooltipHeight,
+            tooltipWidth,
+            tooltipHeight);
+
+      gc.setClipping(clippingRect);
+
+      gc.setBackground(ThemeUtil.getDefaultBackgroundColor_Shell());
+      gc.fillRectangle(clippingRect);
+
+      gc.setForeground(ThemeUtil.getDefaultForegroundColor_Shell());
+      gc.drawText(sb.toString(), devX, devY);
+   }
+
+   private void paint_HoveredTrackpoint_10(final GC gc,
+                                           final long tourId,
+                                           final int serieIndex1,
+                                           final int serieIndex2,
+                                           final HoveredPoint_PaintMode valuePoint_PaintMode) {
+
+      final TourData tourData = TourManager.getTour(tourId);
+
+      if (tourData == null) {
+
+         // this occurred, it can be that previously a history/multiple tour was displayed
+         return;
+      }
+
+      gc.setAntialias(SWT.ON);
+
+      final MP mp = getMapProvider();
+      final int zoomLevel = getZoomLevel();
+
+      final double[] latitudeSerie = tourData.latitudeSerie;
+      final double[] longitudeSerie = tourData.longitudeSerie;
+
+      final Rectangle worldPosition_Viewport = _worldPixel_TopLeft_Viewport;
+
+      final int dotWidth = 30;
+      final int dotWidth2 = dotWidth / 2;
+
+      int serieIndexFront;
+      int serieIndexBehind;
+      if (serieIndex1 > serieIndex2) {
+         serieIndexFront = serieIndex1;
+         serieIndexBehind = serieIndex2;
+      } else {
+         serieIndexFront = serieIndex2;
+         serieIndexBehind = serieIndex1;
+      }
+
+      // loop: paint 2 points
+      for (int paintIndex = 0; paintIndex < 2; paintIndex++) {
+
+         final int serieIndex;
+         boolean isFirstIndex = false;
+
+         if (paintIndex == 0) {
+            if (serieIndexFront == -1) {
+               continue;
+            } else {
+               serieIndex = serieIndexFront;
+            }
+            isFirstIndex = true;
+         } else {
+            if (serieIndexBehind == -1) {
+               continue;
+            } else {
+               serieIndex = serieIndexBehind;
+            }
+         }
+
+         // fix: java.lang.ArrayIndexOutOfBoundsException: Index 15091 out of bounds for length 8244
+         // this could not be reproduced, it happened when 2 tours were displayed/selected after a geo search
+         if (serieIndex >= latitudeSerie.length) {
+            continue;
+         }
+
+         // get world position for the current lat/lon
+         final java.awt.Point worldPosAWT = mp.geoToPixel(
+               new GeoPosition(latitudeSerie[serieIndex], longitudeSerie[serieIndex]),
+               zoomLevel);
+
+         // convert world position into device position
+         final int devX = worldPosAWT.x - worldPosition_Viewport.x;
+         final int devY = worldPosAWT.y - worldPosition_Viewport.y;
+
+         /*
+          * Paint colored margin around a point
+          */
+         gc.setAlpha(_hoveredSelectedTour_Hovered_Opacity);
+         gc.setBackground(_hoveredSelectedTour_Hovered_Color);
+
+         if (_prefOptions_IsDrawSquare) {
+
+            gc.fillRectangle(
+                  devX - dotWidth2,
+                  devY - dotWidth2,
+                  dotWidth,
+                  dotWidth);
+         } else {
+
+            gc.fillOval(
+                  devX - dotWidth2,
+                  devY - dotWidth2,
+                  dotWidth,
+                  dotWidth);
+         }
+
+         // paint original symbol but with a more contrast color
+
+         /*
+          * Fill symbol
+          */
+         gc.setAlpha(0xff);
+
+         int symbolSize = _prefOptions_LineWidth;
+         int symbolSize2 = symbolSize / 2;
+
+         int paintedDevX = devX - symbolSize2;
+         int paintedDevY = devY - symbolSize2;
+
+         if (valuePoint_PaintMode.equals(HoveredPoint_PaintMode.IS_SELECTED)) {
+
+            // paint selected
+
+            gc.setBackground(isFirstIndex
+                  ? UI.SYS_COLOR_GREEN
+                  : UI.SYS_COLOR_DARK_GREEN);
+
+         } else if (valuePoint_PaintMode.equals(HoveredPoint_PaintMode.IS_HOVERED_AND_SELECTED)) {
+
+            gc.setBackground(UI.SYS_COLOR_RED);
+
+         } else {
+
+            // paint hovered
+
+            gc.setBackground(UI.SYS_COLOR_WHITE);
+         }
+
+         if (_prefOptions_IsDrawSquare) {
+            gc.fillRectangle(paintedDevX, paintedDevY, symbolSize, symbolSize);
+         } else {
+            gc.fillOval(paintedDevX, paintedDevY, symbolSize, symbolSize);
+         }
+
+         /*
+          * Draw symbol border
+          */
+         gc.setLineWidth(_prefOptions_BorderWidth);
+
+         symbolSize = _prefOptions_LineWidth + (_prefOptions_BorderWidth * 1);
+         symbolSize2 = symbolSize / 2;
+
+         // without this offset the border is not at the correct position
+         final int oddOffset = symbolSize % 2 == 0 ? 0 : 1;
+
+         paintedDevX = devX - symbolSize2 - oddOffset;
+         paintedDevY = devY - symbolSize2 - oddOffset;
+
+         gc.setForeground(UI.SYS_COLOR_BLACK);
+
+         if (_prefOptions_IsDrawSquare) {
+            gc.drawRectangle(paintedDevX, paintedDevY, symbolSize, symbolSize);
+         } else {
+            gc.drawOval(paintedDevX, paintedDevY, symbolSize, symbolSize);
+         }
+      }
+
+      gc.setAntialias(SWT.OFF);
+   }
+
+   private void paint_MapPointImage() {
+
+      final int currentMapPointImageCounter = _mapPointPainter_RunnableCounter.get();
+
+      if (_mapPointPainter_LastCounter == currentMapPointImageCounter) {
+
+         // counter is not incremented -> nothing to do
+
+         return;
+      }
+
+      if (_mapPointPainter_Task != null) {
+
+         // a task is currently running
+
+         final boolean isDone = _mapPointPainter_Task.isDone();
+
+         if (isDone) {
+
+            // this can happen when changing e.g. the map dimm level
+
+         } else {
+
+            // this case happened but the future was not set to null
+
+            return;
+         }
+      }
+
+      final Runnable mapPointTask = () -> {
+
+         try {
+
+            _mapPointPainter_LastCounter = _mapPointPainter_RunnableCounter.get();
+
+            paint_MapPointImage_10_Runnable();
+
+         } finally {
+
+            _mapPointPainter_Task = null;
+         }
+
+         // redraw map image with the updated map point image
+         getDisplay().asyncExec(() -> paint_10_PaintMapImage());
+
+         /*
+          * Paint again when there are viewport differences, this will fix e.g. the zoom in issue
+          * where some markers are not painted
+          */
+//         final Rectangle topLeft_Viewport_WhenPainted = _backgroundPainter_Viewport_WhenPainted;
+//         final Rectangle topLeft_Viewport_Current = _worldPixel_TopLeft_Viewport;
+//
+//         final int diffX = topLeft_Viewport_WhenPainted.x - topLeft_Viewport_Current.x;
+//         final int diffY = topLeft_Viewport_WhenPainted.y - topLeft_Viewport_Current.y;
+//
+//         final boolean isCounterIncremented = _backgroundPainter_LastCounter != _backgroundPainter_RunnableCounter.get();
+//
+//         if (diffX != 0 || diffY != 0 || isCounterIncremented) {
+//
+//            getDisplay().asyncExec(() -> paint_10_PaintMapImage());
+//         }
+
+         /*
+          * Update statistics
+          */
+         Map2PointManager.updateStatistics(new MapPointStatistics(
+
+               _allPaintedCommonLocations.size(),
+               _numStatistics_AllCommonLocations,
+
+               _allPaintedTourLocations.size(),
+               _numStatistics_AllTourLocations,
+
+               _allPaintedMarkers.size(),
+               _numStatistics_AllTourMarkers,
+               _numStatistics_AllTourMarkers_IsTruncated,
+
+               _allPaintedPauses.size(),
+               _numStatistics_AllTourPauses,
+               _numStatistics_AllTourPauses_IsTruncated,
+
+               _allPaintedPhotos.size(),
+               _numStatistics_AllTourPhotos,
+               _numStatistics_AllTourPhotos_IsTruncated,
+
+               _allPaintedWayPoints.size(),
+               _numStatistics_AllTourWayPoints,
+               _numStatistics_AllTourWayPoints_IsTruncated)
+
+         );
+      };
+
+      /*
+       * With Eclipse 4.35 this must be run in the UI thread otherwise this exception occurs
+       * org.eclipse.swt.SWTException: Invalid thread access
+       */
+      setupPainting_SWT();
+
+      _mapPointPainter_Task = _mapPointPainter_Executor.submit(mapPointTask);
+   }
+
+   private void paint_MapPointImage_10_Runnable() {
+
+      if (_mapPointImageSize.width == 0 || _mapPointImageSize.height == 0) {
+
+         // this happend, the UI is propably not yet fully initialized
+
+         return;
+      }
+
+      /*
+       * Setup common values
+       */
+      _mapConfig = Map2ConfigManager.getActiveConfig();
+
+      _mapPointPainter_Viewport_DuringPainting = _worldPixel_TopLeft_Viewport;
+
+      if (_colorSwitchCounter++ % 50 == 0) {
+         // use different colors each time
+         _locationBoundingBoxColors.clear();
+      }
+
+      _labelRespectMargin = _mapConfig.labelRespectMargin;
+      _mapPointSymbolSize = _mapConfig.locationSymbolSize;
+      _mapPointSymbolRespectSize = _mapPointSymbolSize + 2;
+
+// SET_FORMATTING_OFF
+
+      _numStatistics_AllCommonLocations         = 0;
+      _numStatistics_AllTourLocations           = 0;
+      _numStatistics_AllTourMarkers             = 0;
+      _numStatistics_AllTourPauses              = 0;
+      _numStatistics_AllTourPhotos              = 0;
+      _numStatistics_AllTourWayPoints           = 0;
+
+      _numStatistics_AllTourMarkers_IsTruncated = false;
+      _numStatistics_AllTourPauses_IsTruncated  = false;
+      _numStatistics_AllTourPhotos_IsTruncated  = false;
+
+      final List<PaintedMapPoint>      allPaintedCommonLocations  = new ArrayList<>();
+      final List<PaintedMapPoint>      allPaintedTourLocations    = new ArrayList<>();
+
+      final List<PaintedMapPoint>      allPaintedMarkers          = new ArrayList<>();
+      final List<PaintedMapPoint>      allPaintedClusterMarkers   = new ArrayList<>();
+      final List<PaintedMarkerCluster> allPaintedMarkerClusters   = new ArrayList<>();
+      final List<PaintedMapPoint>      allPaintedPauses           = new ArrayList<>();
+      final List<PaintedMapPoint>      allPaintedPhotos           = new ArrayList<>();
+      final List<PaintedMapPoint>      allPaintedWayPoints        = new ArrayList<>();
+
+// SET_FORMATTING_ON
+
+      try {
+
+         _deviceScaling = DPIUtil.getDeviceZoom() / 100f;
+
+         final BufferedImage awtImage = new BufferedImage(
+               (int) (_mapPointImageSize.width * _deviceScaling),
+               (int) (_mapPointImageSize.height * _deviceScaling),
+               BufferedImage.TYPE_4BYTE_ABGR);
+
+         final Graphics2D g2d = awtImage.createGraphics();
+         try {
+
+            setupPainting(g2d);
+
+            // clone list to prevent concurrency exceptions, this happened
+            final List<TourData> allTourData = new ArrayList<>(Map2PainterConfig.getTourData());
+
+            if (_mapConfig.isShowTourMarker && _mapConfig.isTourMarkerClustered) {
+
+               paint_MapPointImage_30_MapPointsAndCluster(g2d,
+                     allTourData,
+                     allPaintedCommonLocations,
+                     allPaintedTourLocations,
+                     allPaintedMarkers,
+                     allPaintedMarkerClusters,
+                     allPaintedPauses,
+                     allPaintedPhotos,
+                     allPaintedWayPoints);
+
+            } else {
+
+               paint_MapPointImage_20_MapPoints(g2d,
+                     allTourData,
+                     allPaintedCommonLocations,
+                     allPaintedTourLocations,
+                     allPaintedMarkers,
+                     allPaintedPauses,
+                     allPaintedPhotos,
+                     allPaintedWayPoints);
+            }
+
+            if (_hoveredMarkerCluster != null) {
+
+               /*
+                * Paint hovered cluster marker at the end, over other markers but put the painted
+                * locations at the beginning that they are hit before the other !!!
+                */
+
+               paint_MapPointImage_40_HoveredCluster(g2d,
+                     _hoveredMarkerCluster,
+                     allPaintedClusterMarkers);
+            }
+
+         } finally {
+
+            g2d.dispose();
+         }
+
+         /*
+          * Convert AWT -> SWT image
+          */
+
+         /**
+          * Cleanup images, they cannot be disposed in the UI thread otherwise there are tons of
+          * exceptions when the map image is resized.
+          * <p>
+          */
+         synchronized (_allDisposableMapPointImages_SWT) {
+
+            final CustomScalingImageDataProvider imageDataProvider = new CustomScalingImageDataProvider(awtImage);
+
+            _mapPointImage = new Image(getDisplay(), imageDataProvider);
+
+            _allDisposableMapPointImages_SWT.add(_mapPointImage);
+
+            /**
+             * Starting with Eclipse 4.37. the below exception occurs.
+             * <p>
+             * The below code "_mapPointImage.getImageData();" has "fixed" the below exception, no
+             * exceptions where discovered with this code. However this code causes that the map
+             * point image "jumps" when the map is panned.
+             * <p>
+             * When debugging the code, and a smaller map image of about 1000x1000 is fastly panned,
+             * then image.dispose() will interrupt the thread and a new runnable is run.
+             *
+             * <code>
+             *
+             * java.lang.Error: SWT Resource was not properly disposed
+             *    at org.eclipse.swt.graphics.Resource.initNonDisposeTracking(Resource.java:191)
+             *    at org.eclipse.swt.graphics.Resource.<init>(Resource.java:124)
+             *    at org.eclipse.swt.graphics.Image.<init>(Image.java:231)
+             *    at org.eclipse.swt.graphics.GC$ImageOperation.setCopyOfImage(GC.java:508)
+             *    at org.eclipse.swt.graphics.Image.lambda$4(Image.java:1026)
+             *    at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+             *    at org.eclipse.swt.graphics.Image.dispose(Image.java:1026)
+             *    at de.byteholder.geoclipse.map.Map2.paint_MapPointImage_10_Runnable(Map2.java:7372)
+             *    at de.byteholder.geoclipse.map.Map2.lambda$13(Map2.java:7168)
+             *    at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+             *
+             *
+             *  08:09:40.498 - 1 -    702 -   14889067 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@23c2a091}}
+             *  08:09:40.498 - 2 -    702 -   14889067 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@23c2a091}}
+             *  08:09:40.499 - 3 -    702 -   14889067 - Image {*DISPOSED*}
+             *  08:09:40.499 - 1 -    702 -  976994261 - Image {{}}
+             *
+             *  08:09:40.557 - 1 -    708 -  976994261 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@65cc513}}
+             *  08:09:40.557 - 2 -    708 -  976994261 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@65cc513}}
+             *  08:09:40.614 - 1 -    715 -  976994261 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@65cc513}}
+             *  08:09:40.614 - 2 -    715 -  976994261 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@65cc513}}
+             *  08:09:40.615 - 3 -    715 -  976994261 - Image {*DISPOSED*}
+             *  08:09:40.615 - 1 -    715 - 1644039150 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@32954a7b}}
+             *  08:09:40.615 - 2 -    715 - 1644039150 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@32954a7b}}
+             *  08:09:40.615 - 3 -    715 - 1644039150 - Image {*DISPOSED*}
+             *  08:09:40.615 - 1 -    715 -  589661322 - Image {{}}
+             *
+             *  08:09:40.670 - 1 -    721 -  589661322 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@ca9fe5f}}
+             *  08:09:40.670 - 2 -    721 -  589661322 - Image {{200=org.eclipse.swt.graphics.Image$ImageHandle@ca9fe5f}}
+             *  08:09:40.670 - 3 -    721 -  589661322 - Image {*DISPOSED*}
+             *  08:09:40.670 - 1 -    721 -   52898661 - Image {{}}
+             *
+             * </code>
+             */
+            // 17 is used because a "correct" zoom level would cause an exception
+            _mapPointImage.getImageData(17);
+
+            for (final Image image : _allDisposableMapPointImages_SWT) {
+
+//               _debugLog.append(String.format("%s - 1 - %6d - %10d - %s\n",
+//                     UI.timeStampNano(),
+//                     _mapPointPainter_RunnableCounter.get(),
+//                     image.hashCode(),
+//                     image));
+
+               if (image == _mapPointImage) {
+                  continue;
+               }
+
+//               _debugLog.append(String.format("%s - 2 - %6d - %10d - %s\n",
+//                     UI.timeStampNano(),
+//                     _mapPointPainter_RunnableCounter.get(),
+//                     image.hashCode(),
+//                     image));
+
+               if (image != null) {
+                  image.dispose();
+               }
+
+//               _debugLog.append(String.format("%s - 3 - %6d - %10d - %s\n",
+//                     UI.timeStampNano(),
+//                     _mapPointPainter_RunnableCounter.get(),
+//                     image.hashCode(),
+//                     image));
+            }
+
+            _allDisposableMapPointImages_SWT.clear();
+            _allDisposableMapPointImages_SWT.add(_mapPointImage);
+
+//            System.out.println(_debugLog.toString());
+//            _debugLog.setLength(0);
+//            // TODO remove SYSTEM.OUT.PRINTLN
+         }
+
+         _mapPointPainter_Viewport_WhenPainted = _mapPointPainter_Viewport_DuringPainting;
+
+         _allPaintedCommonLocations = allPaintedCommonLocations;
+         _allPaintedTourLocations = allPaintedTourLocations;
+         _allPaintedMarkers = allPaintedMarkers;
+         _allPaintedMarkerClusters = allPaintedMarkerClusters;
+         _allPaintedClusterMarkers = allPaintedClusterMarkers;
+         _allPaintedPauses = allPaintedPauses;
+         _allPaintedPhotos = allPaintedPhotos;
+         _allPaintedWayPoints = allPaintedWayPoints;
+
+         // reset state which can happen when map is moved and no cluster is displayed
+         if (_isMarkerClusterSelected && allPaintedMarkerClusters.size() == 0) {
+            _isMarkerClusterSelected = false;
+         }
+
+         /*
+          * Preload photo images in HQ
+          */
+         if (_isPreloadHQImages) {
+
+            PhotoLoadManager.stopImageLoading(true);
+
+            final ImageQuality requestedImageQuality = ImageQuality.HQ;
+
+            for (final PaintedMapPoint paintedMapPoint : allPaintedPhotos) {
+
+               final Photo photo = paintedMapPoint.mapPoint.photo;
+
+               // check if image has an loading error
+               final PhotoLoadingState photoLoadingState = photo.getLoadingState(requestedImageQuality);
+
+               if (photoLoadingState != PhotoLoadingState.IMAGE_IS_INVALID) {
+
+                  // image is not yet loaded
+
+                  // check if image is in the cache
+                  final Image photoImage = PhotoImageCache.getImage_SWT(photo, requestedImageQuality);
+
+                  if ((photoImage == null || photoImage.isDisposed())
+                        && photoLoadingState == PhotoLoadingState.IMAGE_IS_IN_LOADING_QUEUE == false) {
+
+                     // the requested image is not available in the image cache -> image must be loaded
+
+                     PhotoLoadManager.putImageInLoadingQueueHQ_Map(
+                           photo,
+                           requestedImageQuality,
+                           _photoImageLoaderCallback);
+                  }
+               }
+            }
+         }
+
+      } catch (final Exception e) {
+
+         StatusUtil.log(e);
+      }
+   }
+
+   private void paint_MapPointImage_20_MapPoints(final Graphics2D g2d,
+                                                 final List<TourData> allTourData,
+                                                 final List<PaintedMapPoint> allPaintedCommonLocations,
+                                                 final List<PaintedMapPoint> allPaintedTourLocations,
+                                                 final List<PaintedMapPoint> allPaintedMarkers,
+                                                 final List<PaintedMapPoint> allPaintedPauses,
+                                                 final List<PaintedMapPoint> allPaintedPhotos,
+                                                 final List<PaintedMapPoint> allPaintedWayPoints) {
+
+      final List<Map2Point> allCreatedCommonLocationPoints = new ArrayList<>();
+      final List<Map2Point> allCreatedTourLocationPoints = new ArrayList<>();
+      final List<Map2Point> allCreatedMarkerPoints = new ArrayList<>();
+      final List<Map2Point> allCreatedPausesPoints = new ArrayList<>();
+      final List<Map2Point> allCreatedPhotoPoints = new ArrayList<>();
+      final List<Map2Point> allCreatedWayPointPoints = new ArrayList<>();
+
+      /*
+       * Create map points
+       */
+      if (_isMapPointVisible && _mapConfig.isShowTourMarker) {
+         createMapPoints_TourMarkers(allTourData, allCreatedMarkerPoints);
+      }
+
+      if (_isMapPointVisible && _mapConfig.isShowTourPauses) {
+         createMapPoints_TourPauses(allTourData, allCreatedPausesPoints);
+      }
+
+      if (_isMapPointVisible && _mapConfig.isShowCommonLocation) {
+         createMapPoints_Locations_50_FromCommonLocations(_allCommonLocations, allCreatedCommonLocationPoints);
+      }
+
+      if (_isMapPointVisible && _mapConfig.isShowTourLocation) {
+         createMapPoints_Locations_10_FromTourData(allTourData, allCreatedTourLocationPoints);
+         createMapPoints_Locations_20_FromTourLocations(_allTourLocations, allCreatedTourLocationPoints);
+      }
+
+      if (_isMapPointVisible && _mapConfig.isShowTourWayPoint) {
+         createMapPoints_TourWayPoints(allTourData, allCreatedWayPointPoints);
+      }
+
+      if (Map2PainterConfig.isShowPhotos) {
+         createMapPoints_TourPhotos(Map2PainterConfig.getPhotos(), allCreatedPhotoPoints);
+      }
+
+      /*
+       * Paint all collected map points
+       */
+      if (allCreatedMarkerPoints.size() > 0
+            || allCreatedCommonLocationPoints.size() > 0
+            || allCreatedTourLocationPoints.size() > 0
+            || allCreatedPausesPoints.size() > 0
+            || allCreatedPhotoPoints.size() > 0
+            || allCreatedWayPointPoints.size() > 0) {
+
+         final Map2Point[] allCommonLocationPoints = allCreatedCommonLocationPoints.toArray(new Map2Point[allCreatedCommonLocationPoints.size()]);
+         final Map2Point[] allTourLocationPoints = allCreatedTourLocationPoints.toArray(new Map2Point[allCreatedTourLocationPoints.size()]);
+         final Map2Point[] allMarkerPoints = allCreatedMarkerPoints.toArray(new Map2Point[allCreatedMarkerPoints.size()]);
+         final Map2Point[] allPausePoints = allCreatedPausesPoints.toArray(new Map2Point[allCreatedPausesPoints.size()]);
+         final Map2Point[] allPhotoPoints = allCreatedPhotoPoints.toArray(new Map2Point[allCreatedPhotoPoints.size()]);
+         final Map2Point[] allWayPointPoints = allCreatedWayPointPoints.toArray(new Map2Point[allCreatedWayPointPoints.size()]);
+
+         paint_MapPointImage_50_AllCollectedItems(g2d,
+
+               allCommonLocationPoints,
+               allPaintedCommonLocations,
+
+               allTourLocationPoints,
+               allPaintedTourLocations,
+
+               allMarkerPoints,
+               allPaintedMarkers,
+
+               allPausePoints,
+               allPaintedPauses,
+
+               allPhotoPoints,
+               allPaintedPhotos,
+
+               allWayPointPoints,
+               allPaintedWayPoints,
+
+               false, // isPaintClusterMarker
+               null // allClusterRectangle
+         );
+      }
+   }
+
+   private void paint_MapPointImage_30_MapPointsAndCluster(final Graphics2D g2d,
+                                                           final List<TourData> allTourData,
+                                                           final List<PaintedMapPoint> allPaintedCommonLocations,
+                                                           final List<PaintedMapPoint> allPaintedTourLocations,
+                                                           final List<PaintedMapPoint> allPaintedMarkers,
+                                                           final List<PaintedMarkerCluster> allPaintedMarkerClusters,
+                                                           final List<PaintedMapPoint> allPaintedPauses,
+                                                           final List<PaintedMapPoint> allPaintedPhotos,
+                                                           final List<PaintedMapPoint> allPaintedWayPoints) {
+
+      final Map<String, Map2Point> allMarkersOnlyMap = new HashMap<>();
+      final List<Map2Point> allMarkersOnlyList = new ArrayList<>();
+      final List<StaticCluster<?>> allClustersOnly = new ArrayList<>();
+      final List<Rectangle> allClusterSymbolRectangleOnly = new ArrayList<>();
+
+      if (_mapConfig.isShowTourMarker) {
+
+         final int clusterGridSize = (int) ScreenUtils.getPixels(_mapConfig.clusterGridSize);
+
+         final List<Map2Point> allMapPoints = new ArrayList<>();
+
+         createMapPoints_TourMarkers(allTourData, allMapPoints);
+
+         // convert MapPoints's into ClusterItem's
+         final List<ClusterItem> allClusterItems = new ArrayList<>();
+         allClusterItems.addAll(allMapPoints);
+
+         _distanceClustering.clearItems();
+         _distanceClustering.addItems(allClusterItems);
+
+         final Set<? extends Cluster<ClusterItem>> allMarkerAndCluster = _distanceClustering.getClusters(_mapZoomLevel, clusterGridSize);
+
+         // get clusters and markers
+         for (final Cluster<ClusterItem> item : allMarkerAndCluster) {
+
+            if (item instanceof final StaticCluster staticCluster) {
+
+               // item is a cluster
+
+               allClustersOnly.add(staticCluster);
+
+            } else if (item instanceof final QuadItem markerItem) {
+
+               // item is a marker
+
+               if (markerItem.mClusterItem instanceof final Map2Point mapMarker) {
+
+                  allMarkersOnlyMap.put(mapMarker.ID, mapMarker);
+               }
+            }
+         }
+
+         /*
+          * Resort markers to the original sequence, otherwise they are displayed with random
+          * label positions !!!
+          */
+         if (allMarkersOnlyMap.size() > 0) {
+
+            for (final Map2Point mapPoint : allMapPoints) {
+
+               final Map2Point mapPointInMap = allMarkersOnlyMap.get(mapPoint.ID);
+
+               if (mapPointInMap != null) {
+                  allMarkersOnlyList.add(mapPoint);
+               }
+            }
+         }
+      }
+
+      final List<Map2Point> allCommonLocationPointList = new ArrayList<>();
+      final List<Map2Point> allTourLocationPointList = new ArrayList<>();
+      final List<Map2Point> allPausesPointsList = new ArrayList<>();
+      final List<Map2Point> allPhotoPointsList = new ArrayList<>();
+      final List<Map2Point> allWayPointPointsList = new ArrayList<>();
+
+      if (_mapConfig.isShowTourPauses) {
+         createMapPoints_TourPauses(allTourData, allPausesPointsList);
+      }
+
+      if (_mapConfig.isShowCommonLocation) {
+         createMapPoints_Locations_50_FromCommonLocations(_allCommonLocations, allCommonLocationPointList);
+      }
+
+      if (_mapConfig.isShowTourLocation) {
+         createMapPoints_Locations_10_FromTourData(allTourData, allTourLocationPointList);
+         createMapPoints_Locations_20_FromTourLocations(_allTourLocations, allTourLocationPointList);
+      }
+
+      if (Map2PainterConfig.isShowPhotos) {
+         createMapPoints_TourPhotos(Map2PainterConfig.getPhotos(), allPhotoPointsList);
+      }
+
+      /*
+       * Prepare marker cluster
+       */
+      if (allClustersOnly.size() > 0) {
+
+         // font MUST be set before string.extend() !!!
+         g2d.setFont(_clusterFontAWT);
+
+         for (final StaticCluster<?> staticCluster : allClustersOnly) {
+
+            final int numClusterItems = staticCluster.getSize();
+
+            final PaintedMarkerCluster paintedCluster = paint_MapPointImage_42_OneCluster_Setup(
+                  g2d,
+                  staticCluster,
+                  Integer.toString(numClusterItems),
+                  allPaintedMarkerClusters);
+
+            if (paintedCluster != null) {
+               allClusterSymbolRectangleOnly.add(paintedCluster.clusterSymbolRectangle);
+            }
+         }
+
+         g2d.setFont(_labelFontAWT);
+      }
+
+      /*
+       * Paint map points
+       */
+      final int numCommonLocations = allCommonLocationPointList.size();
+      final int numTourLocations = allTourLocationPointList.size();
+      final int numMarkers = allMarkersOnlyList.size();
+      final int numPauses = allPausesPointsList.size();
+      final int numPhotos = allPhotoPointsList.size();
+      final int numWayPoints = allWayPointPointsList.size();
+
+      if (numMarkers > 0
+            || numCommonLocations > 0
+            || numTourLocations > 0
+            || numPauses > 0) {
+
+         final Map2Point[] allCommonLocationPoints = allCommonLocationPointList.toArray(new Map2Point[numCommonLocations]);
+         final Map2Point[] allTourLocationPoints = allTourLocationPointList.toArray(new Map2Point[numTourLocations]);
+         final Map2Point[] allMarkerPoints = allMarkersOnlyList.toArray(new Map2Point[numMarkers]);
+         final Map2Point[] allPausePoints = allPausesPointsList.toArray(new Map2Point[numPauses]);
+         final Map2Point[] allPhotoPoints = allPhotoPointsList.toArray(new Map2Point[numPhotos]);
+         final Rectangle[] allClusterRectangle = allClusterSymbolRectangleOnly.toArray(new Rectangle[allClusterSymbolRectangleOnly.size()]);
+         final Map2Point[] allWayPointPoints = allWayPointPointsList.toArray(new Map2Point[numWayPoints]);
+
+         paint_MapPointImage_50_AllCollectedItems(g2d,
+
+               allCommonLocationPoints,
+               allPaintedCommonLocations,
+
+               allTourLocationPoints,
+               allPaintedTourLocations,
+
+               allMarkerPoints,
+               allPaintedMarkers,
+
+               allPausePoints,
+               allPaintedPauses,
+
+               allPhotoPoints,
+               allPaintedPhotos,
+
+               allWayPointPoints,
+               allPaintedWayPoints,
+
+               false,
+               allClusterRectangle);
+      }
+
+      /*
+       * Paint cluster at the top
+       */
+      if (allPaintedMarkerClusters.size() > 0) {
+
+         g2d.setFont(_clusterFontAWT);
+
+         for (final PaintedMarkerCluster paintedCluster : allPaintedMarkerClusters) {
+
+            paint_MapPointImage_60_OneCluster_Paint(g2d, paintedCluster);
+         }
+
+         g2d.setFont(_labelFontAWT);
+      }
+   }
+
+   /**
+    * Highligh the cluster and show its markers
+    *
+    * @param g2d
+    * @param hoveredMarkerCluster
+    * @param allPaintedMarkerPoints
+    */
+   private void paint_MapPointImage_40_HoveredCluster(final Graphics2D g2d,
+                                                      final PaintedMarkerCluster hoveredMarkerCluster,
+                                                      final List<PaintedMapPoint> allPaintedMarkerPoints) {
+
+      final Map2Point[] allClusterMarkerPoints = hoveredMarkerCluster.allClusterMarker;
+      final int numAllMarkers = allClusterMarkerPoints.length;
+
+      if (numAllMarkers == 0) {
+         return;
+      }
+
+      final Rectangle clusterRectangle = hoveredMarkerCluster.clusterSymbolRectangle;
+
+      final int numPlacedLabels = paint_MapPointImage_50_AllCollectedItems(g2d,
+
+            null, // common locations
+            null,
+
+            null, // tour locations
+            null,
+
+            allClusterMarkerPoints, // tour markers
+            allPaintedMarkerPoints,
+
+            null, // pauses
+            null,
+
+            null, // photos
+            null,
+
+            null, // way points
+            null,
+
+            true, // isPaintClusterMarker
+            new Rectangle[] { clusterRectangle });
+
+      if (_isMarkerClusterSelected) {
+         return;
+      }
+
+      /*
+       * Draw number of painted labels which can be different to the cluster labels
+       */
+
+      final int diffX = _mapPointPainter_MicroAdjustment_DiffX;
+      final int diffY = _mapPointPainter_MicroAdjustment_DiffY;
+
+      final int devX = clusterRectangle.x + diffX;
+      final int devY = clusterRectangle.y + diffY;
+
+      // the background must be filled because another number could be displayed
+      g2d.setColor(_mapConfig.clusterOutline_ColorAWT);
+
+      g2d.fillOval(
+
+            devX,
+            devY,
+
+            clusterRectangle.width + 1,
+            clusterRectangle.height + 1);
+
+      // must be set BEFORE stringExtent !!!
+      g2d.setFont(_clusterFontAWT);
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+
+      final String clusterLabel = Integer.toString(numPlacedLabels);
+
+      final int textWidth = fontMetrics.stringWidth(clusterLabel);
+      final int textAscent = fontMetrics.getAscent();
+      final int textDescent = fontMetrics.getDescent();
+
+      final int textWidth2 = textWidth / 2;
+      final int textAscent2 = textAscent / 2;
+      final int textDescent2 = textDescent / 2;
+
+      final int margin = _mapConfig.clusterSymbol_Size;
+      final int circleSize = textWidth + margin;
+      final int circleSize2 = circleSize / 2;
+
+      // center number in the cluster symbol
+      final int clusterLabelDevX = devX + circleSize2 - textWidth2;
+      final int clusterLabelDevY = devY + circleSize2 + textAscent2 - textDescent2;
+
+      g2d.setColor(_mapConfig.clusterFill_ColorAWT);
+      g2d.drawString(clusterLabel, clusterLabelDevX, clusterLabelDevY);
+
+      g2d.setFont(_labelFontAWT);
+   }
+
+   private PaintedMarkerCluster paint_MapPointImage_42_OneCluster_Setup(final Graphics2D g2d,
+                                                                        final StaticCluster<?> markerCluster,
+                                                                        final String clusterLabel,
+                                                                        final List<PaintedMarkerCluster> allPaintedClusters) {
+
+      // convert marker lat/long into world pixels
+
+      final GeoPoint geoPoint = markerCluster.getPosition();
+      final GeoPosition geoPosition = new GeoPosition(geoPoint.getLatitude(), geoPoint.getLongitude());
+
+      final java.awt.Point worldPixel_MarkerPos = _mp.geoToPixel(geoPosition, _mapZoomLevel);
+
+      final int worldPixel_MarkerPosX = worldPixel_MarkerPos.x;
+      final int worldPixel_MarkerPosY = worldPixel_MarkerPos.y;
+
+      final Rectangle worldPixel_Viewport = _mapPointPainter_Viewport_DuringPainting;
+
+      final boolean isClusterInViewport = worldPixel_Viewport.contains(worldPixel_MarkerPosX, worldPixel_MarkerPosY);
+
+      if (isClusterInViewport == false) {
+         return null;
+      }
+
+      // convert world position into device position
+      int devX = worldPixel_MarkerPosX - worldPixel_Viewport.x;
+      int devY = worldPixel_MarkerPosY - worldPixel_Viewport.y;
+
+      devX = (int) (devX * _deviceScaling);
+      devY = (int) (devY * _deviceScaling);
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+
+      final int textWidth = fontMetrics.stringWidth(clusterLabel);
+      final int textAscent = fontMetrics.getAscent();
+      final int textDescent = fontMetrics.getDescent();
+
+      final int textWidth2 = textWidth / 2;
+      final int textAscent2 = textAscent / 2;
+      final int textDescent2 = textDescent / 2;
+
+      final int margin = _mapConfig.clusterSymbol_Size;
+
+      final int circleSize = textWidth + margin;
+      final int circleSize2 = circleSize / 2;
+
+      devX = devX - circleSize2;
+      devY = devY - circleSize2;
+
+      final int circleDevX = devX;
+      final int circleDevY = devY;
+
+      final int clusterLabelDevX = devX + circleSize2 - textWidth2;
+      final int clusterLabelDevY = devY + circleSize2 + textAscent2 - textDescent2;
+
+      final Rectangle paintedClusterRectangle = new Rectangle(
+
+            circleDevX,
+            circleDevY,
+
+            circleSize,
+            circleSize);
+
+      final Rectangle paintedClusterRectangle_Unscaled = new Rectangle(
+            (int) (circleDevX / _deviceScaling),
+            (int) (circleDevY / _deviceScaling),
+            (int) (circleSize / _deviceScaling),
+            (int) (circleSize / _deviceScaling));
+
+      final PaintedMarkerCluster paintedCluster = new PaintedMarkerCluster(
+
+            markerCluster,
+
+            paintedClusterRectangle,
+            paintedClusterRectangle_Unscaled,
+
+            clusterLabel,
+            clusterLabelDevX,
+            clusterLabelDevY);
+
+      // keep cluster painting data
+      allPaintedClusters.add(paintedCluster);
+
+      return paintedCluster;
+   }
+
+   /**
+    * @param g2d
+    * @param allCommonLocationPoints
+    * @param allPaintedCommonLocationsPoints
+    * @param allTourLocationPoints
+    * @param allPaintedTourLocationsPoints
+    * @param allMarkerPoints
+    * @param allPaintedMarkerPoints
+    * @param allPausePoints
+    * @param allPaintedPauses
+    * @param allPhotoPoints
+    * @param allPaintedPhotos
+    * @param allWayPointPoints
+    * @param allPaintedWayPoints
+    * @param isPaintClusterMarker
+    * @param allClusterSymbolRectangle
+    *
+    * @return
+    */
+   private int paint_MapPointImage_50_AllCollectedItems(final Graphics2D g2d,
+
+                                                        final Map2Point[] allCommonLocationPoints,
+                                                        final List<PaintedMapPoint> allPaintedCommonLocationsPoints,
+
+                                                        final Map2Point[] allTourLocationPoints,
+                                                        final List<PaintedMapPoint> allPaintedTourLocationsPoints,
+
+                                                        final Map2Point[] allMarkerPoints,
+                                                        final List<PaintedMapPoint> allPaintedMarkerPoints,
+
+                                                        final Map2Point[] allPausePoints,
+                                                        final List<PaintedMapPoint> allPaintedPauses,
+
+                                                        final Map2Point[] allPhotoPoints,
+                                                        final List<PaintedMapPoint> allPaintedPhotos,
+
+                                                        final Map2Point[] allWayPointPoints,
+                                                        final List<PaintedMapPoint> allPaintedWayPoints,
+
+                                                        final boolean isPaintClusterMarker,
+                                                        final Rectangle[] allClusterSymbolRectangle) {
+
+      final int mapPointRespectSize2 = _mapPointSymbolRespectSize / 2;
+
+      final Rectangle clientArea = _clientArea;
+
+      final int mapWidth = (int) (clientArea.width * _deviceScaling);
+      final int mapHeight = (int) (clientArea.height * _deviceScaling);
+
+      /*
+       * Setup labels for the label spreader
+       */
+      final int numAllMarkers = allMarkerPoints.length;
+      final int numAllCommonLocations = allCommonLocationPoints == null ? 0 : allCommonLocationPoints.length;
+      final int numAllTourLocations = allTourLocationPoints == null ? 0 : allTourLocationPoints.length;
+      final int numAllPauses = allPausePoints == null ? 0 : allPausePoints.length;
+      final int numAllPhotos = allPhotoPoints == null ? 0 : allPhotoPoints.length;
+      final int numAllWayPoints = allWayPointPoints == null ? 0 : allWayPointPoints.length;
+
+      final List<PointFeature> allCommonLocationLabels = new ArrayList<>(numAllCommonLocations);
+      final List<PointFeature> allTourLocationLabels = new ArrayList<>(numAllTourLocations);
+      final List<PointFeature> allMarkerLabels = new ArrayList<>(numAllMarkers);
+      final List<PointFeature> allPauseLabels = new ArrayList<>(numAllPauses);
+      final List<PointFeature> allPhotoItems = new ArrayList<>(numAllPhotos);
+      final List<PointFeature> allWayPointLabels = new ArrayList<>(numAllWayPoints);
+
+      final List<List<PointFeature>> allDistributedItems = new ArrayList<>();
+
+      if (numAllCommonLocations > 0) {
+
+         createLabelSpreaderLabels(g2d, allCommonLocationPoints, allCommonLocationLabels);
+
+         allDistributedItems.add(allCommonLocationLabels);
+      }
+
+      if (numAllTourLocations > 0) {
+
+         createLabelSpreaderLabels(g2d, allTourLocationPoints, allTourLocationLabels);
+
+         allDistributedItems.add(allTourLocationLabels);
+      }
+
+      if (numAllMarkers > 0) {
+
+         createLabelSpreaderLabels(g2d, allMarkerPoints, allMarkerLabels);
+
+         allDistributedItems.add(allMarkerLabels);
+      }
+
+      if (numAllPauses > 0) {
+
+         createLabelSpreaderLabels(g2d, allPausePoints, allPauseLabels);
+
+         allDistributedItems.add(allPauseLabels);
+      }
+
+      if (numAllWayPoints > 0) {
+
+         createLabelSpreaderLabels(g2d, allWayPointPoints, allWayPointLabels);
+
+         allDistributedItems.add(allWayPointLabels);
+      }
+
+      if (numAllPhotos > 0) {
+
+         createLabelSpreaderPhotos(g2d, allPhotoPoints, allPhotoItems);
+
+         allDistributedItems.add(allPhotoItems);
+      }
+
+      /*
+       * Set label distributor parameters
+       */
+      PointFeatureLabeler.setSpiralRadius(_mapConfig.labelDistributorRadius);
+
+      _labelSpreader.loadDataPriority(allDistributedItems,
+
+            0, //          left
+            mapWidth, //   right
+            0, //          top
+            mapHeight //   bottom
+      );
+
+      /*
+       * Prevent that marker clusters are overwritten
+       */
+      if (allClusterSymbolRectangle != null) {
+
+         for (final Rectangle clusterRectangle : allClusterSymbolRectangle) {
+
+            if (isMapPointPainterInterrupted()) {
+               return 0;
+            }
+
+            final int circleBorder2 = _clusterSymbolBorder / 2;
+
+            final float circleRadius = clusterRectangle.width + _clusterSymbolBorder;
+            final float circleRadius2 = circleRadius / 2;
+
+            final float circleX = clusterRectangle.x + circleRadius2 - circleBorder2;
+            final float circleY = clusterRectangle.y + circleRadius2 - circleBorder2;
+
+            _labelSpreader.respectCircle(
+                  circleX, //  x-coordinate of center point
+                  circleY, //  y-coordinate of center point
+                  circleRadius2);
+         }
+      }
+
+      /**
+       * Prevent that geo locations are overwritten
+       * <p>
+       * !!! This performs 3 time slower than without but for 200 max visible markers, it is OK !!!
+       */
+      if (numAllCommonLocations > 0) {
+
+         final int locationRespectWidth = _imageMapLocationBounds.x;
+         final int locationRespectHeight = _imageMapLocationBounds.y;
+         final int locationRespectWidth2 = locationRespectWidth / 2;
+
+         for (int itemIndex = 0; itemIndex < numAllCommonLocations; itemIndex++) {
+
+            if (isMapPointPainterInterrupted()) {
+               return 0;
+            }
+
+            final PointFeature distribLabel = allCommonLocationLabels.get(itemIndex);
+
+            final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+            final int locationSymbolDevX = mapPoint.geoPointDevX - locationRespectWidth2;
+            final int locationSymbolDevY = mapPoint.geoPointDevY - locationRespectHeight;
+
+            _labelSpreader.respectBox(
+                  locationSymbolDevX,
+                  locationSymbolDevY,
+                  locationRespectWidth,
+                  locationRespectHeight);
+         }
+      }
+
+      if (numAllTourLocations > 0) {
+
+         final int locationRespectWidth = _imageMapLocationBounds.x;
+         final int locationRespectHeight = _imageMapLocationBounds.y;
+         final int locationRespectWidth2 = locationRespectWidth / 2;
+
+         for (int itemIndex = 0; itemIndex < numAllTourLocations; itemIndex++) {
+
+            if (isMapPointPainterInterrupted()) {
+               return 0;
+            }
+
+            final PointFeature distribLabel = allTourLocationLabels.get(itemIndex);
+
+            final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+            final int locationSymbolDevX = mapPoint.geoPointDevX - locationRespectWidth2;
+            final int locationSymbolDevY = mapPoint.geoPointDevY - locationRespectHeight;
+
+            _labelSpreader.respectBox(
+                  locationSymbolDevX,
+                  locationSymbolDevY,
+                  locationRespectWidth,
+                  locationRespectHeight);
+         }
+      }
+
+      for (int itemIndex = 0; itemIndex < numAllMarkers; itemIndex++) {
+
+         if (isMapPointPainterInterrupted()) {
+            return 0;
+         }
+
+         final PointFeature distribLabel = allMarkerLabels.get(itemIndex);
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int symbolDevX = mapPoint.geoPointDevX - mapPointRespectSize2;
+         final int symbolDevY = mapPoint.geoPointDevY - mapPointRespectSize2;
+
+         _labelSpreader.respectBox(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolRespectSize,
+               _mapPointSymbolRespectSize);
+      }
+
+      for (int itemIndex = 0; itemIndex < numAllPauses; itemIndex++) {
+
+         if (isMapPointPainterInterrupted()) {
+            return 0;
+         }
+
+         final PointFeature distribLabel = allPauseLabels.get(itemIndex);
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int symbolDevX = mapPoint.geoPointDevX - mapPointRespectSize2;
+         final int symbolDevY = mapPoint.geoPointDevY - mapPointRespectSize2;
+
+         _labelSpreader.respectBox(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolRespectSize,
+               _mapPointSymbolRespectSize);
+      }
+
+      for (int itemIndex = 0; itemIndex < numAllWayPoints; itemIndex++) {
+
+         if (isMapPointPainterInterrupted()) {
+            return 0;
+         }
+
+         final PointFeature distribLabel = allWayPointLabels.get(itemIndex);
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int symbolDevX = mapPoint.geoPointDevX - mapPointRespectSize2;
+         final int symbolDevY = mapPoint.geoPointDevY - mapPointRespectSize2;
+
+         _labelSpreader.respectBox(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolRespectSize,
+               _mapPointSymbolRespectSize);
+      }
+
+      for (int itemIndex = 0; itemIndex < numAllPhotos; itemIndex++) {
+
+         if (isMapPointPainterInterrupted()) {
+            return 0;
+         }
+
+         final PointFeature distribLabel = allPhotoItems.get(itemIndex);
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int symbolDevX = mapPoint.geoPointDevX - mapPointRespectSize2;
+         final int symbolDevY = mapPoint.geoPointDevY - mapPointRespectSize2;
+
+         _labelSpreader.respectBox(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolRespectSize,
+               _mapPointSymbolRespectSize);
+      }
+
+      /*
+       * Run label spreader, the resulting label positions are stored within the point-features
+       */
+      final int numPlacedLabels = _labelSpreader.label_StandardPipelineAll();
+//    final int numPlacedLabels = _labelDistributor.label_StandardPipelineAdjacentAll();
+
+      if (isMapPointPainterInterrupted()) {
+         return 0;
+      }
+
+      g2d.setStroke(new BasicStroke(1));
+
+      /*
+       * Draw location label
+       */
+      paint_MpImage_10_AllLocationLabels(g2d, numAllCommonLocations, allCommonLocationLabels, allPaintedCommonLocationsPoints);
+      paint_MpImage_10_AllLocationLabels(g2d, numAllTourLocations, allTourLocationLabels, allPaintedTourLocationsPoints);
+
+      /*
+       * Paint other items
+       */
+      paint_MpImage_30_AllMarker(g2d,
+            numAllMarkers,
+            isPaintClusterMarker,
+            allMarkerLabels,
+            allPaintedMarkerPoints);
+
+      paint_MpImage_40_AllPauses(g2d,
+            numAllPauses,
+            allPauseLabels,
+            allPaintedPauses);
+
+      paint_MpImage_50_AllWayPoints(g2d,
+            numAllWayPoints,
+            allWayPointLabels,
+            allPaintedWayPoints);
+
+      paint_MpImage_80_AllPhotos(g2d,
+            allPhotoItems,
+            allPaintedPhotos);
+
+      /*
+       * Draw location symbol
+       */
+      paint_MpImage_20_AllLocationSymbols(g2d, numAllCommonLocations, allCommonLocationLabels, allPaintedCommonLocationsPoints);
+      paint_MpImage_20_AllLocationSymbols(g2d, numAllTourLocations, allTourLocationLabels, allPaintedTourLocationsPoints);
+
+      // FOR DEBUGGING
+      //
+//    _labelSpreader.drawParticles(gc);
+//    _labelSpreader.drawSpiral(gc, (int) circleX, (int) circleY);
+
+      return numPlacedLabels;
+   }
+
+   private void paint_MapPointImage_60_OneCluster_Paint(final Graphics2D g2d,
+                                                        final PaintedMarkerCluster paintedCluster) {
+
+      final boolean isPaintBackground = _isMarkerClusterSelected ? false : true;
+
+      final Rectangle clusterSymbolRectangle = paintedCluster.clusterSymbolRectangle;
+
+      final int symbolDevX = clusterSymbolRectangle.x;
+      final int symbolDevY = clusterSymbolRectangle.y;
+      final int circleSize = clusterSymbolRectangle.width;
+
+      if (isPaintBackground && _mapConfig.isFillClusterSymbol) {
+
+         g2d.setColor(_mapConfig.clusterFill_ColorAWT);
+         g2d.fillOval(
+
+               symbolDevX,
+               symbolDevY,
+
+               circleSize,
+               circleSize);
+      }
+
+      g2d.setColor(_mapConfig.clusterOutline_ColorAWT);
+
+      final int outlineWidth = _mapConfig.clusterOutline_Width;
+
+      if (outlineWidth > 0) {
+
+         g2d.setStroke(new BasicStroke(outlineWidth));
+         g2d.drawOval(
+
+               symbolDevX,
+               symbolDevY,
+
+               circleSize,
+               circleSize);
+      }
+
+      g2d.drawString(
+            paintedCluster.clusterLabel,
+            paintedCluster.clusterLabelDevX,
+            paintedCluster.clusterLabelDevY);
+   }
+
+   private void paint_MpImage_10_AllLocationLabels(final Graphics2D g2d,
+                                                   final int numVisibleLocations,
+                                                   final List<PointFeature> allLocationLabels,
+                                                   final List<PaintedMapPoint> allPaintedLocationsPoints) {
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+      final int textHeight = fontMetrics.getHeight();
+
+      for (int itemIndex = 0; itemIndex < numVisibleLocations; itemIndex++) {
+
+         final PointFeature distribLabel = allLocationLabels.get(itemIndex);
+
+         // check if label is displayed
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         // paint location bounding box
+         if (_mapConfig.isShowLocationBoundingBox) {
+
+            g2d.setColor(mapPoint.boundingBox_ColorAWT);
+
+            // draw original bbox
+            final java.awt.Rectangle rect1 = mapPoint.boundingBoxAWT;
+            g2d.drawRect(rect1.x, rect1.y, rect1.width, rect1.height);
+
+            final java.awt.Rectangle rect2 = mapPoint.boundingBox_ResizedAWT;
+            if (rect2 != null) {
+
+               // draw resized bbox
+               g2d.drawRect(rect2.x, rect2.y, rect2.width, rect2.height);
+            }
+         }
+
+         // draw location label
+         final String text = mapPoint.getFormattedLabel();
+
+         final int textWidth = fontMetrics.stringWidth(text);
+
+         final int labelDevX = (int) distribLabel.labelBoxL;
+         final int labelDevY = (int) distribLabel.labelBoxT;
+
+         final Rectangle labelRectangle = new Rectangle(
+               labelDevX,
+               labelDevY,
+               textWidth,
+               textHeight);
+
+         paint_MpImage_90_OneLabel(
+               g2d,
+               mapPoint,
+               labelRectangle,
+               allPaintedLocationsPoints);
+      }
+   }
+
+   private void paint_MpImage_20_AllLocationSymbols(final Graphics2D g2d,
+                                                    final int numVisibleLocations,
+                                                    final List<PointFeature> allLocationLabels,
+                                                    final List<PaintedMapPoint> allPaintedLocationsPoints) {
+      int paintedLocationIndex = 0;
+
+      final int imageWidth = _imageMapLocationBounds.x;
+      final int imageHeight = _imageMapLocationBounds.y;
+      final int imageWidth2 = imageWidth / 2;
+
+      for (int itemIndex = 0; itemIndex < numVisibleLocations; itemIndex++) {
+
+         final PointFeature distribLabel = allLocationLabels.get(itemIndex);
+
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int locationDevX = mapPoint.geoPointDevX;
+         final int locationDevY = mapPoint.geoPointDevY;
+
+         final int iconDevX = locationDevX - imageWidth2;
+         final int iconDevY = locationDevY - imageHeight;
+
+         // set rectangle from the icon image
+         final Rectangle paintedRectangle = new Rectangle(
+
+               iconDevX,
+               iconDevY,
+
+               imageWidth,
+               imageHeight);
+
+         // draw location image
+
+         final int numDuplicates_Start = mapPoint.numDuplicates_Start;
+         final int numDuplicates_End = mapPoint.numDuplicates_End;
+
+         if (_isMarkerClusterSelected) {
+
+            if (_isMapBackgroundDark) {
+
+               g2d.drawImage(_imageMapLocation_Disabled_Dark, iconDevX, iconDevY, null);
+
+            } else {
+
+               g2d.drawImage(_imageMapLocation_Disabled, iconDevX, iconDevY, null);
+            }
+
+         } else {
+
+            if (numDuplicates_Start > 0 && numDuplicates_End > 0) {
+
+               // start & end location
+
+               g2d.drawImage(_imageMapLocation_TourEnd, iconDevX, iconDevY, null);
+               g2d.drawImage(_imageMapLocation_TourStart, iconDevX, iconDevY, null);
+
+            } else if (numDuplicates_Start > 0) {
+
+               // start location
+
+               g2d.drawImage(_imageMapLocation_TourStart, iconDevX, iconDevY, null);
+
+            } else if (numDuplicates_End > 0) {
+
+               // end location
+
+               g2d.drawImage(_imageMapLocation_TourEnd, iconDevX, iconDevY, null);
+
+            } else {
+
+               if (mapPoint.locationType.equals(LocationType.Common)) {
+
+                  // common location
+
+                  g2d.drawImage(_imageMapLocation_Common, iconDevX, iconDevY, null);
+
+               } else {
+
+                  // other location
+
+                  g2d.drawImage(_imageMapLocation_Tour, iconDevX, iconDevY, null);
+               }
+            }
+         }
+
+         // keep painted symbol position
+         final PaintedMapPoint paintedMarker = allPaintedLocationsPoints.get(paintedLocationIndex++);
+         paintedMarker.symbolRectangle = paintedRectangle;
+      }
+   }
+
+   private void paint_MpImage_30_AllMarker(final Graphics2D g2d,
+                                           final int numVisibleMarkers,
+                                           final boolean isPaintClusterMarker,
+                                           final List<PointFeature> allMarkerItems,
+                                           final List<PaintedMapPoint> allPaintedMarkerPoints) {
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+      final int textHeight = fontMetrics.getHeight();
+
+      for (int itemIndex = 0; itemIndex < numVisibleMarkers; itemIndex++) {
+
+         final PointFeature distribLabel = allMarkerItems.get(itemIndex);
+
+         // check if label is displayed
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final String text = mapPoint.getFormattedLabel();
+
+         final int textWidth = fontMetrics.stringWidth(text);
+
+         final int labelDevX = (int) distribLabel.labelBoxL;
+         final int labelDevY = (int) distribLabel.labelBoxT;
+
+         final Rectangle markerLabelRectangle = new Rectangle(
+               labelDevX,
+               labelDevY,
+               textWidth,
+               textHeight);
+
+         if (isPaintClusterMarker) {
+
+            // paint a cluster marker, all markers within one cluster
+
+            final int devX = labelDevX;
+            final int devY = labelDevY + textHeight - fontMetrics.getDescent();
+
+            // fill label background
+            g2d.setColor(_mapConfig.tourMarkerFill_ColorAWT);
+            g2d.fillRect(markerLabelRectangle.x, markerLabelRectangle.y, markerLabelRectangle.width, markerLabelRectangle.height);
+
+            g2d.fillRect(
+                  markerLabelRectangle.x - MAP_POINT_BORDER,
+                  markerLabelRectangle.y,
+                  markerLabelRectangle.width + 2 * MAP_POINT_BORDER,
+                  markerLabelRectangle.height);
+
+            g2d.setColor(_mapConfig.tourMarkerOutline_ColorAWT);
+
+            // border: horizontal bottom
+            g2d.drawLine(
+                  labelDevX,
+                  labelDevY + textHeight,
+                  labelDevX + textWidth - 1,
+                  labelDevY + textHeight);
+
+            // marker label
+            g2d.drawString(text, devX, devY);
+
+            // keep painted positions
+            final Rectangle markerLabelRectangle_Unscaled = new Rectangle(
+
+                  (int) (markerLabelRectangle.x / _deviceScaling),
+                  (int) (markerLabelRectangle.y / _deviceScaling),
+                  (int) (markerLabelRectangle.width / _deviceScaling),
+                  (int) (markerLabelRectangle.height / _deviceScaling));
+
+            allPaintedMarkerPoints.add(new PaintedMapPoint(mapPoint, markerLabelRectangle, markerLabelRectangle_Unscaled));
+
+         } else {
+
+            // paint a normal marker
+
+            paint_MpImage_90_OneLabel(
+                  g2d,
+                  mapPoint,
+                  markerLabelRectangle,
+                  allPaintedMarkerPoints);
+         }
+      }
+
+      /*
+       * Draw marker symbol
+       */
+
+      final int symbolSize2 = _mapPointSymbolSize / 2;
+      final int lineWidth = _mapPointSymbolSize / 4;
+      final int lineWidth2 = lineWidth / 2;
+
+      g2d.setStroke(new BasicStroke(lineWidth));
+
+      java.awt.Color fillColor;
+      java.awt.Color outlineColor;
+
+      if (_isMarkerClusterSelected) {
+
+         // all other labels are disable -> display grayed out
+
+         fillColor = java.awt.Color.WHITE;
+         outlineColor = _isMapBackgroundDark ? java.awt.Color.GRAY : java.awt.Color.WHITE;
+
+      } else {
+
+         fillColor = _mapConfig.tourMarkerOutline_ColorAWT;
+         outlineColor = _mapConfig.tourMarkerFill_ColorAWT;
+      }
+
+      int paintedMarkerIndex = 0;
+
+      for (int itemIndex = 0; itemIndex < numVisibleMarkers; itemIndex++) {
+
+         final PointFeature distribLabel = allMarkerItems.get(itemIndex);
+
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         if (_isMarkerClusterSelected == false) {
+
+            // use map point color
+
+            fillColor = mapPoint.getFillColorAWT();
+            outlineColor = mapPoint.getOutlineColorAWT();
+         }
+
+         final int mapPointDevX = mapPoint.geoPointDevX;
+         final int mapPointDevY = mapPoint.geoPointDevY;
+
+         final int markerSymbolDevX = mapPointDevX - symbolSize2;
+         final int markerSymbolDevY = mapPointDevY - symbolSize2;
+
+         final Rectangle symbolRectangle = new Rectangle(
+               markerSymbolDevX,
+               markerSymbolDevY,
+               _mapPointSymbolSize,
+               _mapPointSymbolSize);
+
+         g2d.setColor(fillColor);
+         g2d.fillRect(symbolRectangle.x, symbolRectangle.y, symbolRectangle.width, symbolRectangle.height);
+
+         g2d.setColor(outlineColor);
+         g2d.drawRect(
+               symbolRectangle.x + lineWidth2,
+               symbolRectangle.y + lineWidth2,
+               symbolRectangle.width - lineWidth,
+               symbolRectangle.height - lineWidth);
+
+         // keep painted symbol position
+         final Rectangle symbolRectangle_Unscaled = new Rectangle(
+
+               (int) (symbolRectangle.x / _deviceScaling),
+               (int) (symbolRectangle.y / _deviceScaling),
+               (int) (symbolRectangle.width / _deviceScaling),
+               (int) (symbolRectangle.height / _deviceScaling));
+
+         final PaintedMapPoint paintedMarker = allPaintedMarkerPoints.get(paintedMarkerIndex++);
+         paintedMarker.symbolRectangle = symbolRectangle;
+         paintedMarker.symbolRectangle_Unscaled = symbolRectangle_Unscaled;
+      }
+   }
+
+   private void paint_MpImage_40_AllPauses(final Graphics2D g2d,
+                                           final int numVisibleItems,
+                                           final List<PointFeature> allPauseItems,
+                                           final List<PaintedMapPoint> allPaintedPoints) {
+
+      /*
+       * Draw pause label
+       */
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+      final int textHeight = fontMetrics.getHeight();
+
+      for (int itemIndex = 0; itemIndex < numVisibleItems; itemIndex++) {
+
+         final PointFeature distribLabel = allPauseItems.get(itemIndex);
+
+         // check if label is displayed
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final String text = mapPoint.getFormattedLabel();
+
+         final int textWidth = fontMetrics.stringWidth(text);
+
+         final int labelDevX = (int) distribLabel.labelBoxL;
+         final int labelDevY = (int) distribLabel.labelBoxT;
+
+         final Rectangle pauseLabelRectangle = new Rectangle(
+               labelDevX,
+               labelDevY,
+               textWidth,
+               textHeight);
+
+         paint_MpImage_90_OneLabel(
+               g2d,
+               mapPoint,
+               pauseLabelRectangle,
+               allPaintedPoints);
+      }
+
+      /*
+       * Draw pause symbol
+       */
+      final int symbolSize2 = _mapPointSymbolSize / 2;
+      final int lineWidth = _mapPointSymbolSize / 4;
+      final int lineWidth2 = lineWidth / 2;
+
+      g2d.setStroke(new BasicStroke(lineWidth));
+
+      java.awt.Color fillColor;
+      java.awt.Color outlineColor;
+
+      if (_isMarkerClusterSelected) {
+
+         // all other labels are disable -> display grayed out
+
+         fillColor = java.awt.Color.WHITE;
+         outlineColor = _isMapBackgroundDark ? java.awt.Color.GRAY : java.awt.Color.WHITE;
+
+      } else {
+
+         fillColor = _mapConfig.tourPauseOutline_ColorAWT;
+         outlineColor = _mapConfig.tourPauseFill_ColorAWT;
+      }
+
+      int paintedPointIndex = 0;
+
+      for (int itemIndex = 0; itemIndex < numVisibleItems; itemIndex++) {
+
+         final PointFeature distribLabel = allPauseItems.get(itemIndex);
+
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int mapPointDevX = mapPoint.geoPointDevX;
+         final int mapPointDevY = mapPoint.geoPointDevY;
+
+         final int symbolDevX = mapPointDevX - symbolSize2;
+         final int symbolDevY = mapPointDevY - symbolSize2;
+
+         final Rectangle symbolRectangle = new Rectangle(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolSize,
+               _mapPointSymbolSize);
+
+         g2d.setColor(fillColor);
+         g2d.fillRect(symbolRectangle.x, symbolRectangle.y, symbolRectangle.width, symbolRectangle.height);
+
+         g2d.setColor(outlineColor);
+         g2d.drawRect(
+               symbolRectangle.x + lineWidth2,
+               symbolRectangle.y + lineWidth2,
+               symbolRectangle.width - lineWidth,
+               symbolRectangle.height - lineWidth);
+
+         // keep painted symbol position
+         final PaintedMapPoint paintedMarker = allPaintedPoints.get(paintedPointIndex++);
+         paintedMarker.symbolRectangle = symbolRectangle;
+      }
+   }
+
+   private void paint_MpImage_50_AllWayPoints(final Graphics2D g2d,
+                                              final int numVisibleItems,
+                                              final List<PointFeature> allItems,
+                                              final List<PaintedMapPoint> allPaintedPoints) {
+
+      /*
+       * Draw pause label
+       */
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+      final int textHeight = fontMetrics.getHeight();
+
+      for (int itemIndex = 0; itemIndex < numVisibleItems; itemIndex++) {
+
+         final PointFeature distribLabel = allItems.get(itemIndex);
+
+         // check if label is displayed
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final String text = mapPoint.getFormattedLabel();
+
+         final int textWidth = fontMetrics.stringWidth(text);
+
+         final int labelDevX = (int) distribLabel.labelBoxL;
+         final int labelDevY = (int) distribLabel.labelBoxT;
+
+         final Rectangle pauseLabelRectangle = new Rectangle(
+               labelDevX,
+               labelDevY,
+               textWidth,
+               textHeight);
+
+         paint_MpImage_90_OneLabel(
+               g2d,
+               mapPoint,
+               pauseLabelRectangle,
+               allPaintedPoints);
+      }
+
+      /*
+       * Draw pause symbol
+       */
+      final int symbolSize2 = _mapPointSymbolSize / 2;
+      final int lineWidth = _mapPointSymbolSize / 4;
+      final int lineWidth2 = lineWidth / 2;
+
+      g2d.setStroke(new BasicStroke(lineWidth));
+
+      java.awt.Color fillColor;
+      java.awt.Color outlineColor;
+
+      if (_isMarkerClusterSelected) {
+
+         // all other labels are disable -> display grayed out
+
+         fillColor = java.awt.Color.WHITE;
+         outlineColor = _isMapBackgroundDark ? java.awt.Color.GRAY : java.awt.Color.WHITE;
+
+      } else {
+
+         fillColor = _mapConfig.tourWayPointOutline_ColorAWT;
+         outlineColor = _mapConfig.tourWayPointFill_ColorAWT;
+      }
+
+      int paintedPointIndex = 0;
+
+      for (int itemIndex = 0; itemIndex < numVisibleItems; itemIndex++) {
+
+         final PointFeature distribLabel = allItems.get(itemIndex);
+
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final int mapPointDevX = mapPoint.geoPointDevX;
+         final int mapPointDevY = mapPoint.geoPointDevY;
+
+         final int symbolDevX = mapPointDevX - symbolSize2;
+         final int symbolDevY = mapPointDevY - symbolSize2;
+
+         final Rectangle symbolRectangle = new Rectangle(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolSize,
+               _mapPointSymbolSize);
+
+         g2d.setColor(fillColor);
+         g2d.fillRect(symbolRectangle.x, symbolRectangle.y, symbolRectangle.width, symbolRectangle.height);
+
+         g2d.setColor(outlineColor);
+         g2d.drawRect(
+               symbolRectangle.x + lineWidth2,
+               symbolRectangle.y + lineWidth2,
+               symbolRectangle.width - lineWidth,
+               symbolRectangle.height - lineWidth);
+
+         // keep painted symbol position
+         final PaintedMapPoint paintedMapPoint = allPaintedPoints.get(paintedPointIndex++);
+         paintedMapPoint.symbolRectangle = symbolRectangle;
+      }
+   }
+
+   private void paint_MpImage_80_AllPhotos(final Graphics2D g2d,
+                                           final List<PointFeature> allPhotoItems,
+                                           final List<PaintedMapPoint> allPaintedPhotos) {
+
+      final int numPhotosItems = allPhotoItems.size();
+
+      Rectangle selectedPhotoRectangle = null;
+
+      g2d.setStroke(new BasicStroke(1));
+
+      /*
+       * Paint photos
+       */
+      for (int itemIndex = 0; itemIndex < numPhotosItems; itemIndex++) {
+
+         final PointFeature distribLabel = allPhotoItems.get(itemIndex);
+
+         // check if label is displayed
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final Photo photo = mapPoint.photo;
+         final Point mapImageSize = photo.getMap2ImageSize(
+
+               _isShowHQPhotoImages,
+               _isShowPhotoAdjustments,
+               _isEnlargeSmallImages);
+
+         final int labelDevX = (int) distribLabel.labelBoxL;
+         final int labelDevY = (int) distribLabel.labelBoxT;
+
+         final int mapImageWidth = mapImageSize.x;
+         final int mapImageHeight = mapImageSize.y;
+
+         Rectangle photoRectangle = new Rectangle(
+               labelDevX,
+               labelDevY,
+               mapImageWidth,
+               mapImageHeight);
+
+         final BufferedImage awtPhotoImage = getPhotoImage(photo);
+
+         if (awtPhotoImage == null) {
+
+            // image is not yet available -> paint photo placeholder
+
+            g2d.setColor(java.awt.Color.GRAY);
+
+            g2d.fillRect(
+                  photoRectangle.x,
+                  photoRectangle.y,
+                  photoRectangle.width,
+                  photoRectangle.height);
+
+         } else {
+
+            // paint photo image
+
+            final int photoImageWidth = awtPhotoImage.getWidth();
+            final int photoImageHeight = awtPhotoImage.getHeight();
+
+            if (photoImageWidth == mapImageWidth
+                  && photoImageHeight == mapImageHeight) {
+
+               // do NOT resize the image, it would not look very good
+
+               g2d.drawImage(awtPhotoImage,
+
+                     photoRectangle.x,
+                     photoRectangle.y,
+
+                     null);
+
+            } else if (_isEnlargeSmallImages == false
+                  && photoImageWidth < mapImageWidth
+                  && photoImageHeight < mapImageHeight) {
+
+               // photo image is smaller than the requested map image -> do not enlarge it
+
+               photoRectangle = new Rectangle(
+                     labelDevX,
+                     labelDevY,
+                     photoImageWidth,
+                     photoImageHeight);
+
+               g2d.drawImage(awtPhotoImage,
+
+                     photoRectangle.x,
+                     photoRectangle.y,
+
+                     null);
+
+            } else {
+
+               // resize image, this will also enlarge small images
+
+               g2d.drawImage(awtPhotoImage,
+
+                     photoRectangle.x,
+                     photoRectangle.y,
+                     photoRectangle.width,
+                     photoRectangle.height,
+
+                     null);
+            }
+
+            // draw border
+
+//          g2d.setColor(_mapConfig.photoOutline_ColorAWT);
+//          g2d.drawRect(
+//               photoRectangle.x - MAP_POINT_BORDER,
+//               photoRectangle.y,
+//               photoRectangle.width + 2 * MAP_POINT_BORDER,
+//               photoRectangle.height);
+
+            photo.paintedPhoto = photoRectangle;
+
+            if (Map2PainterConfig.isShowPhotoRating) {
+               paint_MpImage_RatingStars(g2d, photo);
+            }
+
+            // photo label
+            if (Map2PainterConfig.isShowPhotoLabel) {
+               paint_MpImage_PhotoLabel(g2d, photo, mapPoint);
+            }
+
+            // draw annotations
+            if (_isShowPhotoAdjustments && _isShowHQPhotoImages && Map2PainterConfig.isShowPhotoAnnotations) {
+               paint_MpImage_Annotations(g2d, photo);
+            }
+
+            if (_selectedPhoto == photo) {
+               selectedPhotoRectangle = photoRectangle;
+            }
+         }
+
+         // keep position
+         final Rectangle photoRectangle_Unscaled = new Rectangle(
+
+               (int) (photoRectangle.x / _deviceScaling),
+               (int) (photoRectangle.y / _deviceScaling),
+               (int) (photoRectangle.width / _deviceScaling),
+               (int) (photoRectangle.height / _deviceScaling));
+
+         final PaintedMapPoint paintedMapPoint = new PaintedMapPoint(mapPoint, photoRectangle, photoRectangle_Unscaled);
+
+         allPaintedPhotos.add(paintedMapPoint);
+      }
+
+      /*
+       * Draw selected photo marker
+       */
+      if (selectedPhotoRectangle != null) {
+
+         final int border = 4;
+         final int border2 = border / 2;
+
+         g2d.setStroke(new BasicStroke(border));
+         g2d.setColor(java.awt.Color.yellow);
+
+         g2d.drawRect(
+
+               selectedPhotoRectangle.x - border2,
+               selectedPhotoRectangle.y - border2,
+               selectedPhotoRectangle.width + border,
+               selectedPhotoRectangle.height + border);
+      }
+
+      /*
+       * Draw photo symbol
+       */
+      final int symbolSize2 = _mapPointSymbolSize / 2;
+      final int lineWidth = _mapPointSymbolSize / 4;
+      final int lineWidth2 = lineWidth / 2;
+
+      g2d.setStroke(new BasicStroke(lineWidth));
+
+      // ensure that ovals are smooth
+      g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+      java.awt.Color fillColor;
+      java.awt.Color outlineColor;
+
+      final java.awt.Color positionedFillColor = java.awt.Color.YELLOW;
+      final java.awt.Color positionedOutlineColor = java.awt.Color.RED;
+
+      if (_isMarkerClusterSelected) {
+
+         // all other labels are disable -> display grayed out
+
+         fillColor = java.awt.Color.WHITE;
+         outlineColor = _isMapBackgroundDark ? java.awt.Color.GRAY : java.awt.Color.WHITE;
+
+      } else {
+
+         fillColor = _mapConfig.photoOutline_ColorAWT;
+         outlineColor = _mapConfig.photoFill_ColorAWT;
+      }
+
+      int paintedPointIndex = 0;
+
+      for (int itemIndex = 0; itemIndex < numPhotosItems; itemIndex++) {
+
+         final PointFeature distribLabel = allPhotoItems.get(itemIndex);
+
+         if (distribLabel.isLabeled == false) {
+            continue;
+         }
+
+         final Map2Point mapPoint = (Map2Point) distribLabel.data;
+
+         final Photo photo = mapPoint.photo;
+         final List<TourPhoto> allTourPhotos = TourPhotoManager.getTourPhotos(photo);
+
+         if (allTourPhotos.size() == 0) {
+            continue;
+         }
+
+         final TourPhoto tourPhoto = allTourPhotos.get(0);
+         final TourData tourData = tourPhoto.getTourData();
+         final Set<Long> tourPhotosWithPositionedGeo = tourData.getTourPhotosWithPositionedGeo();
+         final boolean isPositionedPhoto = tourPhotosWithPositionedGeo.contains(tourPhoto.getPhotoId());
+
+         final int mapPointDevX = mapPoint.geoPointDevX;
+         final int mapPointDevY = mapPoint.geoPointDevY;
+
+         final int symbolDevX = mapPointDevX - symbolSize2;
+         final int symbolDevY = mapPointDevY - symbolSize2;
+
+         final Rectangle symbolRectangle = new Rectangle(
+               symbolDevX,
+               symbolDevY,
+               _mapPointSymbolSize,
+               _mapPointSymbolSize);
+
+         g2d.setColor(isPositionedPhoto ? positionedFillColor : fillColor);
+         g2d.fillOval(
+               symbolRectangle.x + 1, // fill a smaller shape that antialiasing do not show a light border !!!
+               symbolRectangle.y + 1,
+               _mapPointSymbolSize - 2,
+               _mapPointSymbolSize - 2);
+
+         g2d.setColor(isPositionedPhoto ? positionedOutlineColor : outlineColor);
+         g2d.drawOval(
+               symbolRectangle.x + lineWidth2,
+               symbolRectangle.y + lineWidth2,
+               symbolRectangle.width - lineWidth,
+               symbolRectangle.height - lineWidth);
+
+         // keep painted symbol position
+         final PaintedMapPoint paintedMarker = allPaintedPhotos.get(paintedPointIndex++);
+         paintedMarker.symbolRectangle = symbolRectangle;
+      }
+
+      // ensure that rectangels are not smoothed
+      g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+   }
+
+   private void paint_MpImage_90_OneLabel(final Graphics2D g2d,
+                                          final Map2Point mapPoint,
+                                          final Rectangle labelRectangle,
+                                          final List<PaintedMapPoint> allPaintedMapPoints) {
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+
+      final String labelText = mapPoint.getFormattedLabel();
+
+      final int rectangleHeight = labelRectangle.height;
+
+      final int devX = labelRectangle.x;
+      final int devY = labelRectangle.y + rectangleHeight - fontMetrics.getDescent();
+
+      java.awt.Color fillColor;
+      java.awt.Color outlineColor;
+
+      MapLabelLayout markerLabelLayout = _mapConfig.labelLayout;
+
+      if (_isMarkerClusterSelected) {
+
+         // all other labels are disable -> display grayed out
+
+         fillColor = java.awt.Color.WHITE;
+         outlineColor = _isMapBackgroundDark ? java.awt.Color.GRAY : java.awt.Color.WHITE;
+
+         markerLabelLayout = MapLabelLayout.NONE;
+
+      } else {
+
+         fillColor = mapPoint.getFillColorAWT();
+         outlineColor = mapPoint.getOutlineColorAWT();
+      }
+
+      /*
+       * Draw label background
+       */
+      if (markerLabelLayout.equals(MapLabelLayout.RECTANGLE_BOX)) {
+
+         g2d.setColor(fillColor);
+
+         g2d.fillRect(
+               labelRectangle.x - MAP_POINT_BORDER,
+               labelRectangle.y,
+               labelRectangle.width + 2 * MAP_POINT_BORDER,
+               rectangleHeight);
+
+      } else if (markerLabelLayout.equals(MapLabelLayout.SHADOW)) {
+
+         g2d.setColor(fillColor);
+
+         g2d.drawString(labelText, devX + 1, devY + 1);
+
+      } else if (markerLabelLayout.equals(MapLabelLayout.NONE)) {
+
+         // no border
+
+      } else if (markerLabelLayout.equals(MapLabelLayout.BORDER_1_PIXEL)) {
+
+         g2d.setColor(fillColor);
+
+         g2d.drawString(labelText, devX - 1, devY);
+         g2d.drawString(labelText, devX + 1, devY);
+         g2d.drawString(labelText, devX, devY - 1);
+         g2d.drawString(labelText, devX, devY + 1);
+
+      } else if (markerLabelLayout.equals(MapLabelLayout.BORDER_2_PIXEL)) {
+
+         g2d.setColor(fillColor);
+
+         g2d.drawString(labelText, devX - 1, devY);
+         g2d.drawString(labelText, devX + 1, devY);
+         g2d.drawString(labelText, devX, devY - 1);
+         g2d.drawString(labelText, devX, devY + 1);
+
+         g2d.drawString(labelText, devX - 2, devY);
+         g2d.drawString(labelText, devX + 2, devY);
+         g2d.drawString(labelText, devX, devY - 2);
+         g2d.drawString(labelText, devX, devY + 2);
+      }
+
+      /*
+       * Draw label text
+       */
+      g2d.setColor(outlineColor);
+      g2d.drawString(labelText, devX, devY);
+
+      // keep position
+      final Rectangle labelRectangle_Unscaled = new Rectangle(
+
+            (int) (labelRectangle.x / _deviceScaling),
+            (int) (labelRectangle.y / _deviceScaling),
+            (int) (labelRectangle.width / _deviceScaling),
+            (int) (labelRectangle.height / _deviceScaling));
+
+      allPaintedMapPoints.add(new PaintedMapPoint(mapPoint, labelRectangle, labelRectangle_Unscaled));
+   }
+
+   private void paint_MpImage_Annotations(final Graphics2D g2d, final Photo photo) {
+
+      final boolean isCropped = photo.isCropped;
+      final boolean isSetTonality = photo.isSetTonality;
+
+      if (isCropped == false && isSetTonality == false) {
+         return;
+      }
+
+      final Rectangle paintedPhoto = photo.paintedPhoto;
+
+      final int photoDevX = paintedPhoto.x;
+      final int photoDevY = paintedPhoto.y;
+      final int photoWidth = paintedPhoto.width;
+      final int photoHeight = paintedPhoto.height;
+
+      final int annotationWidth = _imageAnnotationCropped.getWidth();
+      final int annotationHeight = _imageAnnotationCropped.getHeight();
+
+      int devX = photoDevX + photoWidth - 2;
+      final int devY = photoDevY + photoHeight - annotationHeight - 2;
+
+      if (isCropped) {
+
+         devX -= annotationWidth;
+
+         g2d.drawImage(_imageAnnotationCropped, devX, devY, null);
+
+         devX -= 3;
+      }
+
+      if (isSetTonality) {
+
+         devX -= annotationWidth;
+
+         g2d.drawImage(_imageAnnotationTonality, devX, devY, null);
+      }
+   }
+
+   private void paint_MpImage_PhotoLabel(final Graphics2D g2d, final Photo photo, final Map2Point mapPoint) {
+
+      final List<TourPhoto> allTourPhotos = TourPhotoManager.getTourPhotos(photo);
+      if (allTourPhotos.size() < 1) {
+         return;
+      }
+
+      final TourPhoto tourPhoto = allTourPhotos.get(0);
+      final String photoLabel = tourPhoto.getPhotoLabel();
+
+      if (photoLabel == null) {
+         return;
+      }
+
+      final Rectangle paintedPhoto = photo.paintedPhoto;
+      final int devY = paintedPhoto.y + paintedPhoto.height;
+      final int devX = paintedPhoto.x + 0;
+
+      final FontMetrics fontMetrics = g2d.getFontMetrics();
+
+      final int textHeight = fontMetrics.getHeight();
+      final int fontAscent = fontMetrics.getAscent();
+
+      final int textWidth = fontMetrics.stringWidth(photoLabel);
+      final int spaceWidth = fontMetrics.stringWidth(UI.SPACE1);
+      final int spaceWidth2 = spaceWidth * 2;
+
+      final int backgroundWidth = Math.min(textWidth + spaceWidth2, paintedPhoto.width);
+
+      final java.awt.Rectangle labelRect = new java.awt.Rectangle(
+            devX,
+            devY - textHeight,
+            backgroundWidth,
+            textHeight);
+
+      // background
+      g2d.setColor(mapPoint.getFillColorAWT());
+      g2d.fillRect(
+            labelRect.x,
+            labelRect.y,
+            labelRect.width,
+            labelRect.height);
+
+      // label
+      g2d.setClip(labelRect);
+      g2d.setColor(mapPoint.getOutlineColorAWT());
+      g2d.drawString(photoLabel,
+            devX + spaceWidth,
+            devY - textHeight + fontAscent);
+
+      // clear clipping
+      g2d.setClip(null);
+   }
+
+   private void paint_MpImage_RatingStars(final Graphics2D g2d, final Photo photo) {
+
+      final Rectangle paintedPhoto = photo.paintedPhoto;
+
+      final int photoDevX = paintedPhoto.x;
+      final int photoDevY = paintedPhoto.y;
+      final int photoWidth = paintedPhoto.width;
+      final int numRatingStars = photo.ratingStars;
+
+      final boolean isSmallRatingStar = photoWidth / _deviceScaling < 70;
+
+      photo.isSmallRatingStars = isSmallRatingStar;
+
+      final int smallRatingStarGap = (int) (5 * _deviceScaling);
+      final int smallRatingStarSize = (photoWidth / MAX_RATING_STARS) - smallRatingStarGap;
+
+      final int maxSmallRatingStarsWidth = MAX_RATING_STARS * smallRatingStarSize
+            + (MAX_RATING_STARS - 1) * smallRatingStarGap;
+
+      // center ratings stars in the middle of the image
+      final int leftBorderWithVisibleStars = photoDevX
+            + photoWidth / 2
+            - MAX_RATING_STARS_WIDTH / 2;
+
+      final int leftBorderRatingStars = isSmallRatingStar
+            ? photoDevX + photoWidth / 2 - maxSmallRatingStarsWidth / 2
+            : leftBorderWithVisibleStars;
+
+      final int ratingStarImageSize = _ratingStarImageSize;
+
+      photo.paintedRatingStars = new Rectangle(
+
+            leftBorderWithVisibleStars,
+            photoDevY,
+
+            ratingStarImageSize * MAX_RATING_STARS,
+            ratingStarImageSize);
+
+      g2d.setStroke(new BasicStroke(1));
+
+      for (int starIndex = 0; starIndex < numRatingStars; starIndex++) {
+
+         // draw stars are at the top of the photo
+
+         if (isSmallRatingStar) {
+
+            final int ratingStarXOffset = (smallRatingStarSize + smallRatingStarGap) * starIndex;
+
+            final int ratingStarDevX = leftBorderRatingStars + ratingStarXOffset;
+            final int ratingStarDevY = photoDevY + (ratingStarImageSize / 2 - smallRatingStarSize / 2) / 2;
+
+            g2d.setColor(RATING_STAR_COLOR);
+            g2d.fillRect(
+
+                  ratingStarDevX,
+                  ratingStarDevY,
+                  smallRatingStarSize,
+                  smallRatingStarSize);
+
+            g2d.setColor(RATING_STAR_COLOR_BORDER);
+            g2d.drawRect(
+
+                  ratingStarDevX,
+                  ratingStarDevY,
+                  smallRatingStarSize,
+                  smallRatingStarSize);
+
+         } else {
+
+            g2d.drawImage(_imageRatingStar,
+
+                  leftBorderRatingStars + (ratingStarImageSize * starIndex),
+                  photoDevY,
+                  ratingStarImageSize,
+                  ratingStarImageSize,
+
+                  null);
+         }
+      }
    }
 
    private void paint_OfflineArea(final GC gc) {
@@ -4489,7 +9590,7 @@ public class Map2 extends Canvas {
 
       _overlayImageCache = new OverlayImageCache();
 
-      _overlayThread = new Thread("PaintOverlayImages") { //$NON-NLS-1$
+      _overlayThread = new Thread("2D Map - Paint Overlay Images") { //$NON-NLS-1$
          @Override
          public void run() {
 
@@ -4518,7 +9619,7 @@ public class Map2 extends Canvas {
                } catch (final InterruptedException e) {
                   interrupt();
                } catch (final Exception e) {
-                  e.printStackTrace();
+                  StatusUtil.log(e);
                }
             }
          }
@@ -4559,7 +9660,9 @@ public class Map2 extends Canvas {
                paint_Overlay_20_Tiles();
 
             } catch (final Exception e) {
-               e.printStackTrace();
+
+               StatusUtil.log(e);
+
             } finally {
                _isRunningDrawOverlay = false;
             }
@@ -4575,8 +9678,6 @@ public class Map2 extends Canvas {
 
          Tile tile;
 
-         checkImageTemplate9Parts();
-
          final long startTime = System.currentTimeMillis();
 
          while ((tile = _tileOverlayPaintQueue.poll()) != null) {
@@ -4588,22 +9689,15 @@ public class Map2 extends Canvas {
                tile.setOverlayTourStatus(OverlayTourState.TILE_IS_CHECKED);
 
                // cleanup previous positions
+               tile.allPainted_Hash.clear();
                tile.allPainted_HoverRectangle.clear();
+               tile.allPainted_HoverSerieIndices.clear();
                tile.allPainted_HoverTourID.clear();
 
                /*
-                * check if a tour, marker or photo is within the current tile
+                * Check if a tour, marker or photo is within the current tile
                 */
-               boolean isPaintingNeeded = false;
-
-               for (final Map2Painter mapPainter : _allMapPainter) {
-
-                  isPaintingNeeded = mapPainter.isPaintingNeeded(Map2.this, tile);
-
-                  if (isPaintingNeeded) {
-                     break;
-                  }
-               }
+               final boolean isPaintingNeeded = _mapPainter.isPaintingNeeded(Map2.this, tile);
 
                if (isPaintingNeeded == false) {
 
@@ -4614,15 +9708,11 @@ public class Map2 extends Canvas {
                }
 
                // paint overlay
-               if (isPaintTile_With_BasicMethod()) {
-                  paint_Overlay_22_PaintTileBasic(tile);
-               } else {
-                  paint_Overlay_30_PaintTileEnhanced(tile);
-               }
+               paint_Overlay_22_OneTile(tile);
 
                // allow to display painted overlays
                final long paintTime = System.currentTimeMillis();
-               if (paintTime > startTime + 100) {
+               if (paintTime > startTime + 500) {
                   break;
                }
 
@@ -4640,38 +9730,41 @@ public class Map2 extends Canvas {
     *
     * @param tile
     */
-   private void paint_Overlay_22_PaintTileBasic(final Tile tile) {
+   private void paint_Overlay_22_OneTile(final Tile tile) {
 
       boolean isOverlayPainted = false;
 
-      // create 1 part image/gc
-      final ImageData transparentImageData = de.byteholder.geoclipse.map.UI.createTransparentImageData(_tilePixelSize);
+      final float scaledTilePixelSize = _tilePixelSize * UI.HIDPI_SCALING * 2;
+      final ImageData transparentImageData = MapUtils.createTransparentImageData((int) scaledTilePixelSize);
 
-      final Image overlayImage = new Image(_display, transparentImageData);
-      final GC gc1Part = new GC(overlayImage);
+      final CustomScalingImageDataProvider imageDataProvider = new CustomScalingImageDataProvider(transparentImageData);
 
-      /*
-       * Ubuntu 12.04 fails, when background is not filled, it draws a black background
-       */
-      gc1Part.setBackground(_transparentColor);
-      gc1Part.fillRectangle(overlayImage.getBounds());
-
+      final Image overlayImage = new Image(_display, imageDataProvider);
+      final GC gcTile = new GC(overlayImage);
       {
+         /*
+          * Ubuntu 12.04 fails, when background is not filled, it draws a black background
+          */
+         final Rectangle bounds = overlayImage.getBounds();
+
+         gcTile.setBackground(_mapTransparentColor);
+         gcTile.fillRectangle(0, 0, bounds.width, bounds.height);
+
          // paint all overlays for the current tile
-         for (final Map2Painter overlayPainter : _allMapPainter) {
+         final boolean isPainted = _mapPainter.doPaint(
+               gcTile,
+               Map2.this,
+               tile,
+               _isFastMapPainting && _isFastMapPainting_Active,
+               _fastMapPainting_skippedValues);
 
-            final boolean isPainted = overlayPainter.doPaint(
-                  gc1Part,
-                  Map2.this,
-                  tile,
-                  1,
-                  _isFastMapPainting && _isFastMapPainting_Active,
-                  _fastMapPainting_skippedValues);
+         final ImageData imageDataAfterPainting = overlayImage.getImageData();
 
-            isOverlayPainted = isOverlayPainted || isPainted;
-         }
+         imageDataProvider.setImageData(imageDataAfterPainting);
+
+         isOverlayPainted = isOverlayPainted || isPainted;
       }
-      gc1Part.dispose();
+      gcTile.dispose();
 
       if (isOverlayPainted) {
 
@@ -4695,272 +9788,6 @@ public class Map2 extends Canvas {
 
          // set tile state
          tile.setOverlayImageState(OverlayImageState.NO_IMAGE);
-      }
-   }
-
-   /**
-    * Paints the overlay into the overlay image which is bigger than the tile image so that the
-    * drawings are not clipped at the tile border. The overlay image is afterwards splitted into
-    * parts which are drawn into the tile images
-    *
-    * @param tile
-    */
-   private void paint_Overlay_30_PaintTileEnhanced(final Tile tile) {
-
-      final int parts = 3;
-
-      boolean isOverlayPainted = false;
-
-      {
-         // clear 9 part image
-         _9PartGC.setBackground(_transparentColor);
-         _9PartGC.fillRectangle(_9PartImage.getBounds());
-
-         // paint all overlays for the current tile
-         for (final Map2Painter overlayPainter : _allMapPainter) {
-
-            final boolean isPainted = overlayPainter.doPaint(
-                  _9PartGC,
-                  Map2.this,
-                  tile,
-                  parts,
-                  _isFastMapPainting && _isFastMapPainting_Active,
-                  _fastMapPainting_skippedValues);
-
-            isOverlayPainted = isOverlayPainted || isPainted;
-         }
-
-         if (isOverlayPainted) {
-
-            tile.setOverlayImageState(OverlayImageState.IMAGE_IS_CREATED);
-
-            final ImageData imageData9Parts = _9PartImage.getImageData();
-
-            /**
-             * overlay image is created, split overlay image into 3*3 part images where the center
-             * image is the requested tile image
-             */
-
-            final Job splitJob = new Job("SplitOverlayImages() " + _jobCounterSplitImages++) { //$NON-NLS-1$
-
-               @Override
-               public boolean belongsTo(final Object family) {
-
-                  return family == _splitJobFamily;
-               }
-
-               @Override
-               protected IStatus run(final IProgressMonitor monitor) {
-
-                  paint_Overlay_31_SplitParts(tile, imageData9Parts);
-
-                  if (_isCancelSplitJobs) {
-                     return Status.CANCEL_STATUS;
-                  }
-
-                  paint();
-
-                  return Status.OK_STATUS;
-               }
-
-            };
-
-            splitJob.setSystem(true);
-            splitJob.schedule();
-
-         } else {
-
-            if (tile.getOverlayContent() == 0) {
-               tile.setOverlayImageState(OverlayImageState.NO_IMAGE);
-            } else {
-               tile.setOverlayImageState(OverlayImageState.TILE_HAS_PART_CONTENT);
-            }
-         }
-      }
-   }
-
-   /**
-    * Splits the overlay tile image into 3*3 parts, the center image is the tile overlay image
-    *
-    * <pre>
-    *
-    * y,x
-    *
-    * 0,0      0,1      0,2
-    * 1,0      1,1      1,2
-    * 2,0      2,1      2,2
-    * </pre>
-    *
-    * @param tile
-    * @param imageData9Parts
-    */
-   private void paint_Overlay_31_SplitParts(final Tile tile, final ImageData imageData9Parts) {
-
-      final TileCache tileCache = MP.getTileCache();
-
-      final String projectionId = _mp.getProjection().getId();
-      final int partSize = _tilePixelSize;
-
-      final int tileZoom = tile.getZoom();
-      final int tileX = tile.getX();
-      final int tileY = tile.getY();
-      final int maxTiles = (int) Math.pow(2, tileZoom);
-
-      final ArrayList<Rectangle> partMarkerBounds = tile.getPartMarkerBounds(tileZoom);
-      final boolean isMarkerBounds = partMarkerBounds != null && partMarkerBounds.size() > 0;
-
-      for (int yIndex = 0; yIndex < 3; yIndex++) {
-         for (int xIndex = 0; xIndex < 3; xIndex++) {
-
-            if (_isCancelSplitJobs) {
-               return;
-            }
-
-            // check if the tile is within the map border
-            if (((tileX - xIndex < -1) //
-                  || (tileX + xIndex > maxTiles + 1))
-                  || ((tileY - yIndex < -1) //
-                        || (tileY + yIndex > maxTiles + 1))) {
-               continue;
-            }
-
-            final int devXPart = partSize * xIndex;
-            final int devYPart = partSize * yIndex;
-
-            // check if there are any drawings in the current part
-            if (isPartImageDataModified(imageData9Parts, devXPart, devYPart, partSize) == false) {
-
-               // there are no drawings within the current part
-               continue;
-            }
-
-            /*
-             * there are drawings in the current part
-             */
-
-            final int xOffset = xIndex - 1;
-            final int yOffset = yIndex - 1;
-
-            final String partImageKey = getOverlayKey(tile, xOffset, yOffset, projectionId);
-            final boolean isCenterPart = (xIndex == 1) && (yIndex == 1);
-            Image tileOverlayImage = null;
-
-            if (isCenterPart) {
-
-               // center part, this is the part which belongs to the current tile
-
-               // get image data resources
-               final ImageDataResources idResources = tile.getOverlayImageDataResources();
-
-               // draw center part into the tile image data
-               idResources.drawTileImageData(
-                     imageData9Parts,
-                     devXPart,
-                     devYPart,
-                     partSize,
-                     partSize);
-
-               tileOverlayImage = tile.createOverlayImage(_display);
-
-               // set tile state
-               tile.setOverlayImageState(OverlayImageState.TILE_HAS_CONTENT);
-               tile.incrementOverlayContent();
-
-            } else {
-
-               // neighbor part
-
-               final String neighborTileCacheKey = tile.getTileKey(xOffset, yOffset, projectionId);
-
-               boolean isNeighborTileCreated = false;
-
-               Tile neighborTile = tileCache.get(neighborTileCacheKey);
-               if (neighborTile == null) {
-
-                  // create neighbor tile
-
-                  isNeighborTileCreated = true;
-
-                  final MP mp = tile.getMP();
-
-                  neighborTile = new Tile(
-                        mp,
-                        tile.getZoom(), //
-                        tile.getX() + xOffset,
-                        tile.getY() + yOffset,
-                        null);
-
-                  neighborTile.setBoundingBoxEPSG4326();
-                  mp.doPostCreation(neighborTile);
-
-                  tileCache.add(neighborTileCacheKey, neighborTile);
-               }
-
-               // get neighbor image data resources
-               final ImageDataResources neighborIDResources = neighborTile.getOverlayImageDataResources();
-
-               // draw part image into the neighbor image
-               neighborIDResources.drawNeighborImageData(
-                     imageData9Parts,
-                     devXPart,
-                     devYPart,
-                     partSize,
-                     partSize);
-
-               if (isNeighborTileCreated == false) {
-
-                  /*
-                   * create overlay image only when the neighbor tile was not created so that the
-                   * normal tile image loading happens
-                   */
-
-                  tileOverlayImage = neighborTile.createOverlayImage(_display);
-               }
-
-               // set state for the neighbor tile
-               neighborTile.incrementOverlayContent();
-
-               final OverlayImageState partImageState = neighborTile.getOverlayImageState();
-               if (partImageState != OverlayImageState.TILE_HAS_CONTENT) {
-                  neighborTile.setOverlayImageState(OverlayImageState.TILE_HAS_PART_CONTENT);
-               }
-            }
-
-            if (isMarkerBounds) {
-               for (final Rectangle markerBound : partMarkerBounds) {
-
-                  /*
-                   * set marker bounds into the tile
-                   */
-
-                  // adjust tile center pos to top/left pos for a 9 part image
-                  final int devXMarker = markerBound.x;// + partSize;
-                  final int devYMarker = markerBound.y;// + partSize;
-
-                  final int markerWidth = markerBound.width;
-                  final int markerHeight = markerBound.height;
-
-                  // check if marker intersects the part
-                  final boolean isMarkerInTile = //
-                        (devXMarker < devXPart + partSize)
-                              && (devYMarker < devYPart + partSize)
-                              && (devXMarker + markerWidth > devXPart)
-                              && (devYMarker + markerHeight > devYPart);
-
-                  if (isMarkerInTile) {
-                     tile.addMarkerBounds(devXMarker, devYMarker, markerWidth, markerHeight, tileZoom);
-                  }
-               }
-            }
-
-            /*
-             * keep image in the cache that not too much image resources are created and that all
-             * images can be disposed
-             */
-            if (tileOverlayImage != null) {
-               _overlayImageCache.add(partImageKey, tileOverlayImage);
-            }
-         }
       }
    }
 
@@ -4992,6 +9819,7 @@ public class Map2 extends Canvas {
     * @param fgColor
     * @param bgColor
     * @param isAdjustToMousePosition
+    *
     * @return Returns outline of the painted text or <code>null</code> when text is not painted
     */
    private Rectangle paint_Text_Label(final GC gc,
@@ -5110,14 +9938,24 @@ public class Map2 extends Canvas {
       // get tile from the map provider, this also starts the loading of the tile image
       final Tile tile = _mp.getTile(tilePositionX, tilePositionY, _mapZoomLevel);
 
-      final Image tileImage = tile.getCheckedMapImage();
+      Image tileImage = tile.getCheckedMapImage();
       if (tileImage != null) {
 
          // tile map image is available and valid
 
+         // paint tile dimming when not yet done
+         if (tile.dimImage_TileKey != null) {
+
+            tileImage = paint_Tile_40_Dimming(tileImage, tile);
+
+            // reset state AFTER tile key is used
+            tile.dimImage_TileKey = null;
+         }
+
          gcMapImage.drawImage(tileImage, devTileViewport.x, devTileViewport.y);
 
       } else {
+
          paint_Tile_10_Image(gcMapImage, tile, devTileViewport);
       }
 
@@ -5138,7 +9976,7 @@ public class Map2 extends Canvas {
    }
 
    /**
-    * draw the tile map image
+    * Draw the tile map image
     */
    private void paint_Tile_10_Image(final GC gcMapImage, final Tile tile, final Rectangle devTileViewport) {
 
@@ -5173,7 +10011,7 @@ public class Map2 extends Canvas {
        * image is available. Tile image loading is started, when the tile is retrieved from the tile
        * factory which is done in drawTile()
        */
-      tile.addObserver(_tileImageLoadObserver);
+      tile.setImageLoaderCallback(_tileImageLoaderCallback);
 
       if (_isLiveView == false) {
 
@@ -5188,7 +10026,7 @@ public class Map2 extends Canvas {
          } else {
 
             /*
-             * offline image is not availabe, show loading... message
+             * offline image is not available, show loading... message
              */
 
             gcMapImage.drawImage(_mp.getLoadingImage(), devTileViewport.x, devTileViewport.y);
@@ -5213,27 +10051,27 @@ public class Map2 extends Canvas {
        * Priority 1: draw overlay image
        */
       final OverlayImageState imageState = tile.getOverlayImageState();
-      final int overlayContent = tile.getOverlayContent();
+      final int numOverlayContent = tile.getOverlayContent();
 
-      if ((imageState == OverlayImageState.IMAGE_IS_CREATED)
-            || ((imageState == OverlayImageState.NO_IMAGE) && (overlayContent == 0))) {
+      if ((imageState == OverlayImageState.IMAGE_IS_BEING_CREATED)
+            || ((imageState == OverlayImageState.NO_IMAGE) && (numOverlayContent == 0))) {
 
          // there is no image for the tile overlay or the image is currently being created
          return;
       }
 
-      Image drawingImage = null;
+      Image overlayCachedImage = null;
       Image partOverlayImage = null;
       Image tileOverlayImage = null;
 
-      if (overlayContent > 0) {
+      if (numOverlayContent > 0) {
 
          // tile has overlay content, check if an image is available
 
          final String overlayKey = getOverlayKey(tile);
 
          // get overlay image from the cache
-         drawingImage = partOverlayImage = _overlayImageCache.get(overlayKey);
+         overlayCachedImage = partOverlayImage = _overlayImageCache.get(overlayKey);
 
          if (partOverlayImage == null) {
 
@@ -5243,19 +10081,22 @@ public class Map2 extends Canvas {
              */
             tileOverlayImage = tile.getOverlayImage();
             if ((tileOverlayImage != null) && (tileOverlayImage.isDisposed() == false)) {
-               drawingImage = tileOverlayImage;
+               overlayCachedImage = tileOverlayImage;
             }
          }
       }
 
       // draw overlay image
-      if ((drawingImage != null) && (drawingImage.isDisposed() == false)) {
+      if (overlayCachedImage != null && overlayCachedImage.isDisposed() == false) {
+
          try {
-            gcMapImage.drawImage(drawingImage, devTileViewport.x, devTileViewport.y);
+
+            gcMapImage.drawImage(overlayCachedImage, devTileViewport.x, devTileViewport.y);
+
          } catch (final Exception e) {
 
             /*
-             * ignore, it's still possible that the image is disposed when the images are changing
+             * Ignore, it's still possible that the image is disposed when the images are changing
              * very often and the cache is small
              */
             partOverlayImage = null;
@@ -5284,7 +10125,7 @@ public class Map2 extends Canvas {
             // overlay image is NOT available
 
             // check if tile has overlay content
-            if (overlayContent == 0) {
+            if (numOverlayContent == 0) {
 
                /**
                 * tile has no overlay content -> set state that the drawing of the overlay is as
@@ -5324,7 +10165,7 @@ public class Map2 extends Canvas {
 
             if (imageState == OverlayImageState.NOT_SET) {
 
-               if (overlayContent == 0) {
+               if (numOverlayContent == 0) {
                   tile.setOverlayImageState(OverlayImageState.NO_IMAGE);
                } else {
                   // something is wrong
@@ -5367,7 +10208,8 @@ public class Map2 extends Canvas {
       if (_isShowDebug_TileBorder) {
 
          // draw tile border
-         gc.setForeground(_display.getSystemColor(SWT.COLOR_YELLOW));
+         gc.setLineWidth(1);
+         gc.setForeground(_isMapBackgroundDark ? UI.SYS_COLOR_YELLOW : UI.SYS_COLOR_RED);
          gc.drawRectangle(devTileViewport.x, devTileViewport.y, _tilePixelSize, _tilePixelSize);
       }
 
@@ -5396,6 +10238,34 @@ public class Map2 extends Canvas {
       }
    }
 
+   private Image paint_Tile_40_Dimming(final Image tileImage, final Tile tile) {
+
+      if (tileImage == null || tileImage.isDisposed()) {
+         return null;
+      }
+
+      // create dimmed image
+      final Rectangle imageBounds = tileImage.getBounds();
+      final Image dimmedImage = new Image(_display, imageBounds.width, imageBounds.height);
+
+      final GC gcDimmedImage = new GC(dimmedImage);
+      {
+         gcDimmedImage.setBackground(new Color(_mp.getDimColor()));
+         gcDimmedImage.fillRectangle(imageBounds);
+
+         gcDimmedImage.setAlpha(_mp.getDimAlpha());
+         gcDimmedImage.drawImage(tileImage, 0, 0);
+      }
+      gcDimmedImage.dispose();
+
+      tileImage.dispose();
+
+      // replace tile image with the dimmed image
+      _mp.getTileImageCache().putIntoImageCache(tile.dimImage_TileKey, dimmedImage);
+
+      return dimmedImage;
+   }
+
    private void paint_TileInfo_Error(final GC gc, final Rectangle devTileViewport, final Tile tile) {
 
       // draw tile border
@@ -5416,8 +10286,8 @@ public class Map2 extends Canvas {
       final String loadingError = tile.getLoadingError();
       if (loadingError != null) {
          sb.append(loadingError);
-         sb.append(UI.NEW_LINE);
-         sb.append(UI.NEW_LINE);
+         sb.append(NL);
+         sb.append(NL);
       }
 
       final ConcurrentHashMap<String, Tile> childrenLoadingError = tile.getChildrenWithErrors();
@@ -5425,8 +10295,8 @@ public class Map2 extends Canvas {
 
          for (final Tile childTile : childrenLoadingError.values()) {
             sb.append(childTile.getLoadingError());
-            sb.append(UI.NEW_LINE);
-            sb.append(UI.NEW_LINE);
+            sb.append(NL);
+            sb.append(NL);
          }
       }
 
@@ -5504,15 +10374,15 @@ public class Map2 extends Canvas {
       final String url = tile.getUrl();
       if (url != null) {
          sb.append(url);
-         sb.append(UI.NEW_LINE);
-         sb.append(UI.NEW_LINE);
+         sb.append(NL);
+         sb.append(NL);
       }
 
       final String offlinePath = tile.getOfflinePath();
       if (offlinePath != null) {
          sb.append(offlinePath);
-         sb.append(UI.NEW_LINE);
-         sb.append(UI.NEW_LINE);
+         sb.append(NL);
+         sb.append(NL);
       }
 
       final ArrayList<Tile> tileChildren = tile.getChildren();
@@ -5529,7 +10399,7 @@ public class Map2 extends Canvas {
                                         final int topMargin,
                                         final int leftMargin) {
 
-      final StringBuilder text = new StringBuilder()//
+      final StringBuilder text = new StringBuilder()
             .append(Messages.TileInfo_Position_Zoom)
             .append(tile.getZoom() + 1)
             .append(Messages.TileInfo_Position_X)
@@ -5537,7 +10407,9 @@ public class Map2 extends Canvas {
             .append(Messages.TileInfo_Position_Y)
             .append(tile.getY());
 
-      gc.drawString(text.toString(), devTileViewport.x + leftMargin, devTileViewport.y + topMargin);
+      gc.drawString(text.toString(),
+            devTileViewport.x + leftMargin,
+            devTileViewport.y + topMargin);
    }
 
    /**
@@ -5564,14 +10436,60 @@ public class Map2 extends Canvas {
 
       // set new map center
       setMapCenterInWorldPixel(new Point2D.Double(newCenterX, newCenterY));
-      updateViewPortData();
+      updateViewportData();
 
       paint();
 
       fireEvent_MapPosition(false);
    }
 
-   private boolean parsePOIText(String text) {
+   private void panPhoto(final MouseEvent mouseEvent) {
+
+      final List<TourPhoto> allTourPhotos = TourPhotoManager.getTourPhotos(_pannedPhoto);
+
+      final TourPhoto tourPhoto = allTourPhotos.get(0);
+      final TourData tourData = tourPhoto.getTourData();
+
+      final GeoPosition mouseMove_GeoPosition = getMouseMove_GeoPosition();
+
+      final double latitude = mouseMove_GeoPosition.latitude;
+      final double longitude = mouseMove_GeoPosition.longitude;
+
+      // getting the serie index is very tricky
+      final int serieIndex = _pannedPhoto.photoIndex;
+
+      if (serieIndex >= tourData.latitudeSerie.length) {
+
+         // this happened, propably a wrong tour was set
+
+         return;
+      }
+
+      tourData.latitudeSerie[serieIndex] = latitude;
+      tourData.longitudeSerie[serieIndex] = longitude;
+
+      tourPhoto.setGeoLocation(latitude, longitude);
+
+      if (tourPhoto != null) {
+
+         tourPhoto.setGeoLocation(latitude, longitude);
+
+         // keep state for which photo a geo position was set
+         tourData.getTourPhotosWithPositionedGeo().add(tourPhoto.getPhotoId());
+      }
+
+      // interpolate all geo positions
+      tourData.computeGeo_Photos();
+
+      TourManager.saveModifiedTour(tourData);
+   }
+
+   /**
+    * @param text
+    *
+    * @return Returns <code>true</code> when POI could be identified and it's displayed in the map
+    */
+   private boolean parseAndDisplayPOIText(String text) {
 
       try {
          text = URLDecoder.decode(text, UI.UTF_8);
@@ -5580,7 +10498,7 @@ public class Map2 extends Canvas {
       }
 
       // linux has 2 lines: 1: url, 2. text
-      final String[] dndText = text.split(de.byteholder.geoclipse.map.UI.NEW_LINE);
+      final String[] dndText = text.split(UI.NEW_LINE1);
       if (dndText.length == 0) {
          return false;
       }
@@ -5765,58 +10683,77 @@ public class Map2 extends Canvas {
 
 // source: https://wiki.toolserver.org/view/GeoHack
 //
-// type:                                   ratio           m / pixel   {scale}    {mmscale}   {span}   {altitude}   {zoom}   {osmzoom}
+// type                                               ratio           m / pixel      {scale}    {mmscale} {span}  {altitude}   {zoom}   {osmzoom}
 //
-// country, satellite                         1 : 10,000,000    3528       10000000    10000000    10.0    1430       1       5
-// state                                  1 : 3,000,000    1058       3000000    4000000    3.0    429       3       7
-// adm1st                                  1 : 1,000,000    353       1000000    1000000    1.0    143       4       9
-// adm2nd (default)                         1 : 300,000    106       300000       200000       0.3    42          5       11
-// adm3rd, city, mountain, isle, river, waterbody    1 : 100,000    35.3       100000       100000       0.1    14          6       12
-// event, forest, glacier                      1 : 50,000       17.6       50000       50000       0.05    7          7       13
-// airport                                  1 : 30,000       10.6       30000       25000       0.03    4          7       14
-// edu, pass, landmark, railwaystation             1 : 10,000       3.53       10000       10000       0.01    1          8       15
+// country, satellite                                 1 : 10,000,000    3528        10000000    10000000    10.0        1430        1           5
+// state                                              1 : 3,000,000     1058         3000000     4000000     3.0         429        3           7
+// adm1st                                             1 : 1,000,000      353         1000000     1000000     1.0         143        4           9
+// adm2nd (default)                                   1 : 300,000        106          300000      200000     0.3          42        5          11
+// adm3rd, city, mountain, isle, river, waterbody     1 : 100,000         35.3        100000      100000     0.1          14        6          12
+// event, forest, glacier                             1 : 50,000          17.6         50000       50000     0.05          7        7          13
+// airport                                            1 : 30,000          10.6         30000       25000     0.03          4        7          14
+// edu, pass, landmark, railwaystation                1 : 10,000          3.53         10000       10000     0.01          1        8          15
 
-                  if (type.equals("country") //             //$NON-NLS-1$
-                        || type.equals("satellite")) { //   //$NON-NLS-1$
+                  if (type.equals("country") //                   //$NON-NLS-1$
+                        || type.equals("satellite")) { //         //$NON-NLS-1$
+
                      zoom = 5 - 1;
-                  } else if (type.equals("state")) { //      //$NON-NLS-1$
+
+                  } else if (type.equals("state")) { //           //$NON-NLS-1$
+
                      zoom = 7 - 1;
-                  } else if (type.equals("adm1st")) { //      //$NON-NLS-1$
+
+                  } else if (type.equals("adm1st")) { //          //$NON-NLS-1$
+
                      zoom = 9 - 1;
-                  } else if (type.equals("adm2nd")) { //      //$NON-NLS-1$
+
+                  } else if (type.equals("adm2nd")) { //          //$NON-NLS-1$
+
                      zoom = 11 - 1;
-                  } else if (type.equals("adm3rd") //         //$NON-NLS-1$
-                        || type.equals("city") //         //$NON-NLS-1$
-                        || type.equals("mountain") //      //$NON-NLS-1$
-                        || type.equals("isle") //         //$NON-NLS-1$
-                        || type.equals("river") //         //$NON-NLS-1$
-                        || type.equals("waterbody")) { //   //$NON-NLS-1$
+
+                  } else if (type.equals("adm3rd") //             //$NON-NLS-1$
+                        || type.equals("city") //                 //$NON-NLS-1$
+                        || type.equals("mountain") //             //$NON-NLS-1$
+                        || type.equals("isle") //                 //$NON-NLS-1$
+                        || type.equals("river") //                //$NON-NLS-1$
+                        || type.equals("waterbody")) { //         //$NON-NLS-1$
+
                      zoom = 12 - 1;
-                  } else if (type.equals("event")//         //$NON-NLS-1$
-                        || type.equals("forest") //       //$NON-NLS-1$
-                        || type.equals("glacier")) { //      //$NON-NLS-1$
+
+                  } else if (type.equals("event")//               //$NON-NLS-1$
+                        || type.equals("forest") //               //$NON-NLS-1$
+                        || type.equals("glacier")) { //           //$NON-NLS-1$
+
                      zoom = 13 - 1;
-                  } else if (type.equals("airport")) { //      //$NON-NLS-1$
+
+                  } else if (type.equals("airport")) { //         //$NON-NLS-1$
+
                      zoom = 14 - 1;
-                  } else if (type.equals("edu") //         //$NON-NLS-1$
-                        || type.equals("pass") //         //$NON-NLS-1$
-                        || type.equals("landmark") //      //$NON-NLS-1$
-                        || type.equals("railwaystation")) { //$NON-NLS-1$
+
+                  } else if (type.equals("edu") //                //$NON-NLS-1$
+                        || type.equals("pass") //                 //$NON-NLS-1$
+                        || type.equals("landmark") //             //$NON-NLS-1$
+                        || type.equals("railwaystation")) { //    //$NON-NLS-1$
+
                      zoom = 15 - 1;
                   }
                }
 
+               final String poiText = pageName.replace('_', ' ');
+               final double lat1 = lat;
+               final double lon1 = lon;
+               final int zoom1 = zoom;
+
                // hide previous tooltip
                setPoiVisible(false);
 
-               final GeoPosition poiGeoPosition = new GeoPosition(lat, lon);
-               final String poiText = pageName.replace('_', ' ');
+               final GeoPosition poiGeoPosition = new GeoPosition(lat1, lon1);
 
-               final PoiToolTip poi = getPoi();
+               final PoiToolTip poi = getPoiTooltip();
                poi.geoPosition = poiGeoPosition;
                poi.setText(poiText);
 
-               setZoom(zoom);
+               setZoom(zoom1);
                setMapCenter(poiGeoPosition);
 
                _isPoiVisible = true;
@@ -5829,6 +10766,26 @@ public class Map2 extends Canvas {
       }
 
       return false;
+   }
+
+   public void photoHistogram_Close() {
+
+      _mapPointTooltip_PhotoHistogram.close();
+   }
+
+   public void photoHistogram_UpdateCropArea(final Rectangle2D.Float histogramCropArea) {
+
+      _mapPointTooltip_PhotoHistogram.updateCropArea(histogramCropArea);
+   }
+
+   public void photoTooltip_Close() {
+
+      _mapPointTooltip_PhotoImage.close();
+   }
+
+   public void photoTooltip_OnDiscardImages() {
+
+      _mapPointTooltip_PhotoImage.onDiscardImages();
    }
 
    /**
@@ -5859,7 +10816,9 @@ public class Map2 extends Canvas {
       final Point2D.Double pixelCenter = new Point2D.Double(newCenterX, newCenterY);
 
       setMapCenterInWorldPixel(pixelCenter);
-      updateViewPortData();
+      updateViewportData();
+
+      resetMapPoints();
 
       paint();
 
@@ -5867,34 +10826,22 @@ public class Map2 extends Canvas {
    }
 
    /**
-    * Re-centers the map to have the current address location be at the center of the map,
+    * Re-centers the map to have the current common location be at the center of the map,
     * accounting for the map's width and height.
     *
-    * @see getAddressLocation
+    * @see getCommonLocation
     */
-   public void recenterToAddressLocation() {
+   public void recenterToCommonLocation() {
 
-      final java.awt.Point worldPixel = _mp.geoToPixel(getAddressLocation(), _mapZoomLevel);
+      final java.awt.Point worldPixel = _mp.geoToPixel(getCommonLocation(), _mapZoomLevel);
 
       setMapCenterInWorldPixel(worldPixel);
 
       paint();
    }
 
-   public void removeMousePositionListener(final IPositionListener listener) {
+   public void removeMousePositionListener(final IGeoPositionListener listener) {
       _allMousePositionListeners.remove(listener);
-   }
-
-   /**
-    * Removes a map overlay.
-    *
-    * @return the current map overlay
-    */
-   public void removeOverlayPainter(final Map2Painter overlay) {
-
-      _allMapPainter.remove(overlay);
-
-      paint();
    }
 
    /**
@@ -5907,15 +10854,34 @@ public class Map2 extends Canvas {
       paint();
    }
 
+   public void resetHoveredMapPoint() {
+
+      _hoveredMapPoint = null;
+
+      _mapPointTooltip.hide();
+      _mapPointTooltip_PhotoImage.hide();
+      _mapPointTooltip_PhotoHistogram.hide();
+   }
+
+   public void resetMapPoints() {
+
+      _hoveredMapPoint = null;
+      _hoveredMarkerCluster = null;
+
+      _isMarkerClusterSelected = false;
+   }
+
    /**
-    * Reset hovered data
+    * Reset hovered tour data
     */
-   public void resetHoveredSelectedTours() {
+   public void resetTours_HoveredData() {
 
-      _hovered_SelectedTourId = Long.MIN_VALUE;
+      _allPaintedMarkerClusters.clear();
+      _hoveredMarkerCluster = null;
 
-      _allHoveredTourIds.clear();
-      _allDevHoveredPoints.clear();
+      _hoveredMapPoint = null;
+
+      hideHoveredTours();
 
       if (_allPaintedTiles != null) {
 
@@ -5927,13 +10893,82 @@ public class Map2 extends Canvas {
 
                   tile.allPainted_HoverRectangle.clear();
                   tile.allPainted_HoverTourID.clear();
+                  tile.allPainted_HoverSerieIndices.clear();
                }
             }
          }
       }
    }
 
-   public void setConfig_HoveredSelectedTour(final boolean isVisible,
+   public void resetTours_Photos() {
+
+      // prevent that old photo images are displayed when a new tour should be displayed
+      Map2PainterConfig.getPhotos().clear();
+   }
+
+   /**
+    * Reset selected tour data
+    */
+   public void resetTours_SelectedData() {
+
+      _hovered_SelectedTourId = -1;
+      _hovered_SelectedSerieIndex_Behind = -1;
+      _hovered_SelectedSerieIndex_Front = -1;
+   }
+
+   /**
+    * Save star rating of the hovered/selected tours
+    */
+   private void saveRatingStars(final Photo photo) {
+
+      final IPhotoServiceProvider photoServiceProvider = Photo.getPhotoServiceProvider();
+
+      final int hoveredRatingStars = photo.ratingStars;
+      int newRatingStars = photo.hoveredStars;
+
+      if (newRatingStars == hoveredRatingStars) {
+
+         /**
+          * Feature to remove rating stars:
+          * <p>
+          * When a rating star is hit and this rating is already set in the photo, the rating
+          * stars are removed.
+          */
+
+         newRatingStars = 0;
+      }
+
+      photo.ratingStars = newRatingStars;
+
+      final ArrayList<Photo> photos = new ArrayList<>();
+      photos.add(photo);
+
+      photoServiceProvider.saveStarRating(photos);
+   }
+
+   /**
+    * Select or deselect a hovered photo
+    *
+    * @param photo
+    * @param hoveredMapPoint
+    */
+   public void selectPhoto(final Photo photo, final PaintedMapPoint hoveredMapPoint) {
+
+      _selectedPhoto = photo;
+      _selectedPhotoMapPoint = hoveredMapPoint;
+
+      _mapPointTooltip_PhotoImage.setupPhoto(hoveredMapPoint);
+      _mapPointTooltip_PhotoHistogram.setupPhoto(hoveredMapPoint);
+
+      // a photo selections border is painted with the photos in the background
+      paint();
+   }
+
+   public void setCenterMapBy(final CenterMapBy centerMapBy) {
+      _centerMapBy = centerMapBy;
+   }
+
+   public void setConfig_HoveredSelectedTour(final boolean isShowHoveredOrSelectedTour,
                                              final boolean isShowBreadcrumbs,
 
                                              final int breadcrumbItems,
@@ -5946,43 +10981,41 @@ public class Map2 extends Canvas {
 
 // SET_FORMATTING_OFF
 
-      _isShowHoveredSelectedTour                      = isVisible;
+      _isShowHoveredOrSelectedTour                    = isShowHoveredOrSelectedTour;
       _isShowBreadcrumbs                              = isShowBreadcrumbs;
 
+
       _hoveredSelectedTour_Hovered_Color              = new Color(hoveredRGB);
-      _hoveredSelectedTour_Hovered_Opacity            = UI.convertOpacity(hoveredOpacity);
+      _hoveredSelectedTour_Hovered_Opacity            = hoveredOpacity;
 
       _hoveredSelectedTour_HoveredAndSelected_Color   = new Color(hoveredAndSelectedRGB);
-      _hoveredSelectedTour_HoveredAndSelected_Opacity = UI.convertOpacity(hoveredAndSelectedOpacity);
+      _hoveredSelectedTour_HoveredAndSelected_Opacity = hoveredAndSelectedOpacity;
 
       _hoveredSelectedTour_Selected_Color             = new Color(selectedRGB);
-      _hoveredSelectedTour_Selected_Opacity           = UI.convertOpacity(selectedOpacity);
+      _hoveredSelectedTour_Selected_Opacity           = selectedOpacity;
 
 // SET_FORMATTING_ON
 
       _tourBreadcrumb.setVisibleBreadcrumbs(breadcrumbItems);
 
-      if (isVisible == false) {
+      if (isShowHoveredOrSelectedTour == false) {
 
          // hide hovered/selected tour
-         _hovered_SelectedTourId = Long.MIN_VALUE;
+         resetTours_SelectedData();
       }
 
-      _allHoveredTourIds.clear();
-      _allDevHoveredPoints.clear();
-
-      disposeOverlayImageCache();
-
-      paint();
+      resetTours_HoveredData();
    }
 
    public void setConfig_TourDirection(final boolean isShowTourDirection,
+                                       final boolean isShowTourDirection_Always,
                                        final int markerGap,
                                        final int lineWidth,
                                        final float symbolSize,
                                        final RGB tourDirection_RGB) {
 
       _isDrawTourDirection = isShowTourDirection;
+      _isDrawTourDirection_Always = isShowTourDirection_Always;
 
       _tourDirection_MarkerGap = markerGap;
       _tourDirection_LineWidth = lineWidth;
@@ -5991,23 +11024,60 @@ public class Map2 extends Canvas {
    }
 
    /**
-    * Set map dimming level for the current map factory, this will dimm the map images
+    * Set cursor only when needed, to optimize performance
     *
-    * @param mapDimLevel
-    * @param dimColor
+    * @param cursor
+    */
+   private void setCursorOptimized(final Cursor cursor) {
+
+      if (cursor == _currentCursor) {
+         return;
+      }
+
+      _currentCursor = cursor;
+
+      setCursor(cursor);
+   }
+
+   /**
+    * Set map dimming level for the current map factory, this will dim the map images
+    *
     * @param isDimMap
+    * @param dimLevel
+    * @param dimColor
+    * @param isUseMapDimColor
     * @param isBackgroundDark
     */
-   public void setDimLevel(final boolean isDimMap, final int mapDimLevel, final RGB dimColor, final boolean isBackgroundDark) {
+   public void setDimLevel(final boolean isDimMap,
+                           final int dimLevel,
+                           final RGB dimColor,
+                           final boolean isUseMapDimColor,
+                           final boolean isBackgroundDark) {
 
       _isMapBackgroundDark = isBackgroundDark;
 
       if (_mp != null) {
-         _mp.setDimLevel(isDimMap, mapDimLevel, dimColor);
+         _mp.setDimLevel(isDimMap, dimLevel, dimColor);
+      }
+
+      if (isDimMap && isUseMapDimColor) {
+
+         final float dimFactor = dimLevel == 0
+               ? 1
+               : (10f - dimLevel) / 10f;
+
+         final RGB transColor = new RGB(
+
+               (int) (dimColor.red * dimFactor),
+               (int) (dimColor.green * dimFactor),
+               (int) (dimColor.blue * dimFactor));
+
+         setTransparencyColor(transColor);
       }
    }
 
    public void setDirectPainter(final IDirectPainter directPainter) {
+
       _directMapPainter = directPainter;
    }
 
@@ -6026,11 +11096,18 @@ public class Map2 extends Canvas {
    }
 
    public void setIsInInverseKeyboardPanning(final boolean isInInverseKeyboardPanning) {
+
       _isInInverseKeyboardPanning = isInInverseKeyboardPanning;
    }
 
-   public void setIsZoomWithMousePosition(final boolean isZoomWithMousePosition) {
-      _isZoomWithMousePosition = isZoomWithMousePosition;
+   public void setIsMultipleTours(final boolean isMultipleTours) {
+
+      _hoveredSelectedTour_CanSelectTour = isMultipleTours;
+   }
+
+   public void setIsShowTour(final boolean isShowTour) {
+
+      _isShowTour = isShowTour;
    }
 
    /**
@@ -6041,10 +11118,10 @@ public class Map2 extends Canvas {
     */
    public void setLegend(final MapLegend legend) {
 
-      if ((legend == null) && (_mapLegend != null)) {
+      if (legend == null && _mapLegend != null) {
 
          // dispose legend image
-         disposeResource(_mapLegend.getImage());
+         UI.disposeResource(_mapLegend.getImage());
       }
 
       _mapLegend = legend;
@@ -6059,6 +11136,20 @@ public class Map2 extends Canvas {
     */
    public void setLiveView(final boolean isLiveView) {
       _isLiveView = isLiveView;
+   }
+
+   public void setLocations_Common(final List<TourLocation> allTourLocations) {
+
+      _allCommonLocations = allTourLocations;
+
+      paint();
+   }
+
+   public void setLocations_Tours(final List<TourLocation> allTourLocations) {
+
+      _allTourLocations = allTourLocations;
+
+      paint();
    }
 
    /**
@@ -6095,17 +11186,15 @@ public class Map2 extends Canvas {
          });
       }
 
-      updateViewPortData();
+      updateViewportData();
       updateTourToolTip();
-
-      stopOldPainting();
 
       paint();
    }
 
    /**
     * Sets the center of the map {@link #_worldPixel_MapCenter} in world pixel coordinates with the
-    * current zoomlevel
+    * current zoom level
     *
     * @param newWorldPixelCenter
     */
@@ -6121,8 +11210,8 @@ public class Map2 extends Canvas {
     *
     * @param mapContextProvider
     */
-   public void setMapContextProvider(final IMapContextProvider mapContextProvider) {
-      _mapContextProvider = mapContextProvider;
+   public void setMapContextProvider(final IMapContextMenuProvider mapContextProvider) {
+      _mapContextMenuProvider = mapContextProvider;
    }
 
    /**
@@ -6148,7 +11237,7 @@ public class Map2 extends Canvas {
       java.awt.Point wpTourCenter;
       java.awt.geom.Point2D.Double wpMapCenter;
 
-      // keep current zoomlevel
+      // keep current zoom level
       final int currentZoomLevel = _mapZoomLevel;
 
       final int minZoomLevel = _mp.getMinimumZoomLevel();
@@ -6204,7 +11293,7 @@ public class Map2 extends Canvas {
 
       if (zoom != currentZoomLevel) {
 
-         // set new zoomlevel ONLY when it was modified -> this will dispose old overlay images !!!
+         // set new zoom level ONLY when it was modified -> this will dispose old overlay images !!!
 
          setZoom(zoom);
       }
@@ -6217,7 +11306,7 @@ public class Map2 extends Canvas {
          // set new map center
          _worldPixel_MapCenter = wpMapCenter;
 
-         updateViewPortData();
+         updateViewportData();
       }
 
       fireEvent_MapInfo();
@@ -6256,9 +11345,12 @@ public class Map2 extends Canvas {
        * !!! initialize map by setting the zoom level which setups all important data !!!
        */
       if (refresh) {
+
          setZoom(zoom);
          setMapCenter(center);
+
       } else {
+
          setZoom(mapProvider.getDefaultZoomLevel());
       }
 
@@ -6284,6 +11376,7 @@ public class Map2 extends Canvas {
    }
 
    public void setMeasurementSystem(final float distanceUnitValue, final String distanceUnitLabel) {
+
       _distanceUnitValue = distanceUnitValue;
       _distanceUnitLabel = distanceUnitLabel;
    }
@@ -6297,6 +11390,11 @@ public class Map2 extends Canvas {
       _overlayKey = key;
    }
 
+   public void setPaintedRatingStars(final Rectangle paintedRatingStars) {
+
+      _paintedRatingStars = paintedRatingStars;
+   }
+
    /**
     * @param isRedrawEnabled
     *           Set <code>true</code> to enable map drawing (which is the default). When
@@ -6307,7 +11405,7 @@ public class Map2 extends Canvas {
     */
    public void setPainting(final boolean isRedrawEnabled) {
 
-      _isRedrawEnabled = isRedrawEnabled;
+      _isMapPaintingEnabled = isRedrawEnabled;
 
       if (isRedrawEnabled) {
          paint();
@@ -6318,7 +11416,7 @@ public class Map2 extends Canvas {
 
       _isPoiVisible = true;
 
-      final PoiToolTip poiToolTip = getPoi();
+      final PoiToolTip poiToolTip = getPoiTooltip();
       poiToolTip.geoPosition = poiGeoPosition;
       poiToolTip.setText(poiText);
 
@@ -6334,7 +11432,7 @@ public class Map2 extends Canvas {
       }
 
       /*
-       * when poi is set, it is possible that the mouse is already over the poi -> update tooltip
+       * When poi is set, it is possible that the mouse is already over the poi -> update tooltip
        */
       final Point devMouse = this.toControl(getDisplay().getCursorLocation());
       final int devMouseX = devMouse.x;
@@ -6356,44 +11454,9 @@ public class Map2 extends Canvas {
       paint();
    }
 
-   public void setPOI(final IToolTipProvider tourToolTipProvider, final TourWayPoint twp) {
-
-      // display poi in the center of the map which make it also visible
-      setMapCenter(twp.getPosition());
-
-      if (tourToolTipProvider instanceof WayPointToolTipProvider) {
-
-         final WayPointToolTipProvider wpToolTipProvider = (WayPointToolTipProvider) tourToolTipProvider;
-
-         final HoveredAreaContext hoveredContext = wpToolTipProvider.getHoveredContext(
-               _worldPixel_TopLeft_Viewport.width / 2,
-               _worldPixel_TopLeft_Viewport.height / 2,
-               _worldPixel_TopLeft_Viewport,
-               _mp,
-               _mapZoomLevel,
-               _tilePixelSize,
-               _isTourPaintMethodEnhanced,
-               twp);
-
-         if (hoveredContext == null) {
-            // this case should not happen
-            return;
-         }
-
-         _hoveredAreaContext = hoveredContext;
-
-         // update tool tip control
-         _tour_ToolTip.setHoveredContext(_hoveredAreaContext);
-
-         _tour_ToolTip.show(new Point(_hoveredAreaContext.hoveredTopLeftX, _hoveredAreaContext.hoveredTopLeftY));
-
-         redraw();
-      }
-   }
-
    /**
     * Sets the visibility of the poi tooltip. Poi tooltip is visible when the tooltip is available
-    * and the poi image is withing the map view port
+    * and the poi image is within the map view port
     *
     * @param isVisible
     *           <code>false</code> will hide the tooltip
@@ -6450,7 +11513,24 @@ public class Map2 extends Canvas {
     * @param isVisibility
     */
    public void setShowLegend(final boolean isVisibility) {
+
       _isLegendVisible = isVisibility;
+   }
+
+   public void setShowMapPoint(final boolean isShowMapPoint) {
+
+      _isMapPointVisible = isShowMapPoint;
+
+      // prevent that hovered map points are displayed when map points are hidden, this happened
+      _allPaintedClusterMarkers.clear();
+      _allPaintedCommonLocations.clear();
+      _allPaintedTourLocations.clear();
+      _allPaintedMarkers.clear();
+      _allPaintedPauses.clear();
+      _allPaintedPhotos.clear();
+      _allPaintedWayPoints.clear();
+
+      paint();
    }
 
    /**
@@ -6460,6 +11540,7 @@ public class Map2 extends Canvas {
     *           set <code>true</code> to see the overlays, <code>false</code> to hide the overlays
     */
    public void setShowOverlays(final boolean showOverlays) {
+
       _isDrawOverlays = showOverlays;
    }
 
@@ -6471,28 +11552,167 @@ public class Map2 extends Canvas {
    }
 
    public void setShowScale(final boolean isScaleVisible) {
+
       _isScaleVisible = isScaleVisible;
    }
 
-   public void setTourPaintMethodEnhanced(final boolean isEnhanced, final boolean isShowWarning) {
+   /**
+    * Set tours which are currently painted in the map
+    *
+    * @param allTourIds
+    */
+   public void setTourIds(final List<Long> allTourIds) {
 
-      _isTourPaintMethodEnhanced = isEnhanced;
-      _isShowTourPaintMethodEnhancedWarning = isShowWarning;
-
-      disposeOverlayImageCache();
+      _allTourIds = allTourIds;
    }
 
    public void setTourToolTip(final TourToolTip tourToolTip) {
 
-      _tour_ToolTip = tourToolTip;
+      _tourTooltip = tourToolTip;
 
       tourToolTip.addHideListener(event -> {
 
          // hide hovered area
-         _hoveredAreaContext = null;
+         _tourTooltip_HoveredAreaContext = null;
 
          redraw();
       });
+   }
+
+   public void setTransparencyColor(final RGB transparentRGB) {
+
+      int red = transparentRGB.red;
+      final int green = transparentRGB.green;
+      final int blue = transparentRGB.blue;
+
+      /*
+       * Ensure that the transparent color is not an exact color which may be used very likely
+       */
+      if (red == 0) {
+
+         red = 1;
+
+      } else if (red == 255) {
+
+         red = 254;
+
+      } else {
+
+         red = red - 1;
+      }
+
+      final RGB newTransparentColor = new RGB(red, green, blue);
+
+      if (newTransparentColor.equals(_mapTransparentRGB) == false) {
+
+         // transparent color is modified
+
+         updateTransparencyColor(newTransparentColor);
+      }
+   }
+
+   private void setupGroupedLabels() {
+
+      final String groupedMarkers = _mapConfig.groupedMarkers;
+
+      if (groupedMarkers.equals(_groupedMarkers)) {
+
+         // skip labels are not modified
+
+         return;
+      }
+
+      _groupedMarkers = groupedMarkers;
+
+      final String[] allDuplicatedMarkers = StringUtils.splitIntoLines(groupedMarkers);
+
+      _allMapMarkerSkipLabels.clear();
+
+      for (String markerLabel : allDuplicatedMarkers) {
+
+         markerLabel = markerLabel.trim();
+
+         if (markerLabel.length() > 0) {
+            _allMapMarkerSkipLabels.add(markerLabel);
+         }
+      }
+   }
+
+   private void setupPainting(final Graphics2D g2d) {
+
+//    Object textAntialiasingON = null;
+//
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_GASP;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HBGR;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VBGR;
+//    textAntialiasingON = RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB;
+
+//    g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+
+//      final Toolkit tk = Toolkit.getDefaultToolkit();
+//      final Map map = (Map) (tk.getDesktopProperty("awt.font.desktophints"));
+
+      g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+            _mapConfig.isLabelAntialiased
+                  ? RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+                  : RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+
+//    g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+//    g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+//    g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+//    final Map<TextAttribute, Object> fontAttributes = new HashMap<>();
+//
+//    fontAttributes.put(TextAttribute.SIZE, 12);
+//    fontAttributes.put(TextAttribute.KERNING, TextAttribute.KERNING_ON);
+//    fontAttributes.put(TextAttribute.LIGATURES, TextAttribute.LIGATURES_ON);
+//    fontAttributes.put(TextAttribute.FAMILY, java.awt.Font.DIALOG);
+//    fontAttributes.put(TextAttribute.FAMILY, java.awt.Font.SANS_SERIF);
+//    fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRA_LIGHT);
+//
+//    _defaultFont = systemFont.deriveFont(fontAttributes);
+//    _defaultFont = UI.AWT_DIALOG_FONT.deriveFont(fontAttributes);
+//    _defaultFont = UI.AWT_FONT_ARIAL_12.deriveFont(fontAttributes);
+
+//    UI.dumpAllFonts();
+//
+//    final java.awt.Font systemFont = new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12); //$NON-NLS-1$
+//    final java.awt.Font systemFont = new java.awt.Font("Liberation Sans", java.awt.Font.PLAIN, 12); //$NON-NLS-1$
+//    final java.awt.Font systemFont = new java.awt.Font("Segoe UI Light", java.awt.Font.PLAIN, 12); //$NON-NLS-1$
+
+      final String labelFontName = _mapConfig.labelFontName;
+      final int labelFontSize = _mapConfig.labelFontSize;
+
+      _labelFontAWT = new java.awt.Font(labelFontName, java.awt.Font.PLAIN, labelFontSize);
+      _clusterFontAWT = new java.awt.Font(labelFontName, java.awt.Font.PLAIN, _mapConfig.clusterSymbol_Size * 2);
+
+      g2d.setFont(_labelFontAWT);
+   }
+
+   private void setupPainting_SWT() {
+
+      final String labelFontName = _mapConfig.labelFontName;
+      final int labelFontSize = _mapConfig.labelFontSize;
+
+      final int labelFontSizeScaled = (int) (labelFontSize / _deviceScaling);
+
+      if (labelFontName.equals(_labelFontName) == false || labelFontSizeScaled != _labelFontSize) {
+
+         // font is changed -> recreate it
+
+         UI.disposeResource(_labelFontSWT);
+
+         _labelFontName = labelFontName;
+         _labelFontSize = (int) (labelFontSize / _deviceScaling);
+
+         // awt and swt font have not the same size
+         final int swtFontSize = (int) (_labelFontSize * 1f);
+
+         _labelFontSWT = new Font(_display, _labelFontName, swtFontSize, SWT.NORMAL);
+      }
    }
 
    /**
@@ -6506,6 +11726,21 @@ public class Map2 extends Canvas {
     */
    public void setZoom(final int newZoomLevel) {
 
+      setZoom(newZoomLevel, CenterMapBy.Map);
+   }
+
+   /**
+    * Set the zoom level for the map and centers the map to <code>centerMapBy</code>. The zoom level
+    * is checked if the map provider supports the requested zoom level.
+    * <p>
+    * The map is initialize when this is not yet done be setting all internal data !!!
+    *
+    * @param newZoomLevel
+    *           zoom level for the map, it is adjusted to the min/max zoom levels
+    * @param centerMapBy
+    */
+   public void setZoom(final int newZoomLevel, final CenterMapBy centerMapBy) {
+
       if (_mp == null) {
          return;
       }
@@ -6513,7 +11748,7 @@ public class Map2 extends Canvas {
       final int oldZoomLevel = _mapZoomLevel;
 
       /*
-       * check if the requested zoom level is within the bounds of the map provider
+       * Check if the requested zoom level is within the bounds of the map provider
        */
       int adjustedZoomLevel = newZoomLevel;
       final int mpMinimumZoomLevel = _mp.getMinimumZoomLevel();
@@ -6534,14 +11769,14 @@ public class Map2 extends Canvas {
 
       } else {
 
-         // a new zoomlevel is set
+         // a new zoom level is set
 
          isNewZoomLevel = true;
       }
 
       if (oldZoomLevel != adjustedZoomLevel) {
 
-         // zoomlevel has changed -> stop downloading images for the old zoom level
+         // zoom level has changed -> stop downloading images for the old zoom level
          _mp.resetAll(true);
       }
 
@@ -6568,12 +11803,12 @@ public class Map2 extends Canvas {
 
       Point2D.Double wpNewMapCenter;
 
-      if (_isZoomWithMousePosition
+      if (CenterMapBy.Mouse.equals(centerMapBy)
 
             // fixes this "issue" https://github.com/wolfgang-ch/mytourbook/issues/370
             && isNewZoomLevel) {
 
-         // set map center to the current mouse position
+         // set map center to the current mouse position but only when a new zoom level is set !!!
 
          final Rectangle wpViewPort = _worldPixel_TopLeft_Viewport;
 
@@ -6583,7 +11818,9 @@ public class Map2 extends Canvas {
 
       } else {
 
-         // zoom behaviour until 18.5
+         // for any other cases: center zoom to the map center
+
+         // this is also the zoom behavior until 18.5
       }
 
       wpNewMapCenter = new Point2D.Double(
@@ -6592,10 +11829,11 @@ public class Map2 extends Canvas {
 
       setMapCenterInWorldPixel(wpNewMapCenter);
 
-      updateViewPortData();
-
+      updateViewportData();
       updateTourToolTip();
-//      updatePoiVisibility();
+//    updatePoiVisibility();
+
+      resetMapPoints();
 
       isTourHovered();
       paint();
@@ -6604,6 +11842,61 @@ public class Map2 extends Canvas {
       fireEvent_MapInfo();
 
       fireEvent_MapPosition(true);
+   }
+
+   /**
+    * @param boundingBox
+    *
+    * @return Returns zoom level or -1 when bounding box is <code>null</code>.
+    */
+   public int setZoomToBoundingBox(final String boundingBox) {
+
+      if (boundingBox == null) {
+         return -1;
+      }
+
+      final Set<GeoPosition> latLonPositions = getBoundingBoxPositions(boundingBox);
+      if (latLonPositions == null) {
+         return -1;
+      }
+
+      final MP mp = getMapProvider();
+
+      final int maximumZoomLevel = mp.getMaximumZoomLevel();
+      int zoom = mp.getMinimumZoomLevel();
+
+      Rectangle positionRect = getWorldPixelFromGeoPositions(latLonPositions, zoom);
+      Rectangle viewport = getWorldPixelViewport();
+
+      // zoom in until bounding box is larger than the viewport
+      while ((positionRect.width < viewport.width) && (positionRect.height < viewport.height)) {
+
+         // center position in the map
+         final java.awt.Point center = new java.awt.Point(
+               positionRect.x + positionRect.width / 2,
+               positionRect.y + positionRect.height / 2);
+
+         setMapCenter(mp.pixelToGeo(center, zoom));
+
+         zoom++;
+
+         // check zoom level
+         if (zoom >= maximumZoomLevel) {
+            break;
+         }
+
+         setZoom(zoom);
+
+         positionRect = getWorldPixelFromGeoPositions(latLonPositions, zoom);
+         viewport = getWorldPixelViewport();
+      }
+
+      // the algorithm generated a larger zoom level as necessary
+      zoom--;
+
+      setZoom(zoom);
+
+      return zoom;
    }
 
    /**
@@ -6627,6 +11920,8 @@ public class Map2 extends Canvas {
          _geoGrid_Data_Selected = null;
          _geoGrid_TourGeoFilter = null;
 
+         _isFastMapPainting_Active = false;
+
          redraw();
 
       } else {
@@ -6647,14 +11942,8 @@ public class Map2 extends Canvas {
 
          if (isSyncMapPosition) {
 
-            // prevent recenter
-            final boolean isZoomWithMousePosition = _isZoomWithMousePosition;
-            _isZoomWithMousePosition = false;
-            {
-               // set zoom level first, that recalculation is correct
-               setZoom(_geoGrid_MapZoomLevel);
-            }
-            _isZoomWithMousePosition = isZoomWithMousePosition;
+            // set zoom level first, that recalculation is correct
+            setZoom(_geoGrid_MapZoomLevel);
          }
 
          MapGridData mapGridData = tourGeoFilter.mapGridData;
@@ -6686,12 +11975,12 @@ public class Map2 extends Canvas {
           */
          if (isSyncMapPosition) {
 
-            // chck if grid box is already visible
+            // check if grid box is already visible
 
             if (world_MapViewPort.contains(_geoGrid_Data_Selected.world_Start)
                   && world_MapViewPort.contains(_geoGrid_Data_Selected.world_End)) {
 
-               // grid box is visile -> nothing to do
+               // grid box is visible -> nothing to do
 
             } else {
 
@@ -6704,7 +11993,7 @@ public class Map2 extends Canvas {
 
             // map is not synched but location is wrong
 
-            updateViewPortData();
+            updateViewportData();
             paint();
          }
       }
@@ -6717,7 +12006,7 @@ public class Map2 extends Canvas {
          return;
       }
 
-      final PoiToolTip poiTT = getPoi();
+      final PoiToolTip poiTT = getPoiTooltip();
       final Point poiDisplayPosition = this.toDisplay(_poiImageDevPosition);
 
       poiTT.show(
@@ -6728,17 +12017,6 @@ public class Map2 extends Canvas {
             _poi_Tooltip_OffsetY);
    }
 
-   private void stopOldPainting() {
-
-      // stop old painting jobs
-
-      _isCancelSplitJobs = true;
-      {
-         Job.getJobManager().cancel(_splitJobFamily);
-      }
-      _isCancelSplitJobs = false;
-   }
-
    public MapTourBreadcrumb tourBreadcrumb() {
       return _tourBreadcrumb;
    }
@@ -6747,11 +12025,48 @@ public class Map2 extends Canvas {
 
       _overlayAlpha = _prefStore.getBoolean(ITourbookPreferences.MAP2_LAYOUT_IS_TOUR_TRACK_OPACITY)
 
-            // convert % to 0xff
-            ? ColorUtil.getTransparencyFromPercentage(_prefStore.getInt(ITourbookPreferences.MAP2_LAYOUT_TOUR_TRACK_OPACITY))
+            ? _prefStore.getInt(ITourbookPreferences.MAP2_LAYOUT_TOUR_TRACK_OPACITY)
 
             // no opacity
             : 0xff;
+   }
+
+   public void updateMapOptions() {
+
+      final String drawSymbol = _prefStore.getString(ITourbookPreferences.MAP_LAYOUT_PLOT_TYPE);
+
+      _prefOptions_IsDrawSquare = drawSymbol.equals(Map2_Appearance.PLOT_TYPE_SQUARE);
+      _prefOptions_LineWidth = _prefStore.getInt(ITourbookPreferences.MAP_LAYOUT_SYMBOL_WIDTH);
+      _prefOptions_BorderWidth = _prefStore.getInt(ITourbookPreferences.MAP_LAYOUT_BORDER_WIDTH);
+
+      final boolean isCutOffLinesInPauses = _prefStore.getBoolean(ITourbookPreferences.MAP_LAYOUT_IS_CUT_OFF_LINES_IN_PAUSES);
+      _prefOptions_isCutOffLinesInPauses = isCutOffLinesInPauses && drawSymbol.equals(Map2_Appearance.PLOT_TYPE_LINE);
+   }
+
+   public void updatePhotoOptions() {
+
+      _isEnlargeSmallImages = Util.getStateBoolean(_state_Map2,
+            SlideoutMap2_PhotoOptions.STATE_IS_ENLARGE_SMALL_IMAGES,
+            SlideoutMap2_PhotoOptions.STATE_IS_ENLARGE_SMALL_IMAGES_DEFAULT);
+
+      _isShowHQPhotoImages = Util.getStateBoolean(_state_Map2,
+            SlideoutMap2_PhotoOptions.STATE_IS_SHOW_THUMB_HQ_IMAGES,
+            SlideoutMap2_PhotoOptions.STATE_IS_SHOW_THUMB_HQ_IMAGES_DEFAULT);
+
+      _isShowPhotoAdjustments = Util.getStateBoolean(_state_Map2,
+            SlideoutMap2_PhotoOptions.STATE_IS_SHOW_PHOTO_ADJUSTMENTS,
+            SlideoutMap2_PhotoOptions.STATE_IS_SHOW_PHOTO_ADJUSTMENTS_DEFAULT);
+
+      _isPreloadHQImages = Util.getStateBoolean(_state_Map2,
+            SlideoutMap2_PhotoOptions.STATE_IS_PRELOAD_HQ_IMAGES,
+            SlideoutMap2_PhotoOptions.STATE_IS_PRELOAD_HQ_IMAGES_DEFAULT);
+
+      if (_isPreloadHQImages == false) {
+
+         // cleanup loading queue
+
+         PhotoLoadManager.stopImageLoading(true);
+      }
    }
 
    /**
@@ -6760,7 +12075,7 @@ public class Map2 extends Canvas {
     */
    private boolean updatePoiImageDevPosition() {
 
-      final GeoPosition poiGeoPosition = getPoi().geoPosition;
+      final GeoPosition poiGeoPosition = getPoiTooltip().geoPosition;
       if (poiGeoPosition == null) {
          return false;
       }
@@ -6833,12 +12148,20 @@ public class Map2 extends Canvas {
       setPoiVisible(isVisible);
    }
 
+   public void updateTooltips() {
+
+      final boolean isShowPhotoAdjustments = _isShowPhotoAdjustments && _isShowHQPhotoImages;
+
+      _mapPointTooltip_PhotoImage.setShowPhotoAdjustements(isShowPhotoAdjustments);
+      _mapPointTooltip_PhotoHistogram.setShowPhotoAdjustements(isShowPhotoAdjustments);
+   }
+
    /**
     * Update tour tool tip, this must be done after the view port data are updated
     */
    private void updateTourToolTip() {
 
-      if (_mp != null && _tour_ToolTip != null && _tour_ToolTip.isActive()) {
+      if (_mp != null && _tourTooltip != null && _tourTooltip.isActive()) {
 
          /*
           * redraw must be forced because the hovered area can be the same but can be at a different
@@ -6846,7 +12169,7 @@ public class Map2 extends Canvas {
           */
          updateTourToolTip_HoveredArea();
 
-         _tour_ToolTip.update();
+         _tourTooltip.update();
       }
    }
 
@@ -6858,10 +12181,10 @@ public class Map2 extends Canvas {
     */
    private void updateTourToolTip_HoveredArea() {
 
-      final HoveredAreaContext oldHoveredContext = _hoveredAreaContext;
+      final HoveredAreaContext oldHoveredContext = _tourTooltip_HoveredAreaContext;
       HoveredAreaContext newHoveredContext = null;
 
-      final ArrayList<ITourToolTipProvider> toolTipProvider = _tour_ToolTip.getToolTipProvider();
+      final ArrayList<ITourToolTipProvider> toolTipProvider = _tourTooltip.getToolTipProvider();
 
       /*
        * check tour info tool tip provider as first
@@ -6897,7 +12220,6 @@ public class Map2 extends Canvas {
                      _mp,
                      _mapZoomLevel,
                      _tilePixelSize,
-                     _isTourPaintMethodEnhanced,
                      null);
 
                if (hoveredContext != null) {
@@ -6908,12 +12230,12 @@ public class Map2 extends Canvas {
          }
       }
 
-      _hoveredAreaContext = newHoveredContext;
+      _tourTooltip_HoveredAreaContext = newHoveredContext;
 
       // update tool tip control
-      _tour_ToolTip.setHoveredContext(_hoveredAreaContext);
+      _tourTooltip.setHoveredContext(_tourTooltip_HoveredAreaContext);
 
-      if (_hoveredAreaContext != null) {
+      if (_tourTooltip_HoveredAreaContext != null) {
          redraw();
       }
 
@@ -6921,14 +12243,13 @@ public class Map2 extends Canvas {
        * Hide hovered area, this must be done because when a tile do not contain a way point, the
        * hovered area can sill be displayed when another position is set with setMapCenter()
        */
-      if (oldHoveredContext != null && _hoveredAreaContext == null) {
+      if (oldHoveredContext != null && _tourTooltip_HoveredAreaContext == null) {
 
          // update tool tip because it has it's own mouse move listener for the map
-         _tour_ToolTip.hideHoveredArea();
+         _tourTooltip.hideHoveredArea();
 
          redraw();
       }
-
    }
 
    /**
@@ -6938,15 +12259,18 @@ public class Map2 extends Canvas {
     * {@link #_worldPixel_MapCenter} and {@link #_mapZoomLevel} are the base values for the other
     * viewport fields.
     */
-   private void updateViewPortData() {
+   private void updateViewportData() {
 
       if (_mp == null) {
+
          // the map has currently no map provider
          return;
       }
 
       _worldPixel_TopLeft_Viewport = getWorldPixel_TopLeft_Viewport(_worldPixel_MapCenter);
 
+      final int worldTopLeft_ViewportX = _worldPixel_TopLeft_Viewport.x;
+      final int worldTopLeft_ViewportY = _worldPixel_TopLeft_Viewport.y;
       final int visiblePixelWidth = _worldPixel_TopLeft_Viewport.width;
       final int visiblePixelHeight = _worldPixel_TopLeft_Viewport.height;
 
@@ -6963,8 +12287,8 @@ public class Map2 extends Canvas {
        * tileOffsetX and tileOffsetY are the x- and y-values for the offset of the visible screen to
        * the map's origin.
        */
-      final int tileOffsetX = (int) Math.floor((double) _worldPixel_TopLeft_Viewport.x / (double) _tilePixelSize);
-      final int tileOffsetY = (int) Math.floor((double) _worldPixel_TopLeft_Viewport.y / (double) _tilePixelSize);
+      final int tileOffsetX = (int) Math.floor((double) worldTopLeft_ViewportX / (double) _tilePixelSize);
+      final int tileOffsetY = (int) Math.floor((double) worldTopLeft_ViewportY / (double) _tilePixelSize);
 
       _tilePos_MinX = tileOffsetX;
       _tilePos_MinY = tileOffsetY;
@@ -6977,8 +12301,8 @@ public class Map2 extends Canvas {
        * Pixel size for one geo grid, 0.01 degree
        */
       final Point2D.Double viewportMapCenter_worldPixel = new Point2D.Double(
-            _worldPixel_TopLeft_Viewport.x + visiblePixelWidth / 2,
-            _worldPixel_TopLeft_Viewport.y + visiblePixelHeight / 2);
+            worldTopLeft_ViewportX + visiblePixelWidth / 2,
+            worldTopLeft_ViewportY + visiblePixelHeight / 2);
 
       final GeoPosition geoPos = _mp.pixelToGeo(viewportMapCenter_worldPixel, _mapZoomLevel);
 
@@ -6995,17 +12319,22 @@ public class Map2 extends Canvas {
       _devGridPixelSize_Y = Math.abs(worldGrid2.y - worldGrid1.y);
 
       grid_UpdateGeoGridData();
+
+      resetMapPoints();
+      PhotoLoadManager.stopImageLoading(true);
    }
 
-   public void zoomIn() {
+   public void zoomIn(final CenterMapBy centerMapBy) {
 
-      setZoom(_mapZoomLevel + 1);
+      setZoom(_mapZoomLevel + 1, centerMapBy);
+
       paint();
    }
 
-   public void zoomOut() {
+   public void zoomOut(final CenterMapBy centerMapBy) {
 
-      setZoom(_mapZoomLevel - 1);
+      setZoom(_mapZoomLevel - 1, centerMapBy);
+
       paint();
    }
 

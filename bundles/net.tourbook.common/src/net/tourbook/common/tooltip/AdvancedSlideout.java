@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2005, 2020 Wolfgang Schramm and Contributors
+ * Copyright (C) 2017, 2026 Wolfgang Schramm and Contributors
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -26,17 +26,17 @@ import org.eclipse.jface.action.ToolBarManager;
 import org.eclipse.jface.dialogs.IDialogSettings;
 import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.layout.GridLayoutFactory;
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseMoveListener;
-import org.eclipse.swt.events.MouseTrackAdapter;
 import org.eclipse.swt.events.MouseTrackListener;
 import org.eclipse.swt.graphics.Cursor;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
@@ -49,7 +49,7 @@ import org.eclipse.swt.widgets.ToolBar;
  */
 public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
 
-   private final WaitTimer        _waitTimer = new WaitTimer();
+   private final WaitTimer        _waitTimer        = new WaitTimer();
 
    private boolean                _isWaitTimerStarted;
    private boolean                _canOpenToolTip;
@@ -62,19 +62,23 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
    private ActionSlideoutKeepOpen _actionKeepSlideoutOpen;
    private ActionPinSlideout      _actionPinSlideout;
 
-   private String                 _titleText = UI.EMPTY_STRING;
+   private String                 _titleText        = UI.EMPTY_STRING;
+
+   private SlideoutLocation       _slideoutLocation = SlideoutLocation.BELOW_CENTER;
 
    /*
     * UI controls
     */
-   private ToolBar          _toolbarSlideoutActions;
+   private Composite _titleContainer;
 
-   private Label            _labelDragSlideout;
+   private Label     _labelDragSlideout;
 
-   private Cursor           _cursorResize;
-   private Cursor           _cursorHand;
+   private Cursor    _cursorResize;
+   private Cursor    _cursorHand;
 
-   private SlideoutLocation _slideoutLocation = SlideoutLocation.BELOW_CENTER;
+   private ToolBar   _toolbarSlideoutActions;
+
+   private Image     _imgTitle;
 
    private class ActionCloseSlideout extends Action {
 
@@ -171,14 +175,11 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
 
    private void addListener(final Control ownerControl) {
 
-      ownerControl.addMouseTrackListener(new MouseTrackAdapter() {
-         @Override
-         public void mouseExit(final MouseEvent e) {
+      ownerControl.addMouseTrackListener(MouseTrackListener.mouseExitAdapter(mouseEvent -> {
 
-            // prevent to open the tooltip
-            _canOpenToolTip = false;
-         }
-      });
+         // prevent to open the tooltip
+         _canOpenToolTip = false;
+      }));
    }
 
    @Override
@@ -212,15 +213,30 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       return container;
    }
 
+   /**
+    * Overwrite this to create the first controls of the title bar
+    *
+    * @param parent
+    */
+   protected void createTitleBar_FirstControls(final Composite parent) {
+
+      // create default content
+      final Label label = new Label(parent, SWT.NONE);
+      label.setText(UI.EMPTY_STRING);
+      GridDataFactory.fillDefaults().applyTo(label);
+   }
+
+   /**
+    * Overwrite this to create custom title bar controls
+    *
+    * @param parent
+    */
    protected void createTitleBarControls(final Composite parent) {
 
       // create default content
       final Label label = new Label(parent, SWT.NONE);
       label.setText(UI.EMPTY_STRING);
-      GridDataFactory
-            .fillDefaults()//
-            //				.grab(true, false)
-            .applyTo(label);
+      GridDataFactory.fillDefaults().applyTo(label);
    }
 
    private Composite createUI(final Composite parent) {
@@ -229,7 +245,7 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       GridLayoutFactory.swtDefaults()
             .spacing(0, 0)
             .applyTo(shellContainer);
-//		shellContainer.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA));
+//      shellContainer.setBackground(UI.SYS_COLOR_MAGENTA);
       {
          createUI_10_ActionBar(shellContainer);
          createSlideoutContent(shellContainer);
@@ -242,19 +258,49 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
 
    private void createUI_10_ActionBar(final Composite parent) {
 
-      final Composite container = new Composite(parent, SWT.NONE);
-      GridDataFactory.fillDefaults().grab(true, false).applyTo(container);
+      final int bottom = _imgTitle == null
+
+            // default bottom spacing
+            ? 3
+
+            // the image creates additional pixel at the bottom
+            : 0;
+
+      _titleContainer = new Composite(parent, SWT.NONE);
+      GridDataFactory.fillDefaults().grab(true, false).applyTo(_titleContainer);
       GridLayoutFactory.fillDefaults()
-            .numColumns(3)
-            .extendedMargins(0, 0, 0, 5)
+            .numColumns(5)
+            .extendedMargins(0, 0, 0, bottom)
             .spacing(0, 0)
-            .applyTo(container);
-//		container.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_YELLOW));
+            .applyTo(_titleContainer);
+//      _titleContainer.setBackground(UI.SYS_COLOR_BLUE);
       {
-         createUI_12_Header_Draggable(container);
-         createTitleBarControls(container);
-         createUI_14_Header_Toolbar(container);
+         createUI_10_Header_Icon(_titleContainer);
+         createTitleBar_FirstControls(_titleContainer);
+         createUI_12_Header_Draggable(_titleContainer);
+         createTitleBarControls(_titleContainer);
+         createUI_14_Header_Toolbar(_titleContainer);
       }
+   }
+
+   private void createUI_10_Header_Icon(final Composite parent) {
+
+      final CLabel lblTitleImage = new CLabel(parent, SWT.TRAIL);
+
+      // the default is to hide the image
+      int widthHint = 0;
+
+      if (_imgTitle != null) {
+
+         widthHint = SWT.DEFAULT;
+
+         lblTitleImage.setImage(_imgTitle);
+      }
+
+      GridDataFactory.fillDefaults()
+            .align(SWT.BEGINNING, SWT.BEGINNING)
+            .hint(widthHint, SWT.DEFAULT)
+            .applyTo(lblTitleImage);
    }
 
    private void createUI_12_Header_Draggable(final Composite container) {
@@ -264,11 +310,11 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       _labelDragSlideout.setToolTipText(Messages.Slideout_Dialog_Action_DragSlideout_ToolTip);
       GridDataFactory.fillDefaults()
             .grab(true, false)
-            .align(SWT.FILL, SWT.CENTER)
+            .align(SWT.FILL, SWT.FILL)
+            .indent(0, 1) // adjust to controls in the custom header, e.g. combo box
             .applyTo(_labelDragSlideout);
       MTFont.setBannerFont(_labelDragSlideout);
-
-//		_labelDragSlideout.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_MAGENTA));
+//      _labelDragSlideout.setBackground(UI.SYS_COLOR_BLUE);
 
       _labelDragSlideout.addMouseTrackListener(new MouseTrackListener() {
 
@@ -299,12 +345,7 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
             onMouseUp(e);
          }
       });
-      _labelDragSlideout.addMouseMoveListener(new MouseMoveListener() {
-         @Override
-         public void mouseMove(final MouseEvent e) {
-            onMouseMove(e);
-         }
-      });
+      _labelDragSlideout.addMouseMoveListener(mouseEvent -> onMouseMove(mouseEvent));
    }
 
    /**
@@ -313,9 +354,8 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
    private void createUI_14_Header_Toolbar(final Composite container) {
 
       _toolbarSlideoutActions = new ToolBar(container, SWT.FLAT);
-      GridDataFactory
-            .fillDefaults()//
-            .indent(10, 0)
+      GridDataFactory.fillDefaults()
+            .indent(0, 0)
             .applyTo(_toolbarSlideoutActions);
    }
 
@@ -343,10 +383,18 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
     */
    protected void fillHeaderToolbar(final ToolBarManager toolbarManager) {}
 
+   /**
+    * @return Return bounds of the parent widget which is used to locate the slideout accordingly.
+    */
    protected abstract Rectangle getParentBounds();
 
    protected SlideoutLocation getSlideoutLocation() {
+
       return _slideoutLocation;
+   }
+
+   public Composite getTitleContainer() {
+      return _titleContainer;
    }
 
    @Override
@@ -355,13 +403,20 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       final int slideoutWidth = slideoutSize.x;
       final int slideoutHeight = slideoutSize.y;
 
-      final Rectangle _slideoutParentBounds = getParentBounds();
+      final Rectangle parentBounds = getParentBounds();
 
       // toolitem top left position and size
-      final int devXParent = _slideoutParentBounds.x;
-      final int devYParent = _slideoutParentBounds.y;
-      final int itemWidth = _slideoutParentBounds.width;
-      final int itemHeight = _slideoutParentBounds.height;
+      final int devXParent = parentBounds.x;
+      final int devYParent = parentBounds.y;
+      final int itemWidth = parentBounds.width;
+      int itemHeight = parentBounds.height;
+
+      if (UI.IS_4K_DISPLAY) {
+
+         // this adjustment is needed otherwise the tooltip is difficult to hover
+
+         itemHeight -= 1;
+      }
 
       // center horizontally
 
@@ -410,7 +465,7 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       if (isCheckAbove && (devY < 0)) {
          devY = devYBelow;
       }
-      if (isCheckBelow & (devY + slideoutHeight > displayHeight)) {
+      if (isCheckBelow && (devY + slideoutHeight > displayHeight)) {
          devY = devYAbove;
       }
 
@@ -429,12 +484,7 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       _cursorResize = new Cursor(display, SWT.CURSOR_SIZEALL);
       _cursorHand = new Cursor(display, SWT.CURSOR_HAND);
 
-      ownerControl.addDisposeListener(new DisposeListener() {
-         @Override
-         public void widgetDisposed(final DisposeEvent e) {
-            onDispose();
-         }
-      });
+      ownerControl.addDisposeListener(disposeEvent -> AdvancedSlideout.this.onDispose());
    }
 
    @Override
@@ -454,9 +504,11 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
 
       _cursorResize.dispose();
       _cursorHand.dispose();
+
+      UI.disposeResource(_imgTitle);
    }
 
-   abstract protected void onFocus();
+   protected abstract void onFocus();
 
    private void onMouseDown(final MouseEvent e) {
 
@@ -559,12 +611,52 @@ public abstract class AdvancedSlideout extends AdvancedSlideoutShell {
       _actionPinSlideout.setChecked(isToolTipPinned);
    }
 
+   public void setDarkThemeForToolbarActions() {
+
+// SET_FORMATTING_OFF
+
+      _actionCloseSlideout    .setImageDescriptor(CommonActivator.getImageDescriptor_Dark(CommonImages.App_Close));
+      _actionKeepSlideoutOpen .setImageDescriptor(CommonActivator.getImageDescriptor_Dark(CommonImages.App_KeepOpen));
+      _actionPinSlideout      .setImageDescriptor(CommonActivator.getImageDescriptor_Dark(CommonImages.App_Pin));
+
+// SET_FORMATTING_ON
+   }
+
    public void setSlideoutLocation(final SlideoutLocation slideoutLocation) {
+
       _slideoutLocation = slideoutLocation;
    }
 
+   /**
+    * Image descriptor for the tooltip title
+    *
+    * @param imageDescriptor
+    */
+   protected void setTitleImage(final ImageDescriptor imageDescriptor) {
+
+      _imgTitle = imageDescriptor.createImage();
+   }
+
    protected void setTitleText(final String titleText) {
+
       _titleText = titleText;
+   }
+
+   /**
+    * Show/hide default action
+    *
+    * @param isResizableShell
+    */
+   protected void showDefaultActions(final boolean isResizableShell) {
+
+      final GridData gd = (GridData) _toolbarSlideoutActions.getLayoutData();
+
+      _toolbarSlideoutActions.setVisible(isResizableShell);
+
+      gd.exclude = isResizableShell == false;
+
+      _toolbarSlideoutActions.getParent().layout(true);
+
    }
 
    protected void updateTitleText(final String titleText) {
