@@ -76,6 +76,7 @@ import net.tourbook.common.tooltip.AdvancedSlideout;
 import net.tourbook.common.tooltip.ICloseOpenedDialogs;
 import net.tourbook.common.tooltip.IOpeningDialog;
 import net.tourbook.common.tooltip.OpenDialogManager;
+import net.tourbook.common.ui.SelectionCellLabelProvider;
 import net.tourbook.common.util.ColumnDefinition;
 import net.tourbook.common.util.ColumnManager;
 import net.tourbook.common.util.ColumnProfile;
@@ -104,11 +105,13 @@ import net.tourbook.extension.download.CloudDownloaderManager;
 import net.tourbook.extension.download.TourbookCloudDownloader;
 import net.tourbook.extension.export.ActionExport;
 import net.tourbook.extension.upload.ActionUpload;
+import net.tourbook.importdata.CadenceConfig;
 import net.tourbook.importdata.DeviceImportState;
 import net.tourbook.importdata.DialogEasyImportConfig;
 import net.tourbook.importdata.EasyConfig;
 import net.tourbook.importdata.EasyImportManager;
 import net.tourbook.importdata.EasyLauncherUtils;
+import net.tourbook.importdata.EquipmentConfig;
 import net.tourbook.importdata.ImportConfig;
 import net.tourbook.importdata.ImportLauncher;
 import net.tourbook.importdata.ImportState_Easy;
@@ -116,6 +119,8 @@ import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
 import net.tourbook.importdata.OSFile;
 import net.tourbook.importdata.RawDataManager;
+import net.tourbook.importdata.SpeedCadence;
+import net.tourbook.importdata.SpeedEquipment;
 import net.tourbook.importdata.SpeedTourType;
 import net.tourbook.importdata.TourTypeConfig;
 import net.tourbook.photo.ImageUtils;
@@ -2292,16 +2297,16 @@ public class RawDataView extends ViewPart implements
 
       final StringBuilder sb = new StringBuilder();
 
-      final String tileName = importLauncher.name.trim();
+      final String launcherName = importLauncher.name.trim();
       final String tileDescription = importLauncher.description.trim();
-      final String tourTypeText = EasyLauncherUtils.createText_TourType(importLauncher, tileName);
 
       {
-         // tour type name
+         // launcher name
 
-         if (tileName.length() > 0) {
+         if (launcherName.length() > 0) {
 
-            sb.append(tileName);
+            sb.append(launcherName);
+            sb.append(NL);
             sb.append(NL);
          }
       }
@@ -2310,54 +2315,70 @@ public class RawDataView extends ViewPart implements
 
          if (tileDescription.length() > 0) {
 
-            sb.append(NL);
             sb.append(tileDescription);
             sb.append(NL);
-         }
-      }
-      {
-         // tour type text
-
-         if (tourTypeText.length() > 0) {
-
-            sb.append(NL);
-            sb.append(tourTypeText);
             sb.append(NL);
          }
       }
       {
-         // tag group tags
+         // tour type
+
+         if (importLauncher.isSetTourType) {
+
+            EasyLauncherUtils.createTooltipText_TourType(importLauncher, launcherName, sb);
+
+         } else {
+
+            sb.append("Set tour type . . . NO");
+            sb.append(NL);
+         }
+      }
+      {
+         // tags
 
          if (importLauncher.isSetTags()) {
 
-            EasyLauncherUtils.createText_TagsGroup(importLauncher, sb);
+            EasyLauncherUtils.createTooltipText_Tags(importLauncher, sb);
 
          } else {
 
-            sb.append(NL);
             sb.append(Messages.Import_Data_HTML_SetTourTags_NO);
+            sb.append(NL);
          }
       }
       {
-         // equipment group
+         // equipment
 
-         if (importLauncher.isSetEquipment()) {
+         if (importLauncher.isSetEquipmentAndIsAvailable()) {
 
-            EasyLauncherUtils.createText_EquipmentGroup(importLauncher, sb);
+            EasyLauncherUtils.createTooltipText_Equipment(importLauncher, sb);
 
          } else {
 
-            sb.append(NL);
             sb.append(Messages.Import_Data_HTML_SetEquipment_NO);
+            sb.append(NL);
+         }
+      }
+      {
+         // cadence
+
+         if (importLauncher.isSetCadence) {
+
+            EasyLauncherUtils.createTooltipText_Cadence(importLauncher, sb);
+
+         } else {
+
+            sb.append("Set cadence . . . NO");
+            sb.append(NL);
          }
       }
       {
          // 2nd last time slice marker
 
-         sb.append(NL);
          sb.append(importLauncher.isRemove2ndLastTimeSliceMarker
                ? Messages.Import_Data_HTML_Remove2dLastTimeSliceMarker_Yes
                : Messages.Import_Data_HTML_Remove2dLastTimeSliceMarker_No);
+         sb.append(NL);
       }
       {
          // last marker
@@ -2366,15 +2387,13 @@ public class RawDataView extends ViewPart implements
 
          final String distanceValue = _nf1.format(distance) + UI.SPACE1 + UI.UNIT_LABEL_DISTANCE;
 
-         sb.append(NL);
          sb.append(importLauncher.isSetLastMarker
                ? NLS.bind(Messages.Import_Data_HTML_LastMarker_Yes, distanceValue, importLauncher.lastMarkerText)
                : Messages.Import_Data_HTML_LastMarker_No);
+         sb.append(NL);
       }
       {
          // adjust temperature
-
-         sb.append(NL);
 
          if (importLauncher.isAdjustTemperature) {
 
@@ -2392,60 +2411,62 @@ public class RawDataView extends ViewPart implements
 
             sb.append(Messages.Import_Data_HTML_AdjustTemperature_No);
          }
+
+         sb.append(NL);
       }
       {
          // adjust elevation
 
-         sb.append(NL);
-
          sb.append(importLauncher.isReplaceFirstTimeSliceElevation
                ? Messages.Import_Data_HTML_ReplaceFirstTimeSliceElevation_Yes
                : Messages.Import_Data_HTML_ReplaceFirstTimeSliceElevation_No);
+
+         sb.append(NL);
       }
       {
          // set elevation from SRTM
 
-         sb.append(NL);
-
          sb.append(importLauncher.isReplaceElevationFromSRTM
                ? Messages.Import_Data_HTML_ReplaceElevationFromSRTM_Yes
                : Messages.Import_Data_HTML_ReplaceElevationFromSRTM_No);
+
+         sb.append(NL);
       }
       {
          // retrieve weather data
 
-         sb.append(NL);
-
          sb.append(importLauncher.isRetrieveWeatherData
                ? Messages.Import_Data_HTML_RetrieveWeatherData_Yes
                : Messages.Import_Data_HTML_RetrieveWeatherData_No);
+
+         sb.append(NL);
       }
       {
          // retrieve tour location
 
-         sb.append(NL);
-
          sb.append(importLauncher.isRetrieveTourLocation
                ? Messages.Import_Data_HTML_RetrieveTourLocation_Yes
                : Messages.Import_Data_HTML_RetrieveTourLocation_No);
+
+         sb.append(NL);
       }
       {
          // save tour
 
-         sb.append(NL);
-
          sb.append(importLauncher.isSaveTour
                ? Messages.Import_Data_HTML_SaveTour_Yes
                : Messages.Import_Data_HTML_SaveTour_No);
+
+         sb.append(NL);
       }
       {
          // delete device files
 
-         sb.append(NL);
-
          sb.append(getEasyConfig().getActiveImportConfig().isDeleteDeviceFiles
                ? Messages.Import_Data_HTML_DeleteDeviceFiles_Yes
                : Messages.Import_Data_HTML_DeleteDeviceFiles_No);
+
+         sb.append(NL);
       }
 
       return sb.toString();
@@ -2512,7 +2533,7 @@ public class RawDataView extends ViewPart implements
        * Equipment
        */
       String htmlEquipment = UI.EMPTY_STRING;
-      if (importLauncher.isSetEquipment()) {
+      if (importLauncher.isSetEquipmentAndIsAvailable()) {
 
          final String stateImage = createHTML_BgImage(_imageUrl_State_Equipment);
 
@@ -2855,9 +2876,14 @@ public class RawDataView extends ViewPart implements
       }
    }
 
+   private String createText_Cadence(final ImportLauncher importLauncher) {
+      // TODO Auto-generated method stub
+      return null;
+   }
+
    private String createText_EquipmentGroup(final ImportLauncher importLauncher) {
 
-      final String equipmentGroupID = importLauncher.equipmentGroupID;
+      final String equipmentGroupID = importLauncher.equipmentOneGroupID;
 
       final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
       final Set<Equipment> allEquipment = EquipmentGroupManager.getEquipment(equipmentGroupID);
@@ -3518,6 +3544,8 @@ public class RawDataView extends ViewPart implements
       defineColumn_Motion_AvgSpeed();
       defineColumn_Motion_AvgPace();
 
+      defineColumn_Powertrain_CadenceMultiplier();
+
       defineColumn_Altitude_Up();
       defineColumn_Altitude_Down();
 
@@ -3783,6 +3811,28 @@ public class RawDataView extends ViewPart implements
    }
 
    /**
+    * Column: Powertrain - Cadence multiplier
+    */
+   private void defineColumn_Powertrain_CadenceMultiplier() {
+
+      final TableColumnDefinition colDef = TableColumnFactory.POWERTRAIN_CADENCE_MULTIPLIER.createColumn(_tourViewer_ColumnManager, _pc);
+      colDef.setLabelProvider(new SelectionCellLabelProvider() {
+         @Override
+         public void update(final ViewerCell cell) {
+
+            final TourData tourData = (TourData) cell.getElement();
+            final double cadenceMultiplier = tourData.getCadenceMultiplier();
+
+            if (cadenceMultiplier == 0) {
+               cell.setText(UI.EMPTY_STRING);
+            } else {
+               cell.setText(_nf1.format(cadenceMultiplier));
+            }
+         }
+      });
+   }
+
+   /**
     * Column: Database state
     */
    private void defineColumn_State_Database() {
@@ -4013,11 +4063,15 @@ public class RawDataView extends ViewPart implements
 
             } else {
 
-               cell.setText(EquipmentManager.getEquipmentNames(allEquipment));
+               final List<Long> allEquipmentIDs = tourData.getEquipmentIds();
+
+               final ValueFormat valueFormat = colDef.getValueFormat_Detail();
+               final String text = EquipmentManager.getEquipmentNames(allEquipmentIDs, valueFormat);
+
+               cell.setText(text);
             }
          }
       });
-
    }
 
    /**
@@ -4759,7 +4813,7 @@ public class RawDataView extends ViewPart implements
 
          // draw multiple tour types in one image
 
-         final ArrayList<SpeedTourType> allSpeedVertices = importConfig.speedTourTypes;
+         final List<SpeedTourType> allSpeedVertices = importConfig.allTourTypeSpeeds;
 
          final ImageData swtImageData = new ImageData(
                configWidthScaled,
@@ -6027,8 +6081,15 @@ public class RawDataView extends ViewPart implements
          /*
           * 9. Set equipment from a group
           */
-         if (importLauncher.isSetEquipmentGroup) {
+         if (importLauncher.isSetEquipment) {
             runEasyImport_009_SetEquipment(importLauncher, importedTours);
+         }
+
+         /*
+          * 10. Set cadence
+          */
+         if (importLauncher.isSetCadence) {
+            runEasyImport_010_SetCadence(importLauncher, importedTours);
          }
 
          /*
@@ -6348,19 +6409,126 @@ public class RawDataView extends ViewPart implements
    private void runEasyImport_009_SetEquipment(final ImportLauncher importLauncher,
                                                final ArrayList<TourData> allImportedTours) {
 
-      final String equipmentGroupID = importLauncher.equipmentGroupID;
-      final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
+      final Enum<EquipmentConfig> eqConfig = importLauncher.equipmentConfig;
 
-      if (equipmentGroup == null) {
-         return;
+      if (EquipmentConfig.EQUIPMENT_CONFIG_BY_SPEED.equals(eqConfig)) {
+
+         // "9. Set tour equipment from the equipment group %s"
+         TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_009_SET_EQUIPMENT.formatted(createText_EquipmentGroup(importLauncher)));
+
+         for (final TourData tourData : allImportedTours) {
+
+            final float tourDistanceMeter = tourData.getTourDistance();
+            final long movingTime = tourData.getTourComputedTime_Moving();
+
+            double tourAvgSpeed = 0;
+
+            if (movingTime != 0) {
+               tourAvgSpeed = tourDistanceMeter / movingTime * 3.6;
+            }
+
+            if (tourAvgSpeed != 0) {
+
+               final List<SpeedEquipment> allEqSpeed = importLauncher.allEquipmentSpeeds;
+               String eqGroupId = null;
+
+               // find equipment for the tour avg speed
+               for (final SpeedEquipment eqSpeed : allEqSpeed) {
+
+                  if (tourAvgSpeed <= eqSpeed.avgSpeed) {
+
+                     eqGroupId = eqSpeed.equipmentGroupID;
+
+                     final Set<Equipment> allEquipment = EquipmentGroupManager.getEquipment(eqGroupId);
+
+                     if (allEquipment != null) {
+                        tourData.setEquipment(allEquipment);
+                     }
+
+                     break;
+                  }
+               }
+            }
+         }
+
+      } else if (EquipmentConfig.EQUIPMENT_CONFIG_ONE_FOR_ALL.equals(eqConfig)) {
+
+         final String equipmentGroupID = importLauncher.equipmentOneGroupID;
+         final EquipmentGroup equipmentGroup = EquipmentGroupManager.getEquipmentGroup(equipmentGroupID);
+
+         if (equipmentGroup == null) {
+            return;
+         }
+
+         // "9. Set tour equipment from the equipment group %s"
+         TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_009_SET_EQUIPMENT.formatted(createText_EquipmentGroup(importLauncher)));
+
+         for (final TourData tourData : allImportedTours) {
+
+            tourData.setEquipment(equipmentGroup.allEquipment);
+         }
       }
+   }
 
-      // "9. Set tour equipment from the equipment group %s"
-      TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_009_SET_EQUIPMENT.formatted(createText_EquipmentGroup(importLauncher)));
+   private void runEasyImport_010_SetCadence(final ImportLauncher importLauncher,
+                                             final ArrayList<TourData> allImportedTours) {
 
-      for (final TourData tourData : allImportedTours) {
+      final Enum<CadenceConfig> cadConfig = importLauncher.cadenceConfig;
 
-         tourData.setEquipment(equipmentGroup.allEquipment);
+      if (CadenceConfig.CADENCE_CONFIG_BY_SPEED.equals(cadConfig)) {
+
+         // "10. Set cadence - %s"
+         TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_010_SET_CADENCE.formatted(createText_Cadence(importLauncher)));
+
+         for (final TourData tourData : allImportedTours) {
+
+            final float tourDistanceMeter = tourData.getTourDistance();
+            final long movingTime = tourData.getTourComputedTime_Moving();
+
+            double tourAvgSpeed = 0;
+
+            if (movingTime != 0) {
+               tourAvgSpeed = tourDistanceMeter / movingTime * 3.6;
+            }
+
+            if (tourAvgSpeed != 0) {
+
+               final List<SpeedCadence> allCadSpeed = importLauncher.allCadenceSpeeds;
+
+               // find cadence for the tour avg speed
+               for (final SpeedCadence cadSpeed : allCadSpeed) {
+
+                  if (tourAvgSpeed <= cadSpeed.avgSpeed) {
+
+                     final CadenceMultiplier cadenceMultiplier = cadSpeed.cadenceMultiplier;
+
+                     if (cadenceMultiplier != null) {
+
+                        tourData.setCadenceMultiplier(cadenceMultiplier.getMultiplier());
+
+                        break;
+                     }
+                  }
+               }
+            }
+         }
+
+      } else if (CadenceConfig.CADENCE_CONFIG_ONE_FOR_ALL.equals(cadConfig)) {
+
+         final CadenceMultiplier oneCadence = importLauncher.cadenceOne;
+
+         if (oneCadence != null) {
+
+            final float cadenceMultiplier = oneCadence.getMultiplier();
+
+            // "10. Set cadence - %s"
+            TourLogManager.log_DEFAULT(EasyImportManager.LOG_EASY_IMPORT_010_SET_CADENCE.formatted(createText_Cadence(importLauncher)));
+
+            for (final TourData tourData : allImportedTours) {
+
+               tourData.setCadenceMultiplier(cadenceMultiplier);
+            }
+         }
       }
    }
 
