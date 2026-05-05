@@ -15,6 +15,8 @@
  *******************************************************************************/
 package net.tourbook.ui.views.rawData;
 
+import java.util.HashMap;
+
 import net.tourbook.common.util.Util;
 import net.tourbook.data.TourData;
 
@@ -31,11 +33,14 @@ public class TourMerger {
    private float[]  _newSourceAltitudeDifferencesSerie;
    private float[]  _newSourceAltitudeSerie;
 
+   private HashMap<String, float[]>               _newSourceCustomTracks;
+   private HashMap<String, float[]>               _newTargetCustomTrack;
+
    private float[]  _newTargetPulseSerie;
+
    private float[]  _newTargetCadenceSerie;
    private float[]  _newTargetTemperatureSerie;
    private int[]    _newTargetTimeSerie;
-
    public TourMerger(final TourData sourceTour,
                      final TourData targetTour,
                      final boolean adjustAltiFromSource,
@@ -66,6 +71,18 @@ public class TourMerger {
       if (sourceTemperatureSerie != null) {
          _newTargetTemperatureSerie[targetIndex] = sourceTemperatureSerie[sourceIndex];
       }
+
+      if (_newSourceCustomTracks != null && !_newSourceCustomTracks.isEmpty()) {
+         for (final String customTracksId : _newSourceCustomTracks.keySet()) {
+            if (_newTargetCustomTrack.get(customTracksId) == null) {
+               final float[] serieData = new float[_newTargetTimeSerie.length];
+               _newTargetCustomTrack.put(customTracksId, serieData);
+            }
+            final float[] targetSerieData = _newTargetCustomTrack.get(customTracksId);
+            final float[] sourceSerieData = _newSourceCustomTracks.get(customTracksId);
+            targetSerieData[targetIndex] = sourceSerieData[sourceIndex];
+         }
+      }
    }
 
    private int checkArrayBounds(int sourceIndex, final int lastSourceIndex) {
@@ -75,6 +92,9 @@ public class TourMerger {
    }
 
    public void computeMergedData(final boolean mergeSpeed) {
+
+      _newSourceCustomTracks = _sourceTour.getCustomTracks();
+      _newTargetCustomTrack = new HashMap<>();
 
       _newTargetTimeSerie = mergeSpeed ? mergeSpeed() : Util.createIntegerCopy(_targetTour.timeSerie);
 
@@ -212,6 +232,10 @@ public class TourMerger {
 
          assignTargetSeriesValue(sourceIndex, targetIndex);
       }
+   }
+
+   public HashMap<String, float[]> get_newTargetCustomTrack() {
+      return _newTargetCustomTrack;
    }
 
    public float[] getNewSourceAltitudeDifferencesSerie() {

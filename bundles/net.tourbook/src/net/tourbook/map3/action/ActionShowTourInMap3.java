@@ -210,7 +210,7 @@ public class ActionShowTourInMap3 extends ContributionItem implements IOpeningDi
    /**
     * Set enable/disable and selection for this action.
     *
-    * @param isSelected
+    * @param isDeleted
     * @param isEnabled
     */
    public void setEnabled(final boolean isEnabled) {

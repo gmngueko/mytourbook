@@ -22,12 +22,15 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import javax.xml.XMLConstants;
@@ -35,19 +38,26 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import net.tourbook.common.UI;
+import net.tourbook.common.time.DateUtil;
 import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.MtMath;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.CustomTrackDefinition;
 import net.tourbook.data.CustomTrackValue;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.TimeData;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
+import net.tourbook.database.TourDatabase;
 import net.tourbook.device.InvalidDeviceSAXException;
 import net.tourbook.device.Messages;
+import net.tourbook.device.sporttracks.FitLogEx1_SAXHandler.CustomDataFieldDefinition;
 import net.tourbook.device.sporttracks.FitLog_SAXHandler.Equipment;
 import net.tourbook.importdata.ImportState_File;
 import net.tourbook.importdata.ImportState_Process;
@@ -86,7 +96,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_CUSTOM_DATA_FIELD_VALUE         = "v";    //$NON-NLS-1$
 
    private static final String                  ATTRIB_DURATION_SECONDS     = "DurationSeconds"; //$NON-NLS-1$
-   static final String                          ATTRIB_EQUIPMENT_ID         = "Id";              //$NON-NLS-1$
+   static final         String                  ATTRIB_EQUIPMENT_ID         = "Id";              //$NON-NLS-1$
    private static final String                  ATTRIB_NAME                 = "Name";            //$NON-NLS-1$
    private static final String                  ATTRIB_START_TIME           = "StartTime";       //$NON-NLS-1$
    private static final String                  ATTRIB_END_TIME             = "EndTime";         //$NON-NLS-1$
@@ -137,6 +147,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private static final String                  ATTRIB_PT_VO                        = "vo";                                  //$NON-NLS-1$
 
    private static final String                  ATTRIB_ID                           = "Id";                                  //$NON-NLS-1$
+   private static final String                  ATTRIB_REFID                        = "RefId";                               //$NON-NLS-1$
    private static final String                  ATTRIB_AVERAGE_LP_WATTS             = "AvgLeftRightBalance";                 //$NON-NLS-1$
 
    private static final String                  ATTRIB_PATHNAME                     = "PathName";                            //$NON-NLS-1$
@@ -230,7 +241,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private boolean                         _isInLapNotes;
    private boolean                         _isInLap;
    //custom tracks end
-   private Map<String, Integer>            _customDataFieldDefinitions;
+   private Map<String, CustomDataFieldDefinition> _customDataFieldDefinitions;
 
    private StringBuilder                   _characters       = new StringBuilder(100);
 
@@ -238,6 +249,12 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     * Key is the tag name + contained id, all in UPPERCASE
     */
    private final Map<String, TagWithNotes> _allTagsWithNotes = new HashMap<>();
+   private final Map<String, String>              _allTagsWithNotes_ByRefId = new HashMap<>();
+
+   /**
+    * Key is the attribute RefId (UUID) of ST3
+    */
+   private final Map<String, DataSerie>    _allDataSeries    = new HashMap<>();
 
    private class Activity {
 
@@ -286,6 +303,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       private int                           weatherWindSpeed   = Integer.MIN_VALUE;
 
       private LinkedHashMap<String, String> customDataFields   = new LinkedHashMap<>();
+      private LinkedHashMap<String, String> customDataFields_ByRefId = new LinkedHashMap<>();
       //custom tracks start
       private String                        weatherConditionsNotes;
       private float                         weatherTemperatureFeel   = Float.MIN_VALUE;
@@ -309,6 +327,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
    private class CustomST3TrackDefinition {
       private String _Name;
       private String _Id;
+      private String _RefId;
       private String _Unit;
 
       public String getId() {
@@ -317,6 +336,10 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       public String getName() {
          return _Name;
+      }
+
+      public String getRefId() {
+         return _RefId;
       }
 
       public String getUnit() {
@@ -329,6 +352,10 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
       public void setName(final String name) {
          _Name = name;
+      }
+
+      public void setRefId(final String refid) {
+         _RefId = refid;
       }
 
       public void setUnit(final String unit) {
@@ -380,7 +407,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          // We parse the custom field definitions and equipments
          // separately as they can be anywhere in the file
 
-         final FitLogEx_SAXHandler fitLogEx_SaxHandler = new FitLogEx_SAXHandler();
+         final FitLogEx1_SAXHandler fitLogEx1_SaxHandler = new FitLogEx1_SAXHandler();
 
          try {
 
@@ -388,7 +415,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             parser.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, UI.EMPTY_STRING);
             parser.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, UI.EMPTY_STRING);
 
-            parser.parse("file:" + importFilePath, fitLogEx_SaxHandler);//$NON-NLS-1$
+            parser.parse("file:" + importFilePath, fitLogEx1_SaxHandler);//$NON-NLS-1$
 
          } catch (final InvalidDeviceSAXException e) {
             StatusUtil.log(e);
@@ -396,7 +423,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             StatusUtil.log("Error parsing file: " + importFilePath, e); //$NON-NLS-1$
          }
 
-         _customDataFieldDefinitions = fitLogEx_SaxHandler.getCustomDataFieldDefinitions();
+         _customDataFieldDefinitions = fitLogEx1_SaxHandler.getCustomDataFieldDefinitions();
 
 //         if (!_isReimport) {
 
@@ -404,12 +431,12 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          // create a list with all equipments which can be used to create TourTag's
 
-         final List<Equipment> allEquipments_FromFitLogEx = fitLogEx_SaxHandler.getEquipments();
+         final List<Equipment> allEquipments_FromFitLogEx = fitLogEx1_SaxHandler.getEquipments();
 
          for (final Equipment equipment : allEquipments_FromFitLogEx) {
 
             final String name = equipment.getName();
-            final String id = equipment.Id;
+            final String id = equipment.Id.trim();
 
             final String key = (name + UI.DASH + id).toUpperCase();
 
@@ -422,6 +449,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                         id
 
                   ));
+
+            _allTagsWithNotes_ByRefId.put(id, key);
          }
 //         }
 //      }
@@ -687,16 +716,22 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          //setting up customTracksDefinition with call to "tourData.customTracksDefinition.put(...)"
          //must be set before calling "tourData.createTimeSeries(....)"
          for (final CustomST3TrackDefinition customST3TrackDefinition : _currentActivity.customTrackDefinitions) {
-            final String idS = customST3TrackDefinition.getId();
+            //final String idS = customST3TrackDefinition.getId();
             final String nameS = customST3TrackDefinition.getName();
             final String unitS = customST3TrackDefinition.getUnit();
+            final String refidS = customST3TrackDefinition.getRefId();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {} else if (nameS.compareTo(NAME_GROUNDCONTACT_TIME_BALANCE) == 0) {} else if (nameS
                   .compareTo(NAME_VERTICALRATIO) == 0) {} else {
                final CustomTrackDefinition customTrackDefinition = new CustomTrackDefinition();
-               customTrackDefinition.setId(idS);
+               customTrackDefinition.setId(refidS);
                customTrackDefinition.setName(nameS);
                customTrackDefinition.setUnit(unitS);
-               tourData.customTracksDefinition.put(idS, customTrackDefinition);
+               tourData.customTracksDefinition.put(refidS, customTrackDefinition);
+               if (!_allDataSeries.containsKey(refidS)) {
+                  final DataSerie dataSerie = new DataSerie(nameS, refidS, unitS);
+                  _allDataSeries.put(refidS, dataSerie);
+               }
+
             }
          }
          //custom tracks end
@@ -852,6 +887,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       tourData.setDeviceName(_device.visibleName);
 
       // after all data are added, the tour id can be created because it depends on the tour distance
+      _device.setCreateTourIdWithTime(true);
       final String uniqueId = _device.createUniqueId(tourData, Util.UNIQUE_ID_SUFFIX_SPORT_TRACKS_FITLOG);
       final Long tourId = tourData.createTourId(uniqueId);
 
@@ -876,6 +912,8 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          finalizeTour_10_SetTourType(tourData);
          finalizeTour_20_SetTags(tourData);
+         finalizeTour_25_SetDataSeries(tourData);
+         finalizeTour_28_SetCustomFields(tourData);
 //         }
 
          finalizeTour_30_CreateMarkers(tourData);
@@ -886,6 +924,9 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
       _currentActivity.laps.clear();
       _currentActivity.equipments.clear();
       _currentActivity.customTrackDefinitions.clear();//custom tracks
+      _currentActivity.customDataFields.clear();
+      _currentActivity.customDataFields_ByRefId.clear();
+      _currentActivity.pauses.clear();
 
       _importState_File.isFileImportedWithValidData = true;
    }
@@ -917,10 +958,206 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     */
    private void finalizeTour_20_SetTags(final TourData tourData) {
 
-      final boolean isNewTourTag = RawDataManager.setTourTags(tourData, _allTagsWithNotes);
+      final Map<String, TagWithNotes> activityTagsWithNotes = new HashMap<>();
 
-      if (isNewTourTag) {
-         _importState_Process.isCreated_NewTag().set(true);
+      for(final Equipment equipment:_currentActivity.equipments) {
+         final String key = _allTagsWithNotes_ByRefId.get(equipment.Id);
+         if (key != null) {
+            final TagWithNotes tagWithNotes = _allTagsWithNotes.get(key);
+            if (tagWithNotes != null) {
+               activityTagsWithNotes.put(key, tagWithNotes);
+            }
+         }
+      }
+
+      if (activityTagsWithNotes != null && !activityTagsWithNotes.isEmpty()) {
+         final boolean isNewTourTag = RawDataManager.setTourTags(tourData, activityTagsWithNotes);
+
+         if (isNewTourTag) {
+            _importState_Process.isCreated_NewTag().set(true);
+         }
+      }
+
+   }
+
+   /**
+    * Set dataSeries from all CustomTracks Definition by using it's RefId'ss
+    *
+    * @param tourData
+    */
+   private void finalizeTour_25_SetDataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allDataSeriesSet = new HashSet<>(_allDataSeries.values());
+      final boolean isNewDataSerie = RawDataManager.setDataSeries(tourData, allDataSeriesSet);
+
+      if (isNewDataSerie) {
+         _importState_Process.isCreated_NewDataSerie().set(true);
+      }
+   }
+
+   /**
+    * Set CustomFields and Value from all CustomField in the current activity with their definition by using it's RefId'ss
+    *
+    * @param tourData
+    */
+   private void finalizeTour_28_SetCustomFields(final TourData tourData) {
+      if(_currentActivity.customDataFields_ByRefId.size()>0) {
+
+         /*
+          * Get CustomFieldValue from tour data
+          */
+         final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+         allTourData_CustomFieldValues.clear();
+
+         for (final String customFieldId : _currentActivity.customDataFields_ByRefId.keySet()) {
+            String customFieldMapValue = _currentActivity.customDataFields_ByRefId.get(customFieldId);
+            if (customFieldMapValue != null) {
+               final String sValue = customFieldMapValue.trim().replaceAll("^\"|\"$", "").replaceAll("^'|'$", "");
+               customFieldMapValue = sValue;
+            }
+            //first create CustomField's
+            final CustomDataFieldDefinition customDataFieldDefinition = _customDataFieldDefinitions.get(customFieldId);
+            final CustomField customField;
+            if (customDataFieldDefinition != null) {
+               customField = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                     customFieldId,
+                     customDataFieldDefinition.unit,
+                     customDataFieldDefinition.type,
+                     customDataFieldDefinition.name);
+            } else {
+               customField = RawDataManager.createCustomField("???UnnownName???",
+                     customFieldId,
+                     "",
+                     CustomFieldType.NONE,
+                     "???CustomDataFieldDefinition not present in FitlogEx file???");
+            }
+            final CustomField customFieldToCompare = new CustomField();
+            customFieldToCompare.setFieldName(customDataFieldDefinition.shortName);
+            customFieldToCompare.setFieldType(customDataFieldDefinition.type);
+            customFieldToCompare.setRefId(customDataFieldDefinition.id);
+            if (customField.equals2(customFieldToCompare) == false) {
+               //TODO might not be necessary to update CustomFields
+               //existing CustomFields must sray the way they are
+               //User might have modified on purpose !!!
+               if (customField.getFieldId() == TourDatabase.ENTITY_IS_NOT_SAVED) {
+
+                  /*
+                   * Nothing to do, customField will be saved when a tour is saved which contains
+                   * this customField
+                   * in
+                   * net.tourbook.database.TourDatabase.checkUnsavedTransientInstances_CustomFields(
+                   * )
+                   */
+
+               } else {
+
+                  /*
+                   * Notify post process to update the customField in the db
+                   */
+
+                  final ConcurrentHashMap<String, CustomField> allCustomFieldsToBeUpdated = _importState_Process.getAllCustomFieldsToBeUpdated();
+
+                  allCustomFieldsToBeUpdated.put(customField.getRefId(), customField);
+               }
+            }
+
+            //second create CustomFieldValue's
+            final CustomFieldValue customFieldValue = new CustomFieldValue(customField);
+            if (customField.getFieldType().compareTo(CustomFieldType.FIELD_NUMBER) == 0 ||
+                  customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) == 0) {
+               if (customDataFieldDefinition.type.compareTo(CustomFieldType.FIELD_STRING) == 0) {
+                  //it was originally a String in ST3 !!
+                  if (DateUtil.isValideDuration(customFieldMapValue)) {
+                     try {
+                        final org.joda.time.Duration duration = DateUtil.parseDuration(customFieldMapValue);
+                        customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+                        customFieldValue.setValueString(null);
+                     } catch (final Exception e) {
+                        System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Duration String::\n" + e
+                              .getMessage());
+                        //create a v2 version
+                        final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                              "v1;" + customFieldId, //$NON-NLS-1$
+                              customDataFieldDefinition.unit,
+                              CustomFieldType.FIELD_STRING,
+                              customDataFieldDefinition.name);
+                        customFieldValue.setCustomField(customFieldv2);
+
+                        customFieldValue.setValueFloat(null);
+                        customFieldValue.setValueString(customFieldMapValue);
+                     }
+                  } else {
+                     final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                           "v1;" + customFieldId, //$NON-NLS-1$
+                           customDataFieldDefinition.unit,
+                           CustomFieldType.FIELD_STRING,
+                           customDataFieldDefinition.name);
+                     customFieldValue.setCustomField(customFieldv2);
+
+                     customFieldValue.setValueFloat(null);
+                     customFieldValue.setValueString(customFieldMapValue);
+
+                  }
+               } else {
+                  customFieldValue.setValueFloat(Float.parseFloat(customFieldMapValue));
+               }
+            } else {
+               boolean isDate = false;
+               try {
+                  final Date theDate = DateUtil.parse(customFieldMapValue);
+                  isDate = true;//if there is no exception thrown during parsing above we reach this code
+                  customFieldValue.setValueString(String.valueOf(theDate.getTime() / 1000));
+                  if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DATE) != 0) {
+                     //create a v2 version
+                     final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                           "v2;" + customFieldId, //$NON-NLS-1$
+                           customDataFieldDefinition.unit,
+                           CustomFieldType.FIELD_DATE,
+                           customDataFieldDefinition.name);
+                     customFieldValue.setCustomField(customFieldv2);
+                  }
+               } catch (final Exception e) {
+                  System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Date String::\n" + e.getMessage());
+                  customFieldValue.setValueString(customFieldMapValue);
+               }
+               if (!isDate) {
+                  if (DateUtil.isValideDuration(customFieldMapValue)) {
+                     try {
+                        final org.joda.time.Duration duration = DateUtil.parseDuration(customFieldMapValue);
+                        //customField.setFieldType(CustomFieldType.FIELD_DURATION);
+                        if (customField.getFieldType().compareTo(CustomFieldType.FIELD_DURATION) != 0) {
+                           //create a v2 version
+                           final CustomField customFieldv2 = RawDataManager.createCustomField(customDataFieldDefinition.shortName,
+                                 "v2;" + customFieldId, //$NON-NLS-1$
+                                 customDataFieldDefinition.unit,
+                                 CustomFieldType.FIELD_DURATION,
+                                 customDataFieldDefinition.name);
+                           customFieldValue.setCustomField(customFieldv2);
+                        }
+                        customFieldValue.setValueFloat(((Long) duration.getStandardSeconds()).floatValue());
+                        customFieldValue.setValueString(null);
+                     } catch (final Exception e) {
+                        System.out.println(customField.getFieldName() + ",v=" + customFieldMapValue + ", is not a Duration String::\n" + e
+                              .getMessage());
+                        //customField.setFieldType(CustomFieldType.FIELD_STRING);
+                        customFieldValue.setValueFloat(null);
+                        customFieldValue.setValueString(customFieldMapValue);
+                     }
+                  }
+               }
+
+            }
+
+            /*
+             * Set CustomFieldValue into tour data
+             */
+            customFieldValue.setTourStartTime(tourData.getTourStartTimeMS());
+            customFieldValue.setTourEndTime(tourData.getTourEndTimeMS());
+            customFieldValue.setTourData(tourData);
+            allTourData_CustomFieldValues.add(customFieldValue);
+         }
+
       }
    }
 
@@ -978,7 +1215,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          }
 
          final TourMarker tourMarker = createTourMarker(tourData,
-               Integer.toString(lapCounter),
+               "(Lap)" + Integer.toString(lapCounter), //$NON-NLS-1$
                lapRelativeTime,
                serieIndex);
 
@@ -1010,30 +1247,48 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
     * @param customDataFieldValue
     *           The custom field value to be formatted
     */
-   private void formatCustomDataFieldValue(final Activity activity, final String customDataFieldName, final String customDataFieldValue) {
+   private void formatCustomDataFieldValue(final Activity activity,
+                                           final String customDataFieldId,
+                                           final String customDataFieldName,
+                                           final String customDataFieldValue) {
 
       // If there is no custom data field definition for the current field, we add its value as-is.
-      if (!_customDataFieldDefinitions.containsKey(customDataFieldName)) {
+      if (!_customDataFieldDefinitions.containsKey(customDataFieldId)) {
          activity.customDataFields.put(customDataFieldName, customDataFieldValue);
+         //TODO generate a CustomField for this bogus
+         //activity.customDataFields_ByRefId.put(customDataFieldId, customDataFieldValue);
          return;
       }
 
       //Otherwise, we round the value to the number of specified decimals
-      final int numberOfDecimals = _customDataFieldDefinitions.get(customDataFieldName);
-      try {
-         final String format = "%." + numberOfDecimals + "f"; //$NON-NLS-1$ //$NON-NLS-2$
-         final String formattedNumber = String.format(format, (double) Math.round(Double.valueOf(customDataFieldValue)));
+      if (_customDataFieldDefinitions.get(customDataFieldId).nbrDecimal != null) {
+         final int numberOfDecimals = _customDataFieldDefinitions.get(customDataFieldId).nbrDecimal;
+         try {
+            final String format = "%." + numberOfDecimals + "f"; //$NON-NLS-1$ //$NON-NLS-2$
+            final String formattedNumber = String.format(format, (double) Math.round(Double.valueOf(customDataFieldValue)));
 
-         if (activity.customDataFields.containsKey(customDataFieldName)) {
-            activity.customDataFields.replace(customDataFieldName, formattedNumber);
-         } else {
-            activity.customDataFields.put(customDataFieldName, formattedNumber);
+            if (activity.customDataFields.containsKey(customDataFieldName)) {
+               activity.customDataFields.replace(customDataFieldName, formattedNumber);
+            } else {
+               activity.customDataFields.put(customDataFieldName, formattedNumber);
+            }
+
+            if (activity.customDataFields_ByRefId.containsKey(customDataFieldId)) {
+               activity.customDataFields_ByRefId.replace(customDataFieldId, formattedNumber);
+            } else {
+               activity.customDataFields_ByRefId.put(customDataFieldId, formattedNumber);
+            }
+
+         } catch (final NumberFormatException e) {
+            //The value parsed was not a number
          }
-
-      } catch (final NumberFormatException e) {
-         //The value parsed was not a number
+      } else {//Text type of CustomDataFieldDefinition
+         if (activity.customDataFields_ByRefId.containsKey(customDataFieldId)) {
+            activity.customDataFields_ByRefId.replace(customDataFieldId, customDataFieldValue);
+         } else {
+            activity.customDataFields_ByRefId.put(customDataFieldId, customDataFieldValue);
+         }
       }
-
    }
 
    private void initTour(final Attributes attributes) {
@@ -1245,16 +1500,18 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
    private void parseCustomDataFields(final String name, final Attributes attributes) {
 
-      if (name.equals(FitLog_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELD)) {
+      if (name.equals(FitLogEx1_SAXHandler.TAG_ACTIVITY_CUSTOM_DATA_FIELD)) {
 
-         final String customFieldName = attributes.getValue(FitLogEx2_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_NAME);
-         final String customFieldValue = attributes.getValue(FitLogEx2_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_VALUE);
+         final String customFieldName = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_NAME);
+         final String customFieldValue = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_VALUE);
+         final String customFieldId = attributes.getValue(FitLogEx1_SAXHandler.ATTRIB_CUSTOM_DATA_FIELD_ID);
 
          final boolean isCustomDataFieldValid = StringUtils.hasContent(customFieldName) &&
-               StringUtils.hasContent(customFieldValue);
+               StringUtils.hasContent(customFieldValue) &&
+               StringUtils.hasContent(customFieldId);
 
          if (isCustomDataFieldValid) {
-            formatCustomDataFieldValue(_currentActivity, customFieldName, customFieldValue);
+            formatCustomDataFieldValue(_currentActivity, customFieldId, customFieldName, customFieldValue);
          }
       }
    }
@@ -1266,6 +1523,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
 
          final String nameT = attributes.getValue(ATTRIB_NAME);
          final String idT = attributes.getValue(ATTRIB_ID);
+         final String refidT = attributes.getValue(ATTRIB_REFID);
          final String unitT = attributes.getValue(ATTRIB_UNIT);
 
          if (!StringUtils.isNullOrEmpty(nameT) && !StringUtils.isNullOrEmpty(idT)) {
@@ -1274,6 +1532,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
             custT.setId(idT);
             custT.setName(nameT);
             custT.setUnit(unitT);
+            custT.setRefId(refidT);
 
             _currentActivity.customTrackDefinitions.add(custT);
          }
@@ -1380,6 +1639,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
          final ArrayList<CustomTrackValue> customTracksT = new ArrayList<>();
          for (final CustomST3TrackDefinition element : _currentActivity.customTrackDefinitions) {
             final String idS = element.getId();
+            final String refidS = element.getRefId();
             final String nameS = element.getName();
             if (nameS.compareTo(NAME_STRIDELENGTH) == 0) {
                final float value = Util.parseFloat(attributes, idS);
@@ -1398,7 +1658,7 @@ public class FitLogEx2_SAXHandler extends DefaultHandler {
                }
             } else {
                final CustomTrackValue item = new CustomTrackValue();
-               item.id = idS;
+               item.id = refidS;//global refenrence id to DataSerie now !!!
                item.value = Util.parseFloat(attributes, idS);
                customTracksT.add(item);
             }

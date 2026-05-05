@@ -80,35 +80,35 @@ public class FitLogDeviceDataReader extends TourbookDevice {
                                  final ImportState_File importState_File,
                                  final ImportState_Process importState_Process) {
 
-      //TODO: rework below neede
-      /*
-       * //custom tracks start
-       * {
-       * final boolean isFitLogEx2File =
-       * // check "<FitnessWorkbookEx2 "
-       * isValidXMLFile(importFilePath, XML_FIT_LOG_EX2_TAG, true);
-       * if (isFitLogEx2File) {
-       * final FitLogEx2_SAXHandler saxHandlerEx2 = new FitLogEx2_SAXHandler(
-       * importFilePath,
-       * alreadyImportedTours,
-       * newlyImportedTours,
-       * // isFitLogExFile,
-       * importState_File,
-       * importState_Process,
-       * this);
-       * try {
-       * final SAXParser parserEx2 = SAXParserFactory.newInstance().newSAXParser();
-       * parserEx2.parse("file:" + importFilePath, saxHandlerEx2);//$NON-NLS-1$
-       * } catch (final InvalidDeviceSAXException e) {
-       * StatusUtil.log(e);
-       * } catch (final Exception e) {
-       * StatusUtil.log("Error parsing FitlogEx(FitnessWorkbookEx2) file: " + importFilePath, e);
-       * //$NON-NLS-1$
-       * }
-       * return;
-       * }
-       * }
-       */
+      //TODO: rework below needed
+
+      //custom tracks start
+      {
+         final boolean isFitLogEx2File =
+               // check "<FitnessWorkbookEx2 "
+               isValidXMLFile(importFilePath, XML_FIT_LOG_EX2_TAG, true);
+         if (isFitLogEx2File) {
+            final FitLogEx2_SAXHandler saxHandlerEx2 = new FitLogEx2_SAXHandler(
+                  importFilePath,
+                  alreadyImportedTours,
+                  newlyImportedTours,
+                  // isFitLogExFile,
+                  importState_File,
+                  importState_Process,
+                  this);
+            try {
+               final SAXParser parserEx2 = XmlUtils.initializeParser();
+               //final SAXParser parserEx2 = SAXParserFactory.newInstance().newSAXParser();
+               parserEx2.parse("file:" + importFilePath, saxHandlerEx2);//$NON-NLS-1$
+            } catch (final InvalidDeviceSAXException e) {
+               StatusUtil.log(e);
+            } catch (final Exception e) {
+               StatusUtil.log("Error parsing FitlogEx(FitnessWorkbookEx2) file: " + importFilePath, e);
+               //$NON-NLS-1$
+            }
+            return;
+         }
+      }
       //custom tracks end
 
       final boolean isFitLogExFile =
@@ -153,6 +153,12 @@ public class FitLogDeviceDataReader extends TourbookDevice {
    @Override
    public boolean validateRawData(final String fileName) {
 
+      //custom tracks check "<FitnessWorkbookEx2 "
+      final boolean isValid = isValidXMLFile(fileName, XML_FIT_LOG_EX2_TAG, true);
+      if(isValid) {
+         return true;
+      }
+
       /*
        * .fitlog files contain BOM's (Byte Order Mark)
        */
@@ -165,9 +171,6 @@ public class FitLogDeviceDataReader extends TourbookDevice {
             || isValidXMLFile(fileName, XML_FIT_LOG_EX_TAG, true)
 
             // check "<FitnessWorkbookExFree "
-            || isValidXMLFile(fileName, XML_FIT_LOG_EX_FREE_TAG, true)
-
-            //custom tracks check "<FitnessWorkbookEx2 "
-            || isValidXMLFile(fileName, XML_FIT_LOG_EX2_TAG, true);
+            || isValidXMLFile(fileName, XML_FIT_LOG_EX_FREE_TAG, true);
    }
 }

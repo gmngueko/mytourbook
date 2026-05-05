@@ -417,6 +417,7 @@ public class TourBookView extends ViewPart implements
    private ActionTourCollectionFilter         _actionTourCollectionFilter;
    private ActionUpload                       _actionUploadTour;
    //
+   private ActionDownLoadGarminConnect        _actionDownLoadGarminConnect;
    private SubMenu_AdjustTourValues           _actionAdjustTourValues;
    //
    private ActionOnMouseSelect_ExpandCollapse _actionContext_OnMouseSelect_ExpandCollapse;
@@ -1608,6 +1609,7 @@ public class TourBookView extends ViewPart implements
    private void createActions() {
 
 // SET_FORMATTING_OFF
+      _actionDownLoadGarminConnect     = new ActionDownLoadGarminConnect(this);
 
       _actionAdjustTourValues          = new SubMenu_AdjustTourValues(this, this);
       _actionCollapseAll               = new ActionCollapseAll_WithoutSelection(this);
@@ -2405,17 +2407,19 @@ public class TourBookView extends ViewPart implements
       /*
        * enable actions
        */
+      //TODO: Martial align with new update on weather
+      _actionAdjustTourValues.getActionRetrieveWeatherOwmData().setEnabled(isWeatherRetrievalActivated);
       _actionAdjustTourValues.setEnabled(isTourSelected || isAllToursSelected);
       _actionAdjustTourValues.getActionRetrieveWeatherData().setEnabled(isWeatherRetrievalActivated);
       _actionAdjustTourValues.enableSubMenu_Pauses();
       _actionAdjustTourValues.enableSubMenu_Cadence();
 
-// SET_FORMATTING_OFF
 
       // re-import and tour values deletion can be run on all/selected/between dates tours
       _actionReimport_Tours         .setEnabled(true);
       _actionDeleteTourMenu         .setEnabled(true);
       _actionDeleteTourValues       .setEnabled(true);
+      _actionDownLoadGarminConnect  .setEnabled(true);
 
       _actionCreateTourMarkers      .setEnabled(isTourSelected);
       _actionEditQuick              .setEnabled(isOneTourSelected);
@@ -2557,6 +2561,9 @@ public class TourBookView extends ViewPart implements
 
             // set pref page custom data that actions from this view can be identified
             .setPrefData(new ViewContext(ID, ViewNames.VIEW_NAME_TOUR_BOOK));
+
+      menuMgr.add(new Separator());
+      menuMgr.add(_actionDownLoadGarminConnect);
 
       ActionEditQuick.setTourLocationFocus(getTourLocation_HoverState());
 

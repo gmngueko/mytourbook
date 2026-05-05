@@ -40,6 +40,7 @@ import java.time.temporal.TemporalField;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,6 +68,9 @@ import net.tourbook.common.time.TimeTools;
 import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldValue;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorValue;
 import net.tourbook.data.Equipment;
@@ -95,6 +99,8 @@ import net.tourbook.tourType.TourTypeImage;
 import net.tourbook.ui.AppFilter;
 import net.tourbook.ui.TourTypeFilter;
 import net.tourbook.ui.TreeColumnFactory;
+import net.tourbook.ui.views.tourCustomFields.CustomFieldViewItem;
+import net.tourbook.ui.views.tourCustomTracks.DataSerieViewItem;
 
 import org.apache.derby.drda.NetworkServerControl;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -112,6 +118,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IPropertyListener;
 import org.eclipse.ui.PlatformUI;
+import org.hibernate.Hibernate;
 import org.osgi.framework.Bundle;
 
 public class TourDatabase {
@@ -218,6 +225,10 @@ public class TourDatabase {
    private static final String TABLE_DB_VERSION_DESIGN                    = "DBVERSION";                                             //$NON-NLS-1$
    private static final String TABLE_DB_VERSION_DATA                      = "DB_VERSION_DATA";                                       //$NON-NLS-1$
 
+   public static final String  TABLE_CUSTOM_FIELD                         = "CUSTOMFIELD";                                           //$NON-NLS-1$
+   public static final String  TABLE_CUSTOM_FIELD_VALUE                   = "CUSTOMFIELDVALUE";                                      //$NON-NLS-1$
+   public static final String  TABLE_DATA_SERIE                           = "DATASERIE";                                             //$NON-NLS-1$
+
    public static final String  TABLE_DEVICE_SENSOR                        = "DeviceSensor";                                          //$NON-NLS-1$
    public static final String  TABLE_DEVICE_SENSOR_VALUE                  = "DeviceSensorValue";                                     //$NON-NLS-1$
    public static final String  TABLE_EQUIPMENT                            = "Equipment";                                             //$NON-NLS-1$
@@ -239,6 +250,8 @@ public class TourDatabase {
    public static final String  TABLE_TOUR_TAG_CATEGORY                    = "TOURTAGCATEGORY";                                       //$NON-NLS-1$
    public static final String  TABLE_TOUR_TYPE                            = "TOURTYPE";                                              //$NON-NLS-1$
    public static final String  TABLE_TOUR_WAYPOINT                        = "TOURWAYPOINT";                                          //$NON-NLS-1$
+
+   public static final String  JOINTABLE__TOURDATA__DATA_SERIE            = TABLE_TOUR_DATA + "_" + TABLE_DATA_SERIE;                //$NON-NLS-1$
 
    public static final String  JOINTABLE__TOURDATA__TOURTAG               = TABLE_TOUR_DATA + "_" + TABLE_TOUR_TAG;                  //$NON-NLS-1$
    public static final String  JOINTABLE__TOURTAGCATEGORY_TOURTAG         = TABLE_TOUR_TAG_CATEGORY + "_" + TABLE_TOUR_TAG;          //$NON-NLS-1$
@@ -264,6 +277,10 @@ public class TourDatabase {
     */
    public static final int     ENTITY_IS_NOT_SAVED           = -1;
    //
+   public static final String  ENTITY_ID_CUSTOM_FIELD        = "FieldID";                                   //$NON-NLS-1$
+   public static final String  ENTITY_ID_CUSTOM_FIELD_VALUE  = "FieldValueID";                              //$NON-NLS-1$
+   public static final String  ENTITY_ID_DATA_SERIE          = "SerieID";                                   //$NON-NLS-1$
+
    public static final String  ENTITY_ID_BEVERAGECONTAINER   = "ContainerID";                               //$NON-NLS-1$
    private static final String ENTITY_ID_BIKE                = "BikeID";                                    //$NON-NLS-1$
    private static final String ENTITY_ID_COMPARED            = "ComparedID";                                //$NON-NLS-1$
@@ -287,6 +304,10 @@ public class TourDatabase {
 
 // SET_FORMATTING_OFF
 
+   private static final String KEY_CUSTOM_FIELD                   = TABLE_CUSTOM_FIELD + "_" + ENTITY_ID_CUSTOM_FIELD;             //$NON-NLS-1$
+   //private static final String KEY_CUSTOM_FIELD_VALUE             = TABLE_CUSTOM_FIELD_VALUE + "_" + ENTITY_ID_CUSTOM_FIELD_VALUE; //$NON-NLS-1$
+   private static final String KEY_DATA_SERIE                     = TABLE_DATA_SERIE + "_" + ENTITY_ID_DATA_SERIE;                 //$NON-NLS-1$
+
    public  static final String KEY_BEVERAGE_CONTAINER       = TABLE_TOUR_BEVERAGE_CONTAINER  + "_" + ENTITY_ID_BEVERAGECONTAINER;   //$NON-NLS-1$
    private static final String KEY_BIKE                     = TABLE_TOUR_BIKE                + "_" + ENTITY_ID_BIKE;                //$NON-NLS-1$
    private static final String KEY_DEVICE_SENSOR            = TABLE_DEVICE_SENSOR            + "_" + ENTITY_ID_DEVICE_SENSOR;       //$NON-NLS-1$
@@ -295,6 +316,7 @@ public class TourDatabase {
    private static final String KEY_PERSON                   = TABLE_TOUR_PERSON              + "_" + ENTITY_ID_PERSON;              //$NON-NLS-1$
    public static final String  KEY_TAG                      = TABLE_TOUR_TAG                 + "_" + ENTITY_ID_TAG;                 //$NON-NLS-1$
    private static final String KEY_TAG_CATEGORY             = TABLE_TOUR_TAG_CATEGORY        + "_" + ENTITY_ID_TAG_CATEGORY;        //$NON-NLS-1$
+
    public static final String  KEY_TOUR                     = TABLE_TOUR_DATA                + "_" + ENTITY_ID_TOUR;                //$NON-NLS-1$
    public static final String  KEY_TOUR_LOCATION            = TABLE_TOUR_LOCATION            + "_" + ENTITY_ID_LOCATION;            //$NON-NLS-1$
    private static final String KEY_TOUR_TYPE                = TABLE_TOUR_TYPE                + "_" + ENTITY_ID_TOUR_TYPE;           //$NON-NLS-1$
@@ -363,6 +385,40 @@ public class TourDatabase {
    private static ArrayList<TourType>                     _activeTourTypes;
 
    private static volatile ArrayList<TourType>            _allDbTourTypes;
+
+   private static volatile ArrayList<DataSerie>           _allDbDataSeries;
+
+   private static volatile ArrayList<CustomField>         _allDbCustomFields;
+
+   /**
+    * Key is DataSerie ID
+    */
+   private static HashMap<Long, DataSerie>                _allDataSeries_ById;
+
+   /**
+    * Key is DataSerie RefID
+    */
+   private static HashMap<String, DataSerie>              _allDataSeries_ByRefId;
+
+   /**
+    * Key is DataSerieView RefID
+    */
+   private static HashMap<String, DataSerieViewItem>      _allDataSeriesView_ByRefId;
+
+   /**
+    * Key is CustomField ID
+    */
+   private static HashMap<Long, CustomField>              _allCustomFields_ById;
+
+   /**
+    * Key is CustomField RefID
+    */
+   private static HashMap<String, CustomField>            _allCustomFields_ByRefId;
+
+   /**
+    * Key is CustomFieldView RefID
+    */
+   private static HashMap<String, CustomFieldViewItem>    _allCustomFieldsView_ByRefId;
 
    /**
     * Key is tour type ID
@@ -983,6 +1039,144 @@ public class TourDatabase {
    }
 
    /**
+    * Add CustomFields.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param customFieldListToAdd
+    */
+   public static void addCustomFields(final ArrayList<CustomField> customFieldListToAdd) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      //DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for (final CustomField customField : customFieldListToAdd) {
+            final CustomField entityInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(customField);
+               //savedEntity = dataSerie;
+
+            } else {
+
+               //savedEntity = em.merge(dataSerie);
+               em.merge(customField);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when adding a CustomField"); //$NON-NLS-1$
+      }
+
+   }
+
+   /**
+    * This error can occur when transient instances are not saved.
+    *
+    * <pre>
+    *
+    * !ENTRY net.tourbook.common 4 0 2015-05-08 16:10:55.578
+    * !MESSAGE Tour cannot be saved in the database
+    * !STACK 0
+    * org.hibernate.TransientObjectException: object references an unsaved transient instance - save the transient instance before flushing: net.tourbook.data.TourData.tourType -> net.tourbook.data.TourType
+    *    at org.hibernate.engine.CascadingAction$9.noCascade(CascadingAction.java:376)
+    *    at org.hibernate.engine.Cascade.cascade(Cascade.java:163)
+    *    at org.hibernate.event.def.AbstractFlushingEventListener.cascadeOnFlush(AbstractFlushingEventListener.java:154)
+    *    at org.hibernate.event.def.AbstractFlushingEventListener.prepareEntityFlushes(AbstractFlushingEventListener.java:145)
+    *    at org.hibernate.event.def.AbstractFlushingEventListener.flushEverythingToExecutions(AbstractFlushingEventListener.java:88)
+    *    at org.hibernate.event.def.DefaultFlushEventListener.onFlush(DefaultFlushEventListener.java:49)
+    *    at org.hibernate.impl.SessionImpl.flush(SessionImpl.java:1028)
+    *    at org.hibernate.impl.SessionImpl.managedFlush(SessionImpl.java:366)
+    *    at org.hibernate.transaction.JDBCTransaction.commit(JDBCTransaction.java:137)
+    *    at org.hibernate.ejb.TransactionImpl.commit(TransactionImpl.java:54)
+    *    at net.tourbook.database.TourDatabase.saveTour(TourDatabase.java:1731)
+    * </pre>
+    *
+    * @param tourData
+    */
+
+   /**
+    * Removes all CustomFields which are loaded from the database so the next time they will be
+    * reloaded.
+    */
+   public static synchronized void clearCustomFields() {
+
+      if (_allDbCustomFields != null) {
+         _allDbCustomFields.clear();
+         _allDbCustomFields = null;
+      }
+
+      if (_allCustomFields_ByRefId != null) {
+         _allCustomFields_ByRefId.clear();
+         _allCustomFields_ByRefId = null;
+      }
+
+      if (_allCustomFields_ById != null) {
+         _allCustomFields_ById.clear();
+         _allCustomFields_ById = null;
+      }
+
+      if (_allCustomFieldsView_ByRefId != null) {
+         _allCustomFieldsView_ByRefId.clear();
+         _allCustomFieldsView_ByRefId = null;
+      }
+   }
+
+   /**
+    * Removes all dataSeries which are loaded from the database so the next time they will be
+    * reloaded.
+    */
+   public static synchronized void clearDataSeries() {
+
+      if (_allDbDataSeries != null) {
+         _allDbDataSeries.clear();
+         _allDbDataSeries = null;
+      }
+
+      if (_allDataSeries_ByRefId != null) {
+         _allDataSeries_ByRefId.clear();
+         _allDataSeries_ByRefId = null;
+      }
+
+      if (_allDataSeries_ById != null) {
+         _allDataSeries_ById.clear();
+         _allDataSeries_ById = null;
+      }
+
+      if (_allDataSeriesView_ByRefId != null) {
+         _allDataSeriesView_ByRefId.clear();
+         _allDataSeriesView_ByRefId = null;
+      }
+   }
+
+   /**
     * Removes all sensors which are loaded from the database so the next time they will be
     * reloaded.
     */
@@ -1445,6 +1639,8 @@ public class TourDatabase {
             "DELETE FROM " + TABLE_TOUR_REFERENCE           + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + JOINTABLE__TOURDATA__TOURTAG   + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + JOINTABLE__TOURDATA__EQUIPMENT + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+            "DELETE FROM " + JOINTABLE__TOURDATA__DATA_SERIE + sqlWhere_TourData_TourId,   //$NON-NLS-1$
+            "DELETE FROM " + TABLE_CUSTOM_FIELD_VALUE        + sqlWhere_TourData_TourId,   //$NON-NLS-1$
             "DELETE FROM " + TABLE_TOUR_COMPARED            + sqlWhere_TourId,            //$NON-NLS-1$
             "DELETE FROM " + TABLE_TOUR_GEO_PARTS           + sqlWhere_TourId,            //$NON-NLS-1$
          };
@@ -1574,6 +1770,141 @@ public class TourDatabase {
    }
 
    /**
+    * @return Returns the backend of all CustomField which are stored in the database sorted by
+    *         fieldName.
+    */
+   public static ArrayList<CustomField> getAllCustomFields() {
+
+      if (_allDbCustomFields != null) {
+         return _allDbCustomFields;
+      }
+
+      loadAllCustomFields();
+
+      return _allDbCustomFields;
+   }
+
+   /**
+    * @return Returns the backend of all CustomField which are stored in the database mapped by
+    *         fieldId.
+    */
+   public static HashMap<Long, CustomField> getAllCustomFields_ById() {
+
+      if (_allCustomFields_ById != null) {
+         return _allCustomFields_ById;
+      }
+
+      loadAllCustomFields();
+
+      return _allCustomFields_ById;
+   }
+
+   /**
+    * @return Returns the backend of all CustomField which are stored in the database mapped by
+    *         refId.
+    */
+   public static HashMap<String, CustomField> getAllCustomFields_ByRefId() {
+
+      if (_allCustomFields_ByRefId != null) {
+         return _allCustomFields_ByRefId;
+      }
+
+      loadAllCustomFields();
+
+      return _allCustomFields_ByRefId;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
+   public static HashMap<String, CustomFieldViewItem> getAllCustomFieldsView_ByRefId() {
+
+      if (_allCustomFieldsView_ByRefId != null) {
+         return _allCustomFieldsView_ByRefId;
+      }
+
+      if (_allCustomFields_ByRefId == null) {
+         loadAllCustomFields();
+      }
+
+      loadAllCustomFieldsView();
+
+      return _allCustomFieldsView_ByRefId;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
+   public static ArrayList<DataSerie> getAllDataSeries() {
+
+      if (_allDataSeries_ById != null) {
+         return _allDbDataSeries;
+      }
+
+      loadAllDataSeries();
+
+      return _allDbDataSeries;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database mapped by
+    *         serieId.
+    */
+   public static HashMap<Long, DataSerie> getAllDataSeries_ById() {
+
+      if (_allDataSeries_ById != null) {
+         return _allDataSeries_ById;
+      }
+
+      loadAllDataSeries();
+
+      return _allDataSeries_ById;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database mapped by refId.
+    */
+   public static HashMap<String, DataSerie> getAllDataSeries_ByRefId() {
+
+      if (_allDataSeries_ByRefId != null) {
+         return _allDataSeries_ByRefId;
+      }
+
+      loadAllDataSeries();
+
+      return _allDataSeries_ByRefId;
+   }
+
+   /**
+    * @return Returns the backend of all DataSerie which are stored in the database sorted by name.
+    */
+   public static HashMap<String, DataSerieViewItem> getAllDataSeriesView_ByRefId() {
+
+      if (_allDataSeriesView_ByRefId != null) {
+         return _allDataSeriesView_ByRefId;
+      }
+
+      if (_allDataSeries_ByRefId == null) {
+         loadAllDataSeries();
+      }
+
+      loadAllDataSeriesView();
+
+      return _allDataSeriesView_ByRefId;
+   }
+
+   public static ArrayList<DataSerie> getAllDataSeriesWithTourData() {
+
+      if (_allDataSeries_ById != null) {
+         return _allDbDataSeries;
+      }
+
+      loadAllDataSeriesWithTourData();
+
+      return _allDbDataSeries;
+   }
+
+   /**
     * @return Returns a map with all {@link DeviceSensor} which are stored in the database, key is
     *         sensor ID
     */
@@ -1675,6 +2006,84 @@ public class TourDatabase {
          stmt = conn.prepareStatement(sql);
          stmt.setLong(1, dateFromMS);
          stmt.setLong(2, dateUntilMS);
+
+         final ResultSet result = stmt.executeQuery();
+
+         while (result.next()) {
+            tourIds.add(result.getLong(1));
+         }
+
+      } catch (final SQLException e) {
+         UI.showSQLException(e);
+      } finally {
+         Util.closeSql(stmt);
+      }
+
+      return tourIds;
+   }
+
+   public static ArrayList<Long> getAllTourIds_BetweenTwoDates(final long dateFromEpochMS,
+                                                               final long dateUntilEpochMS) {
+
+      final ArrayList<Long> tourIds = new ArrayList<>();
+
+      PreparedStatement stmt = null;
+
+      try (Connection conn = getInstance().getConnection()) {
+
+         final long dateFromMS = dateFromEpochMS;//dateStart.toInstant().toEpochMilli();
+         final long dateUntilMS = dateUntilEpochMS;//dateEnd.toInstant().toEpochMilli();
+
+         final String sql = UI.EMPTY_STRING +
+
+               "SELECT tourId" //                                       //$NON-NLS-1$
+               + " FROM " + TourDatabase.TABLE_TOUR_DATA //             //$NON-NLS-1$
+               + " WHERE TourStartTime >= ? AND TourStartTime < ?" //   //$NON-NLS-1$
+               + " ORDER BY TourStartTime"; //                          //$NON-NLS-1$
+
+         stmt = conn.prepareStatement(sql);
+         stmt.setLong(1, dateFromMS);
+         stmt.setLong(2, dateUntilMS);
+
+         final ResultSet result = stmt.executeQuery();
+
+         while (result.next()) {
+            tourIds.add(result.getLong(1));
+         }
+
+      } catch (final SQLException e) {
+         UI.showSQLException(e);
+      } finally {
+         Util.closeSql(stmt);
+      }
+
+      return tourIds;
+   }
+
+   public static ArrayList<Long> getAllTourIds_BetweenTwoDates_ForPerson(final long dateFromEpochMS,
+                                                                         final long dateUntilEpochMS,
+                                                                         final long personId) {
+
+      final ArrayList<Long> tourIds = new ArrayList<>();
+
+      PreparedStatement stmt = null;
+
+      try (Connection conn = getInstance().getConnection()) {
+
+         final long dateFromMS = dateFromEpochMS;//dateStart.toInstant().toEpochMilli();
+         final long dateUntilMS = dateUntilEpochMS;//dateEnd.toInstant().toEpochMilli();
+
+         final String sql = UI.EMPTY_STRING +
+
+               "SELECT tourId" //                                       //$NON-NLS-1$
+               + " FROM " + TourDatabase.TABLE_TOUR_DATA //             //$NON-NLS-1$
+               + " WHERE TourStartTime >= ? AND TourStartTime < ? AND " + KEY_PERSON + " = ?" //   //$NON-NLS-1$
+               + " ORDER BY TourStartTime"; //                          //$NON-NLS-1$
+
+         stmt = conn.prepareStatement(sql);
+         stmt.setLong(1, dateFromMS);
+         stmt.setLong(2, dateUntilMS);
+         stmt.setLong(3, personId);
 
          final ResultSet result = stmt.executeQuery();
 
@@ -3048,6 +3457,148 @@ public class TourDatabase {
       return false;
    }
 
+   @SuppressWarnings("unchecked")
+   private static void loadAllCustomFields() {
+
+      synchronized (DB_LOCK) {
+
+         // check again, field must be volatile to work correctly
+         if (_allCustomFields_ById != null) {
+            return;
+         }
+
+         ArrayList<CustomField> allCustomFields = new ArrayList<>();
+         final HashMap<Long, CustomField> allCustomFields_ById = new HashMap<>();
+         final HashMap<String, CustomField> allCustomFields_ByRefId = new HashMap<>();
+
+         final EntityManager em = TourDatabase.getInstance().getEntityManager();
+         if (em != null) {
+
+            final Query emQuery = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT CustomField" //              //$NON-NLS-1$
+                  + " FROM CustomField AS CustomField" //   //$NON-NLS-1$
+                  + " ORDER  BY CustomField.fieldName"); //   //$NON-NLS-1$
+
+            allCustomFields = (ArrayList<CustomField>) emQuery.getResultList();
+
+            for (final CustomField customField : allCustomFields) {
+               //Hibernate.initialize(dataSerie.getTourData());
+               allCustomFields_ById.put(customField.getFieldId(), customField);
+               allCustomFields_ByRefId.put(customField.getRefId(), customField);
+            }
+
+            em.close();
+         }
+
+         _allDbCustomFields = allCustomFields;
+         _allCustomFields_ById = allCustomFields_ById;
+         _allCustomFields_ByRefId = allCustomFields_ByRefId;
+         _allDbCustomFields.sort(Comparator.naturalOrder());
+      }
+   }
+
+   private static void loadAllCustomFieldsView() {
+      _allCustomFieldsView_ByRefId = new HashMap<>();
+
+      for (final CustomField customFieldItem : _allDbCustomFields) {
+         final CustomFieldViewItem customFieldViewItem = new CustomFieldViewItem();
+         customFieldViewItem.readDataSerieTotals(customFieldItem);
+         _allCustomFieldsView_ByRefId.put(customFieldItem.getRefId(), customFieldViewItem);
+      }
+   }
+
+   @SuppressWarnings("unchecked")
+   private static void loadAllDataSeries() {
+
+      synchronized (DB_LOCK) {
+
+         // check again, field must be volatile to work correctly
+         if (_allDbDataSeries != null) {
+            return;
+         }
+
+         ArrayList<DataSerie> allDataSeries = new ArrayList<>();
+         final HashMap<Long, DataSerie> allDataSeries_ById = new HashMap<>();
+         final HashMap<String, DataSerie> allDataSeries_ByRefId = new HashMap<>();
+
+         final EntityManager em = TourDatabase.getInstance().getEntityManager();
+         if (em != null) {
+
+            final Query emQuery = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT DataSerie" //              //$NON-NLS-1$
+                  + " FROM DataSerie AS DataSerie" //   //$NON-NLS-1$
+                  + " ORDER  BY DataSerie.name"); //   //$NON-NLS-1$
+
+            allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
+
+            for (final DataSerie dataSerie : allDataSeries) {
+               //Hibernate.initialize(dataSerie.getTourData());
+               allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
+               allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
+            }
+
+            em.close();
+         }
+
+         _allDbDataSeries = allDataSeries;
+         _allDataSeries_ById = allDataSeries_ById;
+         _allDataSeries_ByRefId = allDataSeries_ByRefId;
+         _allDbDataSeries.sort(Comparator.naturalOrder());
+      }
+   }
+
+   private static void loadAllDataSeriesView() {
+      _allDataSeriesView_ByRefId = new HashMap<>();
+
+      for (final DataSerie serieItem : _allDbDataSeries) {
+         final DataSerieViewItem dataSerieViewItem = new DataSerieViewItem();
+         dataSerieViewItem.readDataSerieTotals(serieItem);
+         _allDataSeriesView_ByRefId.put(serieItem.getRefId(), dataSerieViewItem);
+      }
+   }
+
+   @SuppressWarnings("unchecked")
+   private static void loadAllDataSeriesWithTourData() {
+
+      synchronized (DB_LOCK) {
+
+         // check again, field must be volatile to work correctly
+         if (_allDbDataSeries != null) {
+            return;
+         }
+
+         ArrayList<DataSerie> allDataSeries = new ArrayList<>();
+         final HashMap<Long, DataSerie> allDataSeries_ById = new HashMap<>();
+         final HashMap<String, DataSerie> allDataSeries_ByRefId = new HashMap<>();
+
+         final EntityManager em = TourDatabase.getInstance().getEntityManager();
+         if (em != null) {
+
+            final Query emQuery = em.createQuery(UI.EMPTY_STRING
+
+                  + "SELECT DataSerie" //              //$NON-NLS-1$
+                  + " FROM DataSerie AS DataSerie" //   //$NON-NLS-1$
+                  + " ORDER  BY DataSerie.name"); //   //$NON-NLS-1$
+
+            allDataSeries = (ArrayList<DataSerie>) emQuery.getResultList();
+
+            for (final DataSerie dataSerie : allDataSeries) {
+               Hibernate.initialize(dataSerie.getTourData());
+               allDataSeries_ById.put(dataSerie.getSerieId(), dataSerie);
+               allDataSeries_ByRefId.put(dataSerie.getRefId(), dataSerie);
+            }
+
+            em.close();
+         }
+
+         _allDbDataSeries = allDataSeries;
+         _allDataSeries_ById = allDataSeries_ById;
+         _allDataSeries_ByRefId = allDataSeries_ByRefId;
+      }
+   }
+
    private static void loadAllDeviceSensors() {
 
       synchronized (DB_LOCK) {
@@ -3551,6 +4102,98 @@ public class TourDatabase {
       return persistedEntity;
    }
 
+   /**
+    * This method {@link #saveTour_PostSaveActions_Concurrent_2_ForAllTours(long[])} <b>MUST</b> be
+    * called <b>AFTER</b> all tours are saved
+    * but also cleanup previous CustomFields for merge after re-import, to avoid 2 CustomField of
+    * the same type in the
+    * tourData
+    *
+    * @param tourData
+    * @return
+    */
+   public static TourData saveTour_Concurrent_CleanOld(final TourData tourData,
+                                                       final Set<CustomFieldValue> oldCustomFields,
+                                                       final boolean isUpdateModifiedDate) {
+
+      if (saveTour_PreSaveActions(tourData) == false) {
+         return null;
+      }
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+
+      TourData persistedEntity = null;
+
+      if (em != null) {
+
+         final EntityTransaction ts = em.getTransaction();
+
+         try {
+
+            tourData.onPrePersist();
+
+            ts.begin();
+            {
+               final long dtSaved = TimeTools.createdNowAsYMDhms();
+
+               // get tour data by tour id
+               final TourData dbTourData = em.find(TourData.class, tourData.getTourId());
+               if (dbTourData == null) {
+
+                  // tour is not yet persisted
+
+                  tourData.setDateTimeCreated(dtSaved);
+
+                  em.persist(tourData);
+
+                  persistedEntity = tourData;
+
+               } else {
+
+                  if (isUpdateModifiedDate) {
+                     tourData.setDateTimeModified(dtSaved);
+                  }
+                  if (oldCustomFields != null && !oldCustomFields.isEmpty()) {
+                     //due to unique constraint on customField we need to remove the
+                     //old customFieldVlaue from DB before re-inserting the new re-imported one's
+                     final Set<CustomFieldValue> newCustomFieldValues = new HashSet<>(tourData.getCustomFieldValues());
+                     tourData.getCustomFieldValues().clear();
+                     persistedEntity = em.merge(tourData);
+                     em.flush();
+                     tourData.setCustomFieldValues(newCustomFieldValues);
+                  }
+                  persistedEntity = em.merge(tourData);
+               }
+            }
+            ts.commit();
+
+         } catch (final Exception e) {
+
+            StatusUtil.logError("Exception in tour " + TourManager.getTourDateTimeShort(tourData));//$NON-NLS-1$
+            StatusUtil.showStatus(e);
+
+         } finally {
+
+            if (ts.isActive()) {
+               ts.rollback();
+            }
+
+            em.close();
+         }
+
+         // do post save actions for only ONE tour
+         saveTour_PostSaveActions_Concurrent_1_ForOneTour(persistedEntity, tourData);
+
+         // !!! This method MUST be called AFTER all tours are saved !!!
+         // !!! This method MUST be called AFTER all tours are saved !!!
+         // !!! This method MUST be called AFTER all tours are saved !!!
+
+//       saveTour_PostSaveActions_Concurrent_2_ForAllTours(allTourIds);
+      }
+
+      return persistedEntity;
+   }
+
    private static void saveTour_GeoParts(final TourData tourData) {
 
 //      final long startTime = System.nanoTime();
@@ -3776,16 +4419,215 @@ public class TourDatabase {
    private static void saveTransientInstances(final TourData tourData) {
 
       try {
-
          saveTransientInstances_Tags(tourData);
          saveTransientInstances_TourLocation(tourData);
          saveTransientInstances_TourType(tourData);
          saveTransientInstances_Sensors(tourData);
-
+         saveTransientInstances_DataSeries(tourData);
+         saveTransientInstances_CustomFields(tourData);
       } catch (final Exception e) {
 
          TourLogManager.log_EXCEPTION_WithStacktrace(e);
       }
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void saveTransientInstances_CustomFields(final TourData tourData) {
+
+      final Set<CustomFieldValue> allTourData_CustomFieldValues = tourData.getCustomFieldValues();
+
+      if (allTourData_CustomFieldValues.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<CustomField> allNotSavedCustomFields = new ArrayList<>();
+
+      final HashMap<String, CustomField> allDbCustomFields = new HashMap<>(getAllCustomFields_ByRefId());
+
+      // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
+      for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+         final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
+
+         final long fieldId = tourData_CustomField.getFieldId();
+
+         if (fieldId != ENTITY_IS_NOT_SAVED) {
+
+            // CustomField is saved
+
+            continue;
+         }
+
+         // CustomField is not yet saved
+         // 1. CustomField can still be new
+         // 2. CustomField is already created but not updated in the not yet saved tour
+
+         final CustomField dbCustomField = allDbCustomFields.get(tourData_CustomField.getRefId());
+
+         if (dbCustomField == null) {
+
+            // CustomField not available -> create a new CustomField
+
+            allNotSavedCustomFields.add(tourData_CustomField);
+         }
+      }
+
+      boolean isNewCustomFieldSaved = false;
+
+      if (allNotSavedCustomFields.size() > 0) {
+
+         // create new CustomFields
+
+         synchronized (TRANSIENT_LOCK) {
+
+            HashMap<String, CustomField> allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+            for (final CustomField newCustomField : allNotSavedCustomFields) {
+
+               // check again, CustomField list could be updated in another thread
+               final CustomField dbSensor = allDbCustomFields_InLock.get(newCustomField.getRefId());
+
+               if (dbSensor == null) {
+
+                  // CustomField is not yet in db -> create it
+
+                  saveEntity(
+                        newCustomField,
+                        ENTITY_IS_NOT_SAVED,
+                        CustomField.class);
+
+                  isNewCustomFieldSaved = true;
+               }
+            }
+
+            if (isNewCustomFieldSaved) {
+
+               /*
+                * Replace CustomField in CustomField values
+                */
+
+               // force to reload db CustomFields
+               clearCustomFields();
+               TourManager.getInstance().clearTourDataCache();
+
+               allDbCustomFields_InLock = new HashMap<>(getAllCustomFields_ByRefId());
+
+               // loop: all CustomField values in the tour -> find CustomFields which are not yet saved
+               for (final CustomFieldValue tourData_CustomFieldValue : allTourData_CustomFieldValues) {
+
+                  final CustomField tourData_CustomField = tourData_CustomFieldValue.getCustomField();
+
+                  final String referenceId = tourData_CustomField.getRefId();
+
+                  final CustomField customField = allDbCustomFields_InLock.get(referenceId);
+
+                  tourData_CustomFieldValue.setCustomField(customField);
+               }
+            }
+         }
+      }
+
+   }
+
+   /**
+    * @param tourData
+    */
+   private static void saveTransientInstances_DataSeries(final TourData tourData) {
+
+      final Set<DataSerie> allTourDataDataSeries = tourData.getDataSeries();
+
+      if (allTourDataDataSeries.isEmpty()) {
+         return;
+      }
+
+      final ArrayList<DataSerie> allAppliedDataSeries = new ArrayList<>();
+      final ArrayList<DataSerie> allNewDataSeries = new ArrayList<>();
+
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = new HashMap<>(getAllDataSeries_ByRefId());
+
+      // loop: all DataSeries in the tour -> find DataSeries which are not yet saved
+      for (final DataSerie tourDataSerie : allTourDataDataSeries) {
+
+         final long serieId = tourDataSerie.getSerieId();
+
+         if (serieId != ENTITY_IS_NOT_SAVED) {
+
+            // DataSerie is saved
+
+            allAppliedDataSeries.add(tourDataSerie);
+
+            continue;
+         }
+
+         // dataSerie is not yet saved
+         // 1. dataSerie can still be new
+         // 2. dataSerie is already created but not updated in the not yet saved tour
+
+         final DataSerie dbDataSerie = allDbDataSeries_ByRefId.get(tourDataSerie.getRefId());
+
+         if (dbDataSerie == null) {
+
+            // DataSerie not available -> create a new DataSerie
+
+            allNewDataSeries.add(tourDataSerie);
+
+         } else {
+
+            // use found DataSerie
+
+            allAppliedDataSeries.add(dbDataSerie);
+         }
+      }
+
+      boolean isNewDataSerieSaved = false;
+
+      if (allNewDataSeries.size() > 0) {
+
+         // create new dataSeries
+
+         synchronized (TRANSIENT_LOCK) {
+
+            final HashMap<String, DataSerie> allDbDataSeries_ByRefID_InLock = new HashMap<>(getAllDataSeries_ByRefId());
+
+            for (final DataSerie newDataSerie : allNewDataSeries) {
+
+               // check again, tour DataSerie list could be updated in another thread
+               final DataSerie dbDataSerie = allDbDataSeries_ByRefID_InLock.get(newDataSerie.getRefId());
+
+               if (dbDataSerie == null) {
+
+                  // dataSerie is not yet in db -> create it
+
+                  final DataSerie savedDataSerie = saveEntity(
+                        newDataSerie,
+                        ENTITY_IS_NOT_SAVED,
+                        DataSerie.class);
+
+                  isNewDataSerieSaved = true;
+
+                  allAppliedDataSeries.add(savedDataSerie);
+
+               } else {
+
+                  allAppliedDataSeries.add(dbDataSerie);
+               }
+            }
+
+            if (isNewDataSerieSaved) {
+
+               // force to reload db DataSeries
+
+               clearDataSeries();
+               TourManager.getInstance().clearTourDataCache();
+            }
+         }
+      }
+
+      // replace tags in the tour, either with the old tags and/or with newly created tags
+      allTourDataDataSeries.clear();
+      allTourDataDataSeries.addAll(allAppliedDataSeries);
    }
 
    /**
@@ -4280,6 +5122,142 @@ public class TourDatabase {
       _activeTourTypes = new ArrayList<>();
    }
 
+   /**
+    * UpdateandDelete CustomField.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param customFieldsUpdated
+    * @param customFieldsDeleted
+    */
+   public static void updateAndDeleteCustomField(final ArrayList<CustomField> customFieldsUpdated, final ArrayList<CustomField> customFieldsDeleted) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      //DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for (final CustomField customField : customFieldsUpdated) {
+            final CustomField entityInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(customField);
+               //savedEntity = dataSerie;
+
+            } else {
+
+               //savedEntity = em.merge(dataSerie);
+               em.merge(customField);
+            }
+         }
+         for (final CustomField customField : customFieldsDeleted) {
+            final CustomField customFieldInDB = em.find(CustomField.class, customField.getFieldId());
+
+            if (customFieldInDB != null) {
+
+               em.remove(customFieldInDB);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when update/Delete a CustomField"); //$NON-NLS-1$
+      }
+
+   }
+
+   /**
+    * UpdateandDelete DataSerie.
+    * <p>
+    * This method is <b>much faster</b> than using this
+    * {@link #saveEntity(Object, long, Class, EntityManager)}
+    * <p>
+    *
+    * @param dataSeriesUpdated
+    * @param dataSeriesDeleted
+    */
+   public static void updateAndDeleteDataSerie(final ArrayList<DataSerie> dataSeriesUpdated, final ArrayList<DataSerie> dataSeriesDeleted) {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      //DataSerie savedEntity = null;
+      boolean isSaved = false;
+
+      try {
+
+         ts.begin();
+         for (final DataSerie dataSerie : dataSeriesUpdated) {
+            final DataSerie entityInDB = em.find(DataSerie.class, dataSerie.getSerieId());
+
+            if (entityInDB == null) {
+
+               // entity is not persisted
+
+               em.persist(dataSerie);
+               //savedEntity = dataSerie;
+
+            } else {
+
+               //savedEntity = em.merge(dataSerie);
+               em.merge(dataSerie);
+            }
+         }
+         for (final DataSerie dataSerie : dataSeriesDeleted) {
+            final DataSerie dataSerieInDB = em.find(DataSerie.class, dataSerie.getSerieId());
+
+            if (dataSerieInDB != null) {
+
+               em.remove(dataSerieInDB);
+            }
+         }
+
+         ts.commit();
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         } else {
+            isSaved = true;
+         }
+         em.close();
+      }
+
+      if (isSaved == false) {
+         MessageDialog.openError(
+               Display.getDefault().getActiveShell(),
+               "Error", //$NON-NLS-1$
+               "Error occurred when update/Delete a DataSerie"); //$NON-NLS-1$
+      }
+
+   }
+
    private static void updateCachedFields(final TourData tourData) {
 
       final ConcurrentSkipListSet<String> allTitles = getCachedFields_AllTourTitles();
@@ -4552,6 +5530,116 @@ public class TourDatabase {
             toVersion - 1,
             toVersion,
             net.tourbook.common.UI.format_mm_ss(timeDiff / 1000));
+   }
+
+   /**
+    * Create table {@link #TABLE_CUSTOM_FIELD}
+    *
+    * @param stmt
+    * @throws SQLException
+    */
+   private void createTable_CustomField(final Statement stmt) throws SQLException {
+
+      exec(stmt, "CREATE TABLE " + TABLE_CUSTOM_FIELD + "   (                                  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.createField_EntityId(ENTITY_ID_CUSTOM_FIELD, true)
+
+            // version xxxgmn start
+
+            + "   fieldType           VARCHAR(" + CustomField.DB_LENGTH_FIELDNAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   fieldName           VARCHAR(" + CustomField.DB_LENGTH_FIELDNAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   description         VARCHAR(" + CustomField.DB_LENGTH_DESCRIPTION + "),     " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   refId               VARCHAR(" + CustomField.DB_LENGTH_REFID + ") NOT NULL CONSTRAINT refIdCustomField_uk UNIQUE,  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   unit                VARCHAR(" + CustomField.DB_LENGTH_UNIT + ")            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version xxxgmn end
+
+            + ")" //                                                                          //$NON-NLS-1$
+      );
+
+   }
+
+   /**
+    * Create table {@link #TABLE_CUSTOM_FIELD_VALUE}
+    *
+    * @param stmt
+    * @throws SQLException
+    */
+   private void createTable_CustomFieldValues(final Statement stmt) throws SQLException {
+
+      exec(stmt, "CREATE TABLE " + TABLE_CUSTOM_FIELD_VALUE + "   (                   " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.createField_EntityId(ENTITY_ID_CUSTOM_FIELD_VALUE, true)
+
+            + "   " + KEY_TOUR + "                 BIGINT,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   " + KEY_CUSTOM_FIELD + "        BIGINT,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            // version xxxgmn start
+            + "   TourStartTime                    BIGINT DEFAULT 0,                   " + NL //$NON-NLS-1$
+            + "   TourEndTime                      BIGINT DEFAULT 0,                   " + NL //$NON-NLS-1$
+
+            + "   valueFloat                       FLOAT DEFAULT NULL,                   " + NL //$NON-NLS-1$
+            + "   valueString                VARCHAR(" + CustomFieldValue.DB_LENGTH_VALUESTRING + ") DEFAULT NULL,            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            + "   CONSTRAINT     UK_" + KEY_TOUR + "_" + KEY_CUSTOM_FIELD + " UNIQUE (" + KEY_TOUR + "," + KEY_CUSTOM_FIELD + ")          " + NL //$NON-NLS-1$
+
+            // version xxxgmn end
+
+            + ")" //                                                                          //$NON-NLS-1$
+      );
+
+      SQL.createIndex_Composite(stmt, TABLE_CUSTOM_FIELD_VALUE, "TourStartTime"); //$NON-NLS-1$
+      // Create index
+      SQL.createIndex_Simple(stmt, TABLE_CUSTOM_FIELD_VALUE, KEY_CUSTOM_FIELD);
+   }
+
+   /**
+    * create table {@link #TABLE_CUSTOMTRACK_DEFINITION} *
+    * <p>
+    * since db version xx
+    *
+    * @param stmt
+    * @throws SQLException
+    */
+   private void createTable_DataSerie(final Statement stmt) throws SQLException {
+
+      /*
+       * CREATE TABLE DataSerie
+       */
+      exec(stmt, "CREATE TABLE " + TABLE_DATA_SERIE + "   (                                  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+      //
+            + SQL.createField_EntityId(ENTITY_ID_DATA_SERIE, true)
+
+            + "   name             VARCHAR(" + DataSerie.DB_LENGTH_NAME + "),            " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   refId            VARCHAR(" + DataSerie.DB_LENGTH_REFID + ") NOT NULL CONSTRAINT refId_uk UNIQUE,  " + NL //$NON-NLS-1$ //$NON-NLS-2$
+            + "   unit             VARCHAR(" + DataSerie.DB_LENGTH_UNIT + ")         " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+            + ")"); //$NON-NLS-1$
+
+      /**
+       * Create table: TOURDATA_DATA_SERIE
+       */
+      exec(stmt,
+
+            "CREATE TABLE " + JOINTABLE__TOURDATA__DATA_SERIE + "   (                        " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + "   " + KEY_DATA_SERIE + "      BIGINT NOT NULL,                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   " + KEY_TOUR + "     BIGINT NOT NULL                              " + NL //$NON-NLS-1$ //$NON-NLS-2$
+
+                  + ")"); //$NON-NLS-1$
+
+      // Add Constraint
+      final String fkName = "fk_" + JOINTABLE__TOURDATA__DATA_SERIE + "_" + KEY_TOUR; //         //$NON-NLS-1$ //$NON-NLS-2$
+
+      exec(stmt,
+
+            "ALTER TABLE " + JOINTABLE__TOURDATA__DATA_SERIE + "                             " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   ADD CONSTRAINT " + fkName + "                                     " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   FOREIGN KEY (" + KEY_TOUR + ")                                    " + NL //$NON-NLS-1$ //$NON-NLS-2$
+                  + "   REFERENCES " + TABLE_TOUR_DATA + " (" + ENTITY_ID_TOUR + ")       "); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+      // Create index DATASERIE_SerieID
+      SQL.createIndex_Simple(stmt, JOINTABLE__TOURDATA__DATA_SERIE, KEY_DATA_SERIE);
    }
 
    /**
@@ -5887,11 +6975,19 @@ public class TourDatabase {
 
             // version 38 end ---------
 
+            //
             // version 49 start
 
             + "   imageFilePath              VARCHAR(" + DB_LENGTH_FILE_PATH + ")       " + NL //$NON-NLS-1$ //$NON-NLS-2$
 
             // version 49 end ---------
+
+            // TourTag extraData GMN start
+            //
+            + "   extraData             BLOB(2G)                                          " + NL //$NON-NLS-1$
+            //
+            // TourTag extraData GMN end ---------
+
 
             + ")"); //$NON-NLS-1$
 
@@ -6271,6 +7367,7 @@ public class TourDatabase {
             ? RENAMED__TOUR_RECORDING_TIME__FROM
             : RENAMED__TOUR_RECORDING_TIME__INTO;
    }
+
 
    private void modifyColumn_Type(final String table,
                                   final String fieldName,
@@ -6771,6 +7868,10 @@ public class TourDatabase {
             createTable_EquipmentPart(stmt);
 
             createTable_TourWayPoint(stmt);
+
+            createTable_DataSerie(stmt);
+            createTable_CustomField(stmt);
+            createTable_CustomFieldValues(stmt);
 
          } catch (final SQLException e) {
             UI.showSQLException(e);
@@ -7341,6 +8442,15 @@ public class TourDatabase {
          if (currentDbVersion == 45) {
             currentDbVersion = _dbDesignVersion_New = updateDb_045_To_046(conn, splashManager);
          }
+
+         // DataSerie
+         updateDb_Add_DataSerie(currentDbVersion, conn, splashManager);
+
+         // CustomField and CustomFieldValue
+         updateDb_Add_CustomField(currentDbVersion, conn, splashManager);
+
+         // Extra Data for Maintenance on TourTag table
+         updateDb_TourTag_AddColumn_ExtraData(currentDbVersion, conn, splashManager);
 
          // 46 -> 47    22.3.0
          if (currentDbVersion == 46) {
@@ -10678,21 +11788,21 @@ public class TourDatabase {
          // update new fields with old values
          execUpdate(stmt,
 
-            "UPDATE " + TABLE_TOUR_TYPE + NL //$NON-NLS-1$
+               "UPDATE " + TABLE_TOUR_TYPE + NL //$NON-NLS-1$
 
-            + "SET" + NL //$NON-NLS-1$
+               + "SET" + NL //$NON-NLS-1$
 
-            + " COLOR_GRADIENT_BRIGHT  = (COLORBRIGHTRED * 65536) + (COLORBRIGHTGREEN * 256) + COLORBRIGHTBLUE,"  + NL  //$NON-NLS-1$
-            + " COLOR_GRADIENT_DARK    = (COLORDARKRED   * 65536) + (COLORDARKGREEN   * 256) + COLORDARKBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_GRADIENT_BRIGHT  = (COLORBRIGHTRED * 65536) + (COLORBRIGHTGREEN * 256) + COLORBRIGHTBLUE,"  + NL  //$NON-NLS-1$
+               + " COLOR_GRADIENT_DARK    = (COLORDARKRED   * 65536) + (COLORDARKGREEN   * 256) + COLORDARKBLUE,"    + NL  //$NON-NLS-1$
 
-            + " COLOR_LINE_LIGHTTHEME  = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
-            + " COLOR_TEXT_LIGHTTHEME  = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_LINE_LIGHTTHEME  = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_TEXT_LIGHTTHEME  = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE,"    + NL  //$NON-NLS-1$
 
-            // set defaults for the dark theme that it is not displayed with black color
-            + " COLOR_LINE_DARKTHEME   = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
-            + " COLOR_TEXT_DARKTHEME   = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE"     + NL  //$NON-NLS-1$
+               // set defaults for the dark theme that it is not displayed with black color
+               + " COLOR_LINE_DARKTHEME   = (COLORLINERED   * 65536) + (COLORLINEGREEN   * 256) + COLORLINEBLUE,"    + NL  //$NON-NLS-1$
+               + " COLOR_TEXT_DARKTHEME   = (COLORTEXTRED   * 65536) + (COLORTEXTGREEN   * 256) + COLORTEXTBLUE"     + NL  //$NON-NLS-1$
 
-         );
+               );
 
          // drop old fields
          SQL.cleanup_DropColumn(stmt, TABLE_TOUR_TYPE, "colorBrightRed");                    //$NON-NLS-1$
@@ -10908,7 +12018,7 @@ public class TourDatabase {
       updateVersionNumber_20_AfterDataUpdate(conn, dbDataVersion, startTime);
    }
 
-   /**
+   /*
     * Do data updates concurrently with all available processor threads, this is reducing time
     * significantly.
     *
@@ -11038,6 +12148,7 @@ public class TourDatabase {
 
       return newDbVersion;
    }
+
 
    private int updateDb_048_To_049(final Connection connection,
                                    final SplashManager splashManager) throws SQLException {
@@ -11491,28 +12602,28 @@ public class TourDatabase {
       return newDbVersion;
    }
 
-   private int updateDb_054_To_055(final Connection conn, final SplashManager splashManager) throws SQLException {
+      private int updateDb_054_To_055(final Connection conn, final SplashManager splashManager) throws SQLException {
 
-      final int newDbVersion = 55;
+         final int newDbVersion = 55;
 
-      logDbUpdate_Start(newDbVersion);
-      updateMonitor(splashManager, newDbVersion);
+         logDbUpdate_Start(newDbVersion);
+         updateMonitor(splashManager, newDbVersion);
 
-      final Statement stmt = conn.createStatement();
-      {
-         // double check if db already exists
-         if (isTableAvailable(conn, TABLE_TOUR_NUTRITION_PRODUCT) == false) {
+         final Statement stmt = conn.createStatement();
+         {
+            // double check if db already exists
+            if (isTableAvailable(conn, TABLE_TOUR_NUTRITION_PRODUCT) == false) {
 
-            createTable_TourBeverageContainer(stmt);
-            createTable_TourNutritionProduct(stmt);
+               createTable_TourBeverageContainer(stmt);
+               createTable_TourNutritionProduct(stmt);
+            }
          }
+         stmt.close();
+
+         logDbUpdate_End(newDbVersion);
+
+         return newDbVersion;
       }
-      stmt.close();
-
-      logDbUpdate_End(newDbVersion);
-
-      return newDbVersion;
-   }
 
    private int updateDb_055_To_056(final Connection conn, final SplashManager splashManager) throws SQLException {
 
@@ -11530,6 +12641,7 @@ public class TourDatabase {
 
       return newDbVersion;
    }
+
 
    private int updateDb_056_To_057(final Connection conn, final SplashManager splashManager) throws SQLException {
 
@@ -11583,6 +12695,27 @@ public class TourDatabase {
       return newDbVersion;
    }
 
+//   private int updateDb_055_To_056(final Connection conn, final SplashManager splashManager) throws SQLException {
+//
+//      final int newDbVersion = 56;
+//
+//      logDbUpdate_Start(newDbVersion);
+//      updateMonitor(splashManager, newDbVersion);
+//
+//      final Statement stmt = conn.createStatement();
+//      {
+//         // double check if db already exists
+//         if (isTableAvailable(conn, TABLE_TOUR_LOCATION_POINT) == false) {
+//            createTable_TourLocationPoint(stmt);
+//         }
+//      }
+//      stmt.close();
+//
+//      logDbUpdate_End(newDbVersion);
+//
+//      return newDbVersion;
+//   }
+
    /**
     * Dummy update that {@link net.tourbook.database.TourDataUpdate_058_to_059} works
     *
@@ -11622,6 +12755,7 @@ public class TourDatabase {
 
       return newDbVersion;
    }
+
 
    /**
     * Replace device product name with the Garmin product name when the product name is a number
@@ -11730,7 +12864,7 @@ public class TourDatabase {
        */
    }
 
-   /**
+   /*
     * @param conn
     * @param splashManager
     *
@@ -11762,6 +12896,7 @@ public class TourDatabase {
 
       return newDbVersion;
    }
+
 
    private int updateDb_060_To_061(final Connection conn, final SplashManager splashManager) throws SQLException {
 
@@ -11888,6 +13023,122 @@ public class TourDatabase {
 
       updateVersionNumber_20_AfterDataUpdate(conn, dbDataVersion, startTime);
    }
+
+   /**
+    * Add CustomField on DB version xxxgmn
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private void updateDb_Add_CustomField(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding CustomField and CustomFieldValue Table's in DB"; //$NON-NLS-1$
+      final String message_End = "CustomField and CustomFieldValue Table's has been added in DB"; //$NON-NLS-1$
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate(message);
+      updateMonitor(splashManager, currentDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // double check if db already exists
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD) == false) {
+            createTable_CustomField(stmt);
+         }
+
+         if (isTableAvailable(conn, TABLE_CUSTOM_FIELD_VALUE) == false) {
+            createTable_CustomFieldValues(stmt);
+         }
+
+      }
+      stmt.close();
+
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
+   }
+
+   /**
+    * Add DataSerie on DB version xx
+    *
+    * @param conn
+    * @param splashManager
+    * @return
+    * @throws SQLException
+    */
+   private void updateDb_Add_DataSerie(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding DataSerie Table in DB"; //$NON-NLS-1$
+      final String message_End = "DataSerie Table has been added in DB"; //$NON-NLS-1$
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate(message);
+
+      updateMonitor(splashManager, currentDbVersion);
+
+      final Statement stmt = conn.createStatement();
+      {
+         // double check if db already exists
+         if (isTableAvailable(conn, TABLE_DATA_SERIE) == false) {
+            createTable_DataSerie(stmt);
+         }
+      }
+      stmt.close();
+
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
+
+   }
+
+   /**
+    * Add Column {@link TourTag#extraData} blob on TABLE_TOUR_TAG.
+    *
+    * @param conn
+    * @throws SQLException
+    */
+   private void updateDb_TourTag_AddColumn_ExtraData(final int currentDbVersion, final Connection conn, final SplashManager splashManager)
+         throws SQLException {
+
+      final String message = "Adding ExtraData Column on TourTag Table"; //$NON-NLS-1$
+      final String message_End = "ExtraData Column has been added on TourTag Table"; //$NON-NLS-1$
+      final String message2 = "ExtraData Column Already on TourTag Table"; //$NON-NLS-1$
+      logDbUpdate_Start(currentDbVersion);
+      logDbUpdate( message);
+      updateMonitor(splashManager, currentDbVersion);
+
+      final DatabaseMetaData meta = conn.getMetaData();
+
+      final ResultSet rsColumns = meta.getColumns(null, TABLE_SCHEMA, TABLE_TOUR_TAG, "EXTRADATA"); //$NON-NLS-1$
+
+      while (rsColumns.next()) {
+         final String name = rsColumns.getString("COLUMN_NAME"); //$NON-NLS-1$
+         if (name.compareToIgnoreCase("extraData") == 0) { //$NON-NLS-1$
+            logDbUpdate( message2);
+            logDbUpdate_End(currentDbVersion);
+            return;//column exist already
+         }
+      }
+      /*
+       * Add this column to contain extra (non searchable at this point) data to TourTag
+       * extra info like Maintenance info (date purchased, cost of maintenance, schedule of
+       * maintenance
+       * and other in the future ...
+       */
+
+      String sql;
+      final Statement stmt = conn.createStatement();
+      {
+         // ALTER TABLE TourTag AD COLUMN ExtraData BLOB(2G)
+
+         sql = "ALTER TABLE " + TABLE_TOUR_TAG + " ADD COLUMN extraData   BLOB(2G)"; //$NON-NLS-1$ //$NON-NLS-2$
+         exec(stmt, sql);
+      }
+      stmt.close();
+
+      logDbUpdate(message_End);
+      logDbUpdate_End(currentDbVersion);
+     }
 
    private void updateMonitor(final SplashManager splashManager, final int newDbVersion) {
 

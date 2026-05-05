@@ -133,3 +133,5 @@ Import-Package: tools.jackson.core.type,
  pixelitor.utils,
  pixelitor.utils.debug,
  tourbook.search.nls
+Bundle-ClassPath: opencsv-5.3.jar,
+ .

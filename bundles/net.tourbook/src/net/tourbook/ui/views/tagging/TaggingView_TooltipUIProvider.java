@@ -49,13 +49,12 @@ public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
 
    private static final int   SHELL_MARGIN   = 5;
    private static final int   MAX_DATA_WIDTH = 300;
-
    private Object             _viewerCellData;
-
    private IToolTipProvider   _toolTipProvider;
-
    private ActionCloseTooltip _actionCloseTooltip;
    private ActionEditTag      _actionEditTag;
+
+   private ActionEditTagMaintenance _actionEditTagMaintenance;
 
    private boolean            _hasNotes;
    private String             _content_Notes;
@@ -108,6 +107,27 @@ public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
          _toolTipProvider.hideToolTip();
 
          _taggingView.editTag(_viewerCellData);
+      }
+   }
+
+   private class ActionEditTagMaintenance extends Action {
+
+      public ActionEditTagMaintenance() {
+
+         super(null, Action.AS_PUSH_BUTTON);
+
+         setToolTipText(Messages.Action_Tag_EditMaintenance_Tooltip);
+
+         setImageDescriptor(TourbookPlugin.getImageDescriptor(Images.App_Edit));
+         //setDisabledImageDescriptor(TourbookPlugin.getImageDescriptor(Images.EditTour_Disabled));
+      }
+
+      @Override
+      public void run() {
+
+         _toolTipProvider.hideToolTip();
+
+         _taggingView.editTagMaintenance(_viewerCellData);
       }
    }
 
@@ -214,6 +234,9 @@ public class TaggingView_TooltipUIProvider implements ITooltipUIProvider {
 
       _actionEditTag = new ActionEditTag();
       tbm.add(_actionEditTag);
+
+      _actionEditTagMaintenance = new ActionEditTagMaintenance();
+      tbm.add(_actionEditTagMaintenance);
 
       /**
        * The close action is ALWAYS visible, sometimes there is a bug that the tooltip do not

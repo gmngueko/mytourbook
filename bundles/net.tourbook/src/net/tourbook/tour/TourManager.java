@@ -67,7 +67,10 @@ import net.tourbook.common.util.StatusUtil;
 import net.tourbook.common.util.StringToArrayConverter;
 import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
+import net.tourbook.data.CustomFieldValue;
 import net.tourbook.data.CustomTrackDefinition;
+import net.tourbook.data.CustomTrackIsActiveSettings;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.GearDataType;
 import net.tourbook.data.TourData;
 import net.tourbook.data.TourMarker;
@@ -108,6 +111,8 @@ import net.tourbook.ui.views.rawData.RawDataView;
 import net.tourbook.ui.views.tourBook.TourBookView;
 import net.tourbook.ui.views.tourDataEditor.TourDataEditorView;
 import net.tourbook.weather.TourWeatherRetriever;
+import net.tourbook.weather.openweathermapCustom.HistoricalWeatherOwmRetriever;
+import net.tourbook.weather.openweathermapCustom.OWMWeatherData;
 
 import org.eclipse.collections.impl.list.mutable.primitive.DoubleArrayList;
 import org.eclipse.collections.impl.list.mutable.primitive.FloatArrayList;
@@ -157,9 +162,10 @@ public class TourManager {
    private static final String LOG_TEMP_ADJUST_010_NO_TEMPERATURE_DATA_SERIE   = Messages.Log_TemperatureAdjustment_010_NoTemperatureDataSeries;
    private static final String LOG_TEMP_ADJUST_011_NO_TIME_DATA_SERIE          = Messages.Log_TemperatureAdjustment_011_NoTimeDataSeries;
    //
-   private static final String LOG_RETRIEVE_WEATHER_DATA_001_START             = Messages.Log_RetrieveWeatherData_001_Start;
-   private static final String LOG_RETRIEVE_WEATHER_DATA_002_END               = Messages.Log_RetrieveWeatherData_002_End;
-   private static final String LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE = Messages.Log_RetrieveWeatherData_010_NoGpsDataSeries;
+   public static final String  LOG_RETRIEVE_WEATHER_DATA_001_START             = Messages.Log_RetrieveWeatherData_001_Start;
+   public static final String  LOG_RETRIEVE_WEATHER_DATA_002_END               = Messages.Log_RetrieveWeatherData_002_End;
+   public static final String  LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE = Messages.Log_RetrieveWeatherData_010_NoGpsDataSeries;
+   public static final String  LOG_RETRIEVE_OWM_WEATHER_USING_DEFAULT_GPS      = Messages.Log_RetrieveOWMWeatherData_010_UsingDefaultGPS;
    //
    public static final String  CUSTOM_DATA_TOUR_DATA                           = "tourData";                                                    //$NON-NLS-1$
    public static final String  CUSTOM_DATA_TOUR_CHART_CONFIGURATION            = "tourChartConfig";                                             //$NON-NLS-1$
@@ -897,11 +903,12 @@ public class TourManager {
       int numTimeSlices = 0;
       int numSwimTimeSlices = 0;
       final HashMap<String, CustomTrackDefinition> toCustomTracksDefinition = new HashMap<>();
-      int numCustomTrackDefinition = 0;
+      final HashMap<String, CustomFieldValue> toCustomFieldValue = new HashMap<>();
+      //int numCustomTrackDefinition = 0;
 
       // get tours which have data series
       for (final TourData tourData : allMultipleTours) {
-
+         //DataSerie treatment
          final int[] timeSerie = tourData.timeSerie;
 
          // ignore tours which have no data series
@@ -910,17 +917,17 @@ public class TourManager {
             validatedMultipleTours.add(tourData);
             numTimeSlices += timeSerie.length;
             //Compute list of custom tracks definition
-            //by considering that definition with the same "name" field are the same
-            //"id" field can't be used because id's are unique only for a given tour at this point of the implementation !!
-            //maybe later "id" of custom track definition will be a globally defined entity like a TAG.
+            //by considering that definition with the same "id" field are the same, since id is globally unique referenceId to the DataSerie object
             final HashMap<String, CustomTrackDefinition> customTrackDefinitionMap = tourData.getCustomTracksDefinition();
             for (final String customTrackDefinitionId : customTrackDefinitionMap.keySet()) {
                final CustomTrackDefinition customTrackDefinitionEntry = customTrackDefinitionMap.get(customTrackDefinitionId);
                if (customTrackDefinitionEntry != null) {
-                  if (toCustomTracksDefinition.get(customTrackDefinitionEntry.getName()) != null) {
-                     customTrackDefinitionEntry.setId("_" + Integer.toString(numCustomTrackDefinition));// new local id
-                     toCustomTracksDefinition.put(customTrackDefinitionEntry.getName(), customTrackDefinitionEntry);
-                     numCustomTrackDefinition++;
+                  if (toCustomTracksDefinition.get(customTrackDefinitionEntry.getId()) == null) {//entry with that name not yet present so add it
+                     final CustomTrackDefinition newCustomTrackDefinition = customTrackDefinitionEntry.clone();
+                     //newCustomTrackDefinition.setId(customTrackDefinitionEntry.getId());// new local id is the name itself
+                     //newCustomTrackDefinition.setId("_" + Integer.toString(numCustomTrackDefinition));// new local id
+                     toCustomTracksDefinition.put(newCustomTrackDefinition.getId(), newCustomTrackDefinition);
+                     //numCustomTrackDefinition++;
                   }
                }
             }
@@ -930,6 +937,16 @@ public class TourManager {
 
          if (swimTimeSerie != null && swimTimeSerie.length > 0) {
             numSwimTimeSlices += swimTimeSerie.length;
+         }
+
+         //CustomFieldValue treatment: add one newCustomFieldValue for all existing CustomField's
+         for (final CustomFieldValue customFieldValue : tourData.getCustomFieldValues()) {
+            if (!toCustomFieldValue.containsKey(customFieldValue.getCustomField().getRefId())) {
+               final CustomFieldValue newCustomFieldValue = new CustomFieldValue(customFieldValue.getCustomField(), null, null);
+               newCustomFieldValue.setCountNull(allMultipleTours.size());
+               newCustomFieldValue.setCountNotNull(0);
+               toCustomFieldValue.put(newCustomFieldValue.getCustomField().getRefId(), newCustomFieldValue);
+            }
          }
       }
 
@@ -957,14 +974,17 @@ public class TourManager {
       final float[] toTemperaturSerie              = joinedTourData.temperatureSerie                  = new float[numTimeSlices];
 
       final HashMap<String, float[]> toCustomTracks = new HashMap<>();
-      for (final String customTrackDefinitionName : toCustomTracksDefinition.keySet()) {
-         toCustomTracks.put(customTrackDefinitionName, new float[numTimeSlices]);
+      for (final String customTrackDefinitionKey : toCustomTracksDefinition.keySet()) {
+         toCustomTracks.put(customTrackDefinitionKey, new float[numTimeSlices]);
       }
 
       final int[]   toRadar_PassedVehicles         = joinedTourData.radar_PassedVehicles              = new int[numTimeSlices];
       final short[] toRadar_DistanceToVehicle      = joinedTourData.radar_DistanceToVehicle           = new short[numTimeSlices];
       final short[] toRadar_PassingSpeed_Absolute  = joinedTourData.radar_PassingSpeed_Absolute       = new short[numTimeSlices];
       final short[] toRadar_PassingSpeed_Relative  = joinedTourData.radar_PassingSpeed_Relative       = new short[numTimeSlices];
+
+      final CustomTrackIsActiveSettings[] allCustomTracksIsActiveSettings = joinedTourData.multipleTourCustomTracksIsActiveSettings =
+            new CustomTrackIsActiveSettings[numTours];
 
       final short[] toRunDyn_StanceTime            = joinedTourData.runDyn_StanceTime                 = new short[numTimeSlices];
       final short[] toRunDyn_StanceTimeBalance     = joinedTourData.runDyn_StanceTimeBalance          = new short[numTimeSlices];
@@ -1236,11 +1256,21 @@ public class TourManager {
             for (final String customTracksId : customTracksMap.keySet()) {
                final float[] fromCustomTrack = customTracksMap.get(customTracksId);
                final CustomTrackDefinition customTrackDefinitionEntry = fromCustomTrackDefinition.get(customTracksId);
-               if (customTrackDefinitionEntry != null && toCustomTracks.containsKey(customTrackDefinitionEntry.getName())) {
-                  System.arraycopy(fromCustomTrack, 0, toCustomTracks.get(customTrackDefinitionEntry.getName()), toStartIndex, fromSerieLength);
+               if (customTrackDefinitionEntry != null && toCustomTracks.containsKey(customTrackDefinitionEntry.getId())) {
+                  System.arraycopy(fromCustomTrack, 0, toCustomTracks.get(customTrackDefinitionEntry.getId()), toStartIndex, fromSerieLength);
                }
             }
          }
+
+         /*
+          * CustomFields
+          */
+         for (final CustomFieldValue customFieldValue : fromTourData.getCustomFieldValues()) {
+            final CustomFieldValue sCustomFieldValue = toCustomFieldValue.get(customFieldValue.getCustomField().getRefId());
+
+            sCustomFieldValue.updateStatistic(customFieldValue.getValueFloat(), customFieldValue.getValueString());
+         }
+
          /*
           * Swimming
           */
@@ -1267,6 +1297,12 @@ public class TourManager {
          final ArrayList<TourMarker> fromTourMarker = fromTourData.getTourMarkersSorted();
          allTourMarker.addAll(fromTourMarker);
          allTourMarkerNumbers[tourIndex] = fromTourMarker.size();
+
+         //need for custom tracks
+         //CustomTrackIsActiveSettings to easily retrieve it
+         for (final TourMarker tourMarker : fromTourMarker) {//need for custom tracks
+            tourMarker.setMultiTourIndex(tourIndex);
+         }
 
          // tour pauses
          final long[] pausedTime_Start = fromTourData.getPausedTime_Start();
@@ -1327,6 +1363,9 @@ public class TourManager {
          allTourTitle[tourIndex] = TimeTools.getZonedDateTime(tourStartTime).format(TimeTools.Formatter_Date_S);
          allStartTime[tourIndex] = fromTourData.getTourStartTime();
 
+         //custom tracks CustomTrackIsActiveSettings
+         allCustomTracksIsActiveSettings[tourIndex] = fromTourData.getCustomTrackIsActiveSettings();
+
          // cadence multiplier
          allTours_CadenceMultiplier[tourIndex] = fromTourData.getCadenceMultiplier();
 
@@ -1340,8 +1379,11 @@ public class TourManager {
          tourDeviceTime_Paused += fromTourData.getTourDeviceTime_Paused();
       }
 
-      joinedTourData.customTracksDefinition = toCustomTracksDefinition;
+      joinedTourData.setCustomTracksDefinition(toCustomTracksDefinition);// = toCustomTracksDefinition;
       joinedTourData.setCustomTracks(toCustomTracks);
+
+      joinedTourData.getCustomFieldValues().clear();
+      joinedTourData.getCustomFieldValues().addAll(toCustomFieldValue.values());
 
       /*
        * Remove data series when not available
@@ -2220,6 +2262,8 @@ public class TourManager {
 
       switch (weatherProviderId) {
 
+      case IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAPCUSTOM:
+         return StringUtils.hasContent(_prefStore.getString(ITourbookPreferences.WEATHER_OWM_API_KEY));
       case IWeatherProvider.WEATHER_PROVIDER_OPENWEATHERMAP_ID:
       case IWeatherProvider.WEATHER_PROVIDER_WEATHERAPI_ID:
          return true;
@@ -3146,7 +3190,7 @@ public class TourManager {
    }
 
    /**
-    * @param tourData
+ * @param tourData
     * @param allModifiedTours
     * @param weatherProvider
     */
@@ -3168,6 +3212,78 @@ public class TourManager {
 
          allModifiedTours.add(tourData);
       }
+   }
+
+   /**
+    * @param tourData
+    * @param intervalSeconds
+    * @param defaultOWNLatitude
+    * @param defaultOWNLongitude
+    * @return Returns <code>true</code> when the tour is modified, otherwise <code>false</code>.
+    */
+   public static boolean retrieveWeatherOwmData(final TourData tourData,
+                                                final int intervalSeconds,
+                                                final double defaultOWNLatitude,
+                                                final double defaultOWNLongitude) {
+      //TODO align with new weather processing
+
+      // ensure data is available otherwise use default
+      if (tourData.latitudeSerie == null || tourData.longitudeSerie == null) {
+
+         TourLogManager.subLog_INFO(
+               String.format(
+                     LOG_RETRIEVE_WEATHER_DATA_010_NO_GPS_DATA_SERIE,
+                     getTourDateTimeShort(tourData) + UI.SPACE1 + LOG_RETRIEVE_OWM_WEATHER_USING_DEFAULT_GPS));
+
+         //return false;
+      }
+
+      final HistoricalWeatherOwmRetriever historicalWeatherOwmRetriever = new HistoricalWeatherOwmRetriever(tourData).retrieveHistoricalWeatherData(
+            intervalSeconds,
+            defaultOWNLatitude,
+            defaultOWNLongitude);
+      OWMWeatherData historicalWeatherData = null;
+      if (historicalWeatherOwmRetriever != null) {
+         historicalWeatherData = historicalWeatherOwmRetriever.getHistoricalWeatherData();
+      }
+      if (historicalWeatherData == null) {
+         TourLogManager.subLog_ERROR(
+               NLS.bind(
+                     Messages.Dialog_RetrieveWeatherOwm_WeatherDataNotFound,
+                     new Object[] {
+                           TourManager.getTourDateTimeShort(tourData) }));
+         return false;
+      }
+
+      tourData.setIsWeatherDataFromProvider(true);
+
+      tourData.setWeather_Temperature_Average(historicalWeatherData.getTemperatureAverage());
+      //windspeed is in m/s needs to multiply 3.6 to obtain k/h
+      tourData.setWeather_Wind_Speed((int) (historicalWeatherData.getWindSpeed() * 3.6));
+      tourData.setWeather_Wind_Direction(historicalWeatherData.getWindDirection());
+      tourData.setWeather(historicalWeatherData.getWeatherDescription());
+      tourData.setWeather_Clouds(historicalWeatherData.getWeatherType());
+
+      tourData.setWeather_Humidity((short) historicalWeatherData.getAverageHumidity());
+      tourData.setWeather_Precipitation(historicalWeatherData.getPrecipitation());
+      tourData.setWeather_Pressure((short) historicalWeatherData.getAveragePressure());
+      tourData.setWeather_Temperature_Max(historicalWeatherData.getTemperatureMax());
+      tourData.setWeather_Temperature_Min(historicalWeatherData.getTemperatureMin());
+      tourData.setWeather_Temperature_WindChill(historicalWeatherData.getWindChill());
+      tourData.setWeather_Snowfall(historicalWeatherData.getPrecipitationSnow());
+
+      TourLogManager.addSubLog(TourLogState.OK, "OWM import done for interval:" + intervalSeconds);
+
+      //compute tail wind, cross wind, gps diretion of tour with OWM weather info
+      historicalWeatherData.computeWindTour(tourData, intervalSeconds);
+      //add cutom tracks series data and replace current temperature if any
+      //move current temperature to "Sensor Temperature" custom track data serie if that sensor temperature was not yet present !!
+      //to avoid loosing "sensor temperature" !!! So this "sensor temperature" is created only once the first time you do a OWM retrieval
+      historicalWeatherData.setCustomTracks(tourData);
+
+      TourLogManager.addSubLog(TourLogState.OK, getTourDateTimeShort(tourData));
+
+      return true;
    }
 
    /**
@@ -4867,6 +4983,7 @@ public class TourManager {
 
          final HashMap<String, float[]> customTracks = tourData.getCustomTracks();
          yData_CustomTracks = new HashMap<>();
+         final HashMap<String, DataSerie> dataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
          final HashMap<String, CustomTrackDefinition> customTrackDefinitionMap = tourData.getCustomTracksDefinition();
          final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTrackDefinitionMap.values());
          java.util.Collections.sort(listCustomTrackDefinition);
@@ -4878,6 +4995,11 @@ public class TourManager {
                customTrackDefinition.setId(customTracksId);
                customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + UI.SYMBOL_UNDERSCORE + customTracksId);
                customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
+            }
+            final DataSerie dataSerie = dataSeriesByRefId.get(customTracksId);
+            if (dataSerie != null) {
+               customTrackDefinition.setName(dataSerie.getName());
+               customTrackDefinition.setUnit(dataSerie.getUnit());
             }
 
             final ChartDataYSerie yData_CustomTrack = createModelData_CustomTracks(customTracks.get(customTracksId),
@@ -5089,6 +5211,7 @@ public class TourManager {
                final HashMap<String, CustomTrackDefinition> customTracksDefinitionMap = tourData.getCustomTracksDefinition();
                final ArrayList<CustomTrackDefinition> listCustomTrackDefinition = new ArrayList<>(customTracksDefinitionMap.values());
                java.util.Collections.sort(listCustomTrackDefinition);
+               final HashMap<String, DataSerie> dataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
 
                for (int indexCustomTracksDefinition = 0; indexCustomTracksDefinition < listCustomTrackDefinition.size(); indexCustomTracksDefinition++) {
                   final String customTracksDefinitionId = listCustomTrackDefinition.get(indexCustomTracksDefinition).getId();
@@ -5098,6 +5221,12 @@ public class TourManager {
                      customTrackDefinition.setId(customTracksDefinitionId);
                      customTrackDefinition.setName(CustomTrackDefinition.DEFAULT_CUSTOM_TRACK_NAME + UI.SYMBOL_UNDERSCORE + customTracksDefinitionId);
                      customTrackDefinition.setUnit(net.tourbook.common.UI.EMPTY_STRING);
+                  }
+
+                  final DataSerie dataSerie = dataSeriesByRefId.get(customTracksDefinitionId);
+                  if (dataSerie != null) {
+                     customTrackDefinition.setName(dataSerie.getName());
+                     customTrackDefinition.setUnit(dataSerie.getUnit());
                   }
                   if (graphId == (indexCustomTracksDefinition + GRAPH_CUSTOM_TRACKS)) {
                      final ChartDataYSerie yData_Cust_Tracks = yData_CustomTracks.get(indexCustomTracksDefinition + GRAPH_CUSTOM_TRACKS);

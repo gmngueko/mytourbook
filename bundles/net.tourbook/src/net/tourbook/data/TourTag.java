@@ -81,6 +81,12 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
    private String notes;                                        // db-version 38
 
    /**
+    * Extra informations:Maintenance,... A BLOB CANNOT BE MULTIPLE !
+    */
+   @Basic(optional = false)
+   private ExtraData extraData;
+
+   /**
     * When a tag is expanded in the tag tree viewer, the tours can be displayed in different
     * structures
     * <p>
@@ -89,6 +95,19 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
     * <li>0 ... {@link #EXPAND_TYPE__TAG_YEAR_MONTH_TOURS}</li>
     */
    private int    expandType = EXPAND_TYPE__TAG_TOURS;
+  
+   /**
+    * Contains all tours which are associated with this tag
+    */
+   @ManyToMany(mappedBy = "tourTags", cascade = ALL, fetch = LAZY)
+   private final Set<TourData> tourData   = new HashSet<>();
+
+   /**
+    * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not
+    * persisted
+    */
+   @Transient
+   private long                _createId = 0;
 
    private String imageFilePath;
 
@@ -110,26 +129,21 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
 //   @ManyToOne()
 //   private TourTagCategory      tourTagCategory;
 
-   /**
-    * Contains all tours which are associated with this tag
-    */
-   @ManyToMany(mappedBy = "tourTags", cascade = ALL, fetch = LAZY)
-   private final Set<TourData> tourData  = new HashSet<>();
-
-   /**
-    * Unique id for manually created tour tags because the {@link #tagId} is -1 when it's not
-    * persisted
-    */
-   @Transient
-   private long                _createId = 0;
-
    public TourTag() {}
 
    public TourTag(final String tagName) {
 
       name = tagName.trim();
-
       _createId = _createCounter.incrementAndGet();
+
+      if (extraData == null) {
+         extraData = new ExtraData();
+      }
+      TourTagMaintenance maintenance = extraData.getMaintenanceInfo();
+      if (maintenance == null) {
+         maintenance = new TourTagMaintenance();
+         extraData.setMaintenanceInfo(maintenance);
+      }
    }
 
    @Override
@@ -194,6 +208,10 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
     */
    public int getExpandType() {
       return expandType;
+   }
+
+   public ExtraData getExtraData() {
+      return extraData;
    }
 
    public String getImageFilePath() {
@@ -298,6 +316,10 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
       this.expandType = expandType;
    }
 
+   public void setExtraData(final ExtraData extraData) {
+      this.extraData = extraData;
+   }
+
    public void setImageFilePath(final String imageFilePath) {
       this.imageFilePath = imageFilePath;
    }
@@ -356,6 +378,9 @@ public class TourTag implements Cloneable, Comparable<Object>, Serializable {
 
       name = modifiedTourTag.name;
       notes = modifiedTourTag.notes;
+
+      extraData = modifiedTourTag.extraData;
+
       imageFilePath = modifiedTourTag.imageFilePath;
    }
 }

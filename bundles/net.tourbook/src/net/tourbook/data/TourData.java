@@ -44,6 +44,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,6 +247,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private static final ElevationSRTM1   _elevationSRTM1                   = new ElevationSRTM1();
 
    private static final IPreferenceStore _prefStore                        = TourbookPlugin.getPrefStore();
+
+   //Martial customization
+   private static final RawDataManager   _rawDataMgr                       = RawDataManager.getInstance();
 
 // SET_FORMATTING_OFF
 
@@ -1061,6 +1065,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private Set<TourTag>                tourTags                            = new HashSet<>();
 
    /**
+    * CustomFieldValues: only one CustomFieldValue for a given CustomField in one tour, see contraint in {@link #TourDatabase}
+    */
+   @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
+   @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
+   private Set<CustomFieldValue>     customFieldValues                  = new HashSet<>();
+
+   /**
+    * Sensors
     * Equipment
     */
    @ManyToMany(fetch = EAGER)
@@ -1074,6 +1086,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    @OneToMany(fetch = EAGER, cascade = ALL, mappedBy = "tourData")
    @Cascade(org.hibernate.annotations.CascadeType.DELETE_ORPHAN)
    private Set<DeviceSensorValue>      deviceSensorValues                  = new HashSet<>();
+
+   /**
+    * DataSeries
+    */
+   @ManyToMany(fetch = EAGER)
+   @JoinTable(inverseJoinColumns = @JoinColumn(name = "DATASERIE_SerieID", referencedColumnName = "SerieID"))
+   private Set<DataSerie>                dataSeries                            = new HashSet<>();
 
 //   /**
 //    * SharedMarker
@@ -1784,6 +1803,14 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
    private boolean            isMultipleTours;
 
    /**
+    * Custom Tracks
+    * Contains the CustomTrackIsActiveSettings of the tour id's
+    */
+   @Transient
+   public CustomTrackIsActiveSettings[]              multipleTourCustomTracksIsActiveSettings;
+
+
+   /**
     * Contains the tour id's
     */
    @Transient
@@ -1905,6 +1932,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    @Transient
    private HashMap<String, CustomTrackStatisticEntry> _customTracksStatistics = new HashMap<>();
+
+   @Transient
+   private CustomTrackIsActiveSettings                _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
 
    // ############################################# RUNNING DYNAMICS TRANSIENT#######################################
    /*
@@ -2141,6 +2171,38 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    @Transient
    private List<TourPause>    _allTourPauses;
+
+   // ############################################# Martial STATISTICS TRANSIENT#######################################
+   //HRV
+   @Transient
+   public Double rmssd_ms = null;
+   @Transient
+   public Double rmssd_ms_Raw = null;
+
+   @Transient
+   public Double pnn50 = null;
+   @Transient
+   public Double pnn50_Raw = null;
+
+   @Transient
+   public Double rrStdDev_ms = null;
+   @Transient
+   public Double rrStdDev_ms_Raw = null;
+
+   @Transient
+   public Integer rrMin_ms = null;
+   @Transient
+   public Integer rrMin_ms_Raw = null;
+
+   @Transient
+   public Integer rrMax_ms = null;
+   @Transient
+   public Integer rrMax_ms_Raw = null;
+
+   @Transient
+   public Double rrAvg_ms = null;
+   @Transient
+   public Double rrAvg_ms_Raw = null;
 
    /**
     * When this is not <code>null</code> then the background graph of this tour is displayed differently.
@@ -2513,12 +2575,30 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
    public void clear_CustomTracks(final String idx) {
 
-      if (_customTracks == null) {
-         return;
+      if (dataSeries != null) {
+         final Iterator<DataSerie> itDataSeries = dataSeries.iterator();
+         while (itDataSeries.hasNext()) {
+            final DataSerie dataSerie = itDataSeries.next();
+            if (dataSerie.getRefId().compareTo(idx) == 0) {
+               itDataSeries.remove();
+            }
+         }
       }
-      _customTracks.remove(idx);
-      _customTracks_UI.remove(idx);
-      _customTracksStatistics.remove(idx);
+
+      if (customTracksDefinition != null) {
+         customTracksDefinition.remove(idx);
+      }
+
+      if (_customTracks != null) {
+         _customTracks.remove(idx);
+      }
+
+      if (_customTracks_UI != null) {
+         _customTracks_UI.remove(idx);
+      }
+      if (_customTracksStatistics != null) {
+         _customTracksStatistics.remove(idx);
+      }
    }
 
    public void clear_Radar_DistanceToVehicle() {
@@ -2797,6 +2877,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       tourDataCopy.setTourEndPlace(    this.getTourEndPlace());
 
 // SET_FORMATTING_ON
+
+      //tourDataCopy.setDataSeries(new HashSet<>(this.getDataSeries()));//serieData should not be cloned as per method comment!!
+      tourDataCopy.setCustomFieldValues(new HashSet<>(this.getCustomFieldValues()));
 
       return tourDataCopy;
    }
@@ -7000,6 +7083,18 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          sensorValue.setupDeepClone(tourData_DeepCopy);
       }
 
+      //Martial customization below
+      for (final CustomFieldValue customFieldValue : tourData_DeepCopy.customFieldValues) {
+         customFieldValue.setupDeepClone(tourData_DeepCopy);
+      }
+
+      //Martial customization below
+      //TODO: check if needed see comment on TourTag which also has many to many relashonsip on other Tours
+      //remove below for now as it contains many to many
+      //for (final DataSerie dataSerieValue : tourData_DeepCopy.dataSeries) {
+      //   dataSerieValue.setupDeepClone(tourData_DeepCopy);
+      //}
+
       /**
        * Convert PersistentSet into a "normal" set otherwise this exception occurs
        * <p>
@@ -7034,6 +7129,16 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       final Set<DeviceSensorValue> deviceSensor_Clone = new HashSet<>();
       deviceSensor_Clone.addAll(tourData_DeepCopy.deviceSensorValues);
       tourData_DeepCopy.deviceSensorValues = deviceSensor_Clone;
+
+      //Martial customization below
+      final Set<CustomFieldValue> customField_Clone = new HashSet<>();
+      customField_Clone.addAll(tourData_DeepCopy.customFieldValues);
+      tourData_DeepCopy.customFieldValues = customField_Clone;
+
+      //Martial customization below
+      final Set<DataSerie> dataSerie_Clone = new HashSet<>();
+      dataSerie_Clone.addAll(tourData_DeepCopy.dataSeries);
+      tourData_DeepCopy.dataSeries = dataSerie_Clone;
 
       /**
        * TourReferences are special, they are bound to the original tour and need to be
@@ -8721,16 +8826,24 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
 
       String tourIdKey;
 
+      //Martial customization below
+      if (_rawDataMgr != null) {
+         if (_rawDataMgr.getState_CreateTourIdWithTime() == false) {
+            tourId = System.nanoTime();
+            return tourId;
+         }
+      }
+
       try {
          /*
           * this is the default implementation to create a tour id, but on the 5.5.2007 a
           * NumberFormatException occurred so the calculation for the tour id was adjusted
           */
          tourIdKey = Short.toString(startYear)
-               + Short.toString(startMonth)
-               + Short.toString(startDay)
-               + Short.toString(startHour)
-               + Short.toString(startMinute)
+               + (startMonth < 10 ? "0" : "") + Short.toString(startMonth)
+               + (startDay < 10 ? "0" : "") + Short.toString(startDay)
+               + (startHour < 10 ? "0" : "") + Short.toString(startHour)
+               + (startMinute < 10 ? "0" : "") + Short.toString(startMinute)
                //
                + uniqueKeySuffix;
 
@@ -8744,10 +8857,10 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
          try {
 
             tourIdKey = Short.toString(startYear)
-                  + Short.toString(startMonth)
-                  + Short.toString(startDay)
-                  + Short.toString(startHour)
-                  + Short.toString(startMinute)
+                  + (startMonth < 10 ? "0" : "") + Short.toString(startMonth)
+                  + (startDay < 10 ? "0" : "") + Short.toString(startDay)
+                  + (startHour < 10 ? "0" : "") + Short.toString(startHour)
+                  + (startMinute < 10 ? "0" : "") + Short.toString(startMinute)
                   //
                   + uniqueKeySuffix.substring(0, Math.min(5, uniqueKeySuffix.length()));
 
@@ -9520,6 +9633,33 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       return conconiDeflection;
    }
 
+   public HashMap<String, CustomField> getCustomFields_ByRefID() {
+      final HashMap<String, CustomField> customFields = new HashMap<>();
+      for(final CustomFieldValue value:customFieldValues ) {
+         customFields.put(value.getCustomField().getRefId(), value.getCustomField());
+      }
+      return customFields;
+   }
+
+   public Set<CustomFieldValue> getCustomFieldValues() {
+      return customFieldValues;
+   }
+
+   public HashMap<String, CustomFieldValue> getCustomFieldValues_ByRefID() {
+      final HashMap<String, CustomFieldValue> customFields = new HashMap<>();
+      for (final CustomFieldValue value : customFieldValues) {
+         customFields.put(value.getCustomField().getRefId(), value);
+      }
+      return customFields;
+   }
+
+   public CustomTrackIsActiveSettings getCustomTrackIsActiveSettings() {
+      if (_customTracksIsActiveSettings == null) {
+         _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
+      }
+      return _customTracksIsActiveSettings;
+   }
+
    /**
     * @return Returns the UI values for Custom Tracks.
     */
@@ -9592,7 +9732,40 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       if (customTracksDefinition == null) {
          return new HashMap<>();
       }
-      return customTracksDefinition;
+      final HashMap<String, DataSerie> dataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      for (final Map.Entry<String, CustomTrackDefinition> customTracksDefinitionEntry : customTracksDefinition.entrySet()) {
+         final DataSerie dataSerie = dataSeriesByRefId.get(customTracksDefinitionEntry.getKey());
+         if (dataSerie != null) {
+            customTracksDefinitionEntry.getValue().setName(dataSerie.getName());
+            customTracksDefinitionEntry.getValue().setUnit(dataSerie.getUnit());
+         }
+      }
+      return new HashMap<>(customTracksDefinition);
+   }
+
+   /**
+    * @return Returns the UI values for dataSeries as CUSTOM TRACKS CustomTrackDefinition.
+    */
+   public HashMap<String, CustomTrackDefinition> getCustomTracksDefinitionFromDataSerie() {
+      if (dataSeries == null) {
+         return new HashMap<>();
+      }
+      final HashMap<String, CustomTrackDefinition> newcustomTracksDefinitionMap = new HashMap<>();
+      for (final DataSerie dataSerie : dataSeries) {
+         final CustomTrackDefinition customTracksDefinitionEntry = new CustomTrackDefinition();
+         customTracksDefinitionEntry.setId(dataSerie.getRefId());
+         customTracksDefinitionEntry.setName(dataSerie.getName());
+         customTracksDefinitionEntry.setUnit(dataSerie.getUnit());
+         newcustomTracksDefinitionMap.put(customTracksDefinitionEntry.getId(), customTracksDefinitionEntry);
+      }
+      return newcustomTracksDefinitionMap;
+   }
+
+   public HashMap<String, float[]> getCustomTracksInit() {
+      if (_customTracks == null) {
+         _customTracks = new HashMap<>();
+      }
+      return _customTracks;
    }
 
    public HashMap<String, CustomTrackStatisticEntry> getCustomTracksStatistics() {
@@ -9630,6 +9803,13 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       return dataPerson;
+   }
+
+   /**
+    * @return Returns the dataseries {@link #dataSeries} which are defined for this tour
+    */
+   public Set<DataSerie> getDataSeries() {
+      return dataSeries;
    }
 
    /**
@@ -13172,6 +13352,9 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       pulseTime_Milliseconds  = serieData.pulseTimes;
       pulseTime_TimeIndex     = serieData.pulseTime_TimeIndex;
 
+      //Martial compute some data
+      TourDataCompute.computeHRVData(this);
+
       if (powerSerie != null) {
          isPowerSerieFromDevice = true;
       }
@@ -13185,6 +13368,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       _customTracks = serieData.customTracks;
       _customTracksStatistics = serieData.customTracksStatistics;
       customTracksDefinition = serieData.customTracksDefinition;
+      _customTracksIsActiveSettings = serieData.customTracksIsActiveSettings;
 
       // running dynamics
       runDyn_StanceTime             = serieData.runDyn_StanceTime;
@@ -13281,6 +13465,7 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       serieData.customTracks = _customTracks;
       serieData.customTracksStatistics = _customTracksStatistics;
       serieData.customTracksDefinition = customTracksDefinition;
+      serieData.customTracksIsActiveSettings = _customTracksIsActiveSettings;
 
       // running dynamics
       serieData.runDyn_StanceTime               = runDyn_StanceTime;
@@ -13586,8 +13771,57 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       this.conconiDeflection = conconiDeflection;
    }
 
+   public void setCustomFieldValues(final Set<CustomFieldValue> customFieldValues) {
+
+      if (this.customFieldValues != null) {
+         this.customFieldValues.clear();
+      }
+
+      this.customFieldValues = customFieldValues;
+   }
+
+   public void setCustomTrackIsActiveSettings(final CustomTrackIsActiveSettings newSettings) {
+      if (_customTracksIsActiveSettings == null) {
+         _customTracksIsActiveSettings = new CustomTrackIsActiveSettings();
+      }
+      if(newSettings == null) {
+         return;
+      }
+      _customTracksIsActiveSettings.copy(newSettings);
+   }
+
    public void setCustomTracks(final HashMap<String, float[]> newCustTracks) {
+      if (_customTracks != null) {
+         _customTracks.clear();
+      }
       _customTracks = newCustTracks;
+   }
+
+   public void setCustomTracksDefinition(final HashMap<String, CustomTrackDefinition> customTracksDefinition ) {
+      this.customTracksDefinition = customTracksDefinition;
+   }
+
+   public void setCustomTracksSerie(final String key, final float[] newSerie) {
+      if (_customTracks == null) {
+         _customTracks = new HashMap<>();
+      }
+      _customTracks.put(key, newSerie);
+   }
+
+   public void setDataSeries(final Set<DataSerie> dataSeries) {
+      this.dataSeries = dataSeries;
+   }
+
+   public void setDataSeriesAppendDefinitions( final CustomTrackDefinition dataDefinition) {
+         final DataSerie dataSerie = new DataSerie(dataDefinition.getName(), dataDefinition.getId(), dataDefinition.getUnit());
+         dataSeries.add(dataSerie);
+   }
+
+   public void setDataSeriesAppendDefinitions(final HashMap<String, CustomTrackDefinition> dataDefinition) {
+      for (final CustomTrackDefinition entryDefinition : dataDefinition.values()) {
+         final DataSerie dataSerie = new DataSerie(entryDefinition.getName(), entryDefinition.getId(), entryDefinition.getUnit());
+         dataSeries.add(dataSerie);
+      }
    }
 
    public void setDateTimeCreated(final long dateTimeCreated) {
@@ -15740,6 +15974,52 @@ public class TourData implements Comparable<Object>, IXmlSerializable, Serializa
       }
 
       return null;
+   }
+
+   public void update_CustomTracks_DataSerie(final String oldIdx, final String newIdx) {
+
+      final HashMap<String, DataSerie> allDbDataSeriesByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      final DataSerie newSerie = allDbDataSeriesByRefId.get(newIdx);
+      if (dataSeries != null && newSerie!=null) {
+         final Iterator<DataSerie> itDataSeries = dataSeries.iterator();
+         while (itDataSeries.hasNext()) {
+            final DataSerie dataSerie = itDataSeries.next();
+            if (dataSerie.getRefId().compareTo(oldIdx) == 0) {
+               itDataSeries.remove();
+            }
+         }
+
+         dataSeries.add(newSerie);
+      }else {
+         //TODO: add error in this case
+         return;//should not happen !!!
+      }
+
+      if (customTracksDefinition != null) {
+         customTracksDefinition.remove(oldIdx);
+         final CustomTrackDefinition newCustTrackDef = new CustomTrackDefinition();
+         newCustTrackDef.setId(newIdx);
+         newCustTrackDef.setName(newSerie.getName());
+         newCustTrackDef.setUnit(newSerie.getUnit());
+         customTracksDefinition.put(newIdx, newCustTrackDef);
+      }
+
+      if (_customTracks != null) {
+         final float[] data = _customTracks.get(oldIdx);
+         _customTracks.remove(oldIdx);
+         _customTracks.put(newIdx, data);
+      }
+
+      if (_customTracks_UI != null) {
+         final float[] data = _customTracks_UI.get(oldIdx);
+         _customTracks_UI.remove(oldIdx);
+         _customTracks_UI.put(newIdx, data);
+      }
+      if (_customTracksStatistics != null) {
+         final CustomTrackStatisticEntry data = _customTracksStatistics.get(oldIdx);
+         _customTracksStatistics.remove(oldIdx);
+         _customTracksStatistics.put(newIdx, data);
+      }
    }
 
    /**

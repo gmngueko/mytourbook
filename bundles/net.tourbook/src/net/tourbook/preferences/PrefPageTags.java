@@ -43,6 +43,8 @@ import net.tourbook.data.TourTagCategory;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.tag.Dialog_TourTag;
 import net.tourbook.tag.Dialog_TourTag_Category;
+import net.tourbook.tag.Dialog_TourTag_Import;
+import net.tourbook.tag.Dialog_TourTag_Maintenance;
 import net.tourbook.tag.TVIPrefTag;
 import net.tourbook.tag.TVIPrefTagCategory;
 import net.tourbook.tag.TVIPrefTagRoot;
@@ -96,6 +98,8 @@ import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSourceEvent;
 import org.eclipse.swt.dnd.DragSourceListener;
 import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -161,6 +165,9 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    private Button             _btnReset;
 
    private ITourEventListener _tourEventListener;
+
+   private Button  _btnEditTagMaintenance;
+   private Button  _btnImportTags;
 
    private class Action_DeleteTag extends Action {
 
@@ -711,6 +718,36 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
          }
 
          {
+            // Button: edit tag maintenance
+
+            _btnEditTagMaintenance = new Button(container, SWT.NONE);
+            _btnEditTagMaintenance.setText(Messages.Action_Tag_EditMaintenance);
+            _btnEditTagMaintenance.setToolTipText(Messages.Action_Tag_EditMaintenance_Tooltip);
+            _btnEditTagMaintenance.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  onAction_Edit_TagMaintenance();
+               }
+            });
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnEditTagMaintenance);
+         }
+
+         {
+            // Button: import tags
+
+            _btnImportTags = new Button(container, SWT.NONE);
+            _btnImportTags.setToolTipText(Messages.Action_Tag_ImportTags_Tooltip);
+            _btnImportTags.setText(Messages.Action_Tag_ImportTags);
+            _btnImportTags.addSelectionListener(new SelectionAdapter() {
+               @Override
+               public void widgetSelected(final SelectionEvent e) {
+                  onAction_Import_TagsFromFile();
+               }
+            });
+            GridDataFactory.fillDefaults().grab(true, false).applyTo(_btnImportTags);
+         }
+
+         {
             // Button: Duplicate tag
 
             _btnDuplicateTag = new Button(container, SWT.NONE);
@@ -986,6 +1023,8 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
             _btnEditTagOrCategory.setText(Messages.Action_Tag_Edit);
             _btnEditTagOrCategory.setEnabled(true);
 
+            _btnEditTagMaintenance.setEnabled(true);
+
          } else if (isCategorySelected) {
 
             _btnEditTagOrCategory.setText(Messages.Action_TagCategory_EditCategory);
@@ -995,7 +1034,11 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       } else {
 
          _btnEditTagOrCategory.setEnabled(false);
+
+         _btnEditTagMaintenance.setEnabled(false);
       }
+
+      _btnImportTags.setEnabled(true);
 
       _btnReset.setEnabled(true);
       _tagViewer.getTree().setEnabled(true);
@@ -1133,6 +1176,45 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
    }
 
    /**
+    * Edit Maintenance for selected tag
+    */
+   private void onAction_Edit_TagMaintenance() {
+      final Object firstElement = _tagViewer.getStructuredSelection().getFirstElement();
+
+      String dlgMessage = UI.EMPTY_STRING;
+
+      if (firstElement instanceof TVIPrefTag) {
+
+         final TVIPrefTag tourTagItem = ((TVIPrefTag) firstElement);
+         final TourTag tourTag = tourTagItem.getTourTag();
+
+         dlgMessage = NLS.bind(Messages.Dialog_TourTag_MaintenanceTag_Message, tourTag.getTagName());
+
+         if (new Dialog_TourTag_Maintenance(getShell(), dlgMessage, tourTag).open() != Window.OK) {
+
+            setFocusToViewer();
+
+            return;
+         }
+
+         // update model
+         TourDatabase.saveEntity(tourTag, tourTag.getTagId(), TourTag.class);
+
+         // update UI
+         _tagViewer.update(tourTagItem, new String[] { SORT_PROPERTY });
+
+      } else {
+         return;
+      }
+
+      _isModified = true;
+
+      setFocusToViewer();
+
+      return;
+   }
+
+   /**
     * Edit selected tag/category
     */
    private void onAction_Edit_TagOrCategory() {
@@ -1189,6 +1271,65 @@ public class PrefPageTags extends PreferencePage implements IWorkbenchPreference
       _isModified = true;
 
       setFocusToViewer();
+   }
+
+   /**
+    * Edit Maintenance for selected tag
+    */
+   private void onAction_Import_TagsFromFile() {
+
+      String dlgMessage = UI.EMPTY_STRING;
+
+      dlgMessage = Messages.Dialog_TourTag_ImportTag_Message;
+      final ArrayList<TourTag> updatedTourTags = new ArrayList<>();
+      final ArrayList<TourTag> newTourTags = new ArrayList<>();
+      if (new Dialog_TourTag_Import(getShell(), dlgMessage, updatedTourTags, newTourTags).open() != Window.OK) {
+
+         setFocusToViewer();
+
+         return;
+      }
+
+      for (final TourTag tourTag : updatedTourTags) {
+         // update model
+         TourDatabase.saveEntity(tourTag, tourTag.getTagId(), TourTag.class);
+      }
+
+      for (final TourTag tourTag : newTourTags) {
+         final TVIPrefTag tagItem = new TVIPrefTag(_tagViewer, tourTag);
+
+         //this will be a root tag
+         tourTag.setRoot(true);
+
+         /*
+          * Update model
+          */
+         tagItem.setParentItem(_rootItem);
+         _rootItem.getFetchedChildren().add(tagItem);
+
+         // persist tag
+         final TourTag savedTag = TourDatabase.saveEntity(tourTag, TourDatabase.ENTITY_IS_NOT_SAVED, TourTag.class);
+
+         if (savedTag != null) {
+
+            // update item
+            tagItem.setTourTag(savedTag);
+
+            /*
+             * Update UI
+             */
+            _tagViewer.add(_rootItem, tagItem);
+         }
+      }
+
+      //Update UI
+      _tagViewer.refresh();
+
+      _isModified = true;
+
+      setFocusToViewer();
+
+      return;
    }
 
    private void onAction_NewCategory() {

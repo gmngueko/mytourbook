@@ -30,6 +30,7 @@ public class SubMenu_Weather extends SubMenu {
 
    private ActionAdjustTemperature        _action_AdjustTemperature;
    private ActionRetrieveWeatherData      _action_RetrieveWeatherData;
+   private ActionRetrieveWeatherOwmData   _action_RetrieveWeatherOwmData;
    private ActionComputeMinMaxTemperature _action_ComputeMinMaxTemperature;
    private SubMenu_SetWeatherConditions   _subMenu_SetWeatherConditions;
 
@@ -45,6 +46,7 @@ public class SubMenu_Weather extends SubMenu {
       _action_AdjustTemperature = new ActionAdjustTemperature(_tourProvider);
       _action_ComputeMinMaxTemperature = new ActionComputeMinMaxTemperature(_tourProvider);
       _action_RetrieveWeatherData = new ActionRetrieveWeatherData(_tourProvider);
+      _action_RetrieveWeatherOwmData = new ActionRetrieveWeatherOwmData(_tourProvider);
       _subMenu_SetWeatherConditions = new SubMenu_SetWeatherConditions(_tourProvider);
    }
 
@@ -57,10 +59,18 @@ public class SubMenu_Weather extends SubMenu {
       new ActionContributionItem(_action_AdjustTemperature).fill(menu, -1);
       new ActionContributionItem(_action_ComputeMinMaxTemperature).fill(menu, -1);
       new ActionContributionItem(_action_RetrieveWeatherData).fill(menu, -1);
+      new ActionContributionItem(_action_RetrieveWeatherOwmData).fill(menu, -1);
       new ActionContributionItem(_subMenu_SetWeatherConditions).fill(menu, -1);
    }
 
    public ActionRetrieveWeatherData getActionRetrieveWeatherData() {
       return _action_RetrieveWeatherData;
    }
+
+   public ActionRetrieveWeatherOwmData getActionRetrieveWeatherOwmData() {
+      return _action_RetrieveWeatherOwmData;
+   }
+
+
+
 }

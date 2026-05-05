@@ -15,6 +15,7 @@
  *******************************************************************************/
 package net.tourbook.importdata;
 
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -23,6 +24,7 @@ import javax.persistence.EntityTransaction;
 
 import net.tourbook.application.TourbookPlugin;
 import net.tourbook.common.util.StatusUtil;
+import net.tourbook.data.CustomField;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.database.TourDatabase;
 import net.tourbook.preferences.ITourbookPreferences;
@@ -112,6 +114,14 @@ public class ImportState_Process {
     * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all is
     * imported.
     */
+   private AtomicBoolean                           _isCreated_NewDataSerie        = new AtomicBoolean();
+
+   /**
+    * OUT state:
+    * <p>
+    * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all is
+    * imported.
+    */
    private AtomicBoolean                           _isCreated_NewTourType         = new AtomicBoolean();
 
    /**
@@ -120,6 +130,13 @@ public class ImportState_Process {
     * Device sensors which must be updated in the db, key is the sensor key
     */
    private ConcurrentHashMap<String, DeviceSensor> _allDeviceSensorToBeUpdated    = new ConcurrentHashMap<>();
+
+   /**
+    * OUT state:
+    * <p>
+    * CustomFields which must be updated in the db, key is the referenceId
+    */
+   private ConcurrentHashMap<String, CustomField>  _allCustomFieldToBeUpdated    = new ConcurrentHashMap<>();
 
    /**
     * IN and OUT states for the whole import/re-import process.
@@ -131,6 +148,10 @@ public class ImportState_Process {
       setIsLog_DEFAULT(true);
       setIsLog_INFO(true);
       setIsLog_OK(true);
+   }
+
+   public ConcurrentHashMap<String, CustomField> getAllCustomFieldsToBeUpdated() {
+      return _allCustomFieldToBeUpdated;
    }
 
    /**
@@ -148,6 +169,18 @@ public class ImportState_Process {
    public long getImportId() {
 
       return _importId;
+   }
+
+   /**
+    * OUT state:
+    * <p>
+    * When set to <code>true</code> then {@link #runPostProcess()} should be run AFTER all
+    * isimported.
+    *
+    * @return
+    */
+   public AtomicBoolean isCreated_NewDataSerie() {
+      return _isCreated_NewDataSerie;
    }
 
    /**
@@ -232,6 +265,15 @@ public class ImportState_Process {
       if (_isCreated_NewTag.get()) {
 
          TourManager.fireEvent(TourEventId.TAG_STRUCTURE_CHANGED);
+      }
+
+      if (_isCreated_NewDataSerie.get()) {
+
+         TourManager.fireEvent(TourEventId.DATASERIE_IS_MODIFIED);
+      }
+
+      if (_allCustomFieldToBeUpdated.size() > 0) {
+         updateCustomFields();
       }
    }
 
@@ -346,8 +388,40 @@ public class ImportState_Process {
          _isCreated_NewTag.set(true);
       }
 
-      if (importState_Process._isCreated_NewTourType.get()) {
+      if (importState_Process.isCreated_NewDataSerie().get()) {
+         _isCreated_NewDataSerie.set(true);
+      }
+
+      if (importState_Process.isCreated_NewTourType().get()) {
          _isCreated_NewTourType.set(true);
+      }
+   }
+
+   private void updateCustomFields() {
+
+      final EntityManager em = TourDatabase.getInstance().getEntityManager();
+      final EntityTransaction ts = em.getTransaction();
+
+      try {
+
+         for (final Entry<String, CustomField> entrySet : _allCustomFieldToBeUpdated.entrySet()) {
+
+            final CustomField customField = entrySet.getValue();
+
+            ts.begin();
+            {
+               em.merge(customField);
+            }
+            ts.commit();
+         }
+
+      } catch (final Exception e) {
+         StatusUtil.showStatus(e);
+      } finally {
+         if (ts.isActive()) {
+            ts.rollback();
+         }
+         em.close();
       }
    }
 

@@ -73,6 +73,14 @@ public class Messages extends NLS {
    public static String        Action_Tag_DeleteCategory;
    public static String        Action_Tag_Edit;
    public static String        Action_Tag_Edit_Tooltip;
+
+   //GMN START
+   public static String        Action_Tag_EditMaintenance;
+   public static String        Action_Tag_EditMaintenance_Tooltip;
+   public static String        Action_Tag_ImportTags;
+   public static String        Action_Tag_ImportTags_Tooltip;
+   //GMN END
+
    public static String        Action_Tag_ManageTagGroups;
    public static String        Action_Tag_PasteTags;
    public static String        Action_Tag_PasteTags_Tooltip;
@@ -937,6 +945,8 @@ public class Messages extends NLS {
    public static String        Dialog_ModifyTours_Button_UnlockMultipleToursSelection_Text;
    public static String        Dialog_ModifyTours_Checkbox_BatteryValues;
    public static String        Dialog_ModifyTours_Checkbox_CadenceValues;
+   public static String        Dialog_ModifyTours_Checkbox_CustomFieldsValues;
+   public static String        Dialog_ModifyTours_Checkbox_CustomTracksValues;
    public static String        Dialog_ModifyTours_Checkbox_Calories;
    public static String        Dialog_ModifyTours_Checkbox_ElevationValues;
    public static String        Dialog_ModifyTours_Checkbox_GearValues;
@@ -1001,6 +1011,34 @@ public class Messages extends NLS {
    public static String        Dialog_ResizeTourLocation_Title;
 
    public static String        Dialog_RetrieveWeather_Dialog_Title;
+
+   //GMN START
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_Title;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_Message;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelRadioChoose;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonPath2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelJsonOpenFile_ToolTip;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackName2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackId2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit1;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_LabelTrackUnit2;
+   public static String        Dialog_RetrieveCustomTracksJson_Dialog_NoJsonImport;
+
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_Title;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_Message;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelInterval;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidInterval;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelLatitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidLatitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_LabelLongitude;
+   public static String        Dialog_RetrieveWeatherOwm_Dialog_InvalidLongitude;
+   public static String        Dialog_RetrieveWeatherOwm_Label_WeatherDataNotRetrieved;
+   public static String        Dialog_RetrieveWeatherOwm_WeatherDataNotFound;
+   //GMN END
 
    public static String        Dialog_SaveTags_Dialog_Title;
    public static String        Dialog_SaveTags_Label_Info;
@@ -1087,6 +1125,48 @@ public class Messages extends NLS {
    public static String        Dialog_TourTag_Label_Notes;
    public static String        Dialog_TourTag_Label_TagName;
    public static String        Dialog_TourTag_Title;
+
+   //GMN START
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventAdd;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventComputeData;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventDelete;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventList;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventCost;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventDate;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventNotes;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventNumberOfTours;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventNumberOfToursDiff;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventMeterUsed;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventMeterUsedDifference;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventTimeUsed;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventTimeUsedDifference;
+   public static String        Dialog_TourTag_Label_TagMaintenance_EventSelected;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExtraHour;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExtraMonth;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExpectedLifeHours;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ExpectedLifeKilometers;
+   public static String        Dialog_TourTag_Label_TagMaintenance_Brand;
+   public static String        Dialog_TourTag_Label_TagMaintenance_Model;
+   public static String        Dialog_TourTag_Label_TagMaintenance_Type;
+   public static String        Dialog_TourTag_Label_TagMaintenance_Weight;
+   public static String        Dialog_TourTag_Label_TagMaintenance_PurchasePrice;
+   public static String        Dialog_TourTag_Label_TagMaintenance_PurchaseLocation;
+   public static String        Dialog_TourTag_Label_TagMaintenance_PurchaseDate;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ScheduleDistanceMeters;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ScheduleTimeSpanSeconds;
+   public static String        Dialog_TourTag_Label_TagMaintenance_ScheduleLifeMonths;
+   public static String        Dialog_TourTag_MaintenanceTag_Message;
+   public static String        Dialog_TourTag_MaintenanceTag_Title;
+
+   public static String        Dialog_TourTag_ImportTag_Message;
+   public static String        Dialog_TourTag_ImportTag_Title;
+   public static String        Dialog_TourTag_Label_ImportTag_FileName;
+   public static String        Dialog_TourTag_Label_ImportTag_FileInfo;
+   public static String        Dialog_TourTag_Label_ImportTag_ChoseFile;
+   public static String        Dialog_TourTag_Label_ImportTag_ChoseFile_Tooltip;
+   public static String        Dialog_TourTag_Label_ImportTag_CheckSaveNewTags;
+   public static String        Dialog_TourTag_Label_ImportTag_CheckSaveNewTags_Tooltip;
+   //GMN END
 
    public static String        Dlg_AdjustAltitude_Group_options;
    public static String        Dlg_AdjustAltitude_Label_end_altitude;
@@ -1509,6 +1589,11 @@ public class Messages extends NLS {
    public static String        Log_RetrieveWeatherData_002_End;
    public static String        Log_RetrieveWeatherData_003_NoWeatherData;
    public static String        Log_RetrieveWeatherData_010_NoGpsDataSeries;
+
+   //GMN START
+   public static String        Log_RetrieveOWMWeatherData_010_UsingDefaultGPS;
+   //GMN END
+
    public static String        Log_SaveTags_End;
    public static String        Log_SaveTags_Progress_AppendTags;
    public static String        Log_SaveTags_Progress_RemoveAllTags;
@@ -1634,6 +1719,11 @@ public class Messages extends NLS {
    public static String        merge_tour_source_graph_speed_tooltip;
    public static String        merge_tour_source_graph_temperature;
    public static String        merge_tour_source_graph_temperature_tooltip;
+
+   //GMN START
+   public static String        merge_tour_source_graph_customtracks;
+   public static String        merge_tour_source_graph_customtracks_tooltip;
+   //GMN END
 
    public static String        NT001_DialogExtractTour_InvalidTourData;
 
@@ -2214,6 +2304,11 @@ public class Messages extends NLS {
    public static String        Pref_Weather_Radio_WeatherDescription_Append;
    public static String        Pref_Weather_Radio_WeatherDescription_Replace;
 
+   //GMN START
+   public static String        Pref_WeatherOwm_Label_ApiKey;
+   public static String        Pref_WeatherOwm_Label_ApiKey_Tooltip;
+   public static String        Pref_WeatherOwm_Button_TestHTTPConnection;
+   //GMN END
    public static String        Pref_Workspace_Check_FixViewCloseButton;
    public static String        Pref_Workspace_Check_FixViewIconImage;
    public static String        Pref_Workspace_Label_FixViewCloseButton;
@@ -3267,6 +3362,7 @@ public class Messages extends NLS {
    public static String        Tour_Action_ComputeCadenceZonesTimes_Message;
    public static String        Tour_Action_ComputeCadenceZonesTimes_Title;
 
+   public static String        Tour_Action_Custom_Analysis;
    public static String        Tour_Action_Custom_Tracks;
    public static String        Tour_Action_Custom_Tracks_Tooltip_Prefix;
 
@@ -3322,6 +3418,12 @@ public class Messages extends NLS {
    public static String        Tour_Action_Radar_PassingSpeed_Absolute_Tooltip;
    public static String        Tour_Action_Radar_PassingSpeed_Relative_Tooltip;
    public static String        Tour_Action_RetrieveWeatherData;
+
+   //GMN START
+   public static String Tour_Action_RetrieveWeatherOwmData;
+   public static String Tour_Action_RetrieveCustomTracksJsonData;
+   //GMN END
+
    public static String        Tour_Action_RunDyn_StanceTimeBalance_Tooltip;
    public static String        Tour_Action_RunDyn_StanceTime_Tooltip;
    public static String        Tour_Action_RunDyn_StepLength_Tooltip;
@@ -3354,6 +3456,7 @@ public class Messages extends NLS {
    public static String        Tour_Action_ValuePointToolTip_IsVisible;
    public static String        Tour_Action_Weather;
 
+
    public static String        Tour_Blog_Action_EditMarker_Tooltip;
    public static String        Tour_Blog_Action_EditTour_Tooltip;
    public static String        Tour_Blog_Action_HideMarker_Tooltip;
@@ -3376,6 +3479,27 @@ public class Messages extends NLS {
    public static String        Tour_Book_Action_delete_selected_tours_dlg_title_confirm;
    public static String        Tour_Book_Action_delete_selected_tours_menu;
    public static String        Tour_Book_Action_ExportViewCSV_Tooltip;
+
+   //GMN START
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Title;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Message;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_AddTours;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_StartDate;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_EndDate;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_DownLoadDays_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SplitDays_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptResult;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_SelectFolder_ToolTip;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathDayActivities;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_Label_ScriptPathSplitDay;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_Selected;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourDescription;
+   public static String Tour_Book_Action_DownLoadGarmin_Dialog_ListHeader_TourPerson;
+   //GMN END
+
    public static String        Tour_Book_Action_GoToLastTour_Tooltip2;
    public static String        Tour_Book_Action_ToggleViewLayout_Tooltip;
    public static String        Tour_Book_Combo_statistic_tooltip;
@@ -3436,6 +3560,11 @@ public class Messages extends NLS {
    public static String        tour_database_version_info_message;
    public static String        tour_database_version_info_title;
 
+   //GMN START
+   public static String        Tour_Database_UpdateInfo_TourTag_ExtraData;
+   public static String        Tour_Database_UpdateInfo_TourTag_ExtraData_Exception;
+   //GMN END
+
    public static String        tour_data_label_device_marker;
    public static String        tour_data_label_feature_since_version_9_01;
    public static String        tour_data_label_manually_created_tour;
@@ -3452,6 +3581,8 @@ public class Messages extends NLS {
    public static String        Tour_Data_Text_BatteryValues;
    public static String        Tour_Data_Text_CadenceValues;
    public static String        Tour_Data_Text_Calories;
+   public static String Tour_Data_Text_CustomFields;
+   public static String Tour_Data_Text_CustomTracks;
    public static String        Tour_Data_Text_EntireTour;
    public static String        Tour_Data_Text_GearValues;
    public static String        Tour_Data_Text_ImportFileLocation;
@@ -3618,7 +3749,9 @@ public class Messages extends NLS {
    public static String        Tour_Editor_Link_RemoveTimeZone_Tooltip;
    public static String        Tour_Editor_Link_RetrieveWeather;
 
+   //GMN START
    public static String        Tour_Editor_No_Custom_Track_Data_Tooltip;
+   //GMN END
 
    public static String        Tour_Editor_Link_RetrieveWeatherAndAppend_Tooltip;
    public static String        Tour_Editor_Link_RetrieveWeatherAndReplace_Tooltip;
@@ -3630,7 +3763,11 @@ public class Messages extends NLS {
    public static String        tour_editor_message_show_another_tour;
    public static String        Tour_Editor_NoSwimData;
    public static String        tour_editor_section_characteristics;
+
+   //GMN START
    public static String        tour_editor_section_custom_tracks;
+   //GMN END
+
    public static String        tour_editor_section_date_time;
    public static String        tour_editor_section_personal;
    public static String        tour_editor_section_tour;

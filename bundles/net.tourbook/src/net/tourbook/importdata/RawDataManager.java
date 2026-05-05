@@ -61,6 +61,10 @@ import net.tourbook.common.util.StringUtils;
 import net.tourbook.common.util.Util;
 import net.tourbook.common.weather.IWeather;
 import net.tourbook.common.widgets.ComboEnumEntry;
+import net.tourbook.data.CustomField;
+import net.tourbook.data.CustomFieldType;
+import net.tourbook.data.CustomFieldValue;
+import net.tourbook.data.DataSerie;
 import net.tourbook.data.DeviceSensor;
 import net.tourbook.data.DeviceSensorImport;
 import net.tourbook.data.TourData;
@@ -242,6 +246,12 @@ public class RawDataManager {
    private static final ConcurrentHashMap<String, TourTag>      _allImported_NewTourTags                 = new ConcurrentHashMap<>();
 
    /**
+    * Contains {@link DataSerie}'s which are imported and could be saved or not, key is the
+    * DataSerie RefId
+    */
+   private static final ConcurrentHashMap<String, DataSerie>    _allImported_NewDataSeries               = new ConcurrentHashMap<>();
+
+   /**
     * Contains {@link TourTag}'s which are imported and could be saved or not, key is the tour tag
     * name + contained id in notes, all is in UPPERCASE
     */
@@ -253,6 +263,12 @@ public class RawDataManager {
     * {@link DeviceSensor#createSensorKey(Integer, String, Integer, String, String, Short)}
     */
    private static final ConcurrentHashMap<String, DeviceSensor> _allImported_NewDeviceSensors            = new ConcurrentHashMap<>();
+
+   /**
+    * Contains {@link CustomField}'s which are imported and could be saved or not, key is the
+    * referenceId
+    */
+   private static final ConcurrentHashMap<String, CustomField>  _allImported_NewCustomfields             = new ConcurrentHashMap<>();
 
    //
    /**
@@ -354,6 +370,7 @@ public class RawDataManager {
       TOUR__CALORIES, //
       TOUR__IMPORT_FILE_LOCATION, //
       TOUR__MARKER, //
+      TOUR__CUSTOM_FIELDS, //
       TOUR__WEATHER, //
 
       TIME_SLICES__BATTERY, //
@@ -369,9 +386,119 @@ public class RawDataManager {
       TIME_SLICES__TRAINING, //
       TIME_SLICES__TIME, //
       TIME_SLICES__TIMER_PAUSES, //
+      TIME_SLICES__CUSTOM_TRACKS //
    }
 
    private RawDataManager() {}
+
+   /**
+    * SYNCHRONIZED: Create new CustomField and keep it in {@link #_allImported_NewCustomfields}
+    * or uses an already created CustomField
+    *
+    * @param fieldName
+    * @param referenceID
+    * @param unit
+    * @param fieldType
+    * @param description
+    * @return Returns the new CustomField
+    */
+   public static synchronized CustomField createCustomField(final String fieldName,
+                                                              final String referenceID,
+                                                              final String unit,
+                                                            final CustomFieldType fieldType,
+                                                              final String description) {
+
+      final String refID = referenceID;
+
+      /*
+       * Check imported CustomField
+       */
+      final CustomField importedCustomField = _allImported_NewCustomfields.get(refID);
+      if (importedCustomField != null) {
+         return importedCustomField;
+      }
+
+      /*
+       * Check if CustomField is still unavailable in the database
+       */
+      final CustomField customField = TourDatabase.getAllCustomFields_ByRefId().get(refID);
+      if (customField != null) {
+         return customField;
+      }
+
+      /*
+       * CustomField is for sure not available -> create it now
+       */
+      final CustomField newCustomField = new CustomField(
+
+            fieldName,
+
+            unit,
+            referenceID,
+
+            fieldType,
+            description);
+
+      _allImported_NewCustomfields.put(refID, newCustomField);
+
+      return newCustomField;
+   }
+
+   /**
+    * SYNCHRONIZED: Add new tour tags and save them in the database
+    *
+    * @param allRequestedDataSeries
+    *           Contains DataSeries which should be created
+    * @param allNewDataseries
+    * @param allOldDataSeries
+    */
+   private static synchronized void createDataSeries(final HashSet<DataSerie> allRequestedDataSeries,
+                                                   final ArrayList<DataSerie> allNewDataseries,
+                                                   final ArrayList<DataSerie> allOldDataSeries) {
+
+      /*
+       * Check dataSeries again if they are still unavailable
+       */
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = TourDatabase.getAllDataSeries_ByRefId();
+      final HashSet<DataSerie> allDataSeriesRefId_NotAvailable = new HashSet<>();
+
+      for (final DataSerie dataSerieRefId : allRequestedDataSeries) {
+
+         final String dataSerieRefIdKey = dataSerieRefId.getRefId();
+
+         DataSerie dataSerie = allDbDataSeries_ByRefId.get(dataSerieRefIdKey);
+
+         if (dataSerie == null) {
+
+            dataSerie = _allImported_NewDataSeries.get(dataSerieRefIdKey);
+
+            if (dataSerie == null) {
+
+               allDataSeriesRefId_NotAvailable.add(dataSerieRefId);
+
+            } else {
+
+               allOldDataSeries.add(dataSerie);
+            }
+
+         } else {
+
+            allOldDataSeries.add(dataSerie);
+         }
+      }
+
+      /*
+       * Create dataSeries
+       */
+      for (final DataSerie dataSerie : allDataSeriesRefId_NotAvailable) {
+
+         final DataSerie newdataSerie = dataSerie.cloneNoSerieId();
+
+         allNewDataseries.add(newdataSerie);
+
+         _allImported_NewDataSeries.put(dataSerie.getRefId(), newdataSerie);
+      }
+   }
 
    private static void createDeviceLists() {
 
@@ -744,6 +871,22 @@ public class RawDataManager {
                newTourData.getTourMarkers().size() + UI.SPACE1 + OtherMessages.COLUMN_FACTORY_CATEGORY_MARKER);
       }
 
+      if (isEntireTour || tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+
+         previousData.add(
+               oldTourData.getCustomFieldValues().size() + UI.SPACE1 + OtherMessages.COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS);
+         newData.add(
+               newTourData.getCustomFieldValues().size() + UI.SPACE1 + OtherMessages.COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS);
+      }
+
+      if (isEntireTour || tourValueType == TourValueType.TIME_SLICES__CUSTOM_TRACKS) {
+
+         previousData.add(
+               oldTourData.getDataSeries().size() + UI.SPACE1 + OtherMessages.COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS);
+         newData.add(
+               newTourData.getDataSeries().size() + UI.SPACE1 + OtherMessages.COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS);
+      }
+
       if (isEntireTour || tourValueType == TourValueType.TOUR__IMPORT_FILE_LOCATION) {
 
          previousData.add(oldTourData.getImportFilePathName());
@@ -1034,6 +1177,70 @@ public class RawDataManager {
       } catch (final IOException e) {
          e.printStackTrace();
       }
+   }
+
+   /**
+    * Sets {@link DataSerie} 's into {@link TourData} and create new tour DataSeries when not
+    * available by
+    * comparing the DataSerie refId
+    *
+    * @param tourData
+    * @param allRequestedDataSeries
+    * @return Returns <code>true</code> when new tour DataSeries were created
+    */
+   public static boolean setDataSeries(final TourData tourData, final Set<DataSerie> allRequestedDataSeries) {
+
+      final HashMap<String, DataSerie> allDataSeries_Available = new HashMap<>();
+      final HashSet<DataSerie> allDataSeries_NotAvailable = new HashSet<>();
+
+      final HashMap<String, DataSerie> allDbDataSeries_ByRefId = TourDatabase.getAllDataSeries_ByRefId();
+
+      for (final DataSerie dataSerie : allRequestedDataSeries) {
+
+         final String refIdKey = dataSerie.getRefId();
+
+         DataSerie existingDataSerie = allDbDataSeries_ByRefId.get(refIdKey);
+
+         if (existingDataSerie == null) {
+
+            existingDataSerie = _allImported_NewDataSeries.get(refIdKey);
+
+            if (existingDataSerie == null) {
+
+               allDataSeries_NotAvailable.add(dataSerie);
+
+            } else {
+
+               allDataSeries_Available.put(refIdKey, existingDataSerie);
+            }
+
+         } else {
+
+            allDataSeries_Available.put(refIdKey, existingDataSerie);
+         }
+      }
+
+      final ArrayList<DataSerie> allNewDataSeries = new ArrayList<>();
+      final ArrayList<DataSerie> allOldDataSeries = new ArrayList<>();
+
+      if (allDataSeries_NotAvailable.size() > 0) {
+
+         // some DataSeries are not available -> create them
+
+         createDataSeries(allDataSeries_NotAvailable, allNewDataSeries, allOldDataSeries);
+      }
+
+      /*
+       * Set tags into tour data
+       */
+      final Set<DataSerie> tourData_DataSeries = tourData.getDataSeries();
+
+      tourData_DataSeries.clear();
+      tourData_DataSeries.addAll(allDataSeries_Available.values());
+      tourData_DataSeries.addAll(allOldDataSeries);
+      tourData_DataSeries.addAll(allNewDataSeries);
+
+      return allNewDataSeries.size() > 0;
    }
 
    public static void setIsDeleteValuesActive(final boolean isDeleteValuesActive) {
@@ -1614,6 +1821,11 @@ public class RawDataManager {
                tourDataDummyClone.setTourMarkers(new HashSet<>(oldTourData.getTourMarkers()));
             }
 
+            if (isEntireTour || tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+
+               tourDataDummyClone.setCustomFieldValues(new HashSet<>(oldTourData.getCustomFieldValues()));
+            }
+
             if (isEntireTour || tourValueType == TourValueType.TOUR__CALORIES) {
 
                tourDataDummyClone.setCalories(oldTourData.getCalories());
@@ -1754,6 +1966,16 @@ public class RawDataManager {
          // Running Dynamics
          if (isAllTimeSlices || tourValueType == TourValueType.TIME_SLICES__RUNNING_DYNAMICS) {
             dataToModifyDetails.add(Messages.Tour_Data_Text_RunningDynamicsValues);
+         }
+
+         // Custom Tracks
+         if (isAllTimeSlices || tourValueType == TourValueType.TIME_SLICES__CUSTOM_TRACKS) {
+            dataToModifyDetails.add(Messages.Tour_Data_Text_CustomTracks);
+         }
+
+         // Tour Custom Fields
+         if (tourValueType == TourValueType.TOUR__CUSTOM_FIELDS) {
+            dataToModifyDetails.add(Messages.Tour_Data_Text_CustomFields);
          }
 
          // Swimming
@@ -2090,6 +2312,13 @@ public class RawDataManager {
                tourData.setTourMarkers(new HashSet<>());
                break;
 
+            case TOUR__CUSTOM_FIELDS:
+
+               clonedTourData.setCustomFieldValues(new HashSet<>(tourData.getCustomFieldValues()));
+
+               tourData.setCustomFieldValues(new HashSet<>());
+               break;
+
             case ALL_TIME_SLICES:
             case ENTIRE_TOUR:
             default:
@@ -2242,6 +2471,13 @@ public class RawDataManager {
       default:
          return ReplaceImportFilenameAction.DO_NOTHING;
       }
+   }
+
+   /** Martial customization
+    * @return boolean telling if TourId should be created with time or not
+    */
+   public boolean getState_CreateTourIdWithTime() {
+      return _importState_IsCreateTourIdWithTime;
    }
 
    /**
@@ -3425,6 +3661,13 @@ public class RawDataManager {
 
       if (importState_File.isFileImportedWithValidData) {
 
+         //Martial start
+         Set<CustomFieldValue> oldCustomFieldValues = null;
+         if (tourValueTypes.get(0) == TourValueType.ENTIRE_TOUR || tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
+            oldCustomFieldValues = new HashSet<>(oldTourData.getCustomFieldValues());
+         }
+         //Martial end
+
          /*
           * Tour(s) could be re-imported from the file, check if it contains a valid tour
           */
@@ -3467,7 +3710,9 @@ public class RawDataManager {
                 * Save tour but don't fire a change event because the tour editor would set the tour
                 * to dirty
                 */
-               final TourData savedTourData = TourDatabase.saveTour_Concurrent(updatedTourData, true);
+               //Martial change below to account to custom field change, so must always align with original function
+               //final TourData savedTourData = TourDatabase.saveTour_Concurrent(updatedTourData, true);
+               final TourData savedTourData = TourDatabase.saveTour_Concurrent_CleanOld(updatedTourData, oldCustomFieldValues, true);
 
                // keep transient values
                final boolean[] interpolatedValueSerie = updatedTourData.interpolatedValueSerie;
@@ -3622,6 +3867,7 @@ public class RawDataManager {
          } else {
 
             if (tourValueTypes.contains(TourValueType.ALL_TIME_SLICES)
+                  || tourValueTypes.contains(TourValueType.TIME_SLICES__CUSTOM_TRACKS)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__BATTERY)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__CADENCE)
                   || tourValueTypes.contains(TourValueType.TIME_SLICES__ELEVATION)
@@ -3648,6 +3894,10 @@ public class RawDataManager {
             if (tourValueTypes.contains(TourValueType.TOUR__MARKER)) {
 
                oldTourData.setTourMarkers(reimportedTourData.getTourMarkers());
+            }
+
+            if (tourValueTypes.contains(TourValueType.TOUR__CUSTOM_FIELDS)) {
+               oldTourData.setCustomFieldValues(reimportedTourData.getCustomFieldValues());
             }
 
             if (tourValueTypes.contains(TourValueType.TOUR__IMPORT_FILE_LOCATION)) {
@@ -3820,6 +4070,13 @@ public class RawDataManager {
          }
       }
 
+      // Custom Tracks
+      if (isAllTimeSlices || allTourValueTypes.contains(TourValueType.TIME_SLICES__CUSTOM_TRACKS)) {
+         // re-import only custom tracks
+         oldTourData.customTracksDefinition = reimportedTourData.customTracksDefinition;
+         oldTourData.setCustomTracks(reimportedTourData.getCustomTracks());
+         oldTourData.setDataSeries(reimportedTourData.getDataSeries());
+      }
 // SET_FORMATTING_OFF
 
       // Radar
@@ -3953,6 +4210,9 @@ public class RawDataManager {
       _allImported_NewTourTags.clear();
       _allImported_NewTourTags_WithContainedId.clear();
       _allImported_NewTourTypes.clear();
+
+      _allImported_NewDataSeries.clear();
+      _allImported_NewCustomfields.clear();
 
       _allImported_NewDeviceSensors.clear();
    }

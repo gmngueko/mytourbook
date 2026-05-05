@@ -97,6 +97,8 @@ public class Images {
 
    public static final String GeoCompare_PinComparedTour           = "geo-compare-pin-compared-tour.svg";           //$NON-NLS-1$
    public static final String GeoCompare_SelectComparedTour        = "geo-compare-select-compared-tour.svg";        //$NON-NLS-1$
+   public static final String Custom_Field_16                      = "custom-field-16.png";                         //$NON-NLS-1$
+   public static final String Custom_Field_16_Disabled             = "custom-field-16-disabled.png";                //$NON-NLS-1$
 
    public static final String Graph                                = "graph.svg";                                   //$NON-NLS-1$
    public static final String GraphMinMax                          = "graph-min-max.svg";                           //$NON-NLS-1$

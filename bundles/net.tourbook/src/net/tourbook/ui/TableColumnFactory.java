@@ -82,7 +82,26 @@ public abstract class TableColumnFactory {
    public static final TableColumnFactory BODY_WEIGHT;
    public static final String             BODY_WEIGHT_ID                                     = "BODY_WEIGHT";                                     //$NON-NLS-1$
 
+   public static final TableColumnFactory CUSTOM_FIELDS_AVERAGE;
+   public static final TableColumnFactory CUSTOM_FIELDS_ID;
+   public static final TableColumnFactory CUSTOM_FIELDS_INDEX;
+   public static final TableColumnFactory CUSTOM_FIELDS_MAX;
+   public static final TableColumnFactory CUSTOM_FIELDS_MIN;
+   public static final TableColumnFactory CUSTOM_FIELDS_NAME;
+   public static final TableColumnFactory CUSTOM_FIELDS_SUM;
+   public static final TableColumnFactory CUSTOM_FIELDS_TOURS_COUNT;
+   public static final TableColumnFactory CUSTOM_FIELDS_TOURS_COUNT_NULL;
+   public static final TableColumnFactory CUSTOM_FIELDS_TYPE;
+   public static final TableColumnFactory CUSTOM_FIELDS_UNIT;
+   public static final TableColumnFactory CUSTOM_FIELDS_VALUE;
+   public static final TableColumnFactory CUSTOM_TRACKS_COUNT_TOURS;
+   public static final TableColumnFactory CUSTOM_TRACKS_ID;
+   public static final TableColumnFactory CUSTOM_TRACKS_INDEX;
+   public static final TableColumnFactory CUSTOM_TRACKS_LAP_ISACTIVE;
+   public static final TableColumnFactory CUSTOM_TRACKS_NAME;
+   public static final TableColumnFactory CUSTOM_TRACKS_SIZE;
    public static final TableColumnFactory CUSTOM_TRACKS_TIME_SLICES;
+   public static final TableColumnFactory CUSTOM_TRACKS_UNIT;
 
    public static final TableColumnFactory DATA_DP_TOLERANCE;
    public static final String             DATA_DP_TOLERANCE_ID                               = "DATA_DP_TOLERANCE";                               //$NON-NLS-1$
@@ -5591,6 +5610,422 @@ public abstract class TableColumnFactory {
          }
       };
 
+      CUSTOM_TRACKS_COUNT_TOURS = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_COUNT_TOURS", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Tours Count"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Tours Count"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Number of Tours containing this DataSerie/custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+
+      CUSTOM_TRACKS_ID = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_ID", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Id"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Id"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Id (unique) of the custom track in the tour"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_INDEX = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_INDEX", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Index"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_LAP_ISACTIVE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_LAP_ISACTIVE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Is Active"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Is Active"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Is Lap Active according to detection settings"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_NAME = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_NAME", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Name of the custom track in the tour"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(8));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_TRACKS_SIZE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_SIZE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Size"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Size"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Size/Number of entries(points) in the custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_AVERAGE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_AVERAGE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Avg"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Average"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Average value of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_VALUE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_VALUE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Value"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Value"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Value of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_TYPE = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_TYPE", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Type"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Type"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Type of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_TOURS_COUNT = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_TOURS_COUNT", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "#Tours"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Tours Count"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Number Of Tours of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(4));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_TOURS_COUNT_NULL = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_TOURS_COUNT_NULL", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "#Tours(Null)"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Tours Count Null"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Number Of Tours with no entries of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(4));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_NAME = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_NAME", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Name"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Name of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_MAX = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_MAX", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Max"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Max"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Maximum value of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_MIN = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_MIN", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Min"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Min"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Minimum value of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_SUM = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_SUM", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Sum"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Sum"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Sum of the value of the custom field serie"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_UNIT = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_UNIT", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Unit of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_ID = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_ID", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "RefId"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "RefId"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "ReferenceId of the custom field"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(6));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+      CUSTOM_FIELDS_INDEX = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_FIELDS_INDEX", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Fields);
+
+            colDef.setColumnLabel(              "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "#"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Row number in the table"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(4));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
+
 
       CUSTOM_TRACKS_TIME_SLICES = new TableColumnFactory() {
          @Override
@@ -5626,6 +6061,30 @@ public abstract class TableColumnFactory {
             return colDef;
          }
       };
+
+      CUSTOM_TRACKS_UNIT = new TableColumnFactory() {
+
+         @Override
+         public TableColumnDefinition createColumn(final ColumnManager columnManager,
+                                                   final PixelConverter pixelConverter) {
+
+            final int pixelWidth = pixelConverter.convertWidthInCharsToPixels(30);
+
+            final TableColumnDefinition colDef = new TableColumnDefinition(columnManager, "CUSTOM_TRACKS_UNIT", SWT.LEAD); //$NON-NLS-1$
+
+            colDef.setColumnCategory(           Messages.ColumnFactory_Category_Custom_Tracks);
+
+            colDef.setColumnLabel(              "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderText(         "Unit"); //$NON-NLS-1$
+            colDef.setColumnHeaderToolTipText(  "Unit of the custom track"); //$NON-NLS-1$
+
+            colDef.setDefaultColumnWidth(pixelConverter.convertWidthInCharsToPixels(4));
+            colDef.setColumnWeightData(new ColumnPixelData(pixelWidth, true));
+
+            return colDef;
+         }
+      };
+
    }
 
 

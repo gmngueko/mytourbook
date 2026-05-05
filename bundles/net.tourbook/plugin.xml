@@ -680,6 +680,20 @@
                   label       ="%View_Name_AllTourMarkers"
                   mnemonic    ="%View_Name_AllTourMarkers_Mnemonic"/>
 
+            <!-- CustomTracksAll -->
+            <command
+	           commandId   ="command.net.tourbook.views.AllCustomTracksView"
+	           icon        ="icons/graph-custom-tracks.png"
+	           label       ="%View_Name_CustomTracksAll"
+               mnemonic    ="%View_Name_CustomTracksAll_Mnemonic"/>
+
+            <!-- CustomFieldsAll -->
+            <command
+	           commandId   ="command.net.tourbook.views.AllCustomFieldsView"
+	           icon        ="icons/custom-field-16.png"
+	           label       ="%View_Name_CustomFieldsAll"
+               mnemonic    ="%View_Name_CustomFieldsAll_Mnemonic"/>
+
                <!-- All Tour Locations -->
                <command
                   commandId   ="command.net.tourbook.tour.location.TourLocationView"
@@ -791,6 +805,20 @@
             icon        ="icons/tour-waypoint.svg"
             label       ="%View_Name_Waypoint"
             mnemonic    ="%View_Name_Waypoint_Mnemonic"/>
+
+         <!-- CustomTracks -->
+         <command
+            commandId   ="command.net.tourbook.views.TourCustomTracksView"
+            icon        ="icons/graph-custom-tracks.png"
+            label       ="%View_Name_CustomTracks"
+            mnemonic    ="%View_Name_CustomTracks_Mnemonic"/>
+
+         <!-- CustomFields -->
+         <command
+            commandId   ="command.net.tourbook.views.TourCustomFieldsView"
+            icon        ="icons/custom-field-16.png"
+            label       ="%View_Name_CustomFields"
+            mnemonic    ="%View_Name_CustomFields_Mnemonic"/>
 
          <!-- Tour Data -->
          <command
@@ -1384,6 +1412,26 @@
          defaultHandler ="net.tourbook.ui.views.ActionHandler_OpenView_TourNutrition"/>
 
       <command
+            defaultHandler="net.tourbook.ui.views.tourCustomTracks.ActionHandler_OpenView_CustomTracks"
+            id="command.net.tourbook.views.TourCustomTracksView"
+            name="%View_Name_CustomTracks"/>
+
+      <command
+            defaultHandler="net.tourbook.ui.views.tourCustomFields.ActionHandler_OpenView_CustomFields"
+            id="command.net.tourbook.views.TourCustomFieldsView"
+            name="%View_Name_CustomFields"/>
+
+      <command
+            defaultHandler="net.tourbook.ui.views.tourCustomTracks.ActionHandler_OpenView_AllCustomTracks"
+            id="command.net.tourbook.views.AllCustomTracksView"
+            name="%View_Name_CustomTracksAll"/>
+
+      <command
+            defaultHandler="net.tourbook.ui.views.tourCustomFields.ActionHandler_OpenView_AllCustomFields"
+            id="command.net.tourbook.views.AllCustomFieldsView"
+            name="%View_Name_CustomFieldsAll"/>
+
+      <command
          id             ="command.net.tourbook.views.HeartRateVariabilityChart"
          name           ="%View_Name_HeartRateVariabilityChart"
          defaultHandler ="net.tourbook.ui.views.heartRateVariability.ActionHandler_OpenView_HeartRateVariability"/>
@@ -1698,6 +1746,20 @@
             name        ="%View_Name_AllTourMarkers"/>
 
          <view
+               category="net.tourbook.category.Tour_Directory"
+               id="net.tourbook.views.AllCustomTracksView"
+               class="net.tourbook.ui.views.tourCustomTracks.AllCustomTracksView"
+               icon="icons/graph-custom-tracks.png"
+               name="%View_Name_CustomTracksAll"/>
+
+         <view
+               category="net.tourbook.category.Tour_Directory"
+               id="net.tourbook.views.AllCustomFieldsView"
+               class="net.tourbook.ui.views.tourCustomFields.AllCustomFieldsView"
+               icon="icons/custom-field-16.png"
+               name="%View_Name_CustomFieldsAll"/>
+
+		 <view
             category    ="net.tourbook.category.Tour_Directory"
             id          ="net.tourbook.tour.location.TourLocationView"
             class       ="net.tourbook.tour.location.TourLocationView"
@@ -1745,6 +1807,20 @@
              class      ="net.tourbook.ui.views.tourMarker.TourMarkerView"
              icon       ="icons/tour-marker.svg"
              name       ="%view_name_Marker"/>
+
+         <view
+               category="net.tourbook.category.Tour_Properties"
+               class="net.tourbook.ui.views.tourCustomTracks.TourCustomTracksView"
+               icon="icons/graph-custom-tracks.png"
+               id="net.tourbook.views.TourCustomTracksView"
+               name="%View_Name_CustomTracks"/>
+
+         <view
+               category="net.tourbook.category.Tour_Properties"
+               class="net.tourbook.ui.views.tourCustomFields.TourCustomFieldsView"
+               icon="icons/custom-field-16.png"
+               id="net.tourbook.views.TourCustomFieldsView"
+               name="%View_Name_CustomFields"/>
 
          <view
             category    ="net.tourbook.category.Tour_Properties"

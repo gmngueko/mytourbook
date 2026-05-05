@@ -25,6 +25,10 @@
       <class>net.tourbook.data.TourTagCategory</class>
       <class>net.tourbook.data.TourType</class>
       <class>net.tourbook.data.TourWayPoint</class>
+      
+      <class>net.tourbook.data.DataSerie</class>
+      <class>net.tourbook.data.CustomField</class>
+      <class>net.tourbook.data.CustomFieldValue</class>
 
       <properties>
          <property name="hibernate.connection.url" value="jdbc:derby://localhost:1527/tourbook;create=true"/>

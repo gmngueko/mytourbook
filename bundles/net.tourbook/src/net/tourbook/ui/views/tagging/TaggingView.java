@@ -246,6 +246,7 @@ public class TaggingView extends ViewPart implements
    private Action_DeleteTagCategory            _actionDeleteTagCategory;
    private ActionEditQuick                     _actionEditQuick;
    private ActionEditTag                       _actionEditTag;
+   private ActionEditTagMaintenance            _actionEditTagMaintenance;                                                //GMN
    private ActionEditTour                      _actionEditTour;
    private ActionExpandSelection               _actionExpandSelection;
    private ActionExport                        _actionExportTour;
@@ -755,6 +756,8 @@ public class TaggingView extends ViewPart implements
             _tagMenuManager         .getAllTagActions()        .keySet(),
             _equipmentMenuManager   .getAllEquipmentActions()  .keySet()
       );
+
+      _actionEditTagMaintenance = new ActionEditTagMaintenance(this);//GMN
 
       _action_RefreshView = new ActionRefreshView(this);
       _action_ToggleTagFilter = new Action_TagFilter();
@@ -1909,6 +1912,11 @@ public class TaggingView extends ViewPart implements
       _actionEditTag.editTag(viewerCellData);
    }
 
+   void editTagMaintenance(final Object viewerCellData) {
+
+      _actionEditTagMaintenance.editTag(viewerCellData);
+   }
+
    private void enableActions(final boolean isIterateTours) {
 
       final StructuredSelection selection = (StructuredSelection) _tagViewer.getSelection();
@@ -1990,17 +1998,24 @@ public class TaggingView extends ViewPart implements
             _actionEditTag.setText(Messages.Action_Tag_Edit);
             _actionEditTag.setEnabled(true);
 
+            _actionEditTagMaintenance.setText(Messages.Action_Tag_EditMaintenance);
+            _actionEditTagMaintenance.setEnabled(true);
+
          } else if (isCategorySelected) {
 
             _actionEditTag.setText(Messages.Action_TagCategory_Edit);
             _actionEditTag.setEnabled(true);
 
+            _actionEditTagMaintenance.setEnabled(false);
+
          } else {
             _actionEditTag.setEnabled(false);
+            _actionEditTagMaintenance.setEnabled(false);
          }
 
       } else {
          _actionEditTag.setEnabled(false);
+         _actionEditTagMaintenance.setEnabled(false);
       }
 
       /*
@@ -2064,6 +2079,7 @@ public class TaggingView extends ViewPart implements
       // customize tags in the view
       menuMgr.add(new Separator());
       menuMgr.add(_actionEditTag);
+      menuMgr.add(_actionEditTagMaintenance);//GMN
       menuMgr.add(_actionSetTagStructure);
       menuMgr.add(_actionSetTagStructure_All);
       menuMgr.add(_actionOpenTagPrefs);

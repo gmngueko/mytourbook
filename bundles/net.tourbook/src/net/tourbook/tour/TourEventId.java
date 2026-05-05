@@ -93,6 +93,17 @@ public enum TourEventId {
    TAG_STRUCTURE_CHANGED,
 
    /**
+    * dataserie modified, this includes add/remove of dataseries
+    */
+   DATASERIE_IS_MODIFIED,
+
+   /**
+    * customFields modified, this includes add/remove of customFields
+    */
+   CUSTOMFIELDS_IS_MODIFIED,
+
+   /**
+    * Tag content has changed, e.g. tag image size
     * Equipment or tag content has changed, e.g. tag image size
     */
    CONTENT_LAYOUT_CHANGED,

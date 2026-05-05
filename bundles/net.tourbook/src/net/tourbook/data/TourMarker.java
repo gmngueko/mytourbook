@@ -321,6 +321,13 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
    @Transient
    private IntObjectHashMap<java.awt.Point> _worldPixelPositions;
 
+   /**
+    * Tour index in {@link TourData} when tour is {@link TourData#isMultipleTours}.
+    * index of the Tour to which belongs this marker when tour is {@link TourData#isMultipleTours}.
+    */
+   @Transient
+   private int       _multiTourIndex      = -1;
+
    public TourMarker() {}
 
    /**
@@ -605,6 +612,10 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
    public long getMarkerType() {
 
       return markerType;
+   }
+
+   public int getMultiTourIndex() {
+      return _multiTourIndex;
    }
 
    public int getMultiTourSerieIndex() {
@@ -977,6 +988,10 @@ public class TourMarker implements Cloneable, Comparable<Object>, IXmlSerializab
 
    public void setMarkerVisible(final boolean isMarkerVisible) {
       this.isMarkerVisible = isMarkerVisible ? 1 : 0;
+   }
+
+   public void setMultiTourIndex(final int multiTourIndex) {
+      _multiTourIndex = multiTourIndex;
    }
 
    public void setMultiTourSerieIndex(final int multiTourSerieIndex) {

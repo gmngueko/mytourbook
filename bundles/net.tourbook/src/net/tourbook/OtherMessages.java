@@ -186,6 +186,10 @@ public class OtherMessages {
    public static final String SLIDEOUT_MAP_TRACK_COLORS_LABEL_VISIBLE_COLOR_PROFILES_TOOLTIP   = net.tourbook.common.Messages.Slideout_Map_TrackColors_Label_VisibleColorProfiles_Tooltip;
    public static final String SLIDEOUT_MAP_TRACK_COLORS_LABEL_VISIBLE_COLOR_PROFILES           = net.tourbook.common.Messages.Slideout_Map_TrackColors_Label_VisibleColorProfiles;
 
+   //GMN START
+   public static final String COLUMN_FACTORY_CATEGORY_CUSTOM_FIELDS       = net.tourbook.ui.Messages.ColumnFactory_Category_Custom_Fields;
+   public static final String COLUMN_FACTORY_CATEGORY_CUSTOM_TRACKS       = net.tourbook.ui.Messages.ColumnFactory_Category_Custom_Tracks;
+   //GMN END
    public static final String WEATHER_AIRQUAlITY_0_IS_NOT_DEFINED          = net.tourbook.common.Messages.Weather_AirQuality_0_IsNotDefined;
    public static final String WEATHER_AIRQUAlITY_1_GOOD                    = net.tourbook.common.Messages.Weather_AirQuality_1_Good;
    public static final String WEATHER_AIRQUAlITY_2_FAIR                    = net.tourbook.common.Messages.Weather_AirQuality_2_Fair;
