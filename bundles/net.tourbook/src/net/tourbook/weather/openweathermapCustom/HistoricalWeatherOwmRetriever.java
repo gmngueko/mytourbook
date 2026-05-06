@@ -15,9 +15,6 @@
  *******************************************************************************/
 package net.tourbook.weather.openweathermapCustom;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javadocmd.simplelatlng.LatLng;
 import com.javadocmd.simplelatlng.LatLngTool;
 import com.javadocmd.simplelatlng.util.LengthUnit;
@@ -48,6 +45,10 @@ import net.tourbook.weather.openweathermapCustom.OWMResults.OWMWeather_Descripti
 import net.tourbook.weather.openweathermapCustom.OWMResults.OWMWeather_Main_Map;
 
 import org.eclipse.jface.preference.IPreferenceStore;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * A class that retrieves, for a given track, the historical weather data.
@@ -515,7 +516,7 @@ public class HistoricalWeatherOwmRetriever {
          weatherSummary += weatherNote;
          weatherSummary += UI.NEW_LINE1 + "OWM retrieval interval(seconds):" + intervalSeconds; //$NON-NLS-1$
          historicalWeatherData.setWeatherDescription(weatherSummary);
-      } catch (final JsonProcessingException e) {
+      } catch (final JacksonException e) {
          StatusUtil.logError(
                "OWMWeatherHistoryRetriever.parseWeatherData : Error while pretty printing weather condition notes :" //$NON-NLS-1$
                      + "\n" + e.getMessage()); //$NON-NLS-1$

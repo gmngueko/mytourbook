@@ -15,11 +15,6 @@
  *******************************************************************************/
 package net.tourbook.tag;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
@@ -67,6 +62,12 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Dialog to modify a {@link TourTag}
@@ -522,7 +523,8 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
                   }
                   newTag.scheduleTimeSpanSeconds = parseTimeSpan(csvMaintenanceInfo.MyScheduleTimeSpan);
 
-                  final Iterator<Entry<String, JsonNode>> nodes = csvMaintenanceInfo.MyMaintainanceEvents.fields();
+                  final Iterator<Entry<String, JsonNode>> nodes =
+                        (Iterator<Entry<String, tools.jackson.databind.JsonNode>>) csvMaintenanceInfo.MyMaintainanceEvents.properties();
                   while (nodes.hasNext()) {
                      final Map.Entry<String, JsonNode> entry = nodes.next();
                      if (entry.getValue().toString().isBlank()) {
@@ -538,10 +540,10 @@ public class Dialog_TourTag_Import extends TitleAreaDialog {
 
                      //System.out.println("key --> " + entry.getKey() + " value-->" + entry.getValue());
                   }
-               } catch (final JsonMappingException e) {
+               } catch (final DatabindException e) {
                   // TODO Auto-generated catch block
                   e.printStackTrace();
-               } catch (final JsonProcessingException e) {
+               } catch (final JacksonException e) {
                   // TODO Auto-generated catch block
                   e.printStackTrace();
                }

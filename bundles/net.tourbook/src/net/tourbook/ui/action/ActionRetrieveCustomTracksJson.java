@@ -15,11 +15,6 @@
  *******************************************************************************/
 package net.tourbook.ui.action;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -61,6 +56,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
+
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 public class ActionRetrieveCustomTracksJson extends Action {
    //TODO replace with default preference
@@ -531,7 +531,7 @@ public class ActionRetrieveCustomTracksJson extends Action {
                entry.value = arrayElement.get(1).asInt();
                garminValueMap.put(entry.epochMilliseconds, entry.value);
             }
-         } catch (final JsonProcessingException e) {
+         } catch (final JacksonException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
          }
