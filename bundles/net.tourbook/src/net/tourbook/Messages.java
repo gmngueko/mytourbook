@@ -1542,6 +1542,7 @@ public class Messages extends NLS {
    public static String        Log_Tour_CopyTour;
    public static String        Log_Tour_DeleteTours;
    public static String        Log_Tour_MoveTour;
+   public static String        Log_Tour_Nutrition_ProductRetrieval_Error;
    public static String        Log_Tour_SaveTours;
    public static String        Log_Tour_SaveTours_End;
    public static String        Log_TourLocation_Retrieve_End;
@@ -3627,6 +3628,7 @@ public class Messages extends NLS {
    public static String        Tour_Filter_Field_ComputedTime_Moving;
    public static String        Tour_Filter_Field_DeviceTime_Elapsed;
    public static String        Tour_Filter_Field_Distance;
+   public static String        Tour_Filter_Field_NutritionProductsList;
    public static String        Tour_Filter_Field_ManualTour;
    public static String        Tour_Filter_Field_Photos;
    public static String        Tour_Filter_Field_Season;

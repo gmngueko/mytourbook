@@ -470,7 +470,7 @@ public class NatTable_DataLoader {
        * </code>
        *
        * which is causing exceptions because of differences between the sql and the parameters,
-       * propably because of concurrency !!!
+       * probably because of concurrency !!!
        */
 
       try (Connection conn = TourDatabase.getInstance().getConnection()) {
@@ -481,7 +481,14 @@ public class NatTable_DataLoader {
 
          final String orderBy = createSql_Sorting_OrderBy();
 
-         sql = NL
+         sql = UI.EMPTY_STRING
+
+               + "--" + NL //                                                                            //$NON-NLS-1$
+               + NL
+               + "---------------" + NL //                                                               //$NON-NLS-1$
+               + "-- NatTable_DataLoader.fetchPagedTourItems" + NL //                                    //$NON-NLS-1$
+               + "---------------" + NL //                                                               //$NON-NLS-1$
+               + NL
 
                + "SELECT" + NL //                                                                  //$NON-NLS-1$
 
